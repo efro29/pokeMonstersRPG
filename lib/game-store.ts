@@ -1,0 +1,864 @@
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { PokemonSpecies, BagItemDef } from "./pokemon-data";
+import { getGameStoreKey } from "./mode-store";
+import { BAG_ITEMS, getMove, getPokemon, canEvolveByLevel, canEvolveByStone, canEvolveByTrade, xpForLevel } from "./pokemon-data";
+
+export interface ActiveMove {
+  moveId: string;
+  currentPP: number;
+  maxPP: number;
+}
+
+export interface TeamPokemon {
+  uid: string;
+  speciesId: number;
+  name: string;
+  level: number;
+  xp: number;
+  maxHp: number;
+  currentHp: number;
+  moves: ActiveMove[];
+  learnableMoves: string[];
+}
+
+export interface BagItem {
+  itemId: string;
+  quantity: number;
+}
+
+export interface TrainerAttributes {
+  combate: number;      // Battle instinct: +1 to D20 roll per 2 pts
+  afinidade: number;    // Pokemon bond: +3 HP per pt on healing
+  sorte: number;        // Luck: expands crit range by 1 per 2 pts
+  furtividade: number;  // Stealth: RP + flee bonus
+  percepcao: number;    // Perception: RP + item finding
+  carisma: number;      // Charisma: RP + capture bonus
+}
+
+export const DEFAULT_ATTRIBUTES: TrainerAttributes = {
+  combate: 0,
+  afinidade: 0,
+  sorte: 0,
+  furtividade: 0,
+  percepcao: 0,
+  carisma: 0,
+};
+
+export const ATTRIBUTE_INFO: Record<keyof TrainerAttributes, { name: string; icon: string; desc: string; battleEffect: string }> = {
+  combate: { name: "Combate", icon: "swords", desc: "Instinto de batalha do treinador.", battleEffect: "+1 na rolagem D20 a cada 2 pontos" },
+  afinidade: { name: "Afinidade", icon: "heart", desc: "Vinculo com seus Pokemon.", battleEffect: "+3 HP de cura por ponto" },
+  sorte: { name: "Sorte", icon: "sparkles", desc: "Sorte e acasos favoraveis.", battleEffect: "Critico em 19+ (2pts), 18+ (4pts)..." },
+  furtividade: { name: "Furtividade", icon: "eye-off", desc: "Habilidade de se mover sem ser visto.", battleEffect: "Bonus em fugas e ataques surpresa" },
+  percepcao: { name: "Percepcao", icon: "eye", desc: "Atencao aos detalhes e perigos.", battleEffect: "Bonus em encontrar itens e armadilhas" },
+  carisma: { name: "Carisma", icon: "users", desc: "Poder de persuasao e lideranca.", battleEffect: "Bonus em captura e interacoes" },
+};
+
+export interface TrainerProfile {
+  name: string;
+  age: string;
+  hometown: string;
+  trainerClass: string;
+  money: number;
+  badges: Badge[];
+  johtoBadges: Badge[];
+  attributes: TrainerAttributes;
+}
+
+export interface Badge {
+  id: string;
+  name: string;
+  gym: string;
+  obtained: boolean;
+}
+
+export const KANTO_BADGES: Badge[] = [
+  { id: "boulder", name: "Boulder Badge", gym: "Pewter City - Brock", obtained: false },
+  { id: "cascade", name: "Cascade Badge", gym: "Cerulean City - Misty", obtained: false },
+  { id: "thunder", name: "Thunder Badge", gym: "Vermilion City - Lt. Surge", obtained: false },
+  { id: "rainbow", name: "Rainbow Badge", gym: "Celadon City - Erika", obtained: false },
+  { id: "soul", name: "Soul Badge", gym: "Fuchsia City - Koga", obtained: false },
+  { id: "marsh", name: "Marsh Badge", gym: "Saffron City - Sabrina", obtained: false },
+  { id: "volcano", name: "Volcano Badge", gym: "Cinnabar Island - Blaine", obtained: false },
+  { id: "earth", name: "Earth Badge", gym: "Viridian City - Giovanni", obtained: false },
+];
+
+export const JOHTO_BADGES: Badge[] = [
+  { id: "zephyr", name: "Zephyr Badge", gym: "Violet City - Falkner", obtained: false },
+  { id: "hive", name: "Hive Badge", gym: "Azalea Town - Bugsy", obtained: false },
+  { id: "plain", name: "Plain Badge", gym: "Goldenrod City - Whitney", obtained: false },
+  { id: "fog", name: "Fog Badge", gym: "Ecruteak City - Morty", obtained: false },
+  { id: "storm", name: "Storm Badge", gym: "Cianwood City - Chuck", obtained: false },
+  { id: "mineral", name: "Mineral Badge", gym: "Olivine City - Jasmine", obtained: false },
+  { id: "glacier", name: "Glacier Badge", gym: "Mahogany Town - Pryce", obtained: false },
+  { id: "rising", name: "Rising Badge", gym: "Blackthorn City - Clair", obtained: false },
+];
+
+export interface ShopItem {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  category: string;
+}
+
+export const SHOP_ITEMS: ShopItem[] = [
+  { id: "pokeball", name: "Pokeball", price: 200, description: "Pokeball basica para capturar Pokemon.", category: "pokeball" },
+  { id: "great-ball", name: "Great Ball", price: 600, description: "Pokeball melhorada. Maior chance de captura.", category: "pokeball" },
+  { id: "ultra-ball", name: "Ultra Ball", price: 1200, description: "Pokeball de alta performance.", category: "pokeball" },
+  { id: "potion", name: "Poção", price: 300, description: "Restaura 20 HP de um Pokemon.", category: "potion" },
+  { id: "super-potion", name: "Super Poção", price: 700, description: "Restaura 50 HP de um Pokemon.", category: "potion" },
+  { id: "hyper-potion", name: "Hyper Poção", price: 1200, description: "Restaura 200 HP de um Pokemon.", category: "potion" },
+  { id: "ether", name: "Ether", price: 500, description: "Restaura 5 PP de um golpe.", category: "status" },
+  { id: "max-ether", name: "Max Ether", price: 900, description: "Restaura todos os PP de um golpe.", category: "status" },
+  { id: "revive", name: "Revive", price: 1500, description: "Revive um Pokemon desmaiado com 50% HP.", category: "potion" },
+  { id: "full-heal", name: "Full Heal", price: 600, description: "Cura qualquer problema de status.", category: "status" },
+  { id: "antidote", name: "Antídoto", price: 100, description: "Cura envenenamento.", category: "status" },
+  { id: "paralyze-heal", name: "Cura Paralisia", price: 200, description: "Cura paralisia.", category: "status" },
+  { id: "awakening", name: "Despertar", price: 250, description: "Acorda um Pokemon adormecido.", category: "status" },
+  // Evolution stones
+  { id: "fire-stone", name: "Pedra de Fogo", price: 2100, description: "Evolui Pokemon do tipo Fogo.", category: "stone" },
+  { id: "water-stone", name: "Pedra da Agua", price: 2100, description: "Evolui Pokemon do tipo Agua.", category: "stone" },
+  { id: "thunder-stone", name: "Pedra do Trovao", price: 2100, description: "Evolui Pokemon do tipo Eletrico.", category: "stone" },
+  { id: "leaf-stone", name: "Pedra da Folha", price: 2100, description: "Evolui Pokemon do tipo Planta.", category: "stone" },
+  { id: "moon-stone", name: "Pedra da Lua", price: 2100, description: "Evolui Pokemon especiais.", category: "stone" },
+  { id: "sun-stone", name: "Pedra do Sol", price: 2100, description: "Evolui Pokemon com luz solar.", category: "stone" },
+  { id: "metal-coat", name: "Revestimento Metalico", price: 2100, description: "Evolui Pokemon de aco.", category: "stone" },
+  { id: "kings-rock", name: "Pedra do Rei", price: 2100, description: "Evolui Pokemon por troca.", category: "stone" },
+  { id: "dragon-scale", name: "Escama de Dragao", price: 3000, description: "Evolui Seadra em Kingdra.", category: "stone" },
+  { id: "up-grade", name: "Up-Grade", price: 3000, description: "Evolui Porygon em Porygon2.", category: "stone" },
+  // Rare items
+  { id: "rare-candy", name: "Rare Candy", price: 4800, description: "Sobe 1 nivel instantaneamente.", category: "rare" },
+  { id: "master-ball", name: "Master Ball", price: 50000, description: "Captura garantida. Rarissima.", category: "rare" },
+];
+
+// NPC / Enemy system (master mode)
+export interface NpcPokemon {
+  speciesId: number;
+  level: number;
+  nickname?: string;
+}
+
+export interface NpcEnemy {
+  id: string;
+  name: string;
+  team: NpcPokemon[];
+}
+
+export type BattlePhase =
+  | "idle"
+  | "menu"
+  | "attack-select"
+  | "rolling"
+  | "result"
+  | "opponent-damage"
+  | "bag-battle"
+  | "pokeball";
+
+export interface BattleState {
+  phase: BattlePhase;
+  activePokemonUid: string | null;
+  selectedMoveId: string | null;
+  diceRoll: number | null;
+  hitResult: string | null;
+  damageDealt: number | null;
+  battleLog: string[];
+}
+
+interface GameState {
+  trainer: TrainerProfile;
+  team: TeamPokemon[];
+  bag: BagItem[];
+  battle: BattleState;
+  npcs: NpcEnemy[];
+  // Trainer management
+  updateTrainer: (data: Partial<TrainerProfile>) => void;
+  addMoney: (amount: number) => void;
+  spendMoney: (amount: number) => boolean;
+  toggleBadge: (badgeId: string) => void;
+  toggleJohtoBadge: (badgeId: string) => void;
+  updateAttributes: (attrs: Partial<TrainerAttributes>) => void;
+  buyItem: (shopItem: ShopItem, qty: number) => boolean;
+  // Team management
+  addToTeam: (species: PokemonSpecies) => void;
+  addToTeamWithLevel: (species: PokemonSpecies, level: number) => string;
+  removeFromTeam: (uid: string) => void;
+  learnMove: (uid: string, moveId: string) => void;
+  forgetMove: (uid: string, moveId: string) => void;
+  // Bag management
+  addBagItem: (itemId: string, qty: number) => void;
+  useBagItem: (itemId: string, targetUid?: string, moveId?: string) => void;
+  // Battle
+  startBattle: (uid: string) => void;
+  endBattle: () => void;
+  setBattlePhase: (phase: BattlePhase) => void;
+  selectMove: (moveId: string) => void;
+  resolveDiceRoll: (roll: number) => void;
+  applyOpponentDamage: (damage: number) => void;
+  addBattleLog: (msg: string) => void;
+  clearBattleLog: () => void;
+  // Healing
+  healPokemon: (uid: string, amount: number) => void;
+  restorePP: (uid: string, moveId: string, amount: number) => void;
+  restoreAllPP: (uid: string, amount: number) => void;
+  // Level & Evolution
+  addXp: (uid: string, amount: number) => void;
+  setLevel: (uid: string, level: number) => void;
+  evolvePokemon: (uid: string, toSpeciesId: number) => void;
+  useStone: (uid: string, stoneId: string) => boolean;
+  evolveByTrade: (uid: string) => boolean;
+  useRareCandy: (uid: string) => void;
+  // NPC management
+  addNpc: (name: string) => string;
+  removeNpc: (id: string) => void;
+  updateNpcName: (id: string, name: string) => void;
+  addNpcPokemon: (npcId: string, speciesId: number, level: number) => void;
+  removeNpcPokemon: (npcId: string, index: number) => void;
+  updateNpcPokemonLevel: (npcId: string, index: number, level: number) => void;
+}
+
+function generateUid(): string {
+  return Math.random().toString(36).substring(2, 10);
+}
+
+export const useGameStore = create<GameState>()(
+  persist(
+    (set, get) => ({
+      trainer: {
+        name: "",
+        age: "",
+        hometown: "Pallet Town",
+        trainerClass: "Treinador Pokemon",
+        money: 3000,
+        badges: KANTO_BADGES.map((b) => ({ ...b })),
+        johtoBadges: JOHTO_BADGES.map((b) => ({ ...b })),
+        attributes: { ...DEFAULT_ATTRIBUTES },
+      },
+      team: [],
+      bag: [
+        { itemId: "potion", quantity: 5 },
+        { itemId: "super-potion", quantity: 2 },
+        { itemId: "ether", quantity: 3 },
+        { itemId: "pokeball", quantity: 10 },
+        { itemId: "great-ball", quantity: 5 },
+        { itemId: "revive", quantity: 2 },
+      ],
+      npcs: [],
+      battle: {
+        phase: "idle",
+        activePokemonUid: null,
+        selectedMoveId: null,
+        diceRoll: null,
+        hitResult: null,
+        damageDealt: null,
+        battleLog: [],
+      },
+
+      updateTrainer: (data) => {
+        set({ trainer: { ...get().trainer, ...data } });
+      },
+
+      addMoney: (amount) => {
+        set({ trainer: { ...get().trainer, money: get().trainer.money + amount } });
+      },
+
+      spendMoney: (amount) => {
+        const { trainer } = get();
+        if (trainer.money < amount) return false;
+        set({ trainer: { ...trainer, money: trainer.money - amount } });
+        return true;
+      },
+
+      toggleBadge: (badgeId) => {
+        set({
+          trainer: {
+            ...get().trainer,
+            badges: get().trainer.badges.map((b) =>
+              b.id === badgeId ? { ...b, obtained: !b.obtained } : b
+            ),
+          },
+        });
+      },
+
+      toggleJohtoBadge: (badgeId) => {
+        set({
+          trainer: {
+            ...get().trainer,
+            johtoBadges: get().trainer.johtoBadges.map((b) =>
+              b.id === badgeId ? { ...b, obtained: !b.obtained } : b
+            ),
+          },
+        });
+      },
+
+      updateAttributes: (attrs) => {
+        set({
+          trainer: {
+            ...get().trainer,
+            attributes: { ...get().trainer.attributes, ...attrs },
+          },
+        });
+      },
+
+      buyItem: (shopItem, qty) => {
+        const totalCost = shopItem.price * qty;
+        const { trainer } = get();
+        if (trainer.money < totalCost) return false;
+        set({ trainer: { ...trainer, money: trainer.money - totalCost } });
+        get().addBagItem(shopItem.id, qty);
+        return true;
+      },
+
+      addToTeam: (species) => {
+        const { team } = get();
+        if (team.length >= 6) return;
+        const pokemon: TeamPokemon = {
+          uid: generateUid(),
+          speciesId: species.id,
+          name: species.name,
+          level: 1,
+          xp: 0,
+          maxHp: species.baseHp,
+          currentHp: species.baseHp,
+          moves: species.startingMoves
+            .filter((id) => getMove(id))
+            .map((id) => ({ moveId: id, currentPP: 10, maxPP: 10 })),
+          learnableMoves: species.learnableMoves,
+        };
+        set({ team: [...team, pokemon] });
+      },
+
+      addToTeamWithLevel: (species, level) => {
+        const { team } = get();
+        if (team.length >= 6) return "";
+        const levelBonus = (level - 1) * 3;
+        const hp = species.baseHp + levelBonus;
+        const uid = generateUid();
+        const pokemon: TeamPokemon = {
+          uid,
+          speciesId: species.id,
+          name: species.name,
+          level,
+          xp: xpForLevel(level),
+          maxHp: hp,
+          currentHp: hp,
+          moves: species.startingMoves
+            .filter((id) => getMove(id))
+            .map((id) => ({ moveId: id, currentPP: 10, maxPP: 10 })),
+          learnableMoves: species.learnableMoves,
+        };
+        set({ team: [...team, pokemon] });
+        return uid;
+      },
+
+      removeFromTeam: (uid) => {
+        set({ team: get().team.filter((p) => p.uid !== uid) });
+      },
+
+      learnMove: (uid, moveId) => {
+        set({
+          team: get().team.map((p) => {
+            if (p.uid !== uid) return p;
+            if (p.moves.length >= 4) return p;
+            if (p.moves.some((m) => m.moveId === moveId)) return p;
+            return {
+              ...p,
+              moves: [...p.moves, { moveId, currentPP: 10, maxPP: 10 }],
+              learnableMoves: p.learnableMoves.filter((id) => id !== moveId),
+            };
+          }),
+        });
+      },
+
+      forgetMove: (uid, moveId) => {
+        set({
+          team: get().team.map((p) => {
+            if (p.uid !== uid) return p;
+            return {
+              ...p,
+              moves: p.moves.filter((m) => m.moveId !== moveId),
+              learnableMoves: [...p.learnableMoves, moveId],
+            };
+          }),
+        });
+      },
+
+      addBagItem: (itemId, qty) => {
+        const { bag } = get();
+        const existing = bag.find((i) => i.itemId === itemId);
+        if (existing) {
+          set({
+            bag: bag.map((i) =>
+              i.itemId === itemId
+                ? { ...i, quantity: i.quantity + qty }
+                : i
+            ),
+          });
+        } else {
+          set({ bag: [...bag, { itemId, quantity: qty }] });
+        }
+      },
+
+      useBagItem: (itemId, targetUid, moveId) => {
+        const { bag, team, trainer } = get();
+        const bagItem = bag.find((i) => i.itemId === itemId);
+        if (!bagItem || bagItem.quantity <= 0) return;
+
+        const itemDef = BAG_ITEMS.find((i) => i.id === itemId);
+        if (!itemDef) return;
+
+        const newBag = bag.map((i) =>
+          i.itemId === itemId ? { ...i, quantity: i.quantity - 1 } : i
+        ).filter((i) => i.quantity > 0);
+
+        // Afinidade: +3 HP bonus per point when healing
+        const afinidadeBonus = (trainer.attributes?.afinidade ?? 0) * 3;
+
+        let newTeam = team;
+        if (targetUid && itemDef.healAmount !== undefined) {
+          if (itemDef.id === "revive") {
+            newTeam = team.map((p) =>
+              p.uid === targetUid && p.currentHp <= 0
+                ? { ...p, currentHp: Math.floor(p.maxHp / 2) + afinidadeBonus }
+                : p
+            );
+          } else {
+            const totalHeal = (itemDef.healAmount || 0) + afinidadeBonus;
+            newTeam = team.map((p) =>
+              p.uid === targetUid
+                ? { ...p, currentHp: Math.min(p.maxHp, p.currentHp + totalHeal) }
+                : p
+            );
+          }
+        }
+
+        if (targetUid && itemDef.ppRestore) {
+          if (moveId) {
+            newTeam = newTeam.map((p) =>
+              p.uid === targetUid
+                ? {
+                    ...p,
+                    moves: p.moves.map((m) =>
+                      m.moveId === moveId
+                        ? { ...m, currentPP: Math.min(m.maxPP, m.currentPP + itemDef.ppRestore!) }
+                        : m
+                    ),
+                  }
+                : p
+            );
+          } else {
+            newTeam = newTeam.map((p) =>
+              p.uid === targetUid
+                ? {
+                    ...p,
+                    moves: p.moves.map((m) => ({
+                      ...m,
+                      currentPP: Math.min(m.maxPP, m.currentPP + itemDef.ppRestore!),
+                    })),
+                  }
+                : p
+            );
+          }
+        }
+
+        set({ bag: newBag, team: newTeam });
+      },
+
+      startBattle: (uid) => {
+        set({
+          battle: {
+            phase: "menu",
+            activePokemonUid: uid,
+            selectedMoveId: null,
+            diceRoll: null,
+            hitResult: null,
+            damageDealt: null,
+            battleLog: [],
+          },
+        });
+      },
+
+      endBattle: () => {
+        set({
+          battle: {
+            phase: "idle",
+            activePokemonUid: null,
+            selectedMoveId: null,
+            diceRoll: null,
+            hitResult: null,
+            damageDealt: null,
+            battleLog: [],
+          },
+        });
+      },
+
+      setBattlePhase: (phase) => {
+        set({ battle: { ...get().battle, phase } });
+      },
+
+      selectMove: (moveId) => {
+        const { battle, team } = get();
+        const pokemon = team.find((p) => p.uid === battle.activePokemonUid);
+        if (!pokemon) return;
+        const activeMove = pokemon.moves.find((m) => m.moveId === moveId);
+        if (!activeMove || activeMove.currentPP <= 0) return;
+
+        // Deduct 1 PP
+        set({
+          team: team.map((p) =>
+            p.uid === pokemon.uid
+              ? {
+                  ...p,
+                  moves: p.moves.map((m) =>
+                    m.moveId === moveId
+                      ? { ...m, currentPP: m.currentPP - 1 }
+                      : m
+                  ),
+                }
+              : p
+          ),
+          battle: {
+            ...battle,
+            phase: "rolling",
+            selectedMoveId: moveId,
+            diceRoll: null,
+            hitResult: null,
+            damageDealt: null,
+          },
+        });
+      },
+
+      resolveDiceRoll: (roll) => {
+        const { battle, trainer } = get();
+        const move = getMove(battle.selectedMoveId || "");
+        if (!move) return;
+
+        const attrs = trainer.attributes || DEFAULT_ATTRIBUTES;
+        // Combate: +1 to effective roll per 2 points
+        const combateBonus = Math.floor(attrs.combate / 2);
+        // Sorte: expands crit range by 1 per 2 points (20 -> 19 -> 18...)
+        const critExpansion = Math.floor(attrs.sorte / 2);
+        const critThreshold = Math.max(15, 20 - critExpansion);
+
+        const effectiveRoll = roll + combateBonus;
+
+        let hitResult: string;
+        let damageDealt = 0;
+
+        if (roll === 1) {
+          // Natural 1 always critical miss (unaffected by bonuses)
+          hitResult = "critical-miss";
+          damageDealt = 0;
+        } else if (roll >= critThreshold) {
+          // Critical hit: natural roll >= crit threshold
+          hitResult = "critical-hit";
+          damageDealt = Math.floor(move.power * 2);
+        } else if (effectiveRoll >= move.accuracy + 5) {
+          hitResult = "strong-hit";
+          damageDealt = Math.floor(move.power * 1.5);
+        } else if (effectiveRoll >= move.accuracy) {
+          hitResult = "hit";
+          damageDealt = move.power;
+        } else {
+          hitResult = "miss";
+          damageDealt = 0;
+        }
+
+        set({
+          battle: {
+            ...battle,
+            phase: "result",
+            diceRoll: roll,
+            hitResult,
+            damageDealt,
+          },
+        });
+      },
+
+      applyOpponentDamage: (damage) => {
+        const { battle, team } = get();
+        const uid = battle.activePokemonUid;
+        if (!uid) return;
+        set({
+          team: team.map((p) =>
+            p.uid === uid
+              ? { ...p, currentHp: Math.max(0, p.currentHp - damage) }
+              : p
+          ),
+          battle: {
+            ...battle,
+            battleLog: [
+              ...battle.battleLog,
+              `Adversario causou ${damage} de dano!`,
+            ],
+          },
+        });
+      },
+
+      addBattleLog: (msg) => {
+        set({
+          battle: {
+            ...get().battle,
+            battleLog: [...get().battle.battleLog, msg],
+          },
+        });
+      },
+
+      clearBattleLog: () => {
+        set({
+          battle: {
+            ...get().battle,
+            battleLog: [],
+          },
+        });
+      },
+
+      healPokemon: (uid, amount) => {
+        set({
+          team: get().team.map((p) =>
+            p.uid === uid
+              ? { ...p, currentHp: Math.min(p.maxHp, p.currentHp + amount) }
+              : p
+          ),
+        });
+      },
+
+      restorePP: (uid, moveId, amount) => {
+        set({
+          team: get().team.map((p) =>
+            p.uid === uid
+              ? {
+                  ...p,
+                  moves: p.moves.map((m) =>
+                    m.moveId === moveId
+                      ? { ...m, currentPP: Math.min(m.maxPP, m.currentPP + amount) }
+                      : m
+                  ),
+                }
+              : p
+          ),
+        });
+      },
+
+      restoreAllPP: (uid, amount) => {
+        set({
+          team: get().team.map((p) =>
+            p.uid === uid
+              ? {
+                  ...p,
+                  moves: p.moves.map((m) => ({
+                    ...m,
+                    currentPP: Math.min(m.maxPP, m.currentPP + amount),
+                  })),
+                }
+              : p
+          ),
+        });
+      },
+
+      addXp: (uid, amount) => {
+        const { team } = get();
+        const pokemon = team.find((p) => p.uid === uid);
+        if (!pokemon) return;
+
+        const currentXp = pokemon.xp ?? 0;
+        const currentLevel = pokemon.level ?? 1;
+        let newXp = currentXp + amount;
+        let newLevel = currentLevel;
+        // Check for level ups
+        while (newXp >= xpForLevel(newLevel + 1) && newLevel < 100) {
+          newLevel++;
+        }
+
+        // Calculate HP scaling: +3 HP per level gained
+        const levelsGained = newLevel - currentLevel;
+        const hpGain = levelsGained * 3;
+
+        set({
+          team: team.map((p) =>
+            p.uid === uid
+              ? {
+                  ...p,
+                  xp: newXp,
+                  level: newLevel,
+                  maxHp: p.maxHp + hpGain,
+                  currentHp: Math.min(p.currentHp + hpGain, p.maxHp + hpGain),
+                }
+              : p
+          ),
+        });
+      },
+
+      setLevel: (uid, level) => {
+        const { team } = get();
+        const pokemon = team.find((p) => p.uid === uid);
+        if (!pokemon) return;
+        const currentLevel = pokemon.level ?? 1;
+        const levelDiff = level - currentLevel;
+        const hpChange = levelDiff * 3;
+        set({
+          team: team.map((p) =>
+            p.uid === uid
+              ? {
+                  ...p,
+                  level,
+                  xp: xpForLevel(level),
+                  maxHp: Math.max(1, p.maxHp + hpChange),
+                  currentHp: Math.max(1, Math.min(p.currentHp + Math.max(0, hpChange), Math.max(1, p.maxHp + hpChange))),
+                }
+              : p
+          ),
+        });
+      },
+
+      evolvePokemon: (uid, toSpeciesId) => {
+        const { team } = get();
+        const species = getPokemon(toSpeciesId);
+        if (!species) return;
+        set({
+          team: team.map((p) => {
+            if (p.uid !== uid) return p;
+            const hpDiff = species.baseHp - (getPokemon(p.speciesId)?.baseHp || 0);
+            // Add level-based HP bonus
+            const pLevel = p.level ?? 1;
+            const levelBonus = (pLevel - 1) * 3;
+            return {
+              ...p,
+              speciesId: toSpeciesId,
+              name: species.name,
+              maxHp: species.baseHp + levelBonus,
+              currentHp: Math.min(p.currentHp + Math.max(0, hpDiff), species.baseHp + levelBonus),
+              moves: species.startingMoves
+                .filter((id) => getMove(id))
+                .map((id) => {
+                  const existing = p.moves.find((m) => m.moveId === id);
+                  return existing || { moveId: id, currentPP: 10, maxPP: 10 };
+                }),
+              learnableMoves: species.learnableMoves.filter(
+                (id) => !species.startingMoves.includes(id)
+              ),
+            };
+          }),
+        });
+      },
+
+      useStone: (uid, stoneId) => {
+        const { team, bag } = get();
+        const pokemon = team.find((p) => p.uid === uid);
+        if (!pokemon) return false;
+        const evo = canEvolveByStone(pokemon.speciesId, stoneId);
+        if (!evo) return false;
+        // Check if player has the stone
+        const stoneItem = bag.find((b) => b.itemId === stoneId);
+        if (!stoneItem || stoneItem.quantity <= 0) return false;
+        // Consume the stone
+        const newBag = bag.map((b) =>
+          b.itemId === stoneId ? { ...b, quantity: b.quantity - 1 } : b
+        ).filter((b) => b.quantity > 0);
+        set({ bag: newBag });
+        // Evolve
+        get().evolvePokemon(uid, evo.to);
+        return true;
+      },
+
+      evolveByTrade: (uid) => {
+        const { team } = get();
+        const pokemon = team.find((p) => p.uid === uid);
+        if (!pokemon) return false;
+        const evo = canEvolveByTrade(pokemon.speciesId);
+        if (!evo) return false;
+        get().evolvePokemon(uid, evo.to);
+        return true;
+      },
+
+      useRareCandy: (uid) => {
+        const { team, bag } = get();
+        const pokemon = team.find((p) => p.uid === uid);
+        if (!pokemon) return;
+        const candy = bag.find((b) => b.itemId === "rare-candy");
+        if (!candy || candy.quantity <= 0) return;
+        // Consume candy
+        const newBag = bag.map((b) =>
+          b.itemId === "rare-candy" ? { ...b, quantity: b.quantity - 1 } : b
+        ).filter((b) => b.quantity > 0);
+        set({ bag: newBag });
+        // Level up by 1
+        const newLevel = (pokemon.level ?? 1) + 1;
+        get().setLevel(uid, newLevel);
+      },
+
+      // NPC management
+      addNpc: (name) => {
+        const id = generateUid();
+        set({ npcs: [...get().npcs, { id, name, team: [] }] });
+        return id;
+      },
+
+      removeNpc: (id) => {
+        set({ npcs: get().npcs.filter((n) => n.id !== id) });
+      },
+
+      updateNpcName: (id, name) => {
+        set({
+          npcs: get().npcs.map((n) => (n.id === id ? { ...n, name } : n)),
+        });
+      },
+
+      addNpcPokemon: (npcId, speciesId, level) => {
+        set({
+          npcs: get().npcs.map((n) => {
+            if (n.id !== npcId) return n;
+            if (n.team.length >= 6) return n;
+            return { ...n, team: [...n.team, { speciesId, level }] };
+          }),
+        });
+      },
+
+      removeNpcPokemon: (npcId, index) => {
+        set({
+          npcs: get().npcs.map((n) => {
+            if (n.id !== npcId) return n;
+            return { ...n, team: n.team.filter((_, i) => i !== index) };
+          }),
+        });
+      },
+
+      updateNpcPokemonLevel: (npcId, index, level) => {
+        set({
+          npcs: get().npcs.map((n) => {
+            if (n.id !== npcId) return n;
+            return {
+              ...n,
+              team: n.team.map((p, i) => (i === index ? { ...p, level } : p)),
+            };
+          }),
+        });
+      },
+    }),
+    {
+      name: getGameStoreKey(),
+      version: 4,
+      migrate: (persistedState: unknown, version: number) => {
+        const state = persistedState as Record<string, unknown>;
+        if (version < 2) {
+          const team = (state.team as TeamPokemon[]) || [];
+          state.team = team.map((p) => ({
+            ...p,
+            level: p.level ?? 1,
+            xp: p.xp ?? 0,
+          }));
+        }
+        if (version < 3) {
+          state.npcs = state.npcs ?? [];
+        }
+        if (version < 4) {
+          const trainer = (state.trainer as Record<string, unknown>) || {};
+          trainer.johtoBadges = trainer.johtoBadges ?? JOHTO_BADGES.map((b) => ({ ...b }));
+          trainer.attributes = trainer.attributes ?? { ...DEFAULT_ATTRIBUTES };
+          state.trainer = trainer;
+        }
+        return state as GameState;
+      },
+    }
+  )
+);

@@ -1,0 +1,838 @@
+export type PokemonType =
+  | "normal" | "fire" | "water" | "grass" | "electric" | "ice"
+  | "fighting" | "poison" | "ground" | "flying" | "psychic"
+  | "bug" | "rock" | "ghost" | "dragon" | "dark" | "steel";
+
+export const TYPE_COLORS: Record<PokemonType, string> = {
+  normal: "#A8A878",
+  fire: "#F08030",
+  water: "#6890F0",
+  grass: "#78C850",
+  electric: "#F8D030",
+  ice: "#98D8D8",
+  fighting: "#C03028",
+  poison: "#A040A0",
+  ground: "#E0C068",
+  flying: "#A890F0",
+  psychic: "#F85888",
+  bug: "#A8B820",
+  rock: "#B8A038",
+  ghost: "#705898",
+  dragon: "#7038F8",
+  dark: "#705848",
+  steel: "#B8B8D0",
+};
+
+export interface Move {
+  id: string;
+  name: string;
+  type: PokemonType;
+  power: number;
+  accuracy: number; // D20 threshold: need to roll this or higher to hit
+  description: string;
+}
+
+export interface PokemonSpecies {
+  id: number;
+  name: string;
+  types: PokemonType[];
+  baseHp: number;
+  startingMoves: string[];
+  learnableMoves: string[];
+}
+
+export const MOVES: Move[] = [
+  // Normal
+  { id: "tackle", name: "Tackle", type: "normal", power: 40, accuracy: 6, description: "Um ataque corpo a corpo simples." },
+  { id: "scratch", name: "Scratch", type: "normal", power: 40, accuracy: 6, description: "Arranha o inimigo com garras afiadas." },
+  { id: "pound", name: "Pound", type: "normal", power: 40, accuracy: 6, description: "Golpeia o alvo com a pata." },
+  { id: "quick-attack", name: "Quick Attack", type: "normal", power: 40, accuracy: 5, description: "Ataque extremamente rapido." },
+  { id: "slam", name: "Slam", type: "normal", power: 80, accuracy: 10, description: "Golpe poderoso que arremessa o alvo." },
+  { id: "body-slam", name: "Body Slam", type: "normal", power: 85, accuracy: 8, description: "Arremessa o corpo inteiro no inimigo." },
+  { id: "hyper-beam", name: "Hyper Beam", type: "normal", power: 150, accuracy: 14, description: "Disparo devastador de energia." },
+  { id: "wrap", name: "Wrap", type: "normal", power: 15, accuracy: 7, description: "Enrola o alvo apertando-o." },
+  { id: "bite", name: "Bite", type: "dark", power: 60, accuracy: 7, description: "Morde com presas afiadas." },
+  { id: "headbutt", name: "Headbutt", type: "normal", power: 70, accuracy: 8, description: "Cabecada poderosa." },
+  { id: "take-down", name: "Take Down", type: "normal", power: 90, accuracy: 10, description: "Investida selvagem, causa recuo." },
+  { id: "fury-attack", name: "Fury Attack", type: "normal", power: 15, accuracy: 6, description: "Ataca 2-5 vezes seguidas." },
+  { id: "horn-attack", name: "Horn Attack", type: "normal", power: 65, accuracy: 7, description: "Ataca com chifres afiados." },
+  { id: "rage", name: "Rage", type: "normal", power: 20, accuracy: 6, description: "Fica mais forte a cada golpe." },
+  { id: "mega-punch", name: "Mega Punch", type: "normal", power: 80, accuracy: 10, description: "Soco devastador." },
+  { id: "double-edge", name: "Double-Edge", type: "normal", power: 120, accuracy: 8, description: "Investida suicida. Causa recuo." },
+  { id: "strength", name: "Strength", type: "normal", power: 80, accuracy: 7, description: "Golpe de forca bruta." },
+  { id: "pay-day", name: "Pay Day", type: "normal", power: 40, accuracy: 7, description: "Atira moedas no inimigo." },
+  { id: "comet-punch", name: "Comet Punch", type: "normal", power: 18, accuracy: 6, description: "Sequencia rapida de socos." },
+  { id: "sing", name: "Sing", type: "normal", power: 0, accuracy: 13, description: "Canta para adormecer o alvo." },
+  { id: "growl", name: "Growl", type: "normal", power: 0, accuracy: 4, description: "Rosna para reduzir ataque." },
+  { id: "tail-whip", name: "Tail Whip", type: "normal", power: 0, accuracy: 4, description: "Abana a cauda para reduzir defesa." },
+  { id: "leer", name: "Leer", type: "normal", power: 0, accuracy: 4, description: "Olhar intimidador reduz defesa." },
+  { id: "harden", name: "Harden", type: "normal", power: 0, accuracy: 2, description: "Endurece o corpo, aumenta defesa." },
+  { id: "defense-curl", name: "Defense Curl", type: "normal", power: 0, accuracy: 2, description: "Enrola-se para aumentar defesa." },
+  { id: "self-destruct", name: "Self-Destruct", type: "normal", power: 200, accuracy: 6, description: "Explode causando dano massivo." },
+  { id: "explosion", name: "Explosion", type: "normal", power: 250, accuracy: 6, description: "Explosao devastadora." },
+  { id: "fury-swipes", name: "Fury Swipes", type: "normal", power: 18, accuracy: 7, description: "Arranha 2-5 vezes." },
+  { id: "super-fang", name: "Super Fang", type: "normal", power: 50, accuracy: 8, description: "Morde tirando metade do HP." },
+  { id: "swift", name: "Swift", type: "normal", power: 60, accuracy: 2, description: "Estrelas que nunca erram." },
+  { id: "screech", name: "Screech", type: "normal", power: 0, accuracy: 10, description: "Grito que reduz muito a defesa." },
+  { id: "barrage", name: "Barrage", type: "normal", power: 15, accuracy: 7, description: "Atira objetos 2-5 vezes." },
+  { id: "tri-attack", name: "Tri Attack", type: "normal", power: 80, accuracy: 7, description: "Ataque triplo de elementos." },
+  { id: "skull-bash", name: "Skull Bash", type: "normal", power: 130, accuracy: 12, description: "Cabecada devastadora." },
+  // Fire
+  { id: "ember", name: "Ember", type: "fire", power: 40, accuracy: 7, description: "Pequenas chamas atingem o alvo." },
+  { id: "flamethrower", name: "Flamethrower", type: "fire", power: 90, accuracy: 8, description: "Lanca-chamas poderoso." },
+  { id: "fire-blast", name: "Fire Blast", type: "fire", power: 110, accuracy: 12, description: "Explosao de fogo intensa." },
+  { id: "fire-spin", name: "Fire Spin", type: "fire", power: 35, accuracy: 10, description: "Vortice de fogo aprisiona o alvo." },
+  { id: "fire-punch", name: "Fire Punch", type: "fire", power: 75, accuracy: 7, description: "Soco em chamas." },
+  // Water
+  { id: "water-gun", name: "Water Gun", type: "water", power: 40, accuracy: 7, description: "Jato de agua pressurizado." },
+  { id: "bubble", name: "Bubble", type: "water", power: 40, accuracy: 7, description: "Bolhas que atingem o alvo." },
+  { id: "surf", name: "Surf", type: "water", power: 90, accuracy: 8, description: "Onda gigante atinge todos." },
+  { id: "hydro-pump", name: "Hydro Pump", type: "water", power: 110, accuracy: 12, description: "Jato de agua devastador." },
+  { id: "bubble-beam", name: "Bubble Beam", type: "water", power: 65, accuracy: 7, description: "Rajada de bolhas concentrada." },
+  { id: "withdraw", name: "Withdraw", type: "water", power: 0, accuracy: 2, description: "Recolhe no casco, aumenta defesa." },
+  { id: "clamp", name: "Clamp", type: "water", power: 35, accuracy: 10, description: "Prende o alvo com conchas." },
+  { id: "crabhammer", name: "Crabhammer", type: "water", power: 100, accuracy: 10, description: "Martelo com garra." },
+  // Grass
+  { id: "vine-whip", name: "Vine Whip", type: "grass", power: 45, accuracy: 7, description: "Chicoteia com vinhas." },
+  { id: "razor-leaf", name: "Razor Leaf", type: "grass", power: 55, accuracy: 7, description: "Folhas afiadas cortam o alvo." },
+  { id: "solar-beam", name: "Solar Beam", type: "grass", power: 120, accuracy: 12, description: "Raio solar concentrado." },
+  { id: "absorb", name: "Absorb", type: "grass", power: 20, accuracy: 6, description: "Absorve HP do alvo." },
+  { id: "mega-drain", name: "Mega Drain", type: "grass", power: 40, accuracy: 7, description: "Drena muita energia do alvo." },
+  { id: "leech-seed", name: "Leech Seed", type: "grass", power: 0, accuracy: 8, description: "Planta semente que drena HP." },
+  { id: "stun-spore", name: "Stun Spore", type: "grass", power: 0, accuracy: 10, description: "Espalha esporos paralisantes." },
+  { id: "sleep-powder", name: "Sleep Powder", type: "grass", power: 0, accuracy: 12, description: "Po que faz o alvo dormir." },
+  { id: "petal-dance", name: "Petal Dance", type: "grass", power: 120, accuracy: 8, description: "Danca de petalas frentica." },
+  // Electric
+  { id: "thunder-shock", name: "Thunder Shock", type: "electric", power: 40, accuracy: 7, description: "Descarga eletrica leve." },
+  { id: "thunderbolt", name: "Thunderbolt", type: "electric", power: 90, accuracy: 8, description: "Raio poderoso." },
+  { id: "thunder", name: "Thunder", type: "electric", power: 110, accuracy: 13, description: "Trovao devastador." },
+  { id: "thunder-wave", name: "Thunder Wave", type: "electric", power: 0, accuracy: 7, description: "Onda eletrica que paralisa." },
+  { id: "thunder-punch", name: "Thunder Punch", type: "electric", power: 75, accuracy: 7, description: "Soco eletrificado." },
+  // Ice
+  { id: "ice-beam", name: "Ice Beam", type: "ice", power: 90, accuracy: 8, description: "Raio congelante." },
+  { id: "blizzard", name: "Blizzard", type: "ice", power: 110, accuracy: 13, description: "Tempestade de gelo devastadora." },
+  { id: "ice-punch", name: "Ice Punch", type: "ice", power: 75, accuracy: 7, description: "Soco congelante." },
+  { id: "aurora-beam", name: "Aurora Beam", type: "ice", power: 65, accuracy: 7, description: "Raio colorido congelante." },
+  // Fighting
+  { id: "low-kick", name: "Low Kick", type: "fighting", power: 50, accuracy: 7, description: "Rasteira poderosa." },
+  { id: "karate-chop", name: "Karate Chop", type: "fighting", power: 50, accuracy: 7, description: "Golpe de karate." },
+  { id: "submission", name: "Submission", type: "fighting", power: 80, accuracy: 10, description: "Golpe de luta, causa recuo." },
+  { id: "seismic-toss", name: "Seismic Toss", type: "fighting", power: 60, accuracy: 8, description: "Arremesso sismico." },
+  { id: "high-jump-kick", name: "High Jump Kick", type: "fighting", power: 130, accuracy: 14, description: "Chute voador devastador." },
+  { id: "double-kick", name: "Double Kick", type: "fighting", power: 30, accuracy: 7, description: "Chuta duas vezes seguidas." },
+  // Poison
+  { id: "poison-sting", name: "Poison Sting", type: "poison", power: 15, accuracy: 6, description: "Ferroa com veneno." },
+  { id: "sludge", name: "Sludge", type: "poison", power: 65, accuracy: 7, description: "Lanca lodo toxico." },
+  { id: "acid", name: "Acid", type: "poison", power: 40, accuracy: 7, description: "Spray de acido corrosivo." },
+  { id: "smog", name: "Smog", type: "poison", power: 30, accuracy: 9, description: "Fumaca toxica." },
+  { id: "toxic", name: "Toxic", type: "poison", power: 0, accuracy: 10, description: "Envenena gravemente o alvo." },
+  { id: "poison-gas", name: "Poison Gas", type: "poison", power: 0, accuracy: 11, description: "Gas venenoso." },
+  // Ground
+  { id: "sand-attack", name: "Sand Attack", type: "ground", power: 0, accuracy: 6, description: "Joga areia nos olhos." },
+  { id: "earthquake", name: "Earthquake", type: "ground", power: 100, accuracy: 7, description: "Terremoto devastador." },
+  { id: "dig", name: "Dig", type: "ground", power: 80, accuracy: 7, description: "Cava e ataca por baixo." },
+  { id: "bone-club", name: "Bone Club", type: "ground", power: 65, accuracy: 10, description: "Golpeia com osso." },
+  { id: "bonemerang", name: "Bonemerang", type: "ground", power: 50, accuracy: 8, description: "Lanca osso como bumerangue." },
+  { id: "fissure", name: "Fissure", type: "ground", power: 999, accuracy: 19, description: "Abre fenda no chao. KO instantaneo." },
+  // Flying
+  { id: "gust", name: "Gust", type: "flying", power: 40, accuracy: 7, description: "Rajada de vento." },
+  { id: "wing-attack", name: "Wing Attack", type: "flying", power: 60, accuracy: 7, description: "Ataque com asas." },
+  { id: "fly", name: "Fly", type: "flying", power: 90, accuracy: 10, description: "Voa alto e mergulha para atacar." },
+  { id: "peck", name: "Peck", type: "flying", power: 35, accuracy: 6, description: "Bica o alvo." },
+  { id: "drill-peck", name: "Drill Peck", type: "flying", power: 80, accuracy: 7, description: "Bica girando como broca." },
+  { id: "sky-attack", name: "Sky Attack", type: "flying", power: 140, accuracy: 14, description: "Ataque aereo devastador." },
+  // Psychic
+  { id: "confusion", name: "Confusion", type: "psychic", power: 50, accuracy: 7, description: "Onda psiquica que confunde." },
+  { id: "psychic", name: "Psychic", type: "psychic", power: 90, accuracy: 7, description: "Ataque psiquico poderoso." },
+  { id: "psybeam", name: "Psybeam", type: "psychic", power: 65, accuracy: 7, description: "Raio psiquico peculiar." },
+  { id: "hypnosis", name: "Hypnosis", type: "psychic", power: 0, accuracy: 12, description: "Hipnotiza o alvo para dormir." },
+  { id: "dream-eater", name: "Dream Eater", type: "psychic", power: 100, accuracy: 7, description: "Devora sonhos do alvo dormindo." },
+  { id: "barrier", name: "Barrier", type: "psychic", power: 0, accuracy: 2, description: "Cria barreira, aumenta defesa." },
+  { id: "agility", name: "Agility", type: "psychic", power: 0, accuracy: 2, description: "Relaxa o corpo, aumenta velocidade." },
+  { id: "teleport", name: "Teleport", type: "psychic", power: 0, accuracy: 2, description: "Teletransporta para longe." },
+  { id: "amnesia", name: "Amnesia", type: "psychic", power: 0, accuracy: 2, description: "Esquece algo, aumenta defesa esp." },
+  { id: "meditate", name: "Meditate", type: "psychic", power: 0, accuracy: 2, description: "Medita para aumentar ataque." },
+  // Bug
+  { id: "string-shot", name: "String Shot", type: "bug", power: 0, accuracy: 6, description: "Seda que reduz velocidade." },
+  { id: "leech-life", name: "Leech Life", type: "bug", power: 80, accuracy: 7, description: "Suga a vida do alvo." },
+  { id: "pin-missile", name: "Pin Missile", type: "bug", power: 25, accuracy: 7, description: "Agulhas afiadas 2-5 vezes." },
+  { id: "twineedle", name: "Twineedle", type: "bug", power: 25, accuracy: 7, description: "Ataca com dois ferroes." },
+  // Rock
+  { id: "rock-throw", name: "Rock Throw", type: "rock", power: 50, accuracy: 8, description: "Arremessa pedras no alvo." },
+  { id: "rock-slide", name: "Rock Slide", type: "rock", power: 75, accuracy: 9, description: "Deslizamento de rochas." },
+  // Ghost
+  { id: "lick", name: "Lick", type: "ghost", power: 30, accuracy: 7, description: "Lambe com lingua espectral." },
+  { id: "night-shade", name: "Night Shade", type: "ghost", power: 50, accuracy: 7, description: "Ilusao sinistra que causa dano." },
+  { id: "confuse-ray", name: "Confuse Ray", type: "ghost", power: 0, accuracy: 7, description: "Luz sinistra que confunde." },
+  // Dragon
+  { id: "dragon-rage", name: "Dragon Rage", type: "dragon", power: 40, accuracy: 7, description: "Furia do dragao, dano fixo." },
+  { id: "outrage", name: "Outrage", type: "dragon", power: 120, accuracy: 8, description: "Furia descontrolada de dragao." },
+  { id: "twister", name: "Twister", type: "dragon", power: 40, accuracy: 7, description: "Tornado draconico." },
+  { id: "dragon-breath", name: "Dragon Breath", type: "dragon", power: 60, accuracy: 7, description: "Sopro draconico paralisante." },
+  // Dark (Gen 2)
+  { id: "crunch", name: "Crunch", type: "dark", power: 80, accuracy: 7, description: "Mordida que esmaga a defesa." },
+  { id: "faint-attack", name: "Faint Attack", type: "dark", power: 60, accuracy: 2, description: "Ataque furtivo que nunca erra." },
+  { id: "pursuit", name: "Pursuit", type: "dark", power: 40, accuracy: 6, description: "Persegue o alvo que foge." },
+  { id: "thief", name: "Thief", type: "dark", power: 60, accuracy: 7, description: "Rouba item enquanto ataca." },
+  { id: "mean-look", name: "Mean Look", type: "dark", power: 0, accuracy: 4, description: "Olhar sinistro impede fuga." },
+  { id: "beat-up", name: "Beat Up", type: "dark", power: 10, accuracy: 7, description: "Chama aliados para atacar." },
+  // Steel (Gen 2)
+  { id: "iron-tail", name: "Iron Tail", type: "steel", power: 100, accuracy: 10, description: "Golpeia com cauda de aco." },
+  { id: "metal-claw", name: "Metal Claw", type: "steel", power: 50, accuracy: 7, description: "Arranha com garras metalicas." },
+  { id: "steel-wing", name: "Steel Wing", type: "steel", power: 70, accuracy: 8, description: "Ataca com asas de aco." },
+  // Gen 2 additions to existing types
+  { id: "cross-chop", name: "Cross Chop", type: "fighting", power: 100, accuracy: 10, description: "Golpe cruzado devastador." },
+  { id: "dynamic-punch", name: "Dynamic Punch", type: "fighting", power: 100, accuracy: 13, description: "Soco dinamico que confunde." },
+  { id: "mach-punch", name: "Mach Punch", type: "fighting", power: 40, accuracy: 5, description: "Soco rapido, sempre ataca primeiro." },
+  { id: "vital-throw", name: "Vital Throw", type: "fighting", power: 70, accuracy: 2, description: "Arremesso certeiro." },
+  { id: "shadow-ball", name: "Shadow Ball", type: "ghost", power: 80, accuracy: 7, description: "Esfera sombria fantasmagorica." },
+  { id: "megahorn", name: "Megahorn", type: "bug", power: 120, accuracy: 10, description: "Chifrada poderosa." },
+  { id: "sacred-fire", name: "Sacred Fire", type: "fire", power: 100, accuracy: 7, description: "Chamas sagradas de Ho-Oh." },
+  { id: "aeroblast", name: "Aeroblast", type: "flying", power: 100, accuracy: 7, description: "Rajada aerea de Lugia." },
+  { id: "spark", name: "Spark", type: "electric", power: 65, accuracy: 7, description: "Eletricidade ao colidir." },
+  { id: "zap-cannon", name: "Zap Cannon", type: "electric", power: 120, accuracy: 14, description: "Canhao eletrico paralisante." },
+  { id: "extreme-speed", name: "Extreme Speed", type: "normal", power: 80, accuracy: 5, description: "Velocidade extrema." },
+  { id: "return", name: "Return", type: "normal", power: 102, accuracy: 7, description: "Ataque baseado na felicidade." },
+  { id: "rapid-spin", name: "Rapid Spin", type: "normal", power: 50, accuracy: 7, description: "Giro rapido remove armadilhas." },
+  { id: "giga-drain", name: "Giga Drain", type: "grass", power: 75, accuracy: 7, description: "Drena muita energia do alvo." },
+  { id: "sludge-bomb", name: "Sludge Bomb", type: "poison", power: 90, accuracy: 7, description: "Bomba de lodo toxico." },
+  { id: "rollout", name: "Rollout", type: "rock", power: 30, accuracy: 8, description: "Rola com forca crescente." },
+  { id: "ancient-power", name: "Ancient Power", type: "rock", power: 60, accuracy: 7, description: "Poder ancestral, pode subir stats." },
+  { id: "mud-slap", name: "Mud-Slap", type: "ground", power: 20, accuracy: 6, description: "Joga lama que reduz precisao." },
+  { id: "icy-wind", name: "Icy Wind", type: "ice", power: 55, accuracy: 7, description: "Vento gelado que reduz velocidade." },
+  { id: "powder-snow", name: "Powder Snow", type: "ice", power: 40, accuracy: 7, description: "Neve em po congelante." },
+  { id: "future-sight", name: "Future Sight", type: "psychic", power: 120, accuracy: 12, description: "Ataque psiquico do futuro." },
+  { id: "whirlpool", name: "Whirlpool", type: "water", power: 35, accuracy: 10, description: "Redemoinho que prende o alvo." },
+  { id: "octazooka", name: "Octazooka", type: "water", power: 65, accuracy: 10, description: "Tinta que reduz precisao." },
+  { id: "flame-wheel", name: "Flame Wheel", type: "fire", power: 60, accuracy: 7, description: "Roda de fogo." },
+  { id: "cotton-spore", name: "Cotton Spore", type: "grass", power: 0, accuracy: 10, description: "Esporos de algodao reduzem velocidade." },
+  { id: "reversal", name: "Reversal", type: "fighting", power: 60, accuracy: 7, description: "Mais forte com menos HP." },
+  { id: "mirror-coat", name: "Mirror Coat", type: "psychic", power: 0, accuracy: 7, description: "Reflete ataques especiais." },
+  { id: "counter", name: "Counter", type: "fighting", power: 0, accuracy: 7, description: "Reflete ataques fisicos." },
+];
+
+// Helper to get move by ID
+export function getMove(id: string): Move | undefined {
+  return MOVES.find((m) => m.id === id);
+}
+
+// [id, name, types[], baseHp, startingMoves[], learnableMoves[]]
+type PokemonRaw = [number, string, PokemonType[], number, string[], string[]];
+
+const RAW_POKEMON: PokemonRaw[] = [
+  [1, "Bulbasaur", ["grass", "poison"], 45, ["tackle", "growl"], ["vine-whip", "razor-leaf", "leech-seed", "solar-beam", "sludge"]],
+  [2, "Ivysaur", ["grass", "poison"], 60, ["tackle", "vine-whip", "growl"], ["razor-leaf", "leech-seed", "solar-beam", "sludge"]],
+  [3, "Venusaur", ["grass", "poison"], 80, ["vine-whip", "razor-leaf", "growl"], ["solar-beam", "sludge", "petal-dance", "hyper-beam"]],
+  [4, "Charmander", ["fire"], 39, ["scratch", "growl"], ["ember", "flamethrower", "fire-blast", "slash", "rage"]],
+  [5, "Charmeleon", ["fire"], 58, ["scratch", "ember", "growl"], ["flamethrower", "fire-blast", "slash", "rage"]],
+  [6, "Charizard", ["fire", "flying"], 78, ["scratch", "ember", "flamethrower"], ["fire-blast", "fly", "hyper-beam", "slash"]],
+  [7, "Squirtle", ["water"], 44, ["tackle", "tail-whip"], ["water-gun", "bubble", "bite", "surf", "hydro-pump"]],
+  [8, "Wartortle", ["water"], 59, ["tackle", "water-gun", "tail-whip"], ["bite", "surf", "hydro-pump", "ice-beam"]],
+  [9, "Blastoise", ["water"], 79, ["water-gun", "bite", "tail-whip"], ["surf", "hydro-pump", "ice-beam", "hyper-beam"]],
+  [10, "Caterpie", ["bug"], 45, ["tackle", "string-shot"], ["bug-bite"]],
+  [11, "Metapod", ["bug"], 50, ["tackle", "harden"], ["string-shot"]],
+  [12, "Butterfree", ["bug", "flying"], 60, ["confusion", "gust"], ["psybeam", "sleep-powder", "stun-spore", "psychic"]],
+  [13, "Weedle", ["bug", "poison"], 40, ["poison-sting", "string-shot"], ["bug-bite"]],
+  [14, "Kakuna", ["bug", "poison"], 45, ["poison-sting", "harden"], ["string-shot"]],
+  [15, "Beedrill", ["bug", "poison"], 65, ["fury-attack", "twineedle"], ["pin-missile", "rage", "sludge", "agility"]],
+  [16, "Pidgey", ["normal", "flying"], 40, ["tackle", "gust"], ["quick-attack", "wing-attack", "fly"]],
+  [17, "Pidgeotto", ["normal", "flying"], 63, ["tackle", "gust", "quick-attack"], ["wing-attack", "fly"]],
+  [18, "Pidgeot", ["normal", "flying"], 83, ["gust", "quick-attack", "wing-attack"], ["fly", "hyper-beam", "sky-attack"]],
+  [19, "Rattata", ["normal"], 30, ["tackle", "tail-whip"], ["quick-attack", "bite", "super-fang", "hyper-beam"]],
+  [20, "Raticate", ["normal"], 55, ["tackle", "quick-attack", "bite"], ["super-fang", "hyper-beam", "body-slam"]],
+  [21, "Spearow", ["normal", "flying"], 40, ["peck", "growl"], ["fury-attack", "drill-peck", "fly"]],
+  [22, "Fearow", ["normal", "flying"], 65, ["peck", "fury-attack", "drill-peck"], ["fly", "hyper-beam", "sky-attack"]],
+  [23, "Ekans", ["poison"], 35, ["wrap", "leer"], ["poison-sting", "bite", "acid", "sludge"]],
+  [24, "Arbok", ["poison"], 60, ["wrap", "poison-sting", "bite"], ["acid", "sludge", "earthquake", "hyper-beam"]],
+  [25, "Pikachu", ["electric"], 35, ["thunder-shock", "growl"], ["thunderbolt", "thunder", "quick-attack", "agility", "slam"]],
+  [26, "Raichu", ["electric"], 60, ["thunder-shock", "thunderbolt", "quick-attack"], ["thunder", "body-slam", "hyper-beam"]],
+  [27, "Sandshrew", ["ground"], 50, ["scratch", "sand-attack"], ["slash", "dig", "earthquake", "fury-swipes"]],
+  [28, "Sandslash", ["ground"], 75, ["scratch", "sand-attack", "slash"], ["dig", "earthquake", "fury-swipes", "hyper-beam"]],
+  [29, "Nidoran F", ["poison"], 55, ["tackle", "growl"], ["scratch", "poison-sting", "bite", "double-kick"]],
+  [30, "Nidorina", ["poison"], 70, ["tackle", "scratch", "poison-sting"], ["bite", "double-kick", "body-slam"]],
+  [31, "Nidoqueen", ["poison", "ground"], 90, ["scratch", "poison-sting", "body-slam"], ["earthquake", "surf", "ice-beam", "hyper-beam"]],
+  [32, "Nidoran M", ["poison"], 46, ["leer", "tackle"], ["horn-attack", "poison-sting", "double-kick", "fury-attack"]],
+  [33, "Nidorino", ["poison"], 61, ["leer", "horn-attack", "poison-sting"], ["double-kick", "fury-attack", "body-slam"]],
+  [34, "Nidoking", ["poison", "ground"], 81, ["horn-attack", "poison-sting", "body-slam"], ["earthquake", "surf", "ice-beam", "hyper-beam", "fire-blast"]],
+  [35, "Clefairy", ["normal"], 70, ["pound", "growl"], ["sing", "defense-curl", "mega-punch", "body-slam", "psychic"]],
+  [36, "Clefable", ["normal"], 95, ["pound", "sing", "mega-punch"], ["body-slam", "psychic", "hyper-beam", "ice-beam"]],
+  [37, "Vulpix", ["fire"], 38, ["ember", "tail-whip"], ["quick-attack", "fire-spin", "flamethrower", "confuse-ray"]],
+  [38, "Ninetales", ["fire"], 73, ["ember", "quick-attack", "flamethrower"], ["fire-blast", "fire-spin", "confuse-ray", "hyper-beam"]],
+  [39, "Jigglypuff", ["normal"], 115, ["sing", "pound"], ["defense-curl", "body-slam", "psychic", "hyper-beam"]],
+  [40, "Wigglytuff", ["normal"], 140, ["sing", "pound", "body-slam"], ["psychic", "hyper-beam", "ice-beam"]],
+  [41, "Zubat", ["poison", "flying"], 40, ["leech-life", "bite"], ["wing-attack", "confuse-ray", "swift"]],
+  [42, "Golbat", ["poison", "flying"], 75, ["leech-life", "bite", "wing-attack"], ["confuse-ray", "swift", "hyper-beam"]],
+  [43, "Oddish", ["grass", "poison"], 45, ["absorb", "growl"], ["acid", "stun-spore", "sleep-powder", "mega-drain", "petal-dance"]],
+  [44, "Gloom", ["grass", "poison"], 60, ["absorb", "acid", "stun-spore"], ["sleep-powder", "mega-drain", "petal-dance", "solar-beam"]],
+  [45, "Vileplume", ["grass", "poison"], 75, ["acid", "mega-drain", "stun-spore"], ["petal-dance", "solar-beam", "hyper-beam"]],
+  [46, "Paras", ["bug", "grass"], 35, ["scratch", "leech-life"], ["stun-spore", "slash", "mega-drain"]],
+  [47, "Parasect", ["bug", "grass"], 60, ["scratch", "leech-life", "stun-spore"], ["slash", "mega-drain", "solar-beam"]],
+  [48, "Venonat", ["bug", "poison"], 60, ["tackle", "confusion"], ["poison-sting", "leech-life", "psybeam", "psychic"]],
+  [49, "Venomoth", ["bug", "poison"], 70, ["confusion", "poison-sting", "leech-life"], ["psybeam", "psychic", "sleep-powder", "stun-spore"]],
+  [50, "Diglett", ["ground"], 10, ["scratch", "sand-attack"], ["dig", "slash", "earthquake"]],
+  [51, "Dugtrio", ["ground"], 35, ["scratch", "sand-attack", "dig"], ["slash", "earthquake", "fissure"]],
+  [52, "Meowth", ["normal"], 40, ["scratch", "growl"], ["bite", "pay-day", "slash", "fury-swipes"]],
+  [53, "Persian", ["normal"], 65, ["scratch", "bite", "pay-day"], ["slash", "fury-swipes", "hyper-beam"]],
+  [54, "Psyduck", ["water"], 50, ["scratch", "confusion"], ["water-gun", "fury-swipes", "hydro-pump", "psychic"]],
+  [55, "Golduck", ["water"], 80, ["scratch", "confusion", "water-gun"], ["surf", "hydro-pump", "psychic", "hyper-beam"]],
+  [56, "Mankey", ["fighting"], 40, ["scratch", "leer"], ["low-kick", "karate-chop", "fury-swipes", "seismic-toss"]],
+  [57, "Primeape", ["fighting"], 65, ["scratch", "low-kick", "karate-chop"], ["fury-swipes", "seismic-toss", "submission", "hyper-beam"]],
+  [58, "Growlithe", ["fire"], 55, ["bite", "ember"], ["leer", "take-down", "flamethrower", "fire-blast", "agility"]],
+  [59, "Arcanine", ["fire"], 90, ["bite", "ember", "take-down", "flamethrower"], ["fire-blast", "hyper-beam"]],
+  [60, "Poliwag", ["water"], 40, ["bubble", "hypnosis"], ["water-gun", "body-slam", "surf"]],
+  [61, "Poliwhirl", ["water"], 65, ["bubble", "hypnosis", "water-gun"], ["body-slam", "surf", "ice-beam"]],
+  [62, "Poliwrath", ["water", "fighting"], 90, ["water-gun", "hypnosis", "body-slam"], ["surf", "submission", "ice-beam", "hyper-beam"]],
+  [63, "Abra", ["psychic"], 25, ["teleport"], ["confusion", "psychic", "thunder-wave"]],
+  [64, "Kadabra", ["psychic"], 40, ["teleport", "confusion"], ["psychic", "psybeam", "thunder-wave"]],
+  [65, "Alakazam", ["psychic"], 55, ["confusion", "psychic", "psybeam"], ["dream-eater", "thunder-wave", "hyper-beam"]],
+  [66, "Machop", ["fighting"], 70, ["low-kick", "leer"], ["karate-chop", "seismic-toss", "submission"]],
+  [67, "Machoke", ["fighting"], 80, ["low-kick", "karate-chop", "leer"], ["seismic-toss", "submission", "earthquake"]],
+  [68, "Machamp", ["fighting"], 90, ["low-kick", "karate-chop", "seismic-toss"], ["submission", "earthquake", "hyper-beam"]],
+  [69, "Bellsprout", ["grass", "poison"], 50, ["vine-whip", "growl"], ["wrap", "acid", "razor-leaf", "sleep-powder", "slam"]],
+  [70, "Weepinbell", ["grass", "poison"], 65, ["vine-whip", "wrap", "acid"], ["razor-leaf", "sleep-powder", "slam"]],
+  [71, "Victreebel", ["grass", "poison"], 80, ["vine-whip", "acid", "razor-leaf"], ["sleep-powder", "slam", "solar-beam", "hyper-beam"]],
+  [72, "Tentacool", ["water", "poison"], 40, ["poison-sting", "acid"], ["wrap", "water-gun", "surf", "hydro-pump"]],
+  [73, "Tentacruel", ["water", "poison"], 80, ["poison-sting", "acid", "wrap"], ["surf", "hydro-pump", "sludge", "hyper-beam"]],
+  [74, "Geodude", ["rock", "ground"], 40, ["tackle", "defense-curl"], ["rock-throw", "self-destruct", "earthquake"]],
+  [75, "Graveler", ["rock", "ground"], 55, ["tackle", "rock-throw", "defense-curl"], ["self-destruct", "earthquake", "explosion"]],
+  [76, "Golem", ["rock", "ground"], 80, ["tackle", "rock-throw", "self-destruct"], ["earthquake", "explosion", "hyper-beam"]],
+  [77, "Ponyta", ["fire"], 50, ["ember", "tail-whip"], ["take-down", "fire-spin", "agility", "flamethrower"]],
+  [78, "Rapidash", ["fire"], 65, ["ember", "take-down", "fire-spin"], ["agility", "flamethrower", "fire-blast", "hyper-beam"]],
+  [79, "Slowpoke", ["water", "psychic"], 90, ["confusion", "tackle"], ["water-gun", "headbutt", "surf", "psychic", "amnesia"]],
+  [80, "Slowbro", ["water", "psychic"], 95, ["confusion", "water-gun", "headbutt"], ["surf", "psychic", "amnesia", "hyper-beam"]],
+  [81, "Magnemite", ["electric"], 25, ["tackle", "thunder-shock"], ["thunderbolt", "thunder", "swift"]],
+  [82, "Magneton", ["electric"], 50, ["tackle", "thunder-shock", "thunderbolt"], ["thunder", "swift", "hyper-beam"]],
+  [83, "Farfetch'd", ["normal", "flying"], 52, ["peck", "sand-attack"], ["slash", "fury-attack", "fly"]],
+  [84, "Doduo", ["normal", "flying"], 35, ["peck", "growl"], ["fury-attack", "drill-peck", "rage"]],
+  [85, "Dodrio", ["normal", "flying"], 60, ["peck", "fury-attack", "drill-peck"], ["rage", "fly", "hyper-beam"]],
+  [86, "Seel", ["water"], 65, ["headbutt", "growl"], ["aurora-beam", "ice-beam", "surf"]],
+  [87, "Dewgong", ["water", "ice"], 90, ["headbutt", "aurora-beam", "ice-beam"], ["surf", "blizzard", "hyper-beam"]],
+  [88, "Grimer", ["poison"], 80, ["pound", "poison-gas"], ["sludge", "acid", "screech", "self-destruct"]],
+  [89, "Muk", ["poison"], 105, ["pound", "sludge", "poison-gas"], ["acid", "screech", "self-destruct", "hyper-beam"]],
+  [90, "Shellder", ["water"], 30, ["tackle", "withdraw"], ["clamp", "ice-beam", "aurora-beam"]],
+  [91, "Cloyster", ["water", "ice"], 50, ["tackle", "clamp", "aurora-beam"], ["ice-beam", "blizzard", "hyper-beam", "explosion"]],
+  [92, "Gastly", ["ghost", "poison"], 30, ["lick", "confuse-ray"], ["night-shade", "hypnosis", "dream-eater"]],
+  [93, "Haunter", ["ghost", "poison"], 45, ["lick", "confuse-ray", "night-shade"], ["hypnosis", "dream-eater", "sludge"]],
+  [94, "Gengar", ["ghost", "poison"], 60, ["lick", "night-shade", "confuse-ray"], ["hypnosis", "dream-eater", "sludge", "psychic", "hyper-beam"]],
+  [95, "Onix", ["rock", "ground"], 35, ["tackle", "screech"], ["rock-throw", "slam", "earthquake", "rock-slide"]],
+  [96, "Drowzee", ["psychic"], 60, ["pound", "hypnosis"], ["confusion", "headbutt", "psybeam", "psychic"]],
+  [97, "Hypno", ["psychic"], 85, ["pound", "hypnosis", "confusion"], ["headbutt", "psybeam", "psychic", "dream-eater"]],
+  [98, "Krabby", ["water"], 30, ["bubble", "leer"], ["vice-grip", "slam", "crabhammer", "surf"]],
+  [99, "Kingler", ["water"], 55, ["bubble", "slam", "crabhammer"], ["surf", "hyper-beam"]],
+  [100, "Voltorb", ["electric"], 40, ["tackle", "screech"], ["thunder-shock", "self-destruct", "thunderbolt", "explosion"]],
+  [101, "Electrode", ["electric"], 60, ["tackle", "thunder-shock", "screech"], ["self-destruct", "thunderbolt", "thunder", "explosion", "hyper-beam"]],
+  [102, "Exeggcute", ["grass", "psychic"], 60, ["barrage", "hypnosis"], ["confusion", "leech-seed", "stun-spore", "solar-beam"]],
+  [103, "Exeggutor", ["grass", "psychic"], 95, ["barrage", "confusion", "hypnosis"], ["psychic", "solar-beam", "mega-drain", "hyper-beam"]],
+  [104, "Cubone", ["ground"], 50, ["bone-club", "growl"], ["leer", "headbutt", "bonemerang", "rage"]],
+  [105, "Marowak", ["ground"], 60, ["bone-club", "headbutt", "leer"], ["bonemerang", "earthquake", "rage", "hyper-beam"]],
+  [106, "Hitmonlee", ["fighting"], 50, ["double-kick", "meditate"], ["high-jump-kick", "low-kick", "mega-kick", "submission"]],
+  [107, "Hitmonchan", ["fighting"], 50, ["comet-punch", "agility"], ["fire-punch", "ice-punch", "thunder-punch", "mega-punch", "submission"]],
+  [108, "Lickitung", ["normal"], 90, ["wrap", "lick"], ["slam", "body-slam", "screech", "hyper-beam"]],
+  [109, "Koffing", ["poison"], 40, ["tackle", "smog"], ["sludge", "self-destruct", "explosion", "toxic"]],
+  [110, "Weezing", ["poison"], 65, ["tackle", "smog", "sludge"], ["self-destruct", "explosion", "toxic", "hyper-beam"]],
+  [111, "Rhyhorn", ["ground", "rock"], 80, ["horn-attack", "tail-whip"], ["take-down", "rock-throw", "earthquake"]],
+  [112, "Rhydon", ["ground", "rock"], 105, ["horn-attack", "take-down", "rock-throw"], ["earthquake", "rock-slide", "hyper-beam", "surf"]],
+  [113, "Chansey", ["normal"], 250, ["pound", "growl"], ["sing", "defense-curl", "body-slam", "ice-beam", "psychic"]],
+  [114, "Tangela", ["grass"], 65, ["vine-whip", "bind"], ["absorb", "mega-drain", "stun-spore", "sleep-powder", "solar-beam"]],
+  [115, "Kangaskhan", ["normal"], 105, ["comet-punch", "rage"], ["bite", "mega-punch", "body-slam", "earthquake", "hyper-beam"]],
+  [116, "Horsea", ["water"], 30, ["bubble", "leer"], ["water-gun", "smokescreen", "hydro-pump", "agility"]],
+  [117, "Seadra", ["water"], 55, ["bubble", "water-gun", "leer"], ["hydro-pump", "agility", "ice-beam", "hyper-beam"]],
+  [118, "Goldeen", ["water"], 45, ["peck", "tail-whip"], ["horn-attack", "fury-attack", "surf", "waterfall"]],
+  [119, "Seaking", ["water"], 80, ["peck", "horn-attack", "fury-attack"], ["surf", "waterfall", "hyper-beam"]],
+  [120, "Staryu", ["water"], 30, ["tackle", "water-gun"], ["swift", "bubble-beam", "surf", "psychic"]],
+  [121, "Starmie", ["water", "psychic"], 60, ["tackle", "water-gun", "swift"], ["bubble-beam", "surf", "psychic", "ice-beam", "hyper-beam"]],
+  [122, "Mr. Mime", ["psychic"], 40, ["confusion", "barrier"], ["psybeam", "psychic", "meditate", "body-slam"]],
+  [123, "Scyther", ["bug", "flying"], 70, ["quick-attack", "leer"], ["fury-attack", "slash", "wing-attack", "agility", "fly"]],
+  [124, "Jynx", ["ice", "psychic"], 65, ["pound", "ice-punch"], ["confusion", "psychic", "blizzard", "body-slam"]],
+  [125, "Electabuzz", ["electric"], 65, ["quick-attack", "thunder-shock"], ["thunderbolt", "thunder", "thunder-punch", "screech", "psychic"]],
+  [126, "Magmar", ["fire"], 65, ["ember", "leer"], ["fire-punch", "flamethrower", "fire-blast", "smog", "psychic"]],
+  [127, "Pinsir", ["bug"], 65, ["bite", "harden"], ["seismic-toss", "slash", "submission"]],
+  [128, "Tauros", ["normal"], 75, ["tackle", "tail-whip"], ["horn-attack", "rage", "take-down", "body-slam", "earthquake", "hyper-beam"]],
+  [129, "Magikarp", ["water"], 20, ["tackle"], ["splash"]],
+  [130, "Gyarados", ["water", "flying"], 95, ["bite", "tackle"], ["hydro-pump", "surf", "hyper-beam", "dragon-rage", "body-slam"]],
+  [131, "Lapras", ["water", "ice"], 130, ["water-gun", "body-slam"], ["surf", "ice-beam", "blizzard", "psychic", "hydro-pump", "confuse-ray"]],
+  [132, "Ditto", ["normal"], 48, ["tackle"], ["slam"]],
+  [133, "Eevee", ["normal"], 55, ["tackle", "tail-whip", "sand-attack"], ["quick-attack", "bite", "take-down"]],
+  [134, "Vaporeon", ["water"], 130, ["tackle", "water-gun", "sand-attack"], ["bite", "surf", "hydro-pump", "ice-beam", "aurora-beam"]],
+  [135, "Jolteon", ["electric"], 65, ["tackle", "thunder-shock", "sand-attack"], ["thunderbolt", "thunder", "quick-attack", "pin-missile", "agility"]],
+  [136, "Flareon", ["fire"], 65, ["tackle", "ember", "sand-attack"], ["bite", "flamethrower", "fire-blast", "quick-attack"]],
+  [137, "Porygon", ["normal"], 65, ["tackle", "agility"], ["psybeam", "tri-attack", "psychic", "thunderbolt", "ice-beam"]],
+  [138, "Omanyte", ["rock", "water"], 35, ["water-gun", "withdraw"], ["bite", "surf", "hydro-pump"]],
+  [139, "Omastar", ["rock", "water"], 70, ["water-gun", "bite", "withdraw"], ["surf", "hydro-pump", "ice-beam", "hyper-beam"]],
+  [140, "Kabuto", ["rock", "water"], 30, ["scratch", "harden"], ["absorb", "slash", "surf"]],
+  [141, "Kabutops", ["rock", "water"], 60, ["scratch", "absorb", "slash"], ["surf", "hydro-pump", "hyper-beam"]],
+  [142, "Aerodactyl", ["rock", "flying"], 80, ["wing-attack", "bite"], ["fly", "hyper-beam", "take-down", "sky-attack"]],
+  [143, "Snorlax", ["normal"], 160, ["headbutt", "body-slam"], ["hyper-beam", "earthquake", "ice-beam", "surf", "amnesia", "self-destruct"]],
+  [144, "Articuno", ["ice", "flying"], 90, ["peck", "ice-beam"], ["blizzard", "fly", "agility", "hyper-beam"]],
+  [145, "Zapdos", ["electric", "flying"], 90, ["peck", "thunderbolt"], ["thunder", "drill-peck", "fly", "agility", "hyper-beam"]],
+  [146, "Moltres", ["fire", "flying"], 90, ["peck", "flamethrower"], ["fire-blast", "fly", "agility", "hyper-beam", "sky-attack"]],
+  [147, "Dratini", ["dragon"], 41, ["wrap", "leer"], ["thunder-wave", "slam", "dragon-rage", "agility"]],
+  [148, "Dragonair", ["dragon"], 61, ["wrap", "thunder-wave", "slam"], ["dragon-rage", "agility", "hyper-beam"]],
+  [149, "Dragonite", ["dragon", "flying"], 91, ["wrap", "slam", "dragon-rage"], ["agility", "hyper-beam", "surf", "ice-beam", "thunderbolt", "fire-blast"]],
+  [150, "Mewtwo", ["psychic"], 106, ["confusion", "psychic", "barrier"], ["psybeam", "hyper-beam", "ice-beam", "thunderbolt", "fire-blast", "amnesia"]],
+  [151, "Mew", ["psychic"], 100, ["pound", "psychic"], ["confusion", "psybeam", "hyper-beam", "ice-beam", "thunderbolt", "fire-blast", "surf", "earthquake", "solar-beam"]],
+  // Generation 2 (152-251)
+  [152, "Chikorita", ["grass"], 45, ["tackle", "growl"], ["razor-leaf", "vine-whip", "body-slam", "giga-drain", "solar-beam"]],
+  [153, "Bayleef", ["grass"], 60, ["tackle", "razor-leaf", "growl"], ["vine-whip", "body-slam", "giga-drain", "solar-beam"]],
+  [154, "Meganium", ["grass"], 80, ["razor-leaf", "body-slam", "giga-drain"], ["solar-beam", "petal-dance", "earthquake", "hyper-beam"]],
+  [155, "Cyndaquil", ["fire"], 39, ["tackle", "leer"], ["ember", "flame-wheel", "flamethrower", "quick-attack"]],
+  [156, "Quilava", ["fire"], 58, ["tackle", "ember", "leer"], ["flame-wheel", "flamethrower", "fire-blast", "quick-attack"]],
+  [157, "Typhlosion", ["fire"], 78, ["ember", "flame-wheel", "flamethrower"], ["fire-blast", "thunder-punch", "hyper-beam", "earthquake"]],
+  [158, "Totodile", ["water"], 50, ["scratch", "leer"], ["water-gun", "bite", "slash", "surf"]],
+  [159, "Croconaw", ["water"], 65, ["scratch", "water-gun", "bite"], ["slash", "surf", "ice-punch", "crunch"]],
+  [160, "Feraligatr", ["water"], 85, ["water-gun", "bite", "slash"], ["surf", "hydro-pump", "ice-punch", "crunch", "hyper-beam", "earthquake"]],
+  [161, "Sentret", ["normal"], 35, ["tackle", "defense-curl"], ["quick-attack", "fury-swipes", "slam"]],
+  [162, "Furret", ["normal"], 85, ["tackle", "quick-attack", "fury-swipes"], ["slam", "body-slam", "surf", "hyper-beam"]],
+  [163, "Hoothoot", ["normal", "flying"], 60, ["tackle", "growl"], ["peck", "confusion", "hypnosis", "dream-eater"]],
+  [164, "Noctowl", ["normal", "flying"], 100, ["tackle", "peck", "confusion"], ["hypnosis", "dream-eater", "psychic", "hyper-beam"]],
+  [165, "Ledyba", ["bug", "flying"], 40, ["tackle", "agility"], ["swift", "comet-punch", "gust"]],
+  [166, "Ledian", ["bug", "flying"], 55, ["tackle", "swift", "comet-punch"], ["agility", "gust", "ice-punch", "thunder-punch"]],
+  [167, "Spinarak", ["bug", "poison"], 40, ["poison-sting", "string-shot"], ["leech-life", "night-shade", "psychic"]],
+  [168, "Ariados", ["bug", "poison"], 70, ["poison-sting", "leech-life", "night-shade"], ["psychic", "sludge-bomb", "agility"]],
+  [169, "Crobat", ["poison", "flying"], 85, ["bite", "wing-attack", "confuse-ray"], ["swift", "sludge-bomb", "fly", "hyper-beam"]],
+  [170, "Chinchou", ["water", "electric"], 75, ["bubble", "thunder-wave"], ["spark", "water-gun", "confuse-ray", "thunderbolt"]],
+  [171, "Lanturn", ["water", "electric"], 125, ["bubble", "spark", "water-gun"], ["thunderbolt", "thunder", "surf", "confuse-ray", "hyper-beam"]],
+  [172, "Pichu", ["electric"], 20, ["thunder-shock", "growl"], ["thunderbolt", "quick-attack", "thunder-wave"]],
+  [173, "Cleffa", ["normal"], 50, ["pound", "growl"], ["sing", "mega-punch", "psychic"]],
+  [174, "Igglybuff", ["normal"], 90, ["sing", "pound"], ["defense-curl", "body-slam"]],
+  [175, "Togepi", ["normal"], 35, ["growl", "headbutt"], ["swift", "ancient-power", "psychic"]],
+  [176, "Togetic", ["normal", "flying"], 55, ["headbutt", "swift", "ancient-power"], ["psychic", "fly", "hyper-beam"]],
+  [177, "Natu", ["psychic", "flying"], 40, ["peck", "leer"], ["night-shade", "confusion", "psychic", "future-sight"]],
+  [178, "Xatu", ["psychic", "flying"], 65, ["peck", "night-shade", "confusion"], ["psychic", "future-sight", "fly", "hyper-beam"]],
+  [179, "Mareep", ["electric"], 55, ["tackle", "growl"], ["thunder-shock", "thunder-wave", "thunderbolt"]],
+  [180, "Flaaffy", ["electric"], 70, ["tackle", "thunder-shock", "thunder-wave"], ["thunderbolt", "thunder", "fire-punch"]],
+  [181, "Ampharos", ["electric"], 90, ["thunder-shock", "thunderbolt", "thunder-wave"], ["thunder", "fire-punch", "hyper-beam", "iron-tail"]],
+  [182, "Bellossom", ["grass"], 75, ["absorb", "mega-drain", "stun-spore"], ["petal-dance", "solar-beam", "hyper-beam"]],
+  [183, "Marill", ["water"], 70, ["tackle", "defense-curl"], ["water-gun", "bubble-beam", "body-slam", "surf"]],
+  [184, "Azumarill", ["water"], 100, ["tackle", "water-gun", "bubble-beam"], ["surf", "hydro-pump", "body-slam", "hyper-beam"]],
+  [185, "Sudowoodo", ["rock"], 70, ["rock-throw", "leer"], ["slam", "rock-slide", "earthquake", "self-destruct"]],
+  [186, "Politoed", ["water"], 90, ["water-gun", "hypnosis", "body-slam"], ["surf", "ice-beam", "earthquake", "hyper-beam"]],
+  [187, "Hoppip", ["grass", "flying"], 35, ["tackle", "growl"], ["absorb", "stun-spore", "mega-drain", "gust"]],
+  [188, "Skiploom", ["grass", "flying"], 55, ["tackle", "absorb", "stun-spore"], ["mega-drain", "gust", "giga-drain"]],
+  [189, "Jumpluff", ["grass", "flying"], 75, ["absorb", "mega-drain", "stun-spore"], ["giga-drain", "gust", "sleep-powder", "hyper-beam"]],
+  [190, "Aipom", ["normal"], 55, ["scratch", "tail-whip"], ["swift", "fury-swipes", "slam", "agility"]],
+  [191, "Sunkern", ["grass"], 30, ["absorb", "growl"], ["mega-drain", "giga-drain", "solar-beam"]],
+  [192, "Sunflora", ["grass"], 75, ["absorb", "mega-drain", "razor-leaf"], ["giga-drain", "solar-beam", "hyper-beam"]],
+  [193, "Yanma", ["bug", "flying"], 65, ["tackle", "quick-attack"], ["wing-attack", "swift", "hypnosis", "ancient-power"]],
+  [194, "Wooper", ["water", "ground"], 55, ["water-gun", "tail-whip"], ["slam", "mud-slap", "earthquake", "surf"]],
+  [195, "Quagsire", ["water", "ground"], 95, ["water-gun", "slam", "mud-slap"], ["earthquake", "surf", "ice-punch", "hyper-beam"]],
+  [196, "Espeon", ["psychic"], 65, ["tackle", "confusion", "sand-attack"], ["psybeam", "psychic", "swift", "future-sight", "hyper-beam"]],
+  [197, "Umbreon", ["dark"], 95, ["tackle", "sand-attack", "pursuit"], ["bite", "faint-attack", "confuse-ray", "mean-look", "hyper-beam"]],
+  [198, "Murkrow", ["dark", "flying"], 60, ["peck", "pursuit"], ["faint-attack", "night-shade", "wing-attack", "fly"]],
+  [199, "Slowking", ["water", "psychic"], 95, ["confusion", "water-gun", "headbutt"], ["surf", "psychic", "ice-beam", "hyper-beam"]],
+  [200, "Misdreavus", ["ghost"], 60, ["confusion", "growl"], ["psybeam", "shadow-ball", "confuse-ray", "mean-look", "psychic"]],
+  [201, "Unown", ["psychic"], 48, ["confusion"], ["psychic"]],
+  [202, "Wobbuffet", ["psychic"], 190, ["counter", "mirror-coat"], ["defense-curl"]],
+  [203, "Girafarig", ["normal", "psychic"], 70, ["tackle", "confusion"], ["psybeam", "crunch", "psychic", "hyper-beam"]],
+  [204, "Pineco", ["bug"], 50, ["tackle", "harden"], ["self-destruct", "rapid-spin", "explosion"]],
+  [205, "Forretress", ["bug", "steel"], 75, ["tackle", "rapid-spin", "self-destruct"], ["explosion", "earthquake", "zap-cannon", "hyper-beam"]],
+  [206, "Dunsparce", ["normal"], 100, ["tackle", "defense-curl"], ["headbutt", "bite", "ancient-power", "body-slam"]],
+  [207, "Gligar", ["ground", "flying"], 65, ["poison-sting", "sand-attack"], ["slash", "dig", "earthquake", "steel-wing"]],
+  [208, "Steelix", ["steel", "ground"], 75, ["tackle", "rock-throw", "screech"], ["iron-tail", "earthquake", "rock-slide", "hyper-beam"]],
+  [209, "Snubbull", ["normal"], 60, ["tackle", "bite"], ["headbutt", "crunch", "body-slam"]],
+  [210, "Granbull", ["normal"], 90, ["tackle", "bite", "headbutt"], ["crunch", "body-slam", "earthquake", "hyper-beam"]],
+  [211, "Qwilfish", ["water", "poison"], 65, ["tackle", "poison-sting"], ["water-gun", "pin-missile", "surf", "sludge-bomb"]],
+  [212, "Scizor", ["bug", "steel"], 70, ["quick-attack", "metal-claw", "fury-attack"], ["slash", "steel-wing", "agility", "hyper-beam"]],
+  [213, "Shuckle", ["bug", "rock"], 20, ["wrap", "withdraw"], ["rollout", "ancient-power", "body-slam"]],
+  [214, "Heracross", ["bug", "fighting"], 80, ["tackle", "horn-attack", "leer"], ["megahorn", "seismic-toss", "take-down", "reversal", "hyper-beam"]],
+  [215, "Sneasel", ["dark", "ice"], 55, ["scratch", "leer"], ["quick-attack", "faint-attack", "icy-wind", "slash", "ice-punch"]],
+  [216, "Teddiursa", ["normal"], 60, ["scratch", "leer"], ["fury-swipes", "slash", "body-slam", "crunch"]],
+  [217, "Ursaring", ["normal"], 90, ["scratch", "fury-swipes", "slash"], ["body-slam", "crunch", "earthquake", "hyper-beam"]],
+  [218, "Slugma", ["fire"], 40, ["ember", "smog"], ["rock-throw", "flamethrower", "body-slam"]],
+  [219, "Magcargo", ["fire", "rock"], 50, ["ember", "rock-throw", "flamethrower"], ["body-slam", "fire-blast", "earthquake", "hyper-beam"]],
+  [220, "Swinub", ["ice", "ground"], 50, ["tackle", "powder-snow"], ["mud-slap", "icy-wind", "take-down", "earthquake"]],
+  [221, "Piloswine", ["ice", "ground"], 100, ["tackle", "powder-snow", "icy-wind"], ["mud-slap", "earthquake", "ice-beam", "blizzard", "hyper-beam"]],
+  [222, "Corsola", ["water", "rock"], 55, ["tackle", "bubble"], ["rock-throw", "ancient-power", "surf", "ice-beam"]],
+  [223, "Remoraid", ["water"], 35, ["water-gun", "leer"], ["aurora-beam", "bubble-beam", "ice-beam", "octazooka"]],
+  [224, "Octillery", ["water"], 75, ["water-gun", "aurora-beam", "octazooka"], ["ice-beam", "surf", "hyper-beam", "fire-blast"]],
+  [225, "Delibird", ["ice", "flying"], 45, ["peck", "powder-snow"], ["icy-wind", "ice-beam", "fly", "quick-attack"]],
+  [226, "Mantine", ["water", "flying"], 65, ["bubble", "wing-attack"], ["surf", "ice-beam", "body-slam", "hydro-pump"]],
+  [227, "Skarmory", ["steel", "flying"], 65, ["peck", "leer"], ["steel-wing", "swift", "fly", "agility"]],
+  [228, "Houndour", ["dark", "fire"], 45, ["leer", "ember"], ["bite", "faint-attack", "flamethrower", "crunch"]],
+  [229, "Houndoom", ["dark", "fire"], 75, ["ember", "bite", "faint-attack"], ["flamethrower", "fire-blast", "crunch", "hyper-beam"]],
+  [230, "Kingdra", ["water", "dragon"], 75, ["bubble", "water-gun", "twister"], ["surf", "hydro-pump", "dragon-breath", "ice-beam", "hyper-beam"]],
+  [231, "Phanpy", ["ground"], 90, ["tackle", "growl"], ["rollout", "take-down", "mud-slap", "earthquake"]],
+  [232, "Donphan", ["ground"], 90, ["tackle", "rollout", "take-down"], ["earthquake", "rapid-spin", "body-slam", "hyper-beam"]],
+  [233, "Porygon2", ["normal"], 85, ["tackle", "psybeam", "agility"], ["tri-attack", "psychic", "thunderbolt", "ice-beam", "hyper-beam"]],
+  [234, "Stantler", ["normal"], 73, ["tackle", "leer"], ["headbutt", "take-down", "confuse-ray", "psychic", "hyper-beam"]],
+  [235, "Smeargle", ["normal"], 55, ["tackle"], ["slash", "swift"]],
+  [236, "Tyrogue", ["fighting"], 35, ["tackle"], ["low-kick", "mach-punch"]],
+  [237, "Hitmontop", ["fighting"], 50, ["tackle", "rapid-spin"], ["triple-kick", "mach-punch", "seismic-toss", "submission"]],
+  [238, "Smoochum", ["ice", "psychic"], 45, ["pound", "lick"], ["confusion", "ice-punch", "psychic"]],
+  [239, "Elekid", ["electric"], 45, ["quick-attack", "leer"], ["thunder-shock", "thunderbolt", "thunder-punch"]],
+  [240, "Magby", ["fire"], 45, ["ember", "leer"], ["fire-punch", "flamethrower", "smog"]],
+  [241, "Miltank", ["normal"], 95, ["tackle", "growl"], ["rollout", "body-slam", "earthquake", "surf", "hyper-beam"]],
+  [242, "Blissey", ["normal"], 255, ["pound", "growl"], ["body-slam", "ice-beam", "psychic", "hyper-beam"]],
+  [243, "Raikou", ["electric"], 90, ["thunder-shock", "quick-attack"], ["spark", "thunderbolt", "thunder", "crunch", "extreme-speed", "hyper-beam"]],
+  [244, "Entei", ["fire"], 115, ["ember", "bite"], ["flamethrower", "fire-blast", "extreme-speed", "crunch", "hyper-beam"]],
+  [245, "Suicune", ["water"], 100, ["water-gun", "gust"], ["surf", "hydro-pump", "ice-beam", "aurora-beam", "hyper-beam"]],
+  [246, "Larvitar", ["rock", "ground"], 50, ["bite", "leer"], ["rock-throw", "screech", "crunch", "earthquake"]],
+  [247, "Pupitar", ["rock", "ground"], 70, ["bite", "rock-throw", "screech"], ["crunch", "earthquake", "rock-slide"]],
+  [248, "Tyranitar", ["rock", "dark"], 100, ["bite", "rock-throw", "crunch"], ["earthquake", "rock-slide", "hyper-beam", "fire-blast", "ice-beam", "thunderbolt"]],
+  [249, "Lugia", ["psychic", "flying"], 106, ["gust", "confusion"], ["aeroblast", "psychic", "hydro-pump", "ice-beam", "hyper-beam", "ancient-power"]],
+  [250, "Ho-Oh", ["fire", "flying"], 106, ["peck", "ember"], ["sacred-fire", "fire-blast", "fly", "ancient-power", "hyper-beam", "earthquake"]],
+  [251, "Celebi", ["psychic", "grass"], 100, ["confusion", "leech-seed"], ["psychic", "giga-drain", "solar-beam", "ancient-power", "future-sight", "hyper-beam"]],
+];
+
+export const POKEMON: PokemonSpecies[] = RAW_POKEMON.map(([id, name, types, baseHp, startingMoves, learnableMoves]) => ({
+  id,
+  name,
+  types,
+  baseHp,
+  startingMoves,
+  learnableMoves,
+}));
+
+export function getPokemon(id: number): PokemonSpecies | undefined {
+  return POKEMON.find((p) => p.id === id);
+}
+
+export function getSpriteUrl(id: number): string {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+}
+
+export function getOfficialArtUrl(id: number): string {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+}
+
+// Animated front battle sprite (Showdown style) - used in battle scene
+export function getBattleSpriteUrl(id: number): string {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${id}.gif`;
+}
+
+// Evolution data
+export type EvolutionMethod = "level" | "stone" | "trade";
+
+export interface EvolutionData {
+  from: number;
+  to: number;
+  method: EvolutionMethod;
+  level?: number;       // for level-based
+  stone?: string;       // item id for stone-based
+}
+
+export const EVOLUTIONS: EvolutionData[] = [
+  // Starters
+  { from: 1, to: 2, method: "level", level: 16 },
+  { from: 2, to: 3, method: "level", level: 32 },
+  { from: 4, to: 5, method: "level", level: 16 },
+  { from: 5, to: 6, method: "level", level: 36 },
+  { from: 7, to: 8, method: "level", level: 16 },
+  { from: 8, to: 9, method: "level", level: 36 },
+  // Caterpie line
+  { from: 10, to: 11, method: "level", level: 7 },
+  { from: 11, to: 12, method: "level", level: 10 },
+  // Weedle line
+  { from: 13, to: 14, method: "level", level: 7 },
+  { from: 14, to: 15, method: "level", level: 10 },
+  // Pidgey line
+  { from: 16, to: 17, method: "level", level: 18 },
+  { from: 17, to: 18, method: "level", level: 36 },
+  // Rattata
+  { from: 19, to: 20, method: "level", level: 20 },
+  // Spearow
+  { from: 21, to: 22, method: "level", level: 20 },
+  // Ekans
+  { from: 23, to: 24, method: "level", level: 22 },
+  // Pikachu - Thunder Stone
+  { from: 25, to: 26, method: "stone", stone: "thunder-stone" },
+  // Sandshrew
+  { from: 27, to: 28, method: "level", level: 22 },
+  // Nidoran F line
+  { from: 29, to: 30, method: "level", level: 16 },
+  { from: 30, to: 31, method: "stone", stone: "moon-stone" },
+  // Nidoran M line
+  { from: 32, to: 33, method: "level", level: 16 },
+  { from: 33, to: 34, method: "stone", stone: "moon-stone" },
+  // Clefairy - Moon Stone
+  { from: 35, to: 36, method: "stone", stone: "moon-stone" },
+  // Vulpix - Fire Stone
+  { from: 37, to: 38, method: "stone", stone: "fire-stone" },
+  // Jigglypuff - Moon Stone
+  { from: 39, to: 40, method: "stone", stone: "moon-stone" },
+  // Zubat
+  { from: 41, to: 42, method: "level", level: 22 },
+  // Oddish line
+  { from: 43, to: 44, method: "level", level: 21 },
+  { from: 44, to: 45, method: "stone", stone: "leaf-stone" },
+  // Paras
+  { from: 46, to: 47, method: "level", level: 24 },
+  // Venonat
+  { from: 48, to: 49, method: "level", level: 31 },
+  // Diglett
+  { from: 50, to: 51, method: "level", level: 26 },
+  // Meowth
+  { from: 52, to: 53, method: "level", level: 28 },
+  // Psyduck
+  { from: 54, to: 55, method: "level", level: 33 },
+  // Mankey
+  { from: 56, to: 57, method: "level", level: 28 },
+  // Growlithe - Fire Stone
+  { from: 58, to: 59, method: "stone", stone: "fire-stone" },
+  // Poliwag line
+  { from: 60, to: 61, method: "level", level: 25 },
+  { from: 61, to: 62, method: "stone", stone: "water-stone" },
+  // Abra line
+  { from: 63, to: 64, method: "level", level: 16 },
+  { from: 64, to: 65, method: "trade" },
+  // Machop line
+  { from: 66, to: 67, method: "level", level: 28 },
+  { from: 67, to: 68, method: "trade" },
+  // Bellsprout line
+  { from: 69, to: 70, method: "level", level: 21 },
+  { from: 70, to: 71, method: "stone", stone: "leaf-stone" },
+  // Tentacool
+  { from: 72, to: 73, method: "level", level: 30 },
+  // Geodude line
+  { from: 74, to: 75, method: "level", level: 25 },
+  { from: 75, to: 76, method: "trade" },
+  // Ponyta
+  { from: 77, to: 78, method: "level", level: 40 },
+  // Slowpoke
+  { from: 79, to: 80, method: "level", level: 37 },
+  // Magnemite
+  { from: 81, to: 82, method: "level", level: 30 },
+  // Doduo
+  { from: 84, to: 85, method: "level", level: 31 },
+  // Seel
+  { from: 86, to: 87, method: "level", level: 34 },
+  // Grimer
+  { from: 88, to: 89, method: "level", level: 38 },
+  // Shellder - Water Stone
+  { from: 90, to: 91, method: "stone", stone: "water-stone" },
+  // Gastly line
+  { from: 92, to: 93, method: "level", level: 25 },
+  { from: 93, to: 94, method: "trade" },
+  // Drowzee
+  { from: 96, to: 97, method: "level", level: 26 },
+  // Krabby
+  { from: 98, to: 99, method: "level", level: 28 },
+  // Voltorb
+  { from: 100, to: 101, method: "level", level: 30 },
+  // Exeggcute - Leaf Stone
+  { from: 102, to: 103, method: "stone", stone: "leaf-stone" },
+  // Cubone
+  { from: 104, to: 105, method: "level", level: 28 },
+  // Koffing
+  { from: 109, to: 110, method: "level", level: 35 },
+  // Rhyhorn
+  { from: 111, to: 112, method: "level", level: 42 },
+  // Horsea
+  { from: 116, to: 117, method: "level", level: 32 },
+  // Goldeen
+  { from: 118, to: 119, method: "level", level: 33 },
+  // Staryu - Water Stone
+  { from: 120, to: 121, method: "stone", stone: "water-stone" },
+  // Magikarp
+  { from: 129, to: 130, method: "level", level: 20 },
+  // Eevee evolutions - stones
+  { from: 133, to: 134, method: "stone", stone: "water-stone" },
+  { from: 133, to: 135, method: "stone", stone: "thunder-stone" },
+  { from: 133, to: 136, method: "stone", stone: "fire-stone" },
+  // Omanyte
+  { from: 138, to: 139, method: "level", level: 40 },
+  // Kabuto
+  { from: 140, to: 141, method: "level", level: 40 },
+  // Dratini line
+  { from: 147, to: 148, method: "level", level: 30 },
+  { from: 148, to: 149, method: "level", level: 55 },
+  // Cross-gen evolutions (Gen 1 -> Gen 2)
+  { from: 42, to: 169, method: "level", level: 36 },  // Golbat -> Crobat
+  { from: 44, to: 182, method: "stone", stone: "sun-stone" },  // Gloom -> Bellossom
+  { from: 61, to: 186, method: "stone", stone: "kings-rock" },  // Poliwhirl -> Politoed
+  { from: 79, to: 199, method: "stone", stone: "kings-rock" },  // Slowpoke -> Slowking
+  { from: 95, to: 208, method: "stone", stone: "metal-coat" },  // Onix -> Steelix
+  { from: 117, to: 230, method: "stone", stone: "dragon-scale" },  // Seadra -> Kingdra
+  { from: 123, to: 212, method: "stone", stone: "metal-coat" },  // Scyther -> Scizor
+  { from: 137, to: 233, method: "stone", stone: "up-grade" },  // Porygon -> Porygon2
+  { from: 113, to: 242, method: "level", level: 40 },  // Chansey -> Blissey
+  // Eevee Gen 2 evolutions
+  { from: 133, to: 196, method: "level", level: 25 },  // Eevee -> Espeon (friendship/day)
+  { from: 133, to: 197, method: "level", level: 25 },  // Eevee -> Umbreon (friendship/night)
+  // Baby -> Gen 1 evolutions
+  { from: 172, to: 25, method: "level", level: 10 },  // Pichu -> Pikachu
+  { from: 173, to: 35, method: "level", level: 10 },  // Cleffa -> Clefairy
+  { from: 174, to: 39, method: "level", level: 10 },  // Igglybuff -> Jigglypuff
+  { from: 175, to: 176, method: "level", level: 20 },  // Togepi -> Togetic
+  { from: 236, to: 106, method: "level", level: 20 },  // Tyrogue -> Hitmonlee
+  { from: 236, to: 107, method: "level", level: 20 },  // Tyrogue -> Hitmonchan
+  { from: 236, to: 237, method: "level", level: 20 },  // Tyrogue -> Hitmontop
+  { from: 238, to: 124, method: "level", level: 30 },  // Smoochum -> Jynx
+  { from: 239, to: 125, method: "level", level: 30 },  // Elekid -> Electabuzz
+  { from: 240, to: 126, method: "level", level: 30 },  // Magby -> Magmar
+  // Gen 2 Starters
+  { from: 152, to: 153, method: "level", level: 16 },
+  { from: 153, to: 154, method: "level", level: 32 },
+  { from: 155, to: 156, method: "level", level: 14 },
+  { from: 156, to: 157, method: "level", level: 36 },
+  { from: 158, to: 159, method: "level", level: 18 },
+  { from: 159, to: 160, method: "level", level: 30 },
+  // Gen 2 regulars
+  { from: 161, to: 162, method: "level", level: 15 },  // Sentret -> Furret
+  { from: 163, to: 164, method: "level", level: 20 },  // Hoothoot -> Noctowl
+  { from: 165, to: 166, method: "level", level: 18 },  // Ledyba -> Ledian
+  { from: 167, to: 168, method: "level", level: 22 },  // Spinarak -> Ariados
+  { from: 170, to: 171, method: "level", level: 27 },  // Chinchou -> Lanturn
+  { from: 177, to: 178, method: "level", level: 25 },  // Natu -> Xatu
+  { from: 179, to: 180, method: "level", level: 15 },  // Mareep -> Flaaffy
+  { from: 180, to: 181, method: "level", level: 30 },  // Flaaffy -> Ampharos
+  { from: 183, to: 184, method: "level", level: 18 },  // Marill -> Azumarill
+  { from: 187, to: 188, method: "level", level: 18 },  // Hoppip -> Skiploom
+  { from: 188, to: 189, method: "level", level: 27 },  // Skiploom -> Jumpluff
+  { from: 191, to: 192, method: "stone", stone: "sun-stone" },  // Sunkern -> Sunflora
+  { from: 194, to: 195, method: "level", level: 20 },  // Wooper -> Quagsire
+  { from: 204, to: 205, method: "level", level: 31 },  // Pineco -> Forretress
+  { from: 209, to: 210, method: "level", level: 23 },  // Snubbull -> Granbull
+  { from: 216, to: 217, method: "level", level: 30 },  // Teddiursa -> Ursaring
+  { from: 218, to: 219, method: "level", level: 38 },  // Slugma -> Magcargo
+  { from: 220, to: 221, method: "level", level: 33 },  // Swinub -> Piloswine
+  { from: 223, to: 224, method: "level", level: 25 },  // Remoraid -> Octillery
+  { from: 228, to: 229, method: "level", level: 24 },  // Houndour -> Houndoom
+  { from: 231, to: 232, method: "level", level: 25 },  // Phanpy -> Donphan
+  { from: 246, to: 247, method: "level", level: 30 },  // Larvitar -> Pupitar
+  { from: 247, to: 248, method: "level", level: 55 },  // Pupitar -> Tyranitar
+];
+
+// Helper to find evolutions for a given Pokemon
+export function getEvolutions(speciesId: number): EvolutionData[] {
+  return EVOLUTIONS.filter((e) => e.from === speciesId);
+}
+
+// Check if a Pokemon can evolve by level
+export function canEvolveByLevel(speciesId: number, level: number): EvolutionData | null {
+  return EVOLUTIONS.find((e) => e.from === speciesId && e.method === "level" && e.level !== undefined && level >= e.level) || null;
+}
+
+// Check if a Pokemon can evolve by stone
+export function canEvolveByStone(speciesId: number, stoneId: string): EvolutionData | null {
+  return EVOLUTIONS.find((e) => e.from === speciesId && e.method === "stone" && e.stone === stoneId) || null;
+}
+
+// Check if a Pokemon can evolve by trade (in our RPG, the master decides)
+export function canEvolveByTrade(speciesId: number): EvolutionData | null {
+  return EVOLUTIONS.find((e) => e.from === speciesId && e.method === "trade") || null;
+}
+
+// XP needed per level (simple formula)
+export function xpForLevel(level: number): number {
+  return level * level * 25;
+}
+
+// Stone item definitions
+export interface StoneItem {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export const EVOLUTION_STONES: StoneItem[] = [
+  { id: "fire-stone", name: "Pedra de Fogo", description: "Evolui Pokemon do tipo Fogo." },
+  { id: "water-stone", name: "Pedra da Agua", description: "Evolui Pokemon do tipo Agua." },
+  { id: "thunder-stone", name: "Pedra do Trovao", description: "Evolui Pokemon do tipo Eletrico." },
+  { id: "leaf-stone", name: "Pedra da Folha", description: "Evolui Pokemon do tipo Planta." },
+  { id: "moon-stone", name: "Pedra da Lua", description: "Evolui Pokemon especiais." },
+  { id: "sun-stone", name: "Pedra do Sol", description: "Evolui Pokemon com luz solar." },
+  { id: "metal-coat", name: "Revestimento Metalico", description: "Evolui Pokemon de aco." },
+  { id: "kings-rock", name: "Pedra do Rei", description: "Evolui Pokemon especiais por troca." },
+  { id: "dragon-scale", name: "Escama de Dragao", description: "Evolui Seadra em Kingdra." },
+  { id: "up-grade", name: "Up-Grade", description: "Evolui Porygon em Porygon2." },
+];
+
+// Bag item definitions
+export interface BagItemDef {
+  id: string;
+  name: string;
+  description: string;
+  category: "potion" | "pokeball" | "status" | "other";
+  healAmount?: number;
+  ppRestore?: number;
+}
+
+export const BAG_ITEMS: BagItemDef[] = [
+  { id: "potion", name: "Potion", description: "Restaura 20 HP.", category: "potion", healAmount: 20 },
+  { id: "super-potion", name: "Super Potion", description: "Restaura 50 HP.", category: "potion", healAmount: 50 },
+  { id: "hyper-potion", name: "Hyper Potion", description: "Restaura 200 HP.", category: "potion", healAmount: 200 },
+  { id: "max-potion", name: "Max Potion", description: "Restaura todo o HP.", category: "potion", healAmount: 9999 },
+  { id: "revive", name: "Revive", description: "Revive um Pokemon com metade do HP.", category: "potion", healAmount: -1 },
+  { id: "ether", name: "Ether", description: "Restaura 5 PP de um golpe.", category: "status", ppRestore: 5 },
+  { id: "elixir", name: "Elixir", description: "Restaura 10 PP de todos os golpes.", category: "status", ppRestore: 10 },
+  { id: "pokeball", name: "Poke Ball", description: "Captura Pokemon selvagens.", category: "pokeball" },
+  { id: "great-ball", name: "Great Ball", description: "Melhor taxa de captura.", category: "pokeball" },
+  { id: "ultra-ball", name: "Ultra Ball", description: "Alta taxa de captura.", category: "pokeball" },
+  { id: "master-ball", name: "Master Ball", description: "Captura garantida.", category: "pokeball" },
+  // Evolution stones as bag items
+  { id: "fire-stone", name: "Pedra de Fogo", description: "Evolui Pokemon do tipo Fogo.", category: "other" },
+  { id: "water-stone", name: "Pedra da Agua", description: "Evolui Pokemon do tipo Agua.", category: "other" },
+  { id: "thunder-stone", name: "Pedra do Trovao", description: "Evolui Pokemon do tipo Eletrico.", category: "other" },
+  { id: "leaf-stone", name: "Pedra da Folha", description: "Evolui Pokemon do tipo Planta.", category: "other" },
+  { id: "moon-stone", name: "Pedra da Lua", description: "Evolui Pokemon especiais.", category: "other" },
+  // Gen 2 evolution items
+  { id: "sun-stone", name: "Pedra do Sol", description: "Evolui Pokemon com luz solar.", category: "other" },
+  { id: "metal-coat", name: "Revestimento Metalico", description: "Evolui Pokemon de aco.", category: "other" },
+  { id: "kings-rock", name: "Pedra do Rei", description: "Evolui Pokemon especiais.", category: "other" },
+  { id: "dragon-scale", name: "Escama de Dragao", description: "Evolui Seadra em Kingdra.", category: "other" },
+  { id: "up-grade", name: "Up-Grade", description: "Evolui Porygon em Porygon2.", category: "other" },
+  // Rare Candy
+  { id: "rare-candy", name: "Rare Candy", description: "Sobe 1 nivel instantaneamente.", category: "other" },
+];
+
+// D20 hit result calculation
+export type HitResult = "critical-miss" | "miss" | "hit" | "strong-hit" | "critical-hit";
+
+export function calculateHitResult(roll: number, accuracy: number): HitResult {
+  if (roll === 1) return "critical-miss";
+  if (roll === 20) return "critical-hit";
+  if (roll >= accuracy + 5) return "strong-hit";
+  if (roll >= accuracy) return "hit";
+  return "miss";
+}
+
+export function getDamageMultiplier(result: HitResult): number {
+  switch (result) {
+    case "critical-miss": return 0;
+    case "miss": return 0;
+    case "hit": return 1;
+    case "strong-hit": return 1.5;
+    case "critical-hit": return 2;
+  }
+}
+
+export function getHitResultLabel(result: HitResult): string {
+  switch (result) {
+    case "critical-miss": return "Falha Critica!";
+    case "miss": return "Errou!";
+    case "hit": return "Acertou!";
+    case "strong-hit": return "Golpe Forte!";
+    case "critical-hit": return "Critico!";
+  }
+}
+
+export function getHitResultColor(result: HitResult): string {
+  switch (result) {
+    case "critical-miss": return "#EF4444";
+    case "miss": return "#9CA3AF";
+    case "hit": return "#22C55E";
+    case "strong-hit": return "#3B82F6";
+    case "critical-hit": return "#F59E0B";
+  }
+}
+
+// Dice notation parser for RPG damage
+export function parseDiceNotation(notation: string): { count: number; sides: number; modifier: number } | null {
+  const match = notation.trim().match(/^(\d+)?d(\d+)\s*([+-]\s*\d+)?$/i);
+  if (!match) return null;
+  return {
+    count: match[1] ? parseInt(match[1]) : 1,
+    sides: parseInt(match[2]),
+    modifier: match[3] ? parseInt(match[3].replace(/\s/g, "")) : 0,
+  };
+}
+
+export function rollDice(count: number, sides: number, modifier: number = 0): { rolls: number[]; total: number } {
+  const rolls: number[] = [];
+  for (let i = 0; i < count; i++) {
+    rolls.push(Math.floor(Math.random() * sides) + 1);
+  }
+  const total = rolls.reduce((a, b) => a + b, 0) + modifier;
+  return { rolls, total: Math.max(0, total) };
+}
