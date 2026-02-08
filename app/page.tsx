@@ -20,7 +20,7 @@ import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords } 
 import { playTabSwitch, playButtonClick } from "@/lib/sounds";
 
 type Tab = "team" | "bag" | "pokedex" | "profile" | "shop" | "npcs";
-type Screen = "loading" | "mode-select" | "profile-select" | "start" | "game";
+type Screen = "loading" | "mode-select" | "profile-select" | "start" | "game" | "raid";
 
 export default function Page() {
   const { mode, setMode, profiles, activeProfileId, setActiveProfile, clearActiveProfile, resetMode } = useModeStore();
@@ -34,13 +34,13 @@ export default function Page() {
 
   // After zustand hydrates from localStorage, determine the correct screen
   useEffect(() => {
-    if (screen === "game") return; // don't override once in game
+    if (screen === "game" || screen === "raid") return; // don't override once in game or raid
 
     if (!mode) {
       setScreen("mode-select");
     } else if (mode === "trainer" && !activeProfileId) {
       setScreen("profile-select");
-    } else if (screen !== "game") {
+    } else if (screen !== "game" && screen !== "raid") {
       setScreen("start");
     }
   }, [mode, activeProfileId, screen]);
@@ -139,7 +139,12 @@ export default function Page() {
 
   // Mode selection
   if (screen === "mode-select") {
-    return <ModeSelectScreen onSelectMode={handleSelectMode} />;
+    return <ModeSelectScreen onSelectMode={handleSelectMode} onRaidMode={() => setScreen("raid")} />;
+  }
+
+  // RAID mode
+  if (screen === "raid") {
+    return <RaidScreen onBack={() => setScreen("mode-select")} />;
   }
 
   // Profile selection (trainer mode only)
