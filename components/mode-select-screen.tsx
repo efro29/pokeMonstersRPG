@@ -2,15 +2,16 @@
 
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Shield, Eye } from "lucide-react";
+import { Shield, Eye, Wifi } from "lucide-react";
 import { playButtonClick, playStartGame } from "@/lib/sounds";
 import type { GameMode } from "@/lib/mode-store";
 
 interface ModeSelectScreenProps {
   onSelectMode: (mode: GameMode) => void;
+  onRaidMode?: () => void;
 }
 
-export function ModeSelectScreen({ onSelectMode }: ModeSelectScreenProps) {
+export function ModeSelectScreen({ onSelectMode, onRaidMode }: ModeSelectScreenProps) {
   const [stars, setStars] = useState<{ x: number; y: number; delay: number; size: number }[]>([]);
 
   useEffect(() => {
@@ -139,6 +140,41 @@ export function ModeSelectScreen({ onSelectMode }: ModeSelectScreenProps) {
               </div>
             </div>
           </motion.button>
+
+          {/* RAID mode */}
+          {onRaidMode && (
+            <motion.button
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.8, duration: 0.5 }}
+              onClick={() => {
+                playStartGame();
+                onRaidMode();
+              }}
+              className="relative w-full rounded-xl border-2 p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
+              style={{
+                borderColor: "#F59E0B",
+                background: "rgba(245, 158, 11, 0.08)",
+              }}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: "rgba(245, 158, 11, 0.2)" }}
+                >
+                  <Wifi className="w-6 h-6" style={{ color: "#F59E0B" }} />
+                </div>
+                <div className="flex-1">
+                  <h2 className="font-pixel text-xs tracking-wider mb-2" style={{ color: "#F59E0B" }}>
+                    MODO RAID
+                  </h2>
+                  <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
+                    Batalha online! 4 treinadores se unem contra 1 mestre em turnos. Crie ou entre em uma sala.
+                  </p>
+                </div>
+              </div>
+            </motion.button>
+          )}
         </div>
       </div>
 

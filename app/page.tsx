@@ -15,6 +15,7 @@ import { ShopTab } from "@/components/shop-tab";
 import { NpcTab } from "@/components/npc-tab";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 import { getPokemon } from "@/lib/pokemon-data";
+import { RaidScreen } from "@/components/raid-screen";
 import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords } from "lucide-react";
 import { playTabSwitch, playButtonClick } from "@/lib/sounds";
 
