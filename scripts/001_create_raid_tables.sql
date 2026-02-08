@@ -36,13 +36,6 @@ create table if not exists public.raid_battle_log (
   created_at timestamptz not null default now()
 );
 
--- Foreign key for current_turn_player_id
-alter table public.raid_rooms
-  add constraint fk_current_turn_player
-  foreign key (current_turn_player_id)
-  references public.raid_players(id)
-  on delete set null;
-
 -- Index for fast room code lookups
 create index if not exists idx_raid_rooms_code on public.raid_rooms(room_code);
 
@@ -75,8 +68,3 @@ create policy "Anyone can leave raid" on public.raid_players for delete using (t
 -- Permissive policies for raid_battle_log
 create policy "Anyone can read battle log" on public.raid_battle_log for select using (true);
 create policy "Anyone can add battle log" on public.raid_battle_log for insert with check (true);
-
--- Enable realtime for all raid tables
-alter publication supabase_realtime add table public.raid_rooms;
-alter publication supabase_realtime add table public.raid_players;
-alter publication supabase_realtime add table public.raid_battle_log;
