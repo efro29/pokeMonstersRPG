@@ -160,19 +160,11 @@ export function BattleScene() {
         <div
           className="absolute inset-0 overflow-hidden"
           style={{
-            background: "linear-gradient(180deg, #1a2744 0%, #243b5e 40%, #2d5a3d 70%, #1a3a28 100%)",
+            background: "linear-gradient(180deg, #020b1fff 0%, #0d1522ff 40%, #000000ff 70%, #000000ff 100%)",
           }}
         >
           {/* Arena floor ellipse */}
-          <div
-            className="absolute bottom-[18%] left-1/2 -translate-x-1/2"
-            style={{
-              width: "85%",
-              height: "40px",
-              borderRadius: "50%",
-              background: "radial-gradient(ellipse, rgba(255,255,255,0.08) 0%, transparent 70%)",
-            }}
-          />
+        
         </div>
 
         {/* Pokemon sprite */}
@@ -182,13 +174,13 @@ export function BattleScene() {
               ? { opacity: 0.3, y: 20 }
               : { opacity: 1, y: 0 }
           }
-          className="relative z-10 pt-3 pb-1"
-        >
+          className="relative z-10 pt- pb-1"
+        > <br /><br />
           <img
             src={getBattleSpriteUrl(pokemon.speciesId)}
             alt={pokemon.name}
-            width={220}
-            height={220}
+            width={200}
+            height={150}
             className="drop-shadow-[0_4px_24px_rgba(255,255,255,0.15)]"
             style={{ imageRendering: "auto", minHeight: 180 }}
             crossOrigin="anonymous"
@@ -206,7 +198,8 @@ export function BattleScene() {
         </motion.div>
 
         {/* Name + HP overlay on the arena */}
-        <div className="relative z-10 w-full max-w-xs -mt-1 pb-3">
+       
+        <div  className="absolute top-2 w-full max-w-xs -mt-1 pb-3">
           <div className="bg-card/90 backdrop-blur-sm rounded-xl border border-border p-3">
             <div className="flex items-center justify-between mb-1.5">
               <h3 className="text-base font-bold text-foreground">{pokemon.name}</h3>
@@ -233,7 +226,7 @@ export function BattleScene() {
       </div>
 
       {/* Battle content area */}
-      <div className="flex-1 px-4 pb-4 flex flex-col">
+      <div className="flex-1 px-4 pb-8 flex flex-col">
         <AnimatePresence mode="wait">
           {/* Main menu */}
           {battle.phase === "menu" && (
@@ -575,19 +568,7 @@ export function BattleScene() {
       </Dialog>
 
       {/* Battle log */}
-      {battle.battleLog.length > 0 && (
-        <div className="border-t border-border bg-card p-3">
-          <ScrollArea className="max-h-24">
-            <div className="flex flex-col gap-0.5">
-              {battle.battleLog.map((log, i) => (
-                <p key={i} className="text-[10px] text-muted-foreground font-mono">
-                  {">"} {log}
-                </p>
-              ))}
-            </div>
-          </ScrollArea>
-        </div>
-      )}
+
     </div>
   );
 }
