@@ -10,8 +10,11 @@ import {
   BAG_ITEMS,
   getHitResultLabel,
   getHitResultColor,
+  computeAttributes,
+  POKEMON_ATTRIBUTE_INFO,
 } from "@/lib/pokemon-data";
-import type { PokemonType, HitResult } from "@/lib/pokemon-data";
+import type { PokemonType, HitResult, PokemonBaseAttributes } from "@/lib/pokemon-data";
+import type { PokemonAttributeKey } from "@/lib/game-store";
 import { D20Dice } from "./d20-dice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +35,10 @@ import {
   Shield,
   Zap,
   ChevronLeft,
+  Dices,
+  Wind,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import {
   playAttack,
@@ -60,6 +67,8 @@ export function BattleScene() {
     applyOpponentDamage,
     addBattleLog,
     useBagItem,
+    selectAttributeTest,
+    resolveAttributeTest,
   } = useGameStore();
 
   const attrs = trainer.attributes || { combate: 0, afinidade: 0, sorte: 0, furtividade: 0, percepcao: 0, carisma: 0 };
@@ -72,6 +81,8 @@ export function BattleScene() {
   const [damageInput, setDamageInput] = useState("");
   const [showBagDialog, setShowBagDialog] = useState(false);
   const [showPokeballAnim, setShowPokeballAnim] = useState(false);
+  const [isTestRolling, setIsTestRolling] = useState(false);
+  const [testDC, setTestDC] = useState("10");
 
   const handleDiceResult = useCallback(
     (roll: number) => {
@@ -136,6 +147,24 @@ export function BattleScene() {
     setBattlePhase("menu");
   };
 
+  const handleSelectAttribute = (attr: PokemonAttributeKey) => {
+    const dc = parseInt(testDC) || 10;
+    selectAttributeTest(attr, dc);
+    setIsTestRolling(true);
+    playDiceRoll();
+  };
+
+  const handleTestDiceResult = useCallback(
+    (roll: number) => {
+      setIsTestRolling(false);
+      resolveAttributeTest(roll);
+    },
+    [resolveAttributeTest]
+  );
+
+  // Compute pokemon attributes for display
+  const pokemonAttrs = pokemon ? computeAttributes(pokemon.speciesId, pokemon.level) : null;
+
   if (!pokemon) return null;
 
   return (
@@ -160,11 +189,11 @@ export function BattleScene() {
         <div
           className="absolute inset-0 overflow-hidden"
           style={{
-            background: "linear-gradient(180deg, #020b1fff 0%, #0d1522ff 40%, #000000ff 70%, #000000ff 100%)",
+            background: "white",
           }}
         >
           {/* Arena floor ellipse */}
-        
+
         </div>
 
         {/* Pokemon sprite */}
@@ -198,8 +227,8 @@ export function BattleScene() {
         </motion.div>
 
         {/* Name + HP overlay on the arena */}
-       
-        <div  className="absolute top-2 w-full max-w-xs -mt-1 pb-3">
+
+        <div className="absolute top-2 w-full max-w-xs -mt-1 pb-3">
           <div className="bg-card/90 backdrop-blur-sm rounded-xl border border-border p-3">
             <div className="flex items-center justify-between mb-1.5">
               <h3 className="text-base font-bold text-foreground">{pokemon.name}</h3>
@@ -268,6 +297,18 @@ export function BattleScene() {
               >
                 <CircleDot className="w-6 h-6" />
                 <span className="text-sm font-bold">Pokebola</span>
+              </Button>
+              <Button
+                onClick={() => {
+                  playButtonClick();
+                  setBattlePhase("attribute-test-select");
+                }}
+                disabled={isFainted}
+                variant="outline"
+                className="col-span-2 h-14 flex flex-row gap-2 border-accent/50 text-accent bg-transparent hover:bg-accent/10"
+              >
+                <Dices className="w-6 h-6" />
+                <span className="text-sm font-bold">Rolar um Teste</span>
               </Button>
             </motion.div>
           )}
@@ -443,6 +484,207 @@ export function BattleScene() {
                   Receber Dano
                 </Button>
               </div>
+            </motion.div>
+          )}
+          {/* Attribute test - select attribute */}
+          {battle.phase === "attribute-test-select" && pokemonAttrs && (
+            <motion.div
+              key="attr-test-select"
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 }}
+              className="flex flex-col gap-3 mt-auto"
+            >
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setBattlePhase("menu")}
+                className="self-start text-muted-foreground hover:text-foreground"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
+              </Button>
+
+              <div className="text-center mb-1">
+                <h4 className="text-base font-bold text-foreground">Rolar um Teste</h4>
+                <p className="text-xs text-muted-foreground">
+                  Escolha o atributo e a dificuldade (DC) para rolar D20
+                </p>
+              </div>
+
+              {/* DC input */}
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <span className="text-xs text-muted-foreground">DC:</span>
+                <div className="flex items-center gap-1">
+                  {[5, 10, 15, 20].map((dc) => (
+                    <Button
+                      key={dc}
+                      size="sm"
+                      variant={testDC === String(dc) ? "default" : "outline"}
+                      onClick={() => setTestDC(String(dc))}
+                      className={`h-8 w-10 text-xs ${testDC === String(dc) ? "bg-accent text-accent-foreground" : "border-border text-foreground bg-transparent hover:bg-secondary"}`}
+                    >
+                      {dc}
+                    </Button>
+                  ))}
+                  <Input
+                    type="number"
+                    value={testDC}
+                    onChange={(e) => setTestDC(e.target.value)}
+                    className="w-16 h-8 text-xs text-center bg-secondary border-border text-foreground"
+                    min={1}
+                    max={30}
+                  />
+                </div>
+              </div>
+
+              {/* Attribute buttons */}
+              <div className="grid grid-cols-2 gap-2">
+                {(Object.keys(POKEMON_ATTRIBUTE_INFO) as PokemonAttributeKey[]).map((attr) => {
+                  const info = POKEMON_ATTRIBUTE_INFO[attr];
+                  const modKey = `${attr}Mod` as keyof typeof pokemonAttrs;
+                  const mod = pokemonAttrs[modKey] as number;
+                  const base = pokemonAttrs[attr];
+                  return (
+                    <Button
+                      key={attr}
+                      onClick={() => handleSelectAttribute(attr)}
+                      className="h-auto py-3 px-3 flex flex-col items-start gap-1 text-left bg-secondary text-foreground hover:bg-accent/20 border border-border"
+                      variant="outline"
+                    >
+                      <div className="flex items-center gap-2 w-full">
+                        {attr === "velocidade" && <Zap className="w-4 h-4 text-yellow-400 shrink-0" />}
+                        {attr === "felicidade" && <Heart className="w-4 h-4 text-pink-400 shrink-0" />}
+                        {attr === "resistencia" && <Shield className="w-4 h-4 text-blue-400 shrink-0" />}
+                        {attr === "acrobacia" && <Wind className="w-4 h-4 text-teal-400 shrink-0" />}
+                        <span className="text-sm font-bold">{info.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                        <span>Base: {base}</span>
+                        <span className="text-accent font-medium">+{mod} mod</span>
+                      </div>
+                    </Button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Attribute test - rolling */}
+          {battle.phase === "attribute-test-rolling" && battle.selectedAttribute && pokemonAttrs && (
+            <motion.div
+              key="attr-test-rolling"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="flex flex-col items-center gap-4 my-auto"
+            >
+              <div className="text-center mb-2">
+                <span className="text-sm text-muted-foreground">
+                  Teste de {POKEMON_ATTRIBUTE_INFO[battle.selectedAttribute].name}
+                </span>
+                <h4 className="text-lg font-bold text-foreground">
+                  {pokemon.name} rola D20!
+                </h4>
+                <div className="flex items-center justify-center gap-3 mt-1">
+                  <span className="text-xs bg-accent/20 text-accent px-2 py-0.5 rounded-full">
+                    DC {battle.attributeTestDC}
+                  </span>
+                  <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                    +{pokemonAttrs[`${battle.selectedAttribute}Mod` as keyof typeof pokemonAttrs]} mod
+                  </span>
+                </div>
+              </div>
+              <D20Dice onResult={handleTestDiceResult} rolling={isTestRolling} />
+            </motion.div>
+          )}
+
+          {/* Attribute test - result */}
+          {battle.phase === "attribute-test-result" && battle.attributeTestResult && (
+            <motion.div
+              key="attr-test-result"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center gap-4 my-auto"
+            >
+              {(() => {
+                const r = battle.attributeTestResult;
+                const isSuccess = r.success;
+                const color = r.criticalSuccess ? "#F59E0B" : r.criticalFail ? "#EF4444" : isSuccess ? "#22C55E" : "#9CA3AF";
+                const label = r.criticalSuccess
+                  ? "Sucesso Critico!"
+                  : r.criticalFail
+                    ? "Falha Critica!"
+                    : isSuccess
+                      ? "Sucesso!"
+                      : "Falhou!";
+
+                return (
+                  <>
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", damping: 10 }}
+                      className="w-24 h-24 rounded-full flex flex-col items-center justify-center"
+                      style={{
+                        backgroundColor: `${color}22`,
+                        border: `3px solid ${color}`,
+                      }}
+                    >
+                      <span className="text-3xl font-bold font-mono" style={{ color }}>
+                        {r.roll}
+                      </span>
+                      {r.modifier > 0 && (
+                        <span className="text-[10px] font-mono text-primary">
+                          +{r.modifier} = {r.total}
+                        </span>
+                      )}
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                      className="flex items-center gap-2"
+                    >
+                      {isSuccess ? (
+                        <CheckCircle className="w-6 h-6" style={{ color }} />
+                      ) : (
+                        <XCircle className="w-6 h-6" style={{ color }} />
+                      )}
+                      <h3 className="text-2xl font-bold" style={{ color }}>
+                        {label}
+                      </h3>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                      className="text-center"
+                    >
+                      <p className="text-sm text-muted-foreground">
+                        Teste de {POKEMON_ATTRIBUTE_INFO[r.attribute].name} (DC {r.dc})
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Rolou {r.roll} + {r.modifier} mod = {r.total} vs DC {r.dc}
+                      </p>
+                    </motion.div>
+
+                    <Button
+                      onClick={() => {
+                        addBattleLog(
+                          `Teste de ${POKEMON_ATTRIBUTE_INFO[r.attribute].name}: rolou ${r.roll}+${r.modifier}=${r.total} vs DC ${r.dc} - ${label}`
+                        );
+                        setBattlePhase("menu");
+                      }}
+                      className="w-full mt-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      Continuar
+                    </Button>
+                  </>
+                );
+              })()}
             </motion.div>
           )}
         </AnimatePresence>

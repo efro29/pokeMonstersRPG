@@ -12,8 +12,10 @@ import {
   canEvolveByStone,
   canEvolveByTrade,
   EVOLUTION_STONES,
+  computeAttributes,
+  POKEMON_ATTRIBUTE_INFO,
 } from "@/lib/pokemon-data";
-import type { PokemonType } from "@/lib/pokemon-data";
+import type { PokemonType, PokemonBaseAttributes } from "@/lib/pokemon-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -40,6 +42,9 @@ import {
   Sparkles,
   Gem,
   RefreshCw,
+  Zap,
+  Shield,
+  Wind,
 } from "lucide-react";
 
 interface TeamTabProps {
@@ -317,6 +322,12 @@ function PokemonDetailContent({
             Aprender
           </TabsTrigger>
           <TabsTrigger
+            value="attrs"
+            className="flex-1 text-foreground data-[state=active]:bg-card"
+          >
+            Atributos
+          </TabsTrigger>
+          <TabsTrigger
             value="evolve"
             className="flex-1 text-foreground data-[state=active]:bg-card"
           >
@@ -581,6 +592,61 @@ function PokemonDetailContent({
               </p>
             )}
           </div>
+        </TabsContent>
+
+        {/* Attributes Tab */}
+        <TabsContent value="attrs" className="mt-3">
+          {(() => {
+            const attrs = computeAttributes(pokemon.speciesId, level);
+            const attrKeys: (keyof PokemonBaseAttributes)[] = ["velocidade", "felicidade", "resistencia", "acrobacia"];
+            const attrIcons: Record<string, { icon: typeof Zap; color: string }> = {
+              velocidade:  { icon: Zap,    color: "#FACC15" },
+              felicidade:  { icon: Heart,  color: "#F472B6" },
+              resistencia: { icon: Shield, color: "#60A5FA" },
+              acrobacia:   { icon: Wind,   color: "#2DD4BF" },
+            };
+            return (
+              <div className="flex flex-col gap-3">
+                <p className="text-xs text-muted-foreground text-center">
+                  Atributos do Pokemon (escalam com o nivel)
+                </p>
+                {attrKeys.map((attr) => {
+                  const info = POKEMON_ATTRIBUTE_INFO[attr];
+                  const { icon: Icon, color } = attrIcons[attr];
+                  const baseVal = attrs[attr];
+                  const modKey = `${attr}Mod` as keyof typeof attrs;
+                  const mod = attrs[modKey] as number;
+                  const barPercent = Math.min(100, baseVal * 10);
+                  return (
+                    <div key={attr} className="bg-secondary rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Icon className="w-4 h-4 shrink-0" style={{ color }} />
+                        <span className="text-sm font-bold text-foreground">{info.name}</span>
+                        <span className="ml-auto text-xs font-mono text-accent">+{mod} mod</span>
+                      </div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="flex-1 h-2.5 bg-background rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-300"
+                            style={{ width: `${barPercent}%`, backgroundColor: color }}
+                          />
+                        </div>
+                        <span className="text-xs font-mono text-muted-foreground w-8 text-right">
+                          {baseVal}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">{info.desc}</p>
+                    </div>
+                  );
+                })}
+                <div className="bg-secondary/50 rounded-lg p-2 mt-1">
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    Modificador = Base/2 + Nivel/5. Usado em "Rolar um Teste" na batalha.
+                  </p>
+                </div>
+              </div>
+            );
+          })()}
         </TabsContent>
 
         {/* Evolve Tab */}

@@ -1,8 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { PokemonSpecies, BagItemDef } from "./pokemon-data";
+import type { PokemonSpecies, BagItemDef, PokemonBaseAttributes } from "./pokemon-data";
 import { getGameStoreKey } from "./mode-store";
-import { BAG_ITEMS, getMove, getPokemon, canEvolveByLevel, canEvolveByStone, canEvolveByTrade, xpForLevel } from "./pokemon-data";
+import { BAG_ITEMS, getMove, getPokemon, canEvolveByLevel, canEvolveByStone, canEvolveByTrade, xpForLevel, computeAttributes } from "./pokemon-data";
+
+export type PokemonAttributeKey = keyof PokemonBaseAttributes;
 
 export interface ActiveMove {
   moveId: string;
@@ -153,7 +155,21 @@ export type BattlePhase =
   | "result"
   | "opponent-damage"
   | "bag-battle"
-  | "pokeball";
+  | "pokeball"
+  | "attribute-test-select"
+  | "attribute-test-rolling"
+  | "attribute-test-result";
+
+export interface AttributeTestResult {
+  attribute: PokemonAttributeKey;
+  roll: number;
+  modifier: number;
+  total: number;
+  dc: number;
+  success: boolean;
+  criticalSuccess: boolean;
+  criticalFail: boolean;
+}
 
 export interface BattleState {
   phase: BattlePhase;
@@ -163,6 +179,10 @@ export interface BattleState {
   hitResult: string | null;
   damageDealt: number | null;
   battleLog: string[];
+  // Attribute test
+  selectedAttribute: PokemonAttributeKey | null;
+  attributeTestDC: number;
+  attributeTestResult: AttributeTestResult | null;
 }
 
 interface GameState {
@@ -208,6 +228,9 @@ interface GameState {
   useStone: (uid: string, stoneId: string) => boolean;
   evolveByTrade: (uid: string) => boolean;
   useRareCandy: (uid: string) => void;
+  // Attribute tests
+  selectAttributeTest: (attribute: PokemonAttributeKey, dc: number) => void;
+  resolveAttributeTest: (roll: number) => void;
   // NPC management
   addNpc: (name: string) => string;
   removeNpc: (id: string) => void;
@@ -252,6 +275,9 @@ export const useGameStore = create<GameState>()(
         hitResult: null,
         damageDealt: null,
         battleLog: [],
+        selectedAttribute: null,
+        attributeTestDC: 10,
+        attributeTestResult: null,
       },
 
       updateTrainer: (data) => {
@@ -474,6 +500,9 @@ export const useGameStore = create<GameState>()(
             hitResult: null,
             damageDealt: null,
             battleLog: [],
+            selectedAttribute: null,
+            attributeTestDC: 10,
+            attributeTestResult: null,
           },
         });
       },
@@ -488,6 +517,9 @@ export const useGameStore = create<GameState>()(
             hitResult: null,
             damageDealt: null,
             battleLog: [],
+            selectedAttribute: null,
+            attributeTestDC: 10,
+            attributeTestResult: null,
           },
         });
       },
@@ -787,6 +819,56 @@ export const useGameStore = create<GameState>()(
         get().setLevel(uid, newLevel);
       },
 
+      // Attribute tests
+      selectAttributeTest: (attribute, dc) => {
+        const { battle } = get();
+        set({
+          battle: {
+            ...battle,
+            phase: "attribute-test-rolling",
+            selectedAttribute: attribute,
+            attributeTestDC: dc,
+            attributeTestResult: null,
+          },
+        });
+      },
+
+      resolveAttributeTest: (roll) => {
+        const { battle, team } = get();
+        const pokemon = team.find((p) => p.uid === battle.activePokemonUid);
+        if (!pokemon || !battle.selectedAttribute) return;
+
+        const attrs = computeAttributes(pokemon.speciesId, pokemon.level);
+        const attrKey = battle.selectedAttribute;
+        const modKey = `${attrKey}Mod` as keyof typeof attrs;
+        const modifier = attrs[modKey] as number;
+
+        const total = roll + modifier;
+        const dc = battle.attributeTestDC;
+        const criticalSuccess = roll === 20;
+        const criticalFail = roll === 1;
+        const success = criticalFail ? false : criticalSuccess ? true : total >= dc;
+
+        const result: AttributeTestResult = {
+          attribute: attrKey,
+          roll,
+          modifier,
+          total,
+          dc,
+          success,
+          criticalSuccess,
+          criticalFail,
+        };
+
+        set({
+          battle: {
+            ...battle,
+            phase: "attribute-test-result",
+            attributeTestResult: result,
+          },
+        });
+      },
+
       // NPC management
       addNpc: (name) => {
         const id = generateUid();
@@ -837,7 +919,7 @@ export const useGameStore = create<GameState>()(
     }),
     {
       name: getGameStoreKey(),
-      version: 4,
+      version: 5,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         if (version < 2) {
@@ -856,6 +938,13 @@ export const useGameStore = create<GameState>()(
           trainer.johtoBadges = trainer.johtoBadges ?? JOHTO_BADGES.map((b) => ({ ...b }));
           trainer.attributes = trainer.attributes ?? { ...DEFAULT_ATTRIBUTES };
           state.trainer = trainer;
+        }
+        if (version < 5) {
+          const battle = (state.battle as Record<string, unknown>) || {};
+          battle.selectedAttribute = battle.selectedAttribute ?? null;
+          battle.attributeTestDC = battle.attributeTestDC ?? 10;
+          battle.attributeTestResult = battle.attributeTestResult ?? null;
+          state.battle = battle;
         }
         return state as GameState;
       },
