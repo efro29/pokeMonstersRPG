@@ -160,7 +160,7 @@ export function BattleScene() {
         <div
           className="absolute inset-0 overflow-hidden"
           style={{
-            background: "linear-gradient(180deg, #020b1fff 0%, #0d1522ff 40%, #000000ff 70%, #000000ff 100%)",
+            background: "white",
           }}
         >
           {/* Arena floor ellipse */}
