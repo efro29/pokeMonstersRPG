@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGameStore, ATTRIBUTE_INFO } from "@/lib/game-store";
+import { useGameStore, ATTRIBUTE_INFO, trainerXpForLevel } from "@/lib/game-store";
 import type { TrainerAttributes } from "@/lib/game-store";
 import { KANTO_BADGE_ICONS, JOHTO_BADGE_ICONS } from "./badge-icons";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,8 @@ import {
   EyeOff,
   Eye,
   Users,
+  Star,
+  ArrowUp,
 } from "lucide-react";
 import { playBadgeObtained, playBadgeRemoved, playButtonClick } from "@/lib/sounds";
 
@@ -55,10 +57,17 @@ const ATTR_ICONS: Record<keyof TrainerAttributes, React.ReactNode> = {
 };
 
 export function ProfileTab() {
-  const { trainer, updateTrainer, updateAttributes, addMoney, toggleBadge, toggleJohtoBadge } = useGameStore();
+  const { trainer, updateTrainer, updateAttributes, addMoney, toggleBadge, toggleJohtoBadge, addTrainerXp, setTrainerLevel, damageTrainer, healTrainer, recalcTrainerStats } = useGameStore();
   const [editing, setEditing] = useState(!trainer.name);
   const [moneyDialog, setMoneyDialog] = useState(false);
   const [moneyAmount, setMoneyAmount] = useState("");
+  const [xpDialog, setXpDialog] = useState(false);
+  const [xpAmount, setXpAmount] = useState("");
+  const [hpDialog, setHpDialog] = useState(false);
+  const [hpAmount, setHpAmount] = useState("");
+  const [hpMode, setHpMode] = useState<"damage" | "heal">("damage");
+  const [levelDialog, setLevelDialog] = useState(false);
+  const [levelInput, setLevelInput] = useState("");
   const [editForm, setEditForm] = useState({
     name: trainer.name,
     age: trainer.age,
