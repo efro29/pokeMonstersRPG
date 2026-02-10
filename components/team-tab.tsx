@@ -309,31 +309,36 @@ function PokemonDetailContent({
         <TabsList className="w-full bg-secondary">
           <TabsTrigger
             value="info"
-            className="flex-1 text-foreground data-[state=active]:bg-card"
+            style={{fontSize:9}}
+            className="flex-1  data-[state=active]:bg-card"
           >
-            Info
+          Info
           </TabsTrigger>
           <TabsTrigger
+                    style={{fontSize:9}}
             value="moves"
-            className="flex-1 text-foreground data-[state=active]:bg-card"
+            className="flex-1  data-[state=active]:bg-card"
           >
             Golpes
           </TabsTrigger>
           <TabsTrigger
+                    style={{fontSize:9}}
             value="learn"
-            className="flex-1 text-foreground data-[state=active]:bg-card"
+            className="flex-1  data-[state=active]:bg-card"
           >
             Aprender
           </TabsTrigger>
           <TabsTrigger
+                    style={{fontSize:9}}
             value="attrs"
-            className="flex-1 text-foreground data-[state=active]:bg-card"
+            className="flex-1  data-[state=active]:bg-card"
           >
             Atributos
           </TabsTrigger>
           <TabsTrigger
+                    style={{fontSize:9}}
             value="evolve"
-            className="flex-1 text-foreground data-[state=active]:bg-card"
+            className="flex-1  data-[state=active]:bg-card"
           >
             Evoluir
           </TabsTrigger>
