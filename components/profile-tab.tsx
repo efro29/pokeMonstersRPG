@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGameStore, ATTRIBUTE_INFO } from "@/lib/game-store";
+import { useGameStore, ATTRIBUTE_INFO, trainerXpForLevel } from "@/lib/game-store";
 import type { TrainerAttributes } from "@/lib/game-store";
 import { KANTO_BADGE_ICONS, JOHTO_BADGE_ICONS } from "./badge-icons";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,8 @@ import {
   EyeOff,
   Eye,
   Users,
+  Star,
+  ArrowUp,
 } from "lucide-react";
 import { playBadgeObtained, playBadgeRemoved, playButtonClick } from "@/lib/sounds";
 
@@ -55,10 +57,17 @@ const ATTR_ICONS: Record<keyof TrainerAttributes, React.ReactNode> = {
 };
 
 export function ProfileTab() {
-  const { trainer, updateTrainer, updateAttributes, addMoney, toggleBadge, toggleJohtoBadge } = useGameStore();
+  const { trainer, updateTrainer, updateAttributes, addMoney, toggleBadge, toggleJohtoBadge, addTrainerXp, setTrainerLevel, damageTrainer, healTrainer, recalcTrainerStats } = useGameStore();
   const [editing, setEditing] = useState(!trainer.name);
   const [moneyDialog, setMoneyDialog] = useState(false);
   const [moneyAmount, setMoneyAmount] = useState("");
+  const [xpDialog, setXpDialog] = useState(false);
+  const [xpAmount, setXpAmount] = useState("");
+  const [hpDialog, setHpDialog] = useState(false);
+  const [hpAmount, setHpAmount] = useState("");
+  const [hpMode, setHpMode] = useState<"damage" | "heal">("damage");
+  const [levelDialog, setLevelDialog] = useState(false);
+  const [levelInput, setLevelInput] = useState("");
   const [editForm, setEditForm] = useState({
     name: trainer.name,
     age: trainer.age,
@@ -176,6 +185,136 @@ export function ProfileTab() {
               <Sparkles className="w-4 h-4 mr-2" />
               Editar Ficha
             </Button>
+          </div>
+        </div>
+
+        {/* Trainer RPG Stats */}
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <div className="p-4 border-b border-border flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Star className="w-5 h-5 text-accent" />
+              <h3 className="font-semibold text-foreground">Status RPG</h3>
+            </div>
+            <span className="text-xs text-muted-foreground font-mono">Nivel {trainer.level ?? 1}</span>
+          </div>
+          <div className="p-4 flex flex-col gap-3">
+            {/* Level & XP */}
+            <div className="bg-secondary/50 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <ArrowUp className="w-4 h-4 text-accent" />
+                  <span className="text-sm font-medium text-foreground">Nivel {trainer.level ?? 1}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setLevelInput(String(trainer.level ?? 1));
+                      setLevelDialog(true);
+                    }}
+                    className="h-6 text-[10px] px-2 border-border text-muted-foreground bg-transparent hover:bg-secondary"
+                  >
+                    Editar Nivel
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setXpDialog(true)}
+                    className="h-6 text-[10px] px-2 border-accent/50 text-accent bg-transparent hover:bg-accent/10"
+                  >
+                    <Plus className="w-3 h-3 mr-0.5" />XP
+                  </Button>
+                </div>
+              </div>
+              {/* XP Progress Bar */}
+              {(() => {
+                const currentLevel = trainer.level ?? 1;
+                const currentXp = trainer.xp ?? 0;
+                const xpCurrent = trainerXpForLevel(currentLevel);
+                const xpNext = trainerXpForLevel(currentLevel + 1);
+                const xpInLevel = currentXp - xpCurrent;
+                const xpNeeded = xpNext - xpCurrent;
+                const xpPercent = xpNeeded > 0 ? Math.min(100, (xpInLevel / xpNeeded) * 100) : 100;
+                return (
+                  <>
+                    <div className="flex-1 h-2.5 bg-background rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-accent transition-all duration-300"
+                        style={{ width: `${xpPercent}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        XP: {currentXp.toLocaleString("pt-BR")}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        Proximo: {xpNext.toLocaleString("pt-BR")}
+                      </span>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* HP */}
+            <div className="bg-secondary/50 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Heart className="w-4 h-4 text-red-400" />
+                  <span className="text-sm font-medium text-foreground">HP</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-bold font-mono text-foreground">
+                    {trainer.currentHp ?? 20}/{trainer.maxHp ?? 20}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => { setHpMode("damage"); setHpAmount(""); setHpDialog(true); }}
+                    className="h-6 text-[10px] px-2 border-destructive/50 text-destructive bg-transparent hover:bg-destructive/10"
+                  >
+                    Dano
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => { setHpMode("heal"); setHpAmount(""); setHpDialog(true); }}
+                    className="h-6 text-[10px] px-2 border-green-500/50 text-green-500 bg-transparent hover:bg-green-500/10"
+                  >
+                    Cura
+                  </Button>
+                </div>
+              </div>
+              {/* HP Bar */}
+              {(() => {
+                const maxHp = trainer.maxHp ?? 20;
+                const currentHp = trainer.currentHp ?? 20;
+                const hpPercent = maxHp > 0 ? (currentHp / maxHp) * 100 : 0;
+                const hpColor = hpPercent > 50 ? "#22C55E" : hpPercent > 25 ? "#EAB308" : "#EF4444";
+                return (
+                  <div className="flex-1 h-3 bg-background rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{ width: `${hpPercent}%`, backgroundColor: hpColor }}
+                    />
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Defense */}
+            <div className="flex items-center justify-between bg-secondary/50 rounded-lg p-3">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-blue-400" />
+                <span className="text-sm font-medium text-foreground">Defesa (AC)</span>
+              </div>
+              <span className="text-lg font-bold font-mono text-blue-400">{trainer.defesa ?? 10}</span>
+            </div>
+
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              HP e Defesa escalam com o nivel e os atributos do treinador. Combate aumenta HP e AC, Furtividade aumenta AC.
+            </p>
           </div>
         </div>
 
@@ -325,6 +464,178 @@ export function ProfileTab() {
                 Salvar
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add XP Dialog */}
+        <Dialog open={xpDialog} onOpenChange={setXpDialog}>
+          <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
+            <DialogHeader>
+              <DialogTitle className="text-foreground">Adicionar Experiencia</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">Quanto XP o treinador ganhou?</p>
+            <div className="flex gap-2 flex-wrap">
+              {[50, 100, 250, 500, 1000].map((val) => (
+                <Button
+                  key={val}
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setXpAmount(String(val))}
+                  className={`border-border bg-transparent hover:bg-secondary ${
+                    xpAmount === String(val) ? "text-accent border-accent" : "text-foreground"
+                  }`}
+                >
+                  +{val}
+                </Button>
+              ))}
+            </div>
+            <Input
+              type="number"
+              value={xpAmount}
+              onChange={(e) => setXpAmount(e.target.value)}
+              placeholder="Valor personalizado"
+              className="bg-secondary border-border text-foreground"
+            />
+            <Button
+              onClick={() => {
+                const amount = parseInt(xpAmount);
+                if (amount > 0) {
+                  addTrainerXp(amount);
+                  setXpAmount("");
+                  setXpDialog(false);
+                }
+              }}
+              disabled={!xpAmount || parseInt(xpAmount) <= 0}
+              className="bg-accent text-accent-foreground hover:bg-accent/90"
+            >
+              <Star className="w-4 h-4 mr-2" />
+              Adicionar {parseInt(xpAmount || "0").toLocaleString("pt-BR")} XP
+            </Button>
+          </DialogContent>
+        </Dialog>
+
+        {/* Trainer Level Dialog */}
+        <Dialog open={levelDialog} onOpenChange={setLevelDialog}>
+          <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
+            <DialogHeader>
+              <DialogTitle className="text-foreground">Definir Nivel</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">Defina o nivel do treinador (1-100):</p>
+            <Input
+              type="number"
+              value={levelInput}
+              onChange={(e) => setLevelInput(e.target.value)}
+              min={1}
+              max={100}
+              className="bg-secondary border-border text-foreground text-lg font-mono text-center"
+              autoFocus
+            />
+            <Button
+              onClick={() => {
+                const level = Math.max(1, Math.min(100, parseInt(levelInput) || 1));
+                setTrainerLevel(level);
+                setLevelDialog(false);
+              }}
+              disabled={!levelInput}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <ArrowUp className="w-4 h-4 mr-2" />
+              Definir Nivel {levelInput || "?"}
+            </Button>
+          </DialogContent>
+        </Dialog>
+
+        {/* Trainer HP Dialog */}
+        <Dialog open={hpDialog} onOpenChange={setHpDialog}>
+          <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
+            <DialogHeader>
+              <DialogTitle className="text-foreground">
+                {hpMode === "damage" ? "Aplicar Dano ao Treinador" : "Curar Treinador"}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex items-center justify-center gap-3 my-1">
+              <Heart className="w-5 h-5 text-red-400" />
+              <span className="text-lg font-bold font-mono text-foreground">
+                {trainer.currentHp ?? 20}/{trainer.maxHp ?? 20} HP
+              </span>
+            </div>
+            {hpMode === "damage" && (
+              <div className="bg-secondary/50 rounded-lg p-2 text-center">
+                <span className="text-xs text-muted-foreground">
+                  Defesa (AC): <span className="text-blue-400 font-bold">{trainer.defesa ?? 10}</span>
+                  {" - "}Reducao: <span className="text-blue-400 font-bold">-{Math.floor((trainer.defesa ?? 10) / 3)}</span>
+                </span>
+              </div>
+            )}
+            <div className="flex gap-2 flex-wrap">
+              {[5, 10, 15, 20, 30].map((val) => (
+                <Button
+                  key={val}
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setHpAmount(String(val))}
+                  className={`border-border bg-transparent hover:bg-secondary ${
+                    hpAmount === String(val)
+                      ? hpMode === "damage" ? "text-destructive border-destructive" : "text-green-500 border-green-500"
+                      : "text-foreground"
+                  }`}
+                >
+                  {hpMode === "damage" ? "-" : "+"}{val}
+                </Button>
+              ))}
+            </div>
+            <Input
+              type="number"
+              value={hpAmount}
+              onChange={(e) => setHpAmount(e.target.value)}
+              placeholder="Valor personalizado"
+              className="bg-secondary border-border text-foreground"
+            />
+            {hpMode === "damage" && hpAmount && parseInt(hpAmount) > 0 && (
+              <div className="bg-destructive/10 rounded-lg p-2 text-xs text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>Dano bruto:</span>
+                  <span className="font-mono text-foreground">{hpAmount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Reducao da defesa:</span>
+                  <span className="font-mono text-blue-400">-{Math.floor((trainer.defesa ?? 10) / 3)}</span>
+                </div>
+                <div className="flex justify-between border-t border-border/50 mt-1 pt-1">
+                  <span className="font-medium text-foreground">Dano final:</span>
+                  <span className="font-mono font-bold text-destructive">
+                    {Math.max(1, parseInt(hpAmount) - Math.floor((trainer.defesa ?? 10) / 3))}
+                  </span>
+                </div>
+              </div>
+            )}
+            <Button
+              onClick={() => {
+                const amount = parseInt(hpAmount);
+                if (amount > 0) {
+                  if (hpMode === "damage") {
+                    const defReduction = Math.floor((trainer.defesa ?? 10) / 3);
+                    const finalDmg = Math.max(1, amount - defReduction);
+                    damageTrainer(finalDmg);
+                  } else {
+                    healTrainer(amount);
+                  }
+                  setHpAmount("");
+                  setHpDialog(false);
+                }
+              }}
+              disabled={!hpAmount || parseInt(hpAmount) <= 0}
+              className={hpMode === "damage"
+                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                : "bg-green-600 text-white hover:bg-green-700"
+              }
+            >
+              <Heart className="w-4 h-4 mr-2" />
+              {hpMode === "damage"
+                ? `Aplicar Dano`
+                : `Curar ${parseInt(hpAmount || "0")} HP`
+              }
+            </Button>
           </DialogContent>
         </Dialog>
 

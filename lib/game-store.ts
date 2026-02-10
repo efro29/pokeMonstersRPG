@@ -1,8 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { PokemonSpecies, BagItemDef } from "./pokemon-data";
+import type { PokemonSpecies, BagItemDef, PokemonBaseAttributes } from "./pokemon-data";
 import { getGameStoreKey } from "./mode-store";
-import { BAG_ITEMS, getMove, getPokemon, canEvolveByLevel, canEvolveByStone, canEvolveByTrade, xpForLevel } from "./pokemon-data";
+import { BAG_ITEMS, getMove, getPokemon, canEvolveByLevel, canEvolveByStone, canEvolveByTrade, xpForLevel, computeAttributes, getBaseAttributes, applyFaintPenalty, applyLevelUpBonus, rollDamageAgainstPokemon } from "./pokemon-data";
+
+export type PokemonAttributeKey = keyof PokemonBaseAttributes;
 
 export interface ActiveMove {
   moveId: string;
@@ -20,6 +22,8 @@ export interface TeamPokemon {
   currentHp: number;
   moves: ActiveMove[];
   learnableMoves: string[];
+  /** Override base attributes (modified by faint penalties and level-up bonuses) */
+  customAttributes?: PokemonBaseAttributes;
 }
 
 export interface BagItem {
@@ -63,6 +67,30 @@ export interface TrainerProfile {
   badges: Badge[];
   johtoBadges: Badge[];
   attributes: TrainerAttributes;
+  // RPG stats
+  level: number;
+  xp: number;
+  maxHp: number;
+  currentHp: number;
+  defesa: number; // AC / defense
+}
+
+/** XP required for a given trainer level */
+export function trainerXpForLevel(level: number): number {
+  if (level <= 1) return 0;
+  return Math.floor(100 * Math.pow(level - 1, 1.5));
+}
+
+/** Compute trainer defense from attributes + level */
+export function computeTrainerDefesa(level: number, combate: number, furtividade: number): number {
+  // Base AC 10 + floor(combate/2) + floor(furtividade/3) + floor(level/5)
+  return 10 + Math.floor(combate / 2) + Math.floor(furtividade / 3) + Math.floor(level / 5);
+}
+
+/** Compute trainer max HP from level and attributes */
+export function computeTrainerMaxHp(level: number, combate: number): number {
+  // Base 20 HP + 3 per level + combate bonus
+  return 20 + (level - 1) * 3 + combate * 2;
 }
 
 export interface Badge {
@@ -153,7 +181,21 @@ export type BattlePhase =
   | "result"
   | "opponent-damage"
   | "bag-battle"
-  | "pokeball";
+  | "pokeball"
+  | "attribute-test-select"
+  | "attribute-test-rolling"
+  | "attribute-test-result";
+
+export interface AttributeTestResult {
+  attribute: PokemonAttributeKey;
+  roll: number;
+  modifier: number;
+  total: number;
+  dc: number;
+  success: boolean;
+  criticalSuccess: boolean;
+  criticalFail: boolean;
+}
 
 export interface BattleState {
   phase: BattlePhase;
@@ -163,6 +205,10 @@ export interface BattleState {
   hitResult: string | null;
   damageDealt: number | null;
   battleLog: string[];
+  // Attribute test
+  selectedAttribute: PokemonAttributeKey | null;
+  attributeTestDC: number;
+  attributeTestResult: AttributeTestResult | null;
 }
 
 interface GameState {
@@ -208,6 +254,19 @@ interface GameState {
   useStone: (uid: string, stoneId: string) => boolean;
   evolveByTrade: (uid: string) => boolean;
   useRareCandy: (uid: string) => void;
+  // Trainer RPG stats
+  addTrainerXp: (amount: number) => void;
+  setTrainerLevel: (level: number) => void;
+  damageTrainer: (amount: number) => void;
+  healTrainer: (amount: number) => void;
+  recalcTrainerStats: () => void;
+  // Pokemon attribute modifications
+  applyFaintPenaltyToPokemon: (uid: string) => void;
+  applyLevelUpBonusToPokemon: (uid: string) => void;
+  rollDamageOnPokemon: (uid: string, baseDamage: number) => { attackRoll: number; hitAC: boolean; finalDamage: number; defenseReduction: number } | null;
+  // Attribute tests
+  selectAttributeTest: (attribute: PokemonAttributeKey, dc: number) => void;
+  resolveAttributeTest: (roll: number) => void;
   // NPC management
   addNpc: (name: string) => string;
   removeNpc: (id: string) => void;
@@ -233,6 +292,11 @@ export const useGameStore = create<GameState>()(
         badges: KANTO_BADGES.map((b) => ({ ...b })),
         johtoBadges: JOHTO_BADGES.map((b) => ({ ...b })),
         attributes: { ...DEFAULT_ATTRIBUTES },
+        level: 1,
+        xp: 0,
+        maxHp: 20,
+        currentHp: 20,
+        defesa: 10,
       },
       team: [],
       bag: [
@@ -252,6 +316,9 @@ export const useGameStore = create<GameState>()(
         hitResult: null,
         damageDealt: null,
         battleLog: [],
+        selectedAttribute: null,
+        attributeTestDC: 10,
+        attributeTestResult: null,
       },
 
       updateTrainer: (data) => {
@@ -292,10 +359,16 @@ export const useGameStore = create<GameState>()(
       },
 
       updateAttributes: (attrs) => {
+        const { trainer } = get();
+        const newAttrs = { ...trainer.attributes, ...attrs };
+        const level = trainer.level ?? 1;
         set({
           trainer: {
-            ...get().trainer,
-            attributes: { ...get().trainer.attributes, ...attrs },
+            ...trainer,
+            attributes: newAttrs,
+            maxHp: computeTrainerMaxHp(level, newAttrs.combate),
+            defesa: computeTrainerDefesa(level, newAttrs.combate, newAttrs.furtividade),
+            currentHp: Math.min(trainer.currentHp ?? 20, computeTrainerMaxHp(level, newAttrs.combate)),
           },
         });
       },
@@ -474,6 +547,9 @@ export const useGameStore = create<GameState>()(
             hitResult: null,
             damageDealt: null,
             battleLog: [],
+            selectedAttribute: null,
+            attributeTestDC: 10,
+            attributeTestResult: null,
           },
         });
       },
@@ -488,6 +564,9 @@ export const useGameStore = create<GameState>()(
             hitResult: null,
             damageDealt: null,
             battleLog: [],
+            selectedAttribute: null,
+            attributeTestDC: 10,
+            attributeTestResult: null,
           },
         });
       },
@@ -579,20 +658,43 @@ export const useGameStore = create<GameState>()(
         const { battle, team } = get();
         const uid = battle.activePokemonUid;
         if (!uid) return;
+        const pokemon = team.find((p) => p.uid === uid);
+        if (!pokemon) return;
+
+        // Apply defense reduction
+        const attrs = computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes);
+        const defenseReduction = Math.floor(attrs.defesa / 3);
+        const finalDamage = Math.max(1, damage - defenseReduction);
+        const newHp = Math.max(0, pokemon.currentHp - finalDamage);
+
         set({
           team: team.map((p) =>
             p.uid === uid
-              ? { ...p, currentHp: Math.max(0, p.currentHp - damage) }
+              ? { ...p, currentHp: newHp }
               : p
           ),
           battle: {
             ...battle,
             battleLog: [
               ...battle.battleLog,
-              `Adversario causou ${damage} de dano!`,
+              `Adversario causou ${damage} de dano bruto! Defesa absorveu ${defenseReduction}. Dano final: ${finalDamage}.`,
             ],
           },
         });
+
+        // Check faint
+        if (newHp <= 0) {
+          get().applyFaintPenaltyToPokemon(uid);
+          set({
+            battle: {
+              ...get().battle,
+              battleLog: [
+                ...get().battle.battleLog,
+                `${pokemon.name} desmaiou! Atributos penalizados.`,
+              ],
+            },
+          });
+        }
       },
 
       addBattleLog: (msg) => {
@@ -674,6 +776,12 @@ export const useGameStore = create<GameState>()(
         const levelsGained = newLevel - currentLevel;
         const hpGain = levelsGained * 3;
 
+        // Apply attribute level-up bonuses for each level gained
+        let currentAttrs = pokemon.customAttributes || getBaseAttributes(pokemon.speciesId);
+        for (let i = 0; i < levelsGained; i++) {
+          currentAttrs = applyLevelUpBonus(currentAttrs);
+        }
+
         set({
           team: team.map((p) =>
             p.uid === uid
@@ -683,6 +791,7 @@ export const useGameStore = create<GameState>()(
                   level: newLevel,
                   maxHp: p.maxHp + hpGain,
                   currentHp: Math.min(p.currentHp + hpGain, p.maxHp + hpGain),
+                  customAttributes: levelsGained > 0 ? currentAttrs : p.customAttributes,
                 }
               : p
           ),
@@ -696,6 +805,15 @@ export const useGameStore = create<GameState>()(
         const currentLevel = pokemon.level ?? 1;
         const levelDiff = level - currentLevel;
         const hpChange = levelDiff * 3;
+
+        // Apply level-up bonuses if gaining levels
+        let currentAttrs = pokemon.customAttributes || getBaseAttributes(pokemon.speciesId);
+        if (levelDiff > 0) {
+          for (let i = 0; i < levelDiff; i++) {
+            currentAttrs = applyLevelUpBonus(currentAttrs);
+          }
+        }
+
         set({
           team: team.map((p) =>
             p.uid === uid
@@ -705,6 +823,7 @@ export const useGameStore = create<GameState>()(
                   xp: xpForLevel(level),
                   maxHp: Math.max(1, p.maxHp + hpChange),
                   currentHp: Math.max(1, Math.min(p.currentHp + Math.max(0, hpChange), Math.max(1, p.maxHp + hpChange))),
+                  customAttributes: levelDiff > 0 ? currentAttrs : p.customAttributes,
                 }
               : p
           ),
@@ -787,6 +906,184 @@ export const useGameStore = create<GameState>()(
         get().setLevel(uid, newLevel);
       },
 
+      // Trainer RPG stats
+      addTrainerXp: (amount) => {
+        const { trainer } = get();
+        const currentXp = trainer.xp ?? 0;
+        const currentLevel = trainer.level ?? 1;
+        let newXp = currentXp + amount;
+        let newLevel = currentLevel;
+        while (newXp >= trainerXpForLevel(newLevel + 1) && newLevel < 100) {
+          newLevel++;
+        }
+        const levelsGained = newLevel - currentLevel;
+        const attrs = trainer.attributes || DEFAULT_ATTRIBUTES;
+        const newMaxHp = computeTrainerMaxHp(newLevel, attrs.combate);
+        const hpGain = newMaxHp - (trainer.maxHp ?? 20);
+        set({
+          trainer: {
+            ...trainer,
+            xp: newXp,
+            level: newLevel,
+            maxHp: newMaxHp,
+            currentHp: Math.min((trainer.currentHp ?? 20) + Math.max(0, hpGain), newMaxHp),
+            defesa: computeTrainerDefesa(newLevel, attrs.combate, attrs.furtividade),
+          },
+        });
+      },
+
+      setTrainerLevel: (level) => {
+        const { trainer } = get();
+        const attrs = trainer.attributes || DEFAULT_ATTRIBUTES;
+        const newMaxHp = computeTrainerMaxHp(level, attrs.combate);
+        set({
+          trainer: {
+            ...trainer,
+            level,
+            xp: trainerXpForLevel(level),
+            maxHp: newMaxHp,
+            currentHp: Math.min(trainer.currentHp ?? 20, newMaxHp),
+            defesa: computeTrainerDefesa(level, attrs.combate, attrs.furtividade),
+          },
+        });
+      },
+
+      damageTrainer: (amount) => {
+        const { trainer } = get();
+        set({
+          trainer: {
+            ...trainer,
+            currentHp: Math.max(0, (trainer.currentHp ?? 20) - amount),
+          },
+        });
+      },
+
+      healTrainer: (amount) => {
+        const { trainer } = get();
+        const maxHp = trainer.maxHp ?? 20;
+        set({
+          trainer: {
+            ...trainer,
+            currentHp: Math.min(maxHp, (trainer.currentHp ?? 0) + amount),
+          },
+        });
+      },
+
+      recalcTrainerStats: () => {
+        const { trainer } = get();
+        const level = trainer.level ?? 1;
+        const attrs = trainer.attributes || DEFAULT_ATTRIBUTES;
+        const newMaxHp = computeTrainerMaxHp(level, attrs.combate);
+        const newDefesa = computeTrainerDefesa(level, attrs.combate, attrs.furtividade);
+        set({
+          trainer: {
+            ...trainer,
+            maxHp: newMaxHp,
+            currentHp: Math.min(trainer.currentHp ?? 20, newMaxHp),
+            defesa: newDefesa,
+          },
+        });
+      },
+
+      // Pokemon attribute modifications
+      applyFaintPenaltyToPokemon: (uid) => {
+        const { team } = get();
+        const pokemon = team.find((p) => p.uid === uid);
+        if (!pokemon) return;
+        const currentAttrs = pokemon.customAttributes || getBaseAttributes(pokemon.speciesId);
+        const penalizedAttrs = applyFaintPenalty(currentAttrs);
+        set({
+          team: team.map((p) =>
+            p.uid === uid ? { ...p, customAttributes: penalizedAttrs } : p
+          ),
+        });
+      },
+
+      applyLevelUpBonusToPokemon: (uid) => {
+        const { team } = get();
+        const pokemon = team.find((p) => p.uid === uid);
+        if (!pokemon) return;
+        const currentAttrs = pokemon.customAttributes || getBaseAttributes(pokemon.speciesId);
+        const bonusAttrs = applyLevelUpBonus(currentAttrs);
+        set({
+          team: team.map((p) =>
+            p.uid === uid ? { ...p, customAttributes: bonusAttrs } : p
+          ),
+        });
+      },
+
+      rollDamageOnPokemon: (uid, baseDamage) => {
+        const { team } = get();
+        const pokemon = team.find((p) => p.uid === uid);
+        if (!pokemon) return null;
+        const attrs = computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes);
+        const result = rollDamageAgainstPokemon(baseDamage, attrs.defesa);
+        // Apply damage
+        set({
+          team: team.map((p) =>
+            p.uid === uid
+              ? { ...p, currentHp: Math.max(0, p.currentHp - result.finalDamage) }
+              : p
+          ),
+        });
+        // Check if fainted and apply penalty
+        const updatedPokemon = get().team.find((p) => p.uid === uid);
+        if (updatedPokemon && updatedPokemon.currentHp <= 0) {
+          get().applyFaintPenaltyToPokemon(uid);
+        }
+        return result;
+      },
+
+      // Attribute tests
+      selectAttributeTest: (attribute, dc) => {
+        const { battle } = get();
+        set({
+          battle: {
+            ...battle,
+            phase: "attribute-test-rolling",
+            selectedAttribute: attribute,
+            attributeTestDC: dc,
+            attributeTestResult: null,
+          },
+        });
+      },
+
+      resolveAttributeTest: (roll) => {
+        const { battle, team } = get();
+        const pokemon = team.find((p) => p.uid === battle.activePokemonUid);
+        if (!pokemon || !battle.selectedAttribute) return;
+
+        const attrs = computeAttributes(pokemon.speciesId, pokemon.level);
+        const attrKey = battle.selectedAttribute;
+        const modKey = `${attrKey}Mod` as keyof typeof attrs;
+        const modifier = attrs[modKey] as number;
+
+        const total = roll + modifier;
+        const dc = battle.attributeTestDC;
+        const criticalSuccess = roll === 20;
+        const criticalFail = roll === 1;
+        const success = criticalFail ? false : criticalSuccess ? true : total >= dc;
+
+        const result: AttributeTestResult = {
+          attribute: attrKey,
+          roll,
+          modifier,
+          total,
+          dc,
+          success,
+          criticalSuccess,
+          criticalFail,
+        };
+
+        set({
+          battle: {
+            ...battle,
+            phase: "attribute-test-result",
+            attributeTestResult: result,
+          },
+        });
+      },
+
       // NPC management
       addNpc: (name) => {
         const id = generateUid();
@@ -837,7 +1134,7 @@ export const useGameStore = create<GameState>()(
     }),
     {
       name: getGameStoreKey(),
-      version: 4,
+      version: 6,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         if (version < 2) {
@@ -855,6 +1152,22 @@ export const useGameStore = create<GameState>()(
           const trainer = (state.trainer as Record<string, unknown>) || {};
           trainer.johtoBadges = trainer.johtoBadges ?? JOHTO_BADGES.map((b) => ({ ...b }));
           trainer.attributes = trainer.attributes ?? { ...DEFAULT_ATTRIBUTES };
+          state.trainer = trainer;
+        }
+        if (version < 5) {
+          const battle = (state.battle as Record<string, unknown>) || {};
+          battle.selectedAttribute = battle.selectedAttribute ?? null;
+          battle.attributeTestDC = battle.attributeTestDC ?? 10;
+          battle.attributeTestResult = battle.attributeTestResult ?? null;
+          state.battle = battle;
+        }
+        if (version < 6) {
+          const trainer = (state.trainer as Record<string, unknown>) || {};
+          trainer.level = trainer.level ?? 1;
+          trainer.xp = trainer.xp ?? 0;
+          trainer.maxHp = trainer.maxHp ?? 20;
+          trainer.currentHp = trainer.currentHp ?? 20;
+          trainer.defesa = trainer.defesa ?? 10;
           state.trainer = trainer;
         }
         return state as GameState;
