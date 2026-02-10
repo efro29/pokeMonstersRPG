@@ -162,8 +162,8 @@ export function BattleScene() {
     [resolveAttributeTest]
   );
 
-  // Compute pokemon attributes for display (using customAttributes if modified by faint/level)
-  const pokemonAttrs = pokemon ? computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes) : null;
+  // Compute pokemon attributes for display
+  const pokemonAttrs = pokemon ? computeAttributes(pokemon.speciesId, pokemon.level) : null;
 
   if (!pokemon) return null;
 
@@ -232,16 +232,9 @@ export function BattleScene() {
           <div className="bg-card/90 backdrop-blur-sm rounded-xl border border-border p-3">
             <div className="flex items-center justify-between mb-1.5">
               <h3 className="text-base font-bold text-foreground">{pokemon.name}</h3>
-              <div className="flex items-center gap-2">
-                {pokemonAttrs && (
-                  <span className="text-[9px] font-mono text-blue-400 bg-blue-400/10 rounded-full px-1.5 py-0.5">
-                    DEF {pokemonAttrs.defesa}
-                  </span>
-                )}
-                <span className="text-[10px] text-muted-foreground font-mono">
-                  Lv.{pokemon.level}
-                </span>
-              </div>
+              <span className="text-[10px] text-muted-foreground font-mono">
+                Lv.{pokemon.level}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <Heart className="w-3.5 h-3.5 text-red-400 shrink-0" />
@@ -749,36 +742,9 @@ export function BattleScene() {
           <DialogHeader>
             <DialogTitle className="text-foreground">Dano do Adversario</DialogTitle>
           </DialogHeader>
-          {pokemonAttrs && (
-            <div className="bg-secondary/50 rounded-lg p-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-blue-400" />
-                <span className="text-sm text-foreground">Defesa (AC)</span>
-              </div>
-              <span className="text-lg font-bold font-mono text-blue-400">{pokemonAttrs.defesa}</span>
-            </div>
-          )}
-          <p className="text-sm text-muted-foreground">
-            Informe o dano bruto causado pelo adversario. A defesa do Pokemon reduzira o dano automaticamente.
+          <p className="text-sm text-muted-foreground mb-2">
+            Informe o dano causado pelo adversario (use dados na vida real):
           </p>
-          {pokemonAttrs && damageInput && parseInt(damageInput) > 0 && (
-            <div className="bg-destructive/10 rounded-lg p-2.5 text-xs text-muted-foreground">
-              <div className="flex justify-between">
-                <span>Dano bruto:</span>
-                <span className="font-mono text-foreground">{damageInput}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Reducao da defesa:</span>
-                <span className="font-mono text-blue-400">-{Math.floor(pokemonAttrs.defesa / 3)}</span>
-              </div>
-              <div className="flex justify-between border-t border-border/50 mt-1 pt-1">
-                <span className="font-medium text-foreground">Dano final:</span>
-                <span className="font-mono font-bold text-destructive">
-                  {Math.max(1, parseInt(damageInput) - Math.floor(pokemonAttrs.defesa / 3))}
-                </span>
-              </div>
-            </div>
-          )}
           <Input
             type="number"
             placeholder="Ex: 25"

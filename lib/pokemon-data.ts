@@ -796,8 +796,6 @@ export interface PokemonComputedAttributes extends PokemonBaseAttributes {
   felicidadeMod: number;
   resistenciaMod: number;
   acrobaciaMod: number;
-  // Defense (Classe de Armadura / AC) - scales with level
-  defesa: number;
 }
 
 export const POKEMON_ATTRIBUTE_INFO: Record<keyof PokemonBaseAttributes, { name: string; desc: string; icon: string }> = {
@@ -806,99 +804,6 @@ export const POKEMON_ATTRIBUTE_INFO: Record<keyof PokemonBaseAttributes, { name:
   resistencia: { name: "Resistencia", desc: "Vigor fisico e capacidade de aguentar.", icon: "shield" },
   acrobacia:   { name: "Acrobacia",   desc: "Agilidade, esquiva e movimentos aereos.", icon: "wind" },
 };
-
-// ========== RPG Dice Utilities ==========
-
-/** Roll NdS: returns an array of N dice with S sides (1-based) */
-export function rollDice(count: number, sides: number): number[] {
-  return Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1);
-}
-
-/** Roll NdS and return the sum */
-export function rollDiceSum(count: number, sides: number): number {
-  return rollDice(count, sides).reduce((a, b) => a + b, 0);
-}
-
-/**
- * Calculate how much damage a Pokemon takes given:
- * - rawDamage: incoming damage from attacker
- * - defesa: the Pokemon's defense (AC)
- * Returns an object with the damage dice results and final damage after defense reduction.
- * Formula: damage = max(1, rawDamage - defenseReduction)
- * defenseReduction = floor(defesa / 3)
- */
-export function calculateDamageTaken(rawDamage: number, defesa: number): {
-  rawDamage: number;
-  defenseReduction: number;
-  finalDamage: number;
-} {
-  const defenseReduction = Math.floor(defesa / 3);
-  const finalDamage = Math.max(1, rawDamage - defenseReduction);
-  return { rawDamage, defenseReduction, finalDamage };
-}
-
-/**
- * Roll damage dice for an attacker targeting a Pokemon.
- * Uses 1d20 vs target AC. If roll >= AC, full damage. Otherwise halved.
- * Returns: { attackRoll, hitAC, rawDamage, defenseReduction, finalDamage }
- */
-export function rollDamageAgainstPokemon(
-  baseDamage: number,
-  targetDefesa: number
-): {
-  attackRoll: number;
-  hitAC: boolean;
-  rawDamage: number;
-  defenseReduction: number;
-  finalDamage: number;
-} {
-  const attackRoll = rollDiceSum(1, 20);
-  const hitAC = attackRoll >= targetDefesa;
-  const rawDamage = hitAC ? baseDamage : Math.floor(baseDamage / 2);
-  const defenseReduction = Math.floor(targetDefesa / 3);
-  const finalDamage = Math.max(1, rawDamage - defenseReduction);
-  return { attackRoll, hitAC, rawDamage, defenseReduction, finalDamage };
-}
-
-/**
- * Faint penalty: reduce base attribute values temporarily.
- * When a Pokemon faints, its felicidade drops by 1 (min 1) and
- * a random other attribute drops by 1 (min 1).
- * Returns a new base attributes object with penalties applied.
- */
-export function applyFaintPenalty(base: PokemonBaseAttributes): PokemonBaseAttributes {
-  const result = { ...base };
-  // Felicidade always drops
-  result.felicidade = Math.max(1, result.felicidade - 1);
-  // Random other attribute drops
-  const otherKeys: (keyof PokemonBaseAttributes)[] = ["velocidade", "resistencia", "acrobacia"];
-  const randomKey = otherKeys[Math.floor(Math.random() * otherKeys.length)];
-  result[randomKey] = Math.max(1, result[randomKey] - 1);
-  return result;
-}
-
-/**
- * Level up bonus: when leveling up, one random attribute may increase by 1 (max 10).
- * The attribute chosen is weighted towards the Pokemon's highest base stat.
- */
-export function applyLevelUpBonus(base: PokemonBaseAttributes): PokemonBaseAttributes {
-  const result = { ...base };
-  const keys: (keyof PokemonBaseAttributes)[] = ["velocidade", "felicidade", "resistencia", "acrobacia"];
-  // Weight towards highest stat
-  const weights = keys.map((k) => base[k]);
-  const totalWeight = weights.reduce((a, b) => a + b, 0);
-  let rand = Math.random() * totalWeight;
-  let chosen: keyof PokemonBaseAttributes = keys[0];
-  for (let i = 0; i < keys.length; i++) {
-    rand -= weights[i];
-    if (rand <= 0) {
-      chosen = keys[i];
-      break;
-    }
-  }
-  result[chosen] = Math.min(10, result[chosen] + 1);
-  return result;
-}
 
 // Base attributes per species ID. Each value 1-10.
 // Designed to make thematic sense for each Pokemon.
@@ -1226,13 +1131,9 @@ export function getBaseAttributes(speciesId: number): PokemonBaseAttributes {
  * This gives a +0 to +5 base modifier, growing up to +20 at level 100.
  * e.g. Pikachu (velocidade=8) at level 20: floor(8/2) + floor(20/5) = 4 + 4 = +8
  */
-export function computeAttributes(speciesId: number, level: number, overrideBase?: PokemonBaseAttributes): PokemonComputedAttributes {
-  const base = overrideBase || getBaseAttributes(speciesId);
+export function computeAttributes(speciesId: number, level: number): PokemonComputedAttributes {
+  const base = getBaseAttributes(speciesId);
   const levelBonus = Math.floor(level / 5);
-  // Defense (AC) formula: 8 + resistencia modifier + floor(level / 4)
-  // Gives range ~9 at level 1 to ~33 at level 100 for high-resist Pokemon
-  const resistenciaMod = Math.floor(base.resistencia / 2) + levelBonus;
-  const defesa = 8 + Math.floor(base.resistencia / 2) + Math.floor(level / 4);
   return {
     velocidade: base.velocidade,
     felicidade: base.felicidade,
@@ -1240,9 +1141,8 @@ export function computeAttributes(speciesId: number, level: number, overrideBase
     acrobacia: base.acrobacia,
     velocidadeMod: Math.floor(base.velocidade / 2) + levelBonus,
     felicidadeMod: Math.floor(base.felicidade / 2) + levelBonus,
-    resistenciaMod,
+    resistenciaMod: Math.floor(base.resistencia / 2) + levelBonus,
     acrobaciaMod: Math.floor(base.acrobacia / 2) + levelBonus,
-    defesa,
   };
 }
 

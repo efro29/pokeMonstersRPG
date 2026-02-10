@@ -123,7 +123,6 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
             const xpNeeded = xpForLevel(level + 1);
             const xpPercent =
               xpNeeded > 0 ? Math.min(100, (xp / xpNeeded) * 100) : 0;
-            const cardAttrs = computeAttributes(pokemon.speciesId, level, pokemon.customAttributes);
 
             return (
               <div
@@ -149,9 +148,6 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
                     />
                     <span className="absolute -bottom-1 -right-1 text-[9px] font-bold bg-secondary text-foreground rounded-full px-1.5 py-0.5 border border-border">
                       Lv.{level}
-                    </span>
-                    <span className="absolute -top-1 -right-1 text-[8px] font-bold text-blue-400 bg-blue-400/10 rounded-full px-1 py-0.5 border border-blue-400/30">
-                      AC{cardAttrs.defesa}
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -601,7 +597,7 @@ function PokemonDetailContent({
         {/* Attributes Tab */}
         <TabsContent value="attrs" className="mt-3">
           {(() => {
-            const attrs = computeAttributes(pokemon.speciesId, level, pokemon.customAttributes);
+            const attrs = computeAttributes(pokemon.speciesId, level);
             const attrKeys: (keyof PokemonBaseAttributes)[] = ["velocidade", "felicidade", "resistencia", "acrobacia"];
             const attrIcons: Record<string, { icon: typeof Zap; color: string }> = {
               velocidade:  { icon: Zap,    color: "#FACC15" },
@@ -609,32 +605,11 @@ function PokemonDetailContent({
               resistencia: { icon: Shield, color: "#60A5FA" },
               acrobacia:   { icon: Wind,   color: "#2DD4BF" },
             };
-            const isFainted = pokemon.currentHp <= 0;
             return (
               <div className="flex flex-col gap-3">
                 <p className="text-xs text-muted-foreground text-center">
                   Atributos do Pokemon (escalam com o nivel)
                 </p>
-                {isFainted && (
-                  <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-2 text-center">
-                    <span className="text-xs text-destructive font-medium">
-                      Pokemon desmaiado - atributos penalizados!
-                    </span>
-                  </div>
-                )}
-
-                {/* Defense / AC */}
-                <div className="bg-blue-400/10 border border-blue-400/20 rounded-lg p-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-blue-400" />
-                    <div>
-                      <span className="text-sm font-bold text-foreground">Defesa (AC)</span>
-                      <p className="text-[10px] text-muted-foreground">Reducao de dano: -{Math.floor(attrs.defesa / 3)}</p>
-                    </div>
-                  </div>
-                  <span className="text-2xl font-bold font-mono text-blue-400">{attrs.defesa}</span>
-                </div>
-
                 {attrKeys.map((attr) => {
                   const info = POKEMON_ATTRIBUTE_INFO[attr];
                   const { icon: Icon, color } = attrIcons[attr];
@@ -665,10 +640,8 @@ function PokemonDetailContent({
                   );
                 })}
                 <div className="bg-secondary/50 rounded-lg p-2 mt-1">
-                  <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
-                    Modificador = Base/2 + Nivel/5. Defesa = 8 + Resistencia/2 + Nivel/4.
-                    <br />
-                    Atributos sobem ao ganhar nivel e caem ao desmaiar.
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    Modificador = Base/2 + Nivel/5. Usado em "Rolar um Teste" na batalha.
                   </p>
                 </div>
               </div>
