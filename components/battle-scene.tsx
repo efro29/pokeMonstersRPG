@@ -189,7 +189,7 @@ export function BattleScene() {
         <div
           className="absolute inset-0 overflow-hidden"
           style={{
-            background: "white",
+            background: "#0F1729",
           }}
         >
           {/* Arena floor ellipse */}
@@ -276,7 +276,7 @@ export function BattleScene() {
               <Button
                 onClick={() => setBattlePhase("attack-select")}
                 disabled={isFainted}
-                className="h-16 flex flex-col gap-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                className="h-16 flex flex-col gap-1 bg-orange-500 text-primary-foreground hover:bg-primary/90"
               >
                 <Swords className="w-6 h-6" />
                 <span className="text-sm font-bold">Atacar</span>
@@ -284,7 +284,7 @@ export function BattleScene() {
               <Button
                 onClick={() => { playFlee(); endBattle(); }}
                 variant="outline"
-                className="h-16 flex flex-col gap-1 border-border text-foreground bg-transparent hover:bg-secondary"
+                className="h-16 flex flex-col gap-1 border-border text-foreground bg-red-500 hover:bg-secondary"
               >
                 <ArrowLeft className="w-6 h-6" />
                 <span className="text-sm font-bold">Fugir</span>
@@ -292,19 +292,13 @@ export function BattleScene() {
               <Button
                 onClick={() => setShowBagDialog(true)}
                 variant="outline"
-                className="h-16 flex flex-col gap-1 border-border text-foreground bg-transparent hover:bg-secondary"
+                className="h-16 flex flex-col gap-1 border-border text-foreground bg-green-500 hover:bg-secondary"
               >
                 <Backpack className="w-6 h-6" />
                 <span className="text-sm font-bold">Bolsa</span>
               </Button>
-              <Button
-                onClick={handlePokeball}
-                variant="outline"
-                className="h-16 flex flex-col gap-1 border-border text-foreground bg-transparent hover:bg-secondary"
-              >
-                <CircleDot className="w-6 h-6" />
-                <span className="text-sm font-bold">Pokebola</span>
-              </Button>
+             
+
               <Button
                 onClick={() => {
                   playButtonClick();
@@ -312,7 +306,7 @@ export function BattleScene() {
                 }}
                 disabled={isFainted}
                 variant="outline"
-                className="col-span-2 h-14 flex flex-row gap-2 border-accent/50 text-accent bg-transparent hover:bg-accent/10"
+                 className="h-16 flex flex-col gap-1 border-border text-foreground bg-blue-500 hover:bg-secondary"
               >
                 <Dices className="w-6 h-6" />
                 <span className="text-sm font-bold">Rolar um Teste</span>
