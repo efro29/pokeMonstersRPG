@@ -12,8 +12,9 @@ import {
   getHitResultColor,
   computeAttributes,
   POKEMON_ATTRIBUTE_INFO,
+  MOVE_RANGE_INFO,
 } from "@/lib/pokemon-data";
-import type { PokemonType, HitResult, PokemonBaseAttributes } from "@/lib/pokemon-data";
+import type { PokemonType, HitResult, PokemonBaseAttributes, MoveRange } from "@/lib/pokemon-data";
 import type { PokemonAttributeKey } from "@/lib/game-store";
 import { D20Dice } from "./d20-dice";
 import { Button } from "@/components/ui/button";
@@ -221,7 +222,7 @@ export function BattleScene() {
               : { opacity: 1, y: 0 }
           }
           className="relative z-10 pt- pb-1"
-        > <br /><br />
+        > <br /><br /><br /> <br />
           <img
             src={getBattleSpriteUrl(pokemon.speciesId)}
             alt={pokemon.name}
@@ -245,8 +246,8 @@ export function BattleScene() {
 
         {/* Name + HP overlay on the arena */}
 
-        <div style={{width:280}} className="absolute top-3 left-1  max-w-xs -mt-1 pb-3">
-        
+        <div style={{ width: 280 }} className="absolute top-3 left-1  max-w-xs -mt-1 pb-3">
+
           <div className="bg-card/90 backdrop-blur-sm rounded-xl border border-border p-3">
             <div className="flex items-center justify-between mb-1.5">
               <h3 className="text-base font-bold text-foreground">{pokemon.name}</h3>
@@ -290,13 +291,12 @@ export function BattleScene() {
                   onClick={() => handleSwitchPokemon(p.uid)}
                   disabled={isActive || isFaintedMember || isSwitching}
                   whileTap={!isActive && !isFaintedMember ? { scale: 0.9 } : undefined}
-                  className={`relative flex items-center justify-center w-11 h-11 rounded-full transition-all ${
-                    isActive
+                  className={`relative flex items-center justify-center w-11 h-11 rounded-full transition-all ${isActive
                       ? "ring-2 ring-accent opacity-100"
                       : isFaintedMember
                         ? "opacity-30 cursor-not-allowed"
                         : "opacity-70 hover:opacity-100 hover:scale-110 cursor-pointer"
-                  }`}
+                    }`}
                   title={`${p.name} ${isFaintedMember ? "(KO)" : `HP: ${p.currentHp}/${p.maxHp}`}`}
                 >
                   {/* Pokeball background */}
@@ -318,7 +318,7 @@ export function BattleScene() {
                     alt={p.name}
                     width={28}
                     height={28}
-                    className="relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+                    className="relative z-10 right-3 top-3  drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
                     style={{
                       imageRendering: "pixelated",
                       filter: isFaintedMember ? "grayscale(1)" : undefined,
@@ -397,7 +397,7 @@ export function BattleScene() {
                 <Backpack className="w-6 h-6" />
                 <span className="text-sm font-bold">Bolsa</span>
               </Button>
-             
+
 
               <Button
                 onClick={() => {
@@ -406,7 +406,7 @@ export function BattleScene() {
                 }}
                 disabled={isFainted}
                 variant="outline"
-                 className="h-16 flex flex-col gap-1 border-border text-foreground bg-blue-500 hover:bg-secondary"
+                className="h-16 flex flex-col gap-1 border-border text-foreground bg-blue-500 hover:bg-secondary"
               >
                 <Dices className="w-6 h-6" />
                 <span className="text-sm font-bold">Rolar um Teste</span>
@@ -457,6 +457,9 @@ export function BattleScene() {
                           PP {m.currentPP}/{m.maxPP}
                         </span>
                       </div>
+                      <span className="text-[9px] opacity-75 mt-0.5">
+                        {MOVE_RANGE_INFO[moveDef.range as MoveRange]?.labelPt ?? moveDef.range}
+                      </span>
                     </Button>
                   );
                 })}

@@ -11,7 +11,7 @@ export interface ActiveMove {
   currentPP: number;
   maxPP: number;
 }
-//
+
 export interface TeamPokemon {
   uid: string;
   speciesId: number;
@@ -1189,7 +1189,7 @@ export const useGameStore = create<GameState>()(
           trainer.defesa = trainer.defesa ?? 10;
           state.trainer = trainer;
         }
-        return state as GameState;
+        return state as unknown as GameState;
       },
     }
   )
