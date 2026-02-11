@@ -69,6 +69,7 @@ export function BattleScene() {
     useBagItem,
     selectAttributeTest,
     resolveAttributeTest,
+    switchBattlePokemon,
   } = useGameStore();
 
   const attrs = trainer.attributes || { combate: 0, afinidade: 0, sorte: 0, furtividade: 0, percepcao: 0, carisma: 0 };
@@ -83,6 +84,22 @@ export function BattleScene() {
   const [showPokeballAnim, setShowPokeballAnim] = useState(false);
   const [isTestRolling, setIsTestRolling] = useState(false);
   const [testDC, setTestDC] = useState("10");
+  const [isSwitching, setIsSwitching] = useState(false);
+
+  const handleSwitchPokemon = (uid: string) => {
+    if (uid === battle.activePokemonUid) return;
+    const targetPokemon = team.find((p) => p.uid === uid);
+    if (!targetPokemon || targetPokemon.currentHp <= 0) return;
+    setIsSwitching(true);
+    playPokeball();
+    addBattleLog(`Trocou para ${targetPokemon.name}!`);
+    setTimeout(() => {
+      switchBattlePokemon(uid);
+      setTimeout(() => {
+        setIsSwitching(false);
+      }, 300);
+    }, 400);
+  };
 
   const handleDiceResult = useCallback(
     (roll: number) => {
@@ -192,24 +209,8 @@ export function BattleScene() {
             background: "#0F1729",
           }}
         >
-          {/* Fog layers */}
-          <div className="absolute inset-0 battle-fog-layer-1" />
-          <div className="absolute inset-0 battle-fog-layer-2" />
-          <div className="absolute inset-0 battle-fog-layer-3" />
-          {/* Top fade to blend with header */}
-          <div
-            className="absolute top-0 left-0 right-0 h-16"
-            style={{
-              background: "linear-gradient(to bottom, #0F1729 0%, transparent 100%)",
-            }}
-          />
-          {/* Bottom fade to blend with controls */}
-          <div
-            className="absolute bottom-0 left-0 right-0 h-20"
-            style={{
-              background: "linear-gradient(to top, #0F1729 0%, transparent 100%)",
-            }}
-          />
+          {/* Arena floor ellipse */}
+
         </div>
 
         {/* Pokemon sprite */}
@@ -275,6 +276,88 @@ export function BattleScene() {
             </div>
           </div>
         </div>
+
+        {/* Team pokeball strip - right side */}
+        {team.length > 1 && (
+          <div className="absolute right-2 top-2 z-20 flex flex-col gap-1.5">
+            {team.map((p) => {
+              const isActive = p.uid === battle.activePokemonUid;
+              const isFaintedMember = p.currentHp <= 0;
+              return (
+                <motion.button
+                  key={p.uid}
+                  onClick={() => handleSwitchPokemon(p.uid)}
+                  disabled={isActive || isFaintedMember || isSwitching}
+                  whileTap={!isActive && !isFaintedMember ? { scale: 0.9 } : undefined}
+                  className={`relative flex items-center justify-center w-11 h-11 rounded-full transition-all ${
+                    isActive
+                      ? "ring-2 ring-accent opacity-100"
+                      : isFaintedMember
+                        ? "opacity-30 cursor-not-allowed"
+                        : "opacity-70 hover:opacity-100 hover:scale-110 cursor-pointer"
+                  }`}
+                  title={`${p.name} ${isFaintedMember ? "(KO)" : `HP: ${p.currentHp}/${p.maxHp}`}`}
+                >
+                  {/* Pokeball background */}
+                  <svg
+                    width="44"
+                    height="44"
+                    viewBox="0 0 100 100"
+                    className="absolute inset-0"
+                  >
+                    <circle cx="50" cy="50" r="48" fill="#EF4444" stroke="#1E293B" strokeWidth="4" />
+                    <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
+                    <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#F1F5F9" />
+                    <circle cx="50" cy="50" r="14" fill="#F1F5F9" stroke="#1E293B" strokeWidth="3" />
+                    <circle cx="50" cy="50" r="6" fill={isActive ? "#F59E0B" : "#1E293B"} />
+                  </svg>
+                  {/* Pokemon mini sprite on top */}
+                  <img
+                    src={getSpriteUrl(p.speciesId)}
+                    alt={p.name}
+                    width={28}
+                    height={28}
+                    className="relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+                    style={{
+                      imageRendering: "pixelated",
+                      filter: isFaintedMember ? "grayscale(1)" : undefined,
+                    }}
+                    crossOrigin="anonymous"
+                  />
+                </motion.button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Switch transition overlay */}
+        <AnimatePresence>
+          {isSwitching && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="absolute inset-0 z-30 flex items-center justify-center"
+              style={{ background: "rgba(15, 23, 41, 0.85)" }}
+            >
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                exit={{ scale: 0, rotate: 180 }}
+                transition={{ type: "spring", damping: 12 }}
+              >
+                <svg width="64" height="64" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="48" fill="#EF4444" stroke="#F1F5F9" strokeWidth="3" />
+                  <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
+                  <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#F1F5F9" />
+                  <circle cx="50" cy="50" r="16" fill="#F1F5F9" stroke="#1E293B" strokeWidth="3" />
+                  <circle cx="50" cy="50" r="8" fill="#F59E0B" />
+                </svg>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Battle content area */}
