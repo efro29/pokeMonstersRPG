@@ -13,12 +13,13 @@ import { BattleScene } from "@/components/battle-scene";
 import { ProfileTab } from "@/components/profile-tab";
 import { ShopTab } from "@/components/shop-tab";
 import { NpcTab } from "@/components/npc-tab";
+import { MovesDictionaryTab } from "@/components/moves-dictionary-tab";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 import { getPokemon } from "@/lib/pokemon-data";
-import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords } from "lucide-react";
+import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords, Crosshair } from "lucide-react";
 import { playTabSwitch, playButtonClick } from "@/lib/sounds";
 
-type Tab = "team" | "bag" | "pokedex" | "profile" | "shop" | "npcs";
+type Tab = "team" | "bag" | "pokedex" | "profile" | "shop" | "npcs" | "moves";
 type Screen = "loading" | "mode-select" | "profile-select" | "start" | "game";
 
 export default function Page() {
@@ -251,6 +252,7 @@ export default function Page() {
         {activeTab === "team" && <TeamTab onStartBattle={(uid) => startBattle(uid)} />}
         {activeTab === "bag" && <BagTab />}
         {activeTab === "shop" && <ShopTab />}
+        {activeTab === "moves" && <MovesDictionaryTab />}
         {activeTab === "pokedex" && (
           <PokedexTab
             onStartBattleWithPokemon={mode === "master" ? handleStartBattleWithPokemon : undefined}
@@ -269,6 +271,7 @@ export default function Page() {
           ...(mode === "master" ? [{ id: "npcs" as Tab, label: "NPCs", icon: Swords }] : []),
           { id: "bag" as Tab, label: "Bolsa", icon: Backpack },
           { id: "shop" as Tab, label: "Loja", icon: ShoppingCart },
+          { id: "moves" as Tab, label: "Golpes", icon: Crosshair },
           { id: "pokedex" as Tab, label: "Pokedex", icon: BookOpen },
         ]).map(({ id, label, icon: Icon }) => {
           const isActive = activeTab === id;
