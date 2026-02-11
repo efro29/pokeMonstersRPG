@@ -230,7 +230,7 @@ export function BagTab() {
                   }}
                   className="flex items-center justify-between h-auto py-2 text-foreground hover:bg-secondary"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center  gap-2">
                     {CATEGORY_ICONS[def.category]}
                     <div className="text-left">
                       <span className="text-sm">{def.name}</span>
