@@ -243,6 +243,7 @@ interface GameState {
   applyOpponentDamage: (damage: number) => void;
   addBattleLog: (msg: string) => void;
   clearBattleLog: () => void;
+  switchBattlePokemon: (uid: string) => void;
   // Healing
   healPokemon: (uid: string, amount: number) => void;
   restorePP: (uid: string, moveId: string, amount: number) => void;
@@ -711,6 +712,24 @@ export const useGameStore = create<GameState>()(
           battle: {
             ...get().battle,
             battleLog: [],
+          },
+        });
+      },
+
+      switchBattlePokemon: (uid) => {
+        const { battle } = get();
+        if (battle.phase === "idle" || battle.activePokemonUid === uid) return;
+        set({
+          battle: {
+            ...battle,
+            activePokemonUid: uid,
+            selectedMoveId: null,
+            diceRoll: null,
+            hitResult: null,
+            damageDealt: null,
+            phase: "menu",
+            selectedAttribute: null,
+            attributeTestResult: null,
           },
         });
       },
