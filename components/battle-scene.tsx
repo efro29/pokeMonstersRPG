@@ -192,8 +192,24 @@ export function BattleScene() {
             background: "#0F1729",
           }}
         >
-          {/* Arena floor ellipse */}
-
+          {/* Fog layers */}
+          <div className="absolute inset-0 battle-fog-layer-1" />
+          <div className="absolute inset-0 battle-fog-layer-2" />
+          <div className="absolute inset-0 battle-fog-layer-3" />
+          {/* Top fade to blend with header */}
+          <div
+            className="absolute top-0 left-0 right-0 h-16"
+            style={{
+              background: "linear-gradient(to bottom, #0F1729 0%, transparent 100%)",
+            }}
+          />
+          {/* Bottom fade to blend with controls */}
+          <div
+            className="absolute bottom-0 left-0 right-0 h-20"
+            style={{
+              background: "linear-gradient(to top, #0F1729 0%, transparent 100%)",
+            }}
+          />
         </div>
 
         {/* Pokemon sprite */}

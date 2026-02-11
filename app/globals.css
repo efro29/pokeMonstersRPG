@@ -64,3 +64,45 @@ body {
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
 }
+
+/* Battle fog effect */
+@keyframes fog-drift-1 {
+  0% { transform: translateX(-10%) translateY(0); opacity: 0.5; }
+  25% { opacity: 0.7; }
+  50% { transform: translateX(10%) translateY(-5%); opacity: 0.4; }
+  75% { opacity: 0.6; }
+  100% { transform: translateX(-10%) translateY(0); opacity: 0.5; }
+}
+
+@keyframes fog-drift-2 {
+  0% { transform: translateX(10%) translateY(-3%); opacity: 0.4; }
+  25% { opacity: 0.6; }
+  50% { transform: translateX(-15%) translateY(3%); opacity: 0.3; }
+  75% { opacity: 0.55; }
+  100% { transform: translateX(10%) translateY(-3%); opacity: 0.4; }
+}
+
+@keyframes fog-drift-3 {
+  0% { transform: translateX(5%) translateY(5%); opacity: 0.35; }
+  33% { transform: translateX(-8%) translateY(-2%); opacity: 0.5; }
+  66% { transform: translateX(12%) translateY(3%); opacity: 0.3; }
+  100% { transform: translateX(5%) translateY(5%); opacity: 0.35; }
+}
+
+.battle-fog-layer-1 {
+  animation: fog-drift-1 12s ease-in-out infinite;
+  background: radial-gradient(ellipse 120% 60% at 30% 70%, rgba(100, 140, 180, 0.35) 0%, transparent 70%),
+              radial-gradient(ellipse 100% 50% at 70% 60%, rgba(80, 120, 160, 0.25) 0%, transparent 65%);
+}
+
+.battle-fog-layer-2 {
+  animation: fog-drift-2 16s ease-in-out infinite;
+  background: radial-gradient(ellipse 140% 55% at 60% 75%, rgba(120, 150, 190, 0.3) 0%, transparent 65%),
+              radial-gradient(ellipse 90% 45% at 25% 55%, rgba(90, 130, 170, 0.2) 0%, transparent 60%);
+}
+
+.battle-fog-layer-3 {
+  animation: fog-drift-3 20s ease-in-out infinite;
+  background: radial-gradient(ellipse 110% 70% at 50% 80%, rgba(140, 170, 200, 0.2) 0%, transparent 60%),
+              radial-gradient(ellipse 80% 40% at 40% 50%, rgba(100, 140, 175, 0.15) 0%, transparent 55%);
+}
