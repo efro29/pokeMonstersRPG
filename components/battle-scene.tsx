@@ -306,7 +306,7 @@ export function BattleScene() {
                     viewBox="0 0 100 100"
                     className="absolute inset-0"
                   >
-                    <circle cx="50" cy="50" r="48" fill="#EF4444" stroke="#1E293B" strokeWidth="4" />
+                    <circle cx="50" cy="50" r="48" fill="#e00909" stroke="#1E293B" strokeWidth="4" />
                     <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
                     <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#F1F5F9" />
                     <circle cx="50" cy="50" r="14" fill="#F1F5F9" stroke="#1E293B" strokeWidth="3" />
