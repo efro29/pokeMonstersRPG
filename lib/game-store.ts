@@ -11,7 +11,7 @@ export interface ActiveMove {
   currentPP: number;
   maxPP: number;
 }
-
+//
 export interface TeamPokemon {
   uid: string;
   speciesId: number;
