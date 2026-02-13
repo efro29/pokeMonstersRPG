@@ -14,7 +14,7 @@ import {
   POKEMON_ATTRIBUTE_INFO,
   MOVE_RANGE_INFO,
 } from "@/lib/pokemon-data";
-import type { PokemonType, HitResult, PokemonBaseAttributes, MoveRange } from "@/lib/pokemon-data";
+import type { PokemonType, HitResult, PokemonBaseAttributes, MoveRange, DamageBreakdown } from "@/lib/pokemon-data";
 import type { PokemonAttributeKey } from "@/lib/game-store";
 import { D20Dice } from "./d20-dice";
 import { Button } from "@/components/ui/button";
@@ -306,7 +306,7 @@ export function BattleScene() {
                     viewBox="0 0 100 100"
                     className="absolute inset-0"
                   >
-                    <circle cx="50" cy="50" r="48" fill="#e00909" stroke="#1E293B" strokeWidth="4" />
+                    <circle cx="50" cy="50" r="48" fill="#EF4444" stroke="#1E293B" strokeWidth="4" />
                     <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
                     <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#F1F5F9" />
                     <circle cx="50" cy="50" r="14" fill="#F1F5F9" stroke="#1E293B" strokeWidth="3" />
@@ -451,8 +451,10 @@ export function BattleScene() {
                       }}
                     >
                       <span className="text-sm font-bold">{moveDef.name}</span>
-                      <div className="flex items-center gap-2 text-[10px] opacity-90">
-                        {moveDef.power > 0 && <span>PWR {moveDef.power}</span>}
+                      <div className="flex items-center gap-2 text-[10px] opacity-90 flex-wrap">
+                        {moveDef.damage_dice && <span>{moveDef.damage_dice}</span>}
+                        {moveDef.damage_type !== "status" && <span className="opacity-75">{moveDef.damage_type === "physical" ? "FIS" : "ESP"}</span>}
+                        {moveDef.damage_type === "status" && <span className="opacity-75">STA</span>}
                         <span>
                           PP {m.currentPP}/{m.maxPP}
                         </span>
@@ -553,7 +555,69 @@ export function BattleScene() {
                 {getHitResultLabel(battle.hitResult as HitResult)}
               </motion.h3>
 
-              {battle.damageDealt !== null && battle.damageDealt > 0 && (
+              {/* Dice Damage Breakdown */}
+              {battle.damageBreakdown && !battle.damageBreakdown.isStatus && (
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="w-full max-w-xs bg-card/80 backdrop-blur-sm rounded-lg border border-border p-3 text-xs"
+                >
+                  {/* Dice rolls */}
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-muted-foreground font-mono">Dados:</span>
+                    <span className="font-bold text-foreground">{battle.damageBreakdown.diceString}</span>
+                    <span className="font-mono text-accent">
+                      [{battle.damageBreakdown.diceRolls.join(" + ")}] = {battle.damageBreakdown.diceTotal}
+                    </span>
+                  </div>
+                  {/* Attribute bonus */}
+                  {battle.damageBreakdown.attrBonus > 0 && (
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-muted-foreground font-mono">Bonus:</span>
+                      <span className="text-foreground">
+                        +{battle.damageBreakdown.attrBonus} {battle.damageBreakdown.scalingAttr}
+                      </span>
+                    </div>
+                  )}
+                  {/* Hit multiplier */}
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-muted-foreground font-mono">Acerto:</span>
+                    <span
+                      className="font-bold"
+                      style={{ color: getHitResultColor(battle.hitResult as HitResult) }}
+                    >
+                      {battle.damageBreakdown.hitMultiplierLabel}
+                    </span>
+                  </div>
+                  {/* Total damage */}
+                  <div className="flex items-center gap-2 pt-1.5 border-t border-border">
+                    <Zap className="w-4 h-4 text-accent shrink-0" />
+                    <span className="font-bold text-accent text-sm">
+                      {battle.damageBreakdown.rawTotal > 0 ? `${battle.damageBreakdown.rawTotal} de dano!` : "Sem dano"}
+                    </span>
+                  </div>
+                  {/* Formula */}
+                  <div className="mt-1.5 text-[10px] text-muted-foreground font-mono break-all">
+                    {battle.damageBreakdown.formula}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Status move fallback */}
+              {battle.damageBreakdown?.isStatus && (
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-sm text-muted-foreground"
+                >
+                  Golpe de status - sem dano direto
+                </motion.div>
+              )}
+
+              {/* Legacy fallback for when breakdown is null */}
+              {!battle.damageBreakdown && battle.damageDealt !== null && battle.damageDealt > 0 && (
                 <motion.div
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -570,9 +634,11 @@ export function BattleScene() {
               <div className="flex gap-2 mt-4 w-full">
                 <Button
                   onClick={() => {
-                    addBattleLog(
-                      `${pokemon.name} usou ${selectedMove?.name}: rolou ${battle.diceRoll} - ${getHitResultLabel(battle.hitResult as HitResult)} (${battle.damageDealt} dano)`
-                    );
+                    const bd = battle.damageBreakdown;
+                    const logMsg = bd && !bd.isStatus
+                      ? `${pokemon.name} usou ${selectedMove?.name}: D20=${battle.diceRoll} - ${getHitResultLabel(battle.hitResult as HitResult)} | ${bd.formula} => ${bd.rawTotal} dano`
+                      : `${pokemon.name} usou ${selectedMove?.name}: rolou ${battle.diceRoll} - ${getHitResultLabel(battle.hitResult as HitResult)} (${battle.damageDealt} dano)`;
+                    addBattleLog(logMsg);
                     setBattlePhase("menu");
                   }}
                   className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"

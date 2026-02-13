@@ -33,6 +33,46 @@ export const MOVE_RANGE_INFO: Record<MoveRange, { label: string; labelPt: string
   area: { label: "Area", labelPt: "Area", tiles: 6, description: "6 casas em 4 colunas" },
 };
 
+export type PowerCategory = "weak" | "medium" | "strong" | "very_strong" | "ultimate";
+export type ScalingAttribute = "attack" | "sp_attack" | null;
+export type DamageType = "physical" | "special" | "status";
+
+export const POWER_CATEGORY_LABEL: Record<PowerCategory, string> = {
+  weak: "Fraco",
+  medium: "Medio",
+  strong: "Forte",
+  very_strong: "Muito Forte",
+  ultimate: "Devastador",
+};
+
+/** Derive dice damage fields from the existing power field */
+export function deriveDiceFromPower(power: number): { damage_dice: string | null; power_category: PowerCategory; damage_type: DamageType } {
+  if (power === 0) return { damage_dice: null, power_category: "weak", damage_type: "status" };
+  if (power <= 40) return { damage_dice: "1d6", power_category: "weak", damage_type: "physical" };
+  if (power <= 60) return { damage_dice: "1d8", power_category: "medium", damage_type: "physical" };
+  if (power <= 80) return { damage_dice: "1d10", power_category: "medium", damage_type: "physical" };
+  if (power <= 100) return { damage_dice: "2d8", power_category: "strong", damage_type: "physical" };
+  if (power <= 120) return { damage_dice: "2d10", power_category: "strong", damage_type: "physical" };
+  if (power <= 150) return { damage_dice: "2d12", power_category: "very_strong", damage_type: "physical" };
+  return { damage_dice: "3d12", power_category: "ultimate", damage_type: "physical" };
+}
+
+/** Physical move types (melee/contact-based) - all others are special */
+const PHYSICAL_TYPES: Set<PokemonType> = new Set([
+  "normal", "fighting", "ground", "rock", "bug", "steel",
+]);
+
+/** Determine if a move is physical, special, or status based on type and range */
+export function classifyMove(move: { type: PokemonType; power: number; range: MoveRange }): { damage_type: DamageType; scaling_attribute: ScalingAttribute; uses_contact: boolean } {
+  if (move.power === 0) return { damage_type: "status", scaling_attribute: null, uses_contact: false };
+  const isPhysical = PHYSICAL_TYPES.has(move.type) || move.range === "melee";
+  return {
+    damage_type: isPhysical ? "physical" : "special",
+    scaling_attribute: isPhysical ? "attack" : "sp_attack",
+    uses_contact: move.range === "melee",
+  };
+}
+
 export interface Move {
   id: string;
   name: string;
@@ -42,6 +82,26 @@ export interface Move {
   description: string;
   range: MoveRange;
   learnLevel: number; // Nivel minimo para aprender
+  // Dice damage system (auto-derived from power, kept for display)
+  damage_dice: string | null;
+  power_category: PowerCategory;
+  damage_type: DamageType;
+  scaling_attribute: ScalingAttribute;
+  uses_contact: boolean;
+}
+
+/** Parse dice string like "2d8" into { count, sides } */
+export function parseDice(dice: string): { count: number; sides: number } {
+  const match = dice.match(/^(\d+)d(\d+)$/);
+  if (!match) return { count: 1, sides: 6 };
+  return { count: parseInt(match[1]), sides: parseInt(match[2]) };
+}
+
+/** Roll a dice string like "2d8" and return individual rolls + sum */
+export function rollDiceString(dice: string): { rolls: number[]; sum: number } {
+  const { count, sides } = parseDice(dice);
+  const rolls = Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1);
+  return { rolls, sum: rolls.reduce((a, b) => a + b, 0) };
 }
 
 export interface PokemonSpecies {
@@ -53,174 +113,188 @@ export interface PokemonSpecies {
   learnableMoves: string[];
 }
 
+/** Auto-enrich a raw move definition with dice damage fields */
+function m(raw: Omit<Move, "damage_dice" | "power_category" | "damage_type" | "scaling_attribute" | "uses_contact">): Move {
+  const dice = deriveDiceFromPower(raw.power);
+  const classification = classifyMove(raw);
+  return {
+    ...raw,
+    damage_dice: dice.damage_dice,
+    power_category: raw.power === 0 ? "weak" : dice.power_category,
+    damage_type: classification.damage_type,
+    scaling_attribute: classification.scaling_attribute,
+    uses_contact: classification.uses_contact,
+  };
+}
+
 export const MOVES: Move[] = [
   // Normal
-  { id: "tackle", name: "Tackle", type: "normal", power: 40, accuracy: 6, description: "Um ataque corpo a corpo simples.", range: "melee", learnLevel: 1 },
-  { id: "scratch", name: "Scratch", type: "normal", power: 40, accuracy: 6, description: "Arranha o inimigo com garras afiadas.", range: "melee", learnLevel: 1 },
-  { id: "pound", name: "Pound", type: "normal", power: 40, accuracy: 6, description: "Golpeia o alvo com a pata.", range: "melee", learnLevel: 1 },
-  { id: "quick-attack", name: "Quick Attack", type: "normal", power: 40, accuracy: 5, description: "Ataque extremamente rapido.", range: "short", learnLevel: 5 },
-  { id: "slam", name: "Slam", type: "normal", power: 80, accuracy: 10, description: "Golpe poderoso que arremessa o alvo.", range: "melee", learnLevel: 20 },
-  { id: "body-slam", name: "Body Slam", type: "normal", power: 85, accuracy: 8, description: "Arremessa o corpo inteiro no inimigo.", range: "melee", learnLevel: 25 },
-  { id: "hyper-beam", name: "Hyper Beam", type: "normal", power: 150, accuracy: 14, description: "Disparo devastador de energia.", range: "long", learnLevel: 45 },
-  { id: "wrap", name: "Wrap", type: "normal", power: 15, accuracy: 7, description: "Enrola o alvo apertando-o.", range: "melee", learnLevel: 5 },
-  { id: "bite", name: "Bite", type: "dark", power: 60, accuracy: 7, description: "Morde com presas afiadas.", range: "melee", learnLevel: 10 },
-  { id: "headbutt", name: "Headbutt", type: "normal", power: 70, accuracy: 8, description: "Cabecada poderosa.", range: "melee", learnLevel: 15 },
-  { id: "take-down", name: "Take Down", type: "normal", power: 90, accuracy: 10, description: "Investida selvagem, causa recuo.", range: "melee", learnLevel: 25 },
-  { id: "fury-attack", name: "Fury Attack", type: "normal", power: 15, accuracy: 6, description: "Ataca 2-5 vezes seguidas.", range: "melee", learnLevel: 8 },
-  { id: "horn-attack", name: "Horn Attack", type: "normal", power: 65, accuracy: 7, description: "Ataca com chifres afiados.", range: "melee", learnLevel: 10 },
-  { id: "rage", name: "Rage", type: "normal", power: 20, accuracy: 6, description: "Fica mais forte a cada golpe.", range: "melee", learnLevel: 10 },
-  { id: "mega-punch", name: "Mega Punch", type: "normal", power: 80, accuracy: 10, description: "Soco devastador.", range: "melee", learnLevel: 20 },
-  { id: "double-edge", name: "Double-Edge", type: "normal", power: 120, accuracy: 8, description: "Investida suicida. Causa recuo.", range: "melee", learnLevel: 35 },
-  { id: "strength", name: "Strength", type: "normal", power: 80, accuracy: 7, description: "Golpe de forca bruta.", range: "melee", learnLevel: 15 },
-  { id: "pay-day", name: "Pay Day", type: "normal", power: 40, accuracy: 7, description: "Atira moedas no inimigo.", range: "short", learnLevel: 12 },
-  { id: "comet-punch", name: "Comet Punch", type: "normal", power: 18, accuracy: 6, description: "Sequencia rapida de socos.", range: "melee", learnLevel: 5 },
-  { id: "sing", name: "Sing", type: "normal", power: 0, accuracy: 13, description: "Canta para adormecer o alvo.", range: "medium", learnLevel: 10 },
-  { id: "growl", name: "Growl", type: "normal", power: 0, accuracy: 4, description: "Rosna para reduzir ataque.", range: "short", learnLevel: 1 },
-  { id: "tail-whip", name: "Tail Whip", type: "normal", power: 0, accuracy: 4, description: "Abana a cauda para reduzir defesa.", range: "short", learnLevel: 1 },
-  { id: "leer", name: "Leer", type: "normal", power: 0, accuracy: 4, description: "Olhar intimidador reduz defesa.", range: "short", learnLevel: 1 },
-  { id: "harden", name: "Harden", type: "normal", power: 0, accuracy: 2, description: "Endurece o corpo, aumenta defesa.", range: "melee", learnLevel: 1 },
-  { id: "defense-curl", name: "Defense Curl", type: "normal", power: 0, accuracy: 2, description: "Enrola-se para aumentar defesa.", range: "melee", learnLevel: 1 },
-  { id: "self-destruct", name: "Self-Destruct", type: "normal", power: 200, accuracy: 6, description: "Explode causando dano massivo.", range: "area", learnLevel: 30 },
-  { id: "explosion", name: "Explosion", type: "normal", power: 250, accuracy: 6, description: "Explosao devastadora.", range: "area", learnLevel: 40 },
-  { id: "fury-swipes", name: "Fury Swipes", type: "normal", power: 18, accuracy: 7, description: "Arranha 2-5 vezes.", range: "melee", learnLevel: 8 },
-  { id: "super-fang", name: "Super Fang", type: "normal", power: 50, accuracy: 8, description: "Morde tirando metade do HP.", range: "melee", learnLevel: 20 },
-  { id: "swift", name: "Swift", type: "normal", power: 60, accuracy: 2, description: "Estrelas que nunca erram.", range: "medium", learnLevel: 18 },
-  { id: "screech", name: "Screech", type: "normal", power: 0, accuracy: 10, description: "Grito que reduz muito a defesa.", range: "short", learnLevel: 15 },
-  { id: "barrage", name: "Barrage", type: "normal", power: 15, accuracy: 7, description: "Atira objetos 2-5 vezes.", range: "short", learnLevel: 8 },
-  { id: "tri-attack", name: "Tri Attack", type: "normal", power: 80, accuracy: 7, description: "Ataque triplo de elementos.", range: "medium", learnLevel: 30 },
-  { id: "skull-bash", name: "Skull Bash", type: "normal", power: 130, accuracy: 12, description: "Cabecada devastadora.", range: "melee", learnLevel: 35 },
+  m({ id: "tackle", name: "Tackle", type: "normal", power: 40, accuracy: 6, description: "Um ataque corpo a corpo simples.", range: "melee", learnLevel: 1 }),
+  m({ id: "scratch", name: "Scratch", type: "normal", power: 40, accuracy: 6, description: "Arranha o inimigo com garras afiadas.", range: "melee", learnLevel: 1 }),
+  m({ id: "pound", name: "Pound", type: "normal", power: 40, accuracy: 6, description: "Golpeia o alvo com a pata.", range: "melee", learnLevel: 1 }),
+  m({ id: "quick-attack", name: "Quick Attack", type: "normal", power: 40, accuracy: 5, description: "Ataque extremamente rapido.", range: "short", learnLevel: 5 }),
+  m({ id: "slam", name: "Slam", type: "normal", power: 80, accuracy: 10, description: "Golpe poderoso que arremessa o alvo.", range: "melee", learnLevel: 20 }),
+  m({ id: "body-slam", name: "Body Slam", type: "normal", power: 85, accuracy: 8, description: "Arremessa o corpo inteiro no inimigo.", range: "melee", learnLevel: 25 }),
+  m({ id: "hyper-beam", name: "Hyper Beam", type: "normal", power: 150, accuracy: 14, description: "Disparo devastador de energia.", range: "long", learnLevel: 45 }),
+  m({ id: "wrap", name: "Wrap", type: "normal", power: 15, accuracy: 7, description: "Enrola o alvo apertando-o.", range: "melee", learnLevel: 5 }),
+  m({ id: "bite", name: "Bite", type: "dark", power: 60, accuracy: 7, description: "Morde com presas afiadas.", range: "melee", learnLevel: 10 }),
+  m({ id: "headbutt", name: "Headbutt", type: "normal", power: 70, accuracy: 8, description: "Cabecada poderosa.", range: "melee", learnLevel: 15 }),
+  m({ id: "take-down", name: "Take Down", type: "normal", power: 90, accuracy: 10, description: "Investida selvagem, causa recuo.", range: "melee", learnLevel: 25 }),
+  m({ id: "fury-attack", name: "Fury Attack", type: "normal", power: 15, accuracy: 6, description: "Ataca 2-5 vezes seguidas.", range: "melee", learnLevel: 8 }),
+  m({ id: "horn-attack", name: "Horn Attack", type: "normal", power: 65, accuracy: 7, description: "Ataca com chifres afiados.", range: "melee", learnLevel: 10 }),
+  m({ id: "rage", name: "Rage", type: "normal", power: 20, accuracy: 6, description: "Fica mais forte a cada golpe.", range: "melee", learnLevel: 10 }),
+  m({ id: "mega-punch", name: "Mega Punch", type: "normal", power: 80, accuracy: 10, description: "Soco devastador.", range: "melee", learnLevel: 20 }),
+  m({ id: "double-edge", name: "Double-Edge", type: "normal", power: 120, accuracy: 8, description: "Investida suicida. Causa recuo.", range: "melee", learnLevel: 35 }),
+  m({ id: "strength", name: "Strength", type: "normal", power: 80, accuracy: 7, description: "Golpe de forca bruta.", range: "melee", learnLevel: 15 }),
+  m({ id: "pay-day", name: "Pay Day", type: "normal", power: 40, accuracy: 7, description: "Atira moedas no inimigo.", range: "short", learnLevel: 12 }),
+  m({ id: "comet-punch", name: "Comet Punch", type: "normal", power: 18, accuracy: 6, description: "Sequencia rapida de socos.", range: "melee", learnLevel: 5 }),
+  m({ id: "sing", name: "Sing", type: "normal", power: 0, accuracy: 13, description: "Canta para adormecer o alvo.", range: "medium", learnLevel: 10 }),
+  m({ id: "growl", name: "Growl", type: "normal", power: 0, accuracy: 4, description: "Rosna para reduzir ataque.", range: "short", learnLevel: 1 }),
+  m({ id: "tail-whip", name: "Tail Whip", type: "normal", power: 0, accuracy: 4, description: "Abana a cauda para reduzir defesa.", range: "short", learnLevel: 1 }),
+  m({ id: "leer", name: "Leer", type: "normal", power: 0, accuracy: 4, description: "Olhar intimidador reduz defesa.", range: "short", learnLevel: 1 }),
+  m({ id: "harden", name: "Harden", type: "normal", power: 0, accuracy: 2, description: "Endurece o corpo, aumenta defesa.", range: "melee", learnLevel: 1 }),
+  m({ id: "defense-curl", name: "Defense Curl", type: "normal", power: 0, accuracy: 2, description: "Enrola-se para aumentar defesa.", range: "melee", learnLevel: 1 }),
+  m({ id: "self-destruct", name: "Self-Destruct", type: "normal", power: 200, accuracy: 6, description: "Explode causando dano massivo.", range: "area", learnLevel: 30 }),
+  m({ id: "explosion", name: "Explosion", type: "normal", power: 250, accuracy: 6, description: "Explosao devastadora.", range: "area", learnLevel: 40 }),
+  m({ id: "fury-swipes", name: "Fury Swipes", type: "normal", power: 18, accuracy: 7, description: "Arranha 2-5 vezes.", range: "melee", learnLevel: 8 }),
+  m({ id: "super-fang", name: "Super Fang", type: "normal", power: 50, accuracy: 8, description: "Morde tirando metade do HP.", range: "melee", learnLevel: 20 }),
+  m({ id: "swift", name: "Swift", type: "normal", power: 60, accuracy: 2, description: "Estrelas que nunca erram.", range: "medium", learnLevel: 18 }),
+  m({ id: "screech", name: "Screech", type: "normal", power: 0, accuracy: 10, description: "Grito que reduz muito a defesa.", range: "short", learnLevel: 15 }),
+  m({ id: "barrage", name: "Barrage", type: "normal", power: 15, accuracy: 7, description: "Atira objetos 2-5 vezes.", range: "short", learnLevel: 8 }),
+  m({ id: "tri-attack", name: "Tri Attack", type: "normal", power: 80, accuracy: 7, description: "Ataque triplo de elementos.", range: "medium", learnLevel: 30 }),
+  m({ id: "skull-bash", name: "Skull Bash", type: "normal", power: 130, accuracy: 12, description: "Cabecada devastadora.", range: "melee", learnLevel: 35 }),
   // Fire
-  { id: "ember", name: "Ember", type: "fire", power: 40, accuracy: 7, description: "Pequenas chamas atingem o alvo.", range: "short", learnLevel: 5 },
-  { id: "flamethrower", name: "Flamethrower", type: "fire", power: 90, accuracy: 8, description: "Lanca-chamas poderoso.", range: "medium", learnLevel: 25 },
-  { id: "fire-blast", name: "Fire Blast", type: "fire", power: 110, accuracy: 12, description: "Explosao de fogo intensa.", range: "long", learnLevel: 40 },
-  { id: "fire-spin", name: "Fire Spin", type: "fire", power: 35, accuracy: 10, description: "Vortice de fogo aprisiona o alvo.", range: "short", learnLevel: 12 },
-  { id: "fire-punch", name: "Fire Punch", type: "fire", power: 75, accuracy: 7, description: "Soco em chamas.", range: "melee", learnLevel: 18 },
+  m({ id: "ember", name: "Ember", type: "fire", power: 40, accuracy: 7, description: "Pequenas chamas atingem o alvo.", range: "short", learnLevel: 5 }),
+  m({ id: "flamethrower", name: "Flamethrower", type: "fire", power: 90, accuracy: 8, description: "Lanca-chamas poderoso.", range: "medium", learnLevel: 25 }),
+  m({ id: "fire-blast", name: "Fire Blast", type: "fire", power: 110, accuracy: 12, description: "Explosao de fogo intensa.", range: "long", learnLevel: 40 }),
+  m({ id: "fire-spin", name: "Fire Spin", type: "fire", power: 35, accuracy: 10, description: "Vortice de fogo aprisiona o alvo.", range: "short", learnLevel: 12 }),
+  m({ id: "fire-punch", name: "Fire Punch", type: "fire", power: 75, accuracy: 7, description: "Soco em chamas.", range: "melee", learnLevel: 18 }),
   // Water
-  { id: "water-gun", name: "Water Gun", type: "water", power: 40, accuracy: 7, description: "Jato de agua pressurizado.", range: "short", learnLevel: 5 },
-  { id: "bubble", name: "Bubble", type: "water", power: 40, accuracy: 7, description: "Bolhas que atingem o alvo.", range: "short", learnLevel: 1 },
-  { id: "surf", name: "Surf", type: "water", power: 90, accuracy: 8, description: "Onda gigante atinge todos.", range: "area", learnLevel: 30 },
-  { id: "hydro-pump", name: "Hydro Pump", type: "water", power: 110, accuracy: 12, description: "Jato de agua devastador.", range: "long", learnLevel: 40 },
-  { id: "bubble-beam", name: "Bubble Beam", type: "water", power: 65, accuracy: 7, description: "Rajada de bolhas concentrada.", range: "medium", learnLevel: 15 },
-  { id: "withdraw", name: "Withdraw", type: "water", power: 0, accuracy: 2, description: "Recolhe no casco, aumenta defesa.", range: "melee", learnLevel: 1 },
-  { id: "clamp", name: "Clamp", type: "water", power: 35, accuracy: 10, description: "Prende o alvo com conchas.", range: "melee", learnLevel: 10 },
-  { id: "crabhammer", name: "Crabhammer", type: "water", power: 100, accuracy: 10, description: "Martelo com garra.", range: "melee", learnLevel: 30 },
+  m({ id: "water-gun", name: "Water Gun", type: "water", power: 40, accuracy: 7, description: "Jato de agua pressurizado.", range: "short", learnLevel: 5 }),
+  m({ id: "bubble", name: "Bubble", type: "water", power: 40, accuracy: 7, description: "Bolhas que atingem o alvo.", range: "short", learnLevel: 1 }),
+  m({ id: "surf", name: "Surf", type: "water", power: 90, accuracy: 8, description: "Onda gigante atinge todos.", range: "area", learnLevel: 30 }),
+  m({ id: "hydro-pump", name: "Hydro Pump", type: "water", power: 110, accuracy: 12, description: "Jato de agua devastador.", range: "long", learnLevel: 40 }),
+  m({ id: "bubble-beam", name: "Bubble Beam", type: "water", power: 65, accuracy: 7, description: "Rajada de bolhas concentrada.", range: "medium", learnLevel: 15 }),
+  m({ id: "withdraw", name: "Withdraw", type: "water", power: 0, accuracy: 2, description: "Recolhe no casco, aumenta defesa.", range: "melee", learnLevel: 1 }),
+  m({ id: "clamp", name: "Clamp", type: "water", power: 35, accuracy: 10, description: "Prende o alvo com conchas.", range: "melee", learnLevel: 10 }),
+  m({ id: "crabhammer", name: "Crabhammer", type: "water", power: 100, accuracy: 10, description: "Martelo com garra.", range: "melee", learnLevel: 30 }),
   // Grass
-  { id: "vine-whip", name: "Vine Whip", type: "grass", power: 45, accuracy: 7, description: "Chicoteia com vinhas.", range: "short", learnLevel: 5 },
-  { id: "razor-leaf", name: "Razor Leaf", type: "grass", power: 55, accuracy: 7, description: "Folhas afiadas cortam o alvo.", range: "medium", learnLevel: 15 },
-  { id: "solar-beam", name: "Solar Beam", type: "grass", power: 120, accuracy: 12, description: "Raio solar concentrado.", range: "long", learnLevel: 40 },
-  { id: "absorb", name: "Absorb", type: "grass", power: 20, accuracy: 6, description: "Absorve HP do alvo.", range: "short", learnLevel: 5 },
-  { id: "mega-drain", name: "Mega Drain", type: "grass", power: 40, accuracy: 7, description: "Drena muita energia do alvo.", range: "short", learnLevel: 15 },
-  { id: "leech-seed", name: "Leech Seed", type: "grass", power: 0, accuracy: 8, description: "Planta semente que drena HP.", range: "short", learnLevel: 8 },
-  { id: "stun-spore", name: "Stun Spore", type: "grass", power: 0, accuracy: 10, description: "Espalha esporos paralisantes.", range: "short", learnLevel: 12 },
-  { id: "sleep-powder", name: "Sleep Powder", type: "grass", power: 0, accuracy: 12, description: "Po que faz o alvo dormir.", range: "short", learnLevel: 15 },
-  { id: "petal-dance", name: "Petal Dance", type: "grass", power: 120, accuracy: 8, description: "Danca de petalas frentica.", range: "area", learnLevel: 35 },
+  m({ id: "vine-whip", name: "Vine Whip", type: "grass", power: 45, accuracy: 7, description: "Chicoteia com vinhas.", range: "short", learnLevel: 5 }),
+  m({ id: "razor-leaf", name: "Razor Leaf", type: "grass", power: 55, accuracy: 7, description: "Folhas afiadas cortam o alvo.", range: "medium", learnLevel: 15 }),
+  m({ id: "solar-beam", name: "Solar Beam", type: "grass", power: 120, accuracy: 12, description: "Raio solar concentrado.", range: "long", learnLevel: 40 }),
+  m({ id: "absorb", name: "Absorb", type: "grass", power: 20, accuracy: 6, description: "Absorve HP do alvo.", range: "short", learnLevel: 5 }),
+  m({ id: "mega-drain", name: "Mega Drain", type: "grass", power: 40, accuracy: 7, description: "Drena muita energia do alvo.", range: "short", learnLevel: 15 }),
+  m({ id: "leech-seed", name: "Leech Seed", type: "grass", power: 0, accuracy: 8, description: "Planta semente que drena HP.", range: "short", learnLevel: 8 }),
+  m({ id: "stun-spore", name: "Stun Spore", type: "grass", power: 0, accuracy: 10, description: "Espalha esporos paralisantes.", range: "short", learnLevel: 12 }),
+  m({ id: "sleep-powder", name: "Sleep Powder", type: "grass", power: 0, accuracy: 12, description: "Po que faz o alvo dormir.", range: "short", learnLevel: 15 }),
+  m({ id: "petal-dance", name: "Petal Dance", type: "grass", power: 120, accuracy: 8, description: "Danca de petalas frentica.", range: "area", learnLevel: 35 }),
   // Electric
-  { id: "thunder-shock", name: "Thunder Shock", type: "electric", power: 40, accuracy: 7, description: "Descarga eletrica leve.", range: "short", learnLevel: 5 },
-  { id: "thunderbolt", name: "Thunderbolt", type: "electric", power: 90, accuracy: 8, description: "Raio poderoso.", range: "medium", learnLevel: 25 },
-  { id: "thunder", name: "Thunder", type: "electric", power: 110, accuracy: 13, description: "Trovao devastador.", range: "long", learnLevel: 40 },
-  { id: "thunder-wave", name: "Thunder Wave", type: "electric", power: 0, accuracy: 7, description: "Onda eletrica que paralisa.", range: "medium", learnLevel: 10 },
-  { id: "thunder-punch", name: "Thunder Punch", type: "electric", power: 75, accuracy: 7, description: "Soco eletrificado.", range: "melee", learnLevel: 18 },
+  m({ id: "thunder-shock", name: "Thunder Shock", type: "electric", power: 40, accuracy: 7, description: "Descarga eletrica leve.", range: "short", learnLevel: 5 }),
+  m({ id: "thunderbolt", name: "Thunderbolt", type: "electric", power: 90, accuracy: 8, description: "Raio poderoso.", range: "medium", learnLevel: 25 }),
+  m({ id: "thunder", name: "Thunder", type: "electric", power: 110, accuracy: 13, description: "Trovao devastador.", range: "long", learnLevel: 40 }),
+  m({ id: "thunder-wave", name: "Thunder Wave", type: "electric", power: 0, accuracy: 7, description: "Onda eletrica que paralisa.", range: "medium", learnLevel: 10 }),
+  m({ id: "thunder-punch", name: "Thunder Punch", type: "electric", power: 75, accuracy: 7, description: "Soco eletrificado.", range: "melee", learnLevel: 18 }),
   // Ice
-  { id: "ice-beam", name: "Ice Beam", type: "ice", power: 90, accuracy: 8, description: "Raio congelante.", range: "medium", learnLevel: 25 },
-  { id: "blizzard", name: "Blizzard", type: "ice", power: 110, accuracy: 13, description: "Tempestade de gelo devastadora.", range: "area", learnLevel: 40 },
-  { id: "ice-punch", name: "Ice Punch", type: "ice", power: 75, accuracy: 7, description: "Soco congelante.", range: "melee", learnLevel: 18 },
-  { id: "aurora-beam", name: "Aurora Beam", type: "ice", power: 65, accuracy: 7, description: "Raio colorido congelante.", range: "medium", learnLevel: 15 },
+  m({ id: "ice-beam", name: "Ice Beam", type: "ice", power: 90, accuracy: 8, description: "Raio congelante.", range: "medium", learnLevel: 25 }),
+  m({ id: "blizzard", name: "Blizzard", type: "ice", power: 110, accuracy: 13, description: "Tempestade de gelo devastadora.", range: "area", learnLevel: 40 }),
+  m({ id: "ice-punch", name: "Ice Punch", type: "ice", power: 75, accuracy: 7, description: "Soco congelante.", range: "melee", learnLevel: 18 }),
+  m({ id: "aurora-beam", name: "Aurora Beam", type: "ice", power: 65, accuracy: 7, description: "Raio colorido congelante.", range: "medium", learnLevel: 15 }),
   // Fighting
-  { id: "low-kick", name: "Low Kick", type: "fighting", power: 50, accuracy: 7, description: "Rasteira poderosa.", range: "melee", learnLevel: 5 },
-  { id: "karate-chop", name: "Karate Chop", type: "fighting", power: 50, accuracy: 7, description: "Golpe de karate.", range: "melee", learnLevel: 8 },
-  { id: "submission", name: "Submission", type: "fighting", power: 80, accuracy: 10, description: "Golpe de luta, causa recuo.", range: "melee", learnLevel: 25 },
-  { id: "seismic-toss", name: "Seismic Toss", type: "fighting", power: 60, accuracy: 8, description: "Arremesso sismico.", range: "melee", learnLevel: 20 },
-  { id: "high-jump-kick", name: "High Jump Kick", type: "fighting", power: 130, accuracy: 14, description: "Chute voador devastador.", range: "melee", learnLevel: 35 },
-  { id: "double-kick", name: "Double Kick", type: "fighting", power: 30, accuracy: 7, description: "Chuta duas vezes seguidas.", range: "melee", learnLevel: 8 },
+  m({ id: "low-kick", name: "Low Kick", type: "fighting", power: 50, accuracy: 7, description: "Rasteira poderosa.", range: "melee", learnLevel: 5 }),
+  m({ id: "karate-chop", name: "Karate Chop", type: "fighting", power: 50, accuracy: 7, description: "Golpe de karate.", range: "melee", learnLevel: 8 }),
+  m({ id: "submission", name: "Submission", type: "fighting", power: 80, accuracy: 10, description: "Golpe de luta, causa recuo.", range: "melee", learnLevel: 25 }),
+  m({ id: "seismic-toss", name: "Seismic Toss", type: "fighting", power: 60, accuracy: 8, description: "Arremesso sismico.", range: "melee", learnLevel: 20 }),
+  m({ id: "high-jump-kick", name: "High Jump Kick", type: "fighting", power: 130, accuracy: 14, description: "Chute voador devastador.", range: "melee", learnLevel: 35 }),
+  m({ id: "double-kick", name: "Double Kick", type: "fighting", power: 30, accuracy: 7, description: "Chuta duas vezes seguidas.", range: "melee", learnLevel: 8 }),
   // Poison
-  { id: "poison-sting", name: "Poison Sting", type: "poison", power: 15, accuracy: 6, description: "Ferroa com veneno.", range: "short", learnLevel: 1 },
-  { id: "sludge", name: "Sludge", type: "poison", power: 65, accuracy: 7, description: "Lanca lodo toxico.", range: "short", learnLevel: 20 },
-  { id: "acid", name: "Acid", type: "poison", power: 40, accuracy: 7, description: "Spray de acido corrosivo.", range: "short", learnLevel: 10 },
-  { id: "smog", name: "Smog", type: "poison", power: 30, accuracy: 9, description: "Fumaca toxica.", range: "short", learnLevel: 8 },
-  { id: "toxic", name: "Toxic", type: "poison", power: 0, accuracy: 10, description: "Envenena gravemente o alvo.", range: "short", learnLevel: 20 },
-  { id: "poison-gas", name: "Poison Gas", type: "poison", power: 0, accuracy: 11, description: "Gas venenoso.", range: "short", learnLevel: 10 },
+  m({ id: "poison-sting", name: "Poison Sting", type: "poison", power: 15, accuracy: 6, description: "Ferroa com veneno.", range: "short", learnLevel: 1 }),
+  m({ id: "sludge", name: "Sludge", type: "poison", power: 65, accuracy: 7, description: "Lanca lodo toxico.", range: "short", learnLevel: 20 }),
+  m({ id: "acid", name: "Acid", type: "poison", power: 40, accuracy: 7, description: "Spray de acido corrosivo.", range: "short", learnLevel: 10 }),
+  m({ id: "smog", name: "Smog", type: "poison", power: 30, accuracy: 9, description: "Fumaca toxica.", range: "short", learnLevel: 8 }),
+  m({ id: "toxic", name: "Toxic", type: "poison", power: 0, accuracy: 10, description: "Envenena gravemente o alvo.", range: "short", learnLevel: 20 }),
+  m({ id: "poison-gas", name: "Poison Gas", type: "poison", power: 0, accuracy: 11, description: "Gas venenoso.", range: "short", learnLevel: 10 }),
   // Ground
-  { id: "sand-attack", name: "Sand Attack", type: "ground", power: 0, accuracy: 6, description: "Joga areia nos olhos.", range: "short", learnLevel: 5 },
-  { id: "earthquake", name: "Earthquake", type: "ground", power: 100, accuracy: 7, description: "Terremoto devastador.", range: "area", learnLevel: 30 },
-  { id: "dig", name: "Dig", type: "ground", power: 80, accuracy: 7, description: "Cava e ataca por baixo.", range: "melee", learnLevel: 20 },
-  { id: "bone-club", name: "Bone Club", type: "ground", power: 65, accuracy: 10, description: "Golpeia com osso.", range: "melee", learnLevel: 15 },
-  { id: "bonemerang", name: "Bonemerang", type: "ground", power: 50, accuracy: 8, description: "Lanca osso como bumerangue.", range: "medium", learnLevel: 18 },
-  { id: "fissure", name: "Fissure", type: "ground", power: 999, accuracy: 19, description: "Abre fenda no chao. KO instantaneo.", range: "area", learnLevel: 45 },
+  m({ id: "sand-attack", name: "Sand Attack", type: "ground", power: 0, accuracy: 6, description: "Joga areia nos olhos.", range: "short", learnLevel: 5 }),
+  m({ id: "earthquake", name: "Earthquake", type: "ground", power: 100, accuracy: 7, description: "Terremoto devastador.", range: "area", learnLevel: 30 }),
+  m({ id: "dig", name: "Dig", type: "ground", power: 80, accuracy: 7, description: "Cava e ataca por baixo.", range: "melee", learnLevel: 20 }),
+  m({ id: "bone-club", name: "Bone Club", type: "ground", power: 65, accuracy: 10, description: "Golpeia com osso.", range: "melee", learnLevel: 15 }),
+  m({ id: "bonemerang", name: "Bonemerang", type: "ground", power: 50, accuracy: 8, description: "Lanca osso como bumerangue.", range: "medium", learnLevel: 18 }),
+  m({ id: "fissure", name: "Fissure", type: "ground", power: 999, accuracy: 19, description: "Abre fenda no chao. KO instantaneo.", range: "area", learnLevel: 45 }),
   // Flying
-  { id: "gust", name: "Gust", type: "flying", power: 40, accuracy: 7, description: "Rajada de vento.", range: "medium", learnLevel: 5 },
-  { id: "wing-attack", name: "Wing Attack", type: "flying", power: 60, accuracy: 7, description: "Ataque com asas.", range: "melee", learnLevel: 12 },
-  { id: "fly", name: "Fly", type: "flying", power: 90, accuracy: 10, description: "Voa alto e mergulha para atacar.", range: "long", learnLevel: 30 },
-  { id: "peck", name: "Peck", type: "flying", power: 35, accuracy: 6, description: "Bica o alvo.", range: "melee", learnLevel: 1 },
-  { id: "drill-peck", name: "Drill Peck", type: "flying", power: 80, accuracy: 7, description: "Bica girando como broca.", range: "melee", learnLevel: 25 },
-  { id: "sky-attack", name: "Sky Attack", type: "flying", power: 140, accuracy: 14, description: "Ataque aereo devastador.", range: "long", learnLevel: 40 },
+  m({ id: "gust", name: "Gust", type: "flying", power: 40, accuracy: 7, description: "Rajada de vento.", range: "medium", learnLevel: 5 }),
+  m({ id: "wing-attack", name: "Wing Attack", type: "flying", power: 60, accuracy: 7, description: "Ataque com asas.", range: "melee", learnLevel: 12 }),
+  m({ id: "fly", name: "Fly", type: "flying", power: 90, accuracy: 10, description: "Voa alto e mergulha para atacar.", range: "long", learnLevel: 30 }),
+  m({ id: "peck", name: "Peck", type: "flying", power: 35, accuracy: 6, description: "Bica o alvo.", range: "melee", learnLevel: 1 }),
+  m({ id: "drill-peck", name: "Drill Peck", type: "flying", power: 80, accuracy: 7, description: "Bica girando como broca.", range: "melee", learnLevel: 25 }),
+  m({ id: "sky-attack", name: "Sky Attack", type: "flying", power: 140, accuracy: 14, description: "Ataque aereo devastador.", range: "long", learnLevel: 40 }),
   // Psychic
-  { id: "confusion", name: "Confusion", type: "psychic", power: 50, accuracy: 7, description: "Onda psiquica que confunde.", range: "medium", learnLevel: 8 },
-  { id: "psychic", name: "Psychic", type: "psychic", power: 90, accuracy: 7, description: "Ataque psiquico poderoso.", range: "medium", learnLevel: 30 },
-  { id: "psybeam", name: "Psybeam", type: "psychic", power: 65, accuracy: 7, description: "Raio psiquico peculiar.", range: "medium", learnLevel: 18 },
-  { id: "hypnosis", name: "Hypnosis", type: "psychic", power: 0, accuracy: 12, description: "Hipnotiza o alvo para dormir.", range: "short", learnLevel: 15 },
-  { id: "dream-eater", name: "Dream Eater", type: "psychic", power: 100, accuracy: 7, description: "Devora sonhos do alvo dormindo.", range: "medium", learnLevel: 30 },
-  { id: "barrier", name: "Barrier", type: "psychic", power: 0, accuracy: 2, description: "Cria barreira, aumenta defesa.", range: "melee", learnLevel: 15 },
-  { id: "agility", name: "Agility", type: "psychic", power: 0, accuracy: 2, description: "Relaxa o corpo, aumenta velocidade.", range: "melee", learnLevel: 10 },
-  { id: "teleport", name: "Teleport", type: "psychic", power: 0, accuracy: 2, description: "Teletransporta para longe.", range: "melee", learnLevel: 1 },
-  { id: "amnesia", name: "Amnesia", type: "psychic", power: 0, accuracy: 2, description: "Esquece algo, aumenta defesa esp.", range: "melee", learnLevel: 20 },
-  { id: "meditate", name: "Meditate", type: "psychic", power: 0, accuracy: 2, description: "Medita para aumentar ataque.", range: "melee", learnLevel: 10 },
+  m({ id: "confusion", name: "Confusion", type: "psychic", power: 50, accuracy: 7, description: "Onda psiquica que confunde.", range: "medium", learnLevel: 8 }),
+  m({ id: "psychic", name: "Psychic", type: "psychic", power: 90, accuracy: 7, description: "Ataque psiquico poderoso.", range: "medium", learnLevel: 30 }),
+  m({ id: "psybeam", name: "Psybeam", type: "psychic", power: 65, accuracy: 7, description: "Raio psiquico peculiar.", range: "medium", learnLevel: 18 }),
+  m({ id: "hypnosis", name: "Hypnosis", type: "psychic", power: 0, accuracy: 12, description: "Hipnotiza o alvo para dormir.", range: "short", learnLevel: 15 }),
+  m({ id: "dream-eater", name: "Dream Eater", type: "psychic", power: 100, accuracy: 7, description: "Devora sonhos do alvo dormindo.", range: "medium", learnLevel: 30 }),
+  m({ id: "barrier", name: "Barrier", type: "psychic", power: 0, accuracy: 2, description: "Cria barreira, aumenta defesa.", range: "melee", learnLevel: 15 }),
+  m({ id: "agility", name: "Agility", type: "psychic", power: 0, accuracy: 2, description: "Relaxa o corpo, aumenta velocidade.", range: "melee", learnLevel: 10 }),
+  m({ id: "teleport", name: "Teleport", type: "psychic", power: 0, accuracy: 2, description: "Teletransporta para longe.", range: "melee", learnLevel: 1 }),
+  m({ id: "amnesia", name: "Amnesia", type: "psychic", power: 0, accuracy: 2, description: "Esquece algo, aumenta defesa esp.", range: "melee", learnLevel: 20 }),
+  m({ id: "meditate", name: "Meditate", type: "psychic", power: 0, accuracy: 2, description: "Medita para aumentar ataque.", range: "melee", learnLevel: 10 }),
   // Bug
-  { id: "string-shot", name: "String Shot", type: "bug", power: 0, accuracy: 6, description: "Seda que reduz velocidade.", range: "short", learnLevel: 1 },
-  { id: "leech-life", name: "Leech Life", type: "bug", power: 80, accuracy: 7, description: "Suga a vida do alvo.", range: "melee", learnLevel: 15 },
-  { id: "pin-missile", name: "Pin Missile", type: "bug", power: 25, accuracy: 7, description: "Agulhas afiadas 2-5 vezes.", range: "short", learnLevel: 12 },
-  { id: "twineedle", name: "Twineedle", type: "bug", power: 25, accuracy: 7, description: "Ataca com dois ferroes.", range: "melee", learnLevel: 10 },
+  m({ id: "string-shot", name: "String Shot", type: "bug", power: 0, accuracy: 6, description: "Seda que reduz velocidade.", range: "short", learnLevel: 1 }),
+  m({ id: "leech-life", name: "Leech Life", type: "bug", power: 80, accuracy: 7, description: "Suga a vida do alvo.", range: "melee", learnLevel: 15 }),
+  m({ id: "pin-missile", name: "Pin Missile", type: "bug", power: 25, accuracy: 7, description: "Agulhas afiadas 2-5 vezes.", range: "short", learnLevel: 12 }),
+  m({ id: "twineedle", name: "Twineedle", type: "bug", power: 25, accuracy: 7, description: "Ataca com dois ferroes.", range: "melee", learnLevel: 10 }),
   // Rock
-  { id: "rock-throw", name: "Rock Throw", type: "rock", power: 50, accuracy: 8, description: "Arremessa pedras no alvo.", range: "short", learnLevel: 10 },
-  { id: "rock-slide", name: "Rock Slide", type: "rock", power: 75, accuracy: 9, description: "Deslizamento de rochas.", range: "medium", learnLevel: 25 },
+  m({ id: "rock-throw", name: "Rock Throw", type: "rock", power: 50, accuracy: 8, description: "Arremessa pedras no alvo.", range: "short", learnLevel: 10 }),
+  m({ id: "rock-slide", name: "Rock Slide", type: "rock", power: 75, accuracy: 9, description: "Deslizamento de rochas.", range: "medium", learnLevel: 25 }),
   // Ghost
-  { id: "lick", name: "Lick", type: "ghost", power: 30, accuracy: 7, description: "Lambe com lingua espectral.", range: "melee", learnLevel: 5 },
-  { id: "night-shade", name: "Night Shade", type: "ghost", power: 50, accuracy: 7, description: "Ilusao sinistra que causa dano.", range: "medium", learnLevel: 15 },
-  { id: "confuse-ray", name: "Confuse Ray", type: "ghost", power: 0, accuracy: 7, description: "Luz sinistra que confunde.", range: "short", learnLevel: 10 },
+  m({ id: "lick", name: "Lick", type: "ghost", power: 30, accuracy: 7, description: "Lambe com lingua espectral.", range: "melee", learnLevel: 5 }),
+  m({ id: "night-shade", name: "Night Shade", type: "ghost", power: 50, accuracy: 7, description: "Ilusao sinistra que causa dano.", range: "medium", learnLevel: 15 }),
+  m({ id: "confuse-ray", name: "Confuse Ray", type: "ghost", power: 0, accuracy: 7, description: "Luz sinistra que confunde.", range: "short", learnLevel: 10 }),
   // Dragon
-  { id: "dragon-rage", name: "Dragon Rage", type: "dragon", power: 40, accuracy: 7, description: "Furia do dragao, dano fixo.", range: "medium", learnLevel: 15 },
-  { id: "outrage", name: "Outrage", type: "dragon", power: 120, accuracy: 8, description: "Furia descontrolada de dragao.", range: "melee", learnLevel: 40 },
-  { id: "twister", name: "Twister", type: "dragon", power: 40, accuracy: 7, description: "Tornado draconico.", range: "medium", learnLevel: 12 },
-  { id: "dragon-breath", name: "Dragon Breath", type: "dragon", power: 60, accuracy: 7, description: "Sopro draconico paralisante.", range: "short", learnLevel: 18 },
+  m({ id: "dragon-rage", name: "Dragon Rage", type: "dragon", power: 40, accuracy: 7, description: "Furia do dragao, dano fixo.", range: "medium", learnLevel: 15 }),
+  m({ id: "outrage", name: "Outrage", type: "dragon", power: 120, accuracy: 8, description: "Furia descontrolada de dragao.", range: "melee", learnLevel: 40 }),
+  m({ id: "twister", name: "Twister", type: "dragon", power: 40, accuracy: 7, description: "Tornado draconico.", range: "medium", learnLevel: 12 }),
+  m({ id: "dragon-breath", name: "Dragon Breath", type: "dragon", power: 60, accuracy: 7, description: "Sopro draconico paralisante.", range: "short", learnLevel: 18 }),
   // Dark (Gen 2)
-  { id: "crunch", name: "Crunch", type: "dark", power: 80, accuracy: 7, description: "Mordida que esmaga a defesa.", range: "melee", learnLevel: 25 },
-  { id: "faint-attack", name: "Faint Attack", type: "dark", power: 60, accuracy: 2, description: "Ataque furtivo que nunca erra.", range: "short", learnLevel: 15 },
-  { id: "pursuit", name: "Pursuit", type: "dark", power: 40, accuracy: 6, description: "Persegue o alvo que foge.", range: "short", learnLevel: 8 },
-  { id: "thief", name: "Thief", type: "dark", power: 60, accuracy: 7, description: "Rouba item enquanto ataca.", range: "melee", learnLevel: 15 },
-  { id: "mean-look", name: "Mean Look", type: "dark", power: 0, accuracy: 4, description: "Olhar sinistro impede fuga.", range: "medium", learnLevel: 10 },
-  { id: "beat-up", name: "Beat Up", type: "dark", power: 10, accuracy: 7, description: "Chama aliados para atacar.", range: "short", learnLevel: 20 },
+  m({ id: "crunch", name: "Crunch", type: "dark", power: 80, accuracy: 7, description: "Mordida que esmaga a defesa.", range: "melee", learnLevel: 25 }),
+  m({ id: "faint-attack", name: "Faint Attack", type: "dark", power: 60, accuracy: 2, description: "Ataque furtivo que nunca erra.", range: "short", learnLevel: 15 }),
+  m({ id: "pursuit", name: "Pursuit", type: "dark", power: 40, accuracy: 6, description: "Persegue o alvo que foge.", range: "short", learnLevel: 8 }),
+  m({ id: "thief", name: "Thief", type: "dark", power: 60, accuracy: 7, description: "Rouba item enquanto ataca.", range: "melee", learnLevel: 15 }),
+  m({ id: "mean-look", name: "Mean Look", type: "dark", power: 0, accuracy: 4, description: "Olhar sinistro impede fuga.", range: "medium", learnLevel: 10 }),
+  m({ id: "beat-up", name: "Beat Up", type: "dark", power: 10, accuracy: 7, description: "Chama aliados para atacar.", range: "short", learnLevel: 20 }),
   // Steel (Gen 2)
-  { id: "iron-tail", name: "Iron Tail", type: "steel", power: 100, accuracy: 10, description: "Golpeia com cauda de aco.", range: "melee", learnLevel: 30 },
-  { id: "metal-claw", name: "Metal Claw", type: "steel", power: 50, accuracy: 7, description: "Arranha com garras metalicas.", range: "melee", learnLevel: 10 },
-  { id: "steel-wing", name: "Steel Wing", type: "steel", power: 70, accuracy: 8, description: "Ataca com asas de aco.", range: "melee", learnLevel: 20 },
+  m({ id: "iron-tail", name: "Iron Tail", type: "steel", power: 100, accuracy: 10, description: "Golpeia com cauda de aco.", range: "melee", learnLevel: 30 }),
+  m({ id: "metal-claw", name: "Metal Claw", type: "steel", power: 50, accuracy: 7, description: "Arranha com garras metalicas.", range: "melee", learnLevel: 10 }),
+  m({ id: "steel-wing", name: "Steel Wing", type: "steel", power: 70, accuracy: 8, description: "Ataca com asas de aco.", range: "melee", learnLevel: 20 }),
   // Gen 2 additions to existing types
-  { id: "cross-chop", name: "Cross Chop", type: "fighting", power: 100, accuracy: 10, description: "Golpe cruzado devastador.", range: "melee", learnLevel: 35 },
-  { id: "dynamic-punch", name: "Dynamic Punch", type: "fighting", power: 100, accuracy: 13, description: "Soco dinamico que confunde.", range: "melee", learnLevel: 35 },
-  { id: "mach-punch", name: "Mach Punch", type: "fighting", power: 40, accuracy: 5, description: "Soco rapido, sempre ataca primeiro.", range: "melee", learnLevel: 5 },
-  { id: "vital-throw", name: "Vital Throw", type: "fighting", power: 70, accuracy: 2, description: "Arremesso certeiro.", range: "melee", learnLevel: 20 },
-  { id: "shadow-ball", name: "Shadow Ball", type: "ghost", power: 80, accuracy: 7, description: "Esfera sombria fantasmagorica.", range: "medium", learnLevel: 25 },
-  { id: "megahorn", name: "Megahorn", type: "bug", power: 120, accuracy: 10, description: "Chifrada poderosa.", range: "melee", learnLevel: 35 },
-  { id: "sacred-fire", name: "Sacred Fire", type: "fire", power: 100, accuracy: 7, description: "Chamas sagradas de Ho-Oh.", range: "long", learnLevel: 45 },
-  { id: "aeroblast", name: "Aeroblast", type: "flying", power: 100, accuracy: 7, description: "Rajada aerea de Lugia.", range: "long", learnLevel: 45 },
-  { id: "spark", name: "Spark", type: "electric", power: 65, accuracy: 7, description: "Eletricidade ao colidir.", range: "melee", learnLevel: 15 },
-  { id: "zap-cannon", name: "Zap Cannon", type: "electric", power: 120, accuracy: 14, description: "Canhao eletrico paralisante.", range: "long", learnLevel: 40 },
-  { id: "extreme-speed", name: "Extreme Speed", type: "normal", power: 80, accuracy: 5, description: "Velocidade extrema.", range: "short", learnLevel: 30 },
-  { id: "return", name: "Return", type: "normal", power: 102, accuracy: 7, description: "Ataque baseado na felicidade.", range: "melee", learnLevel: 15 },
-  { id: "rapid-spin", name: "Rapid Spin", type: "normal", power: 50, accuracy: 7, description: "Giro rapido remove armadilhas.", range: "melee", learnLevel: 12 },
-  { id: "giga-drain", name: "Giga Drain", type: "grass", power: 75, accuracy: 7, description: "Drena muita energia do alvo.", range: "medium", learnLevel: 25 },
-  { id: "sludge-bomb", name: "Sludge Bomb", type: "poison", power: 90, accuracy: 7, description: "Bomba de lodo toxico.", range: "medium", learnLevel: 30 },
-  { id: "rollout", name: "Rollout", type: "rock", power: 30, accuracy: 8, description: "Rola com forca crescente.", range: "melee", learnLevel: 10 },
-  { id: "ancient-power", name: "Ancient Power", type: "rock", power: 60, accuracy: 7, description: "Poder ancestral, pode subir stats.", range: "medium", learnLevel: 20 },
-  { id: "mud-slap", name: "Mud-Slap", type: "ground", power: 20, accuracy: 6, description: "Joga lama que reduz precisao.", range: "short", learnLevel: 5 },
-  { id: "icy-wind", name: "Icy Wind", type: "ice", power: 55, accuracy: 7, description: "Vento gelado que reduz velocidade.", range: "medium", learnLevel: 15 },
-  { id: "powder-snow", name: "Powder Snow", type: "ice", power: 40, accuracy: 7, description: "Neve em po congelante.", range: "short", learnLevel: 5 },
-  { id: "future-sight", name: "Future Sight", type: "psychic", power: 120, accuracy: 12, description: "Ataque psiquico do futuro.", range: "long", learnLevel: 35 },
-  { id: "whirlpool", name: "Whirlpool", type: "water", power: 35, accuracy: 10, description: "Redemoinho que prende o alvo.", range: "short", learnLevel: 12 },
-  { id: "octazooka", name: "Octazooka", type: "water", power: 65, accuracy: 10, description: "Tinta que reduz precisao.", range: "medium", learnLevel: 20 },
-  { id: "flame-wheel", name: "Flame Wheel", type: "fire", power: 60, accuracy: 7, description: "Roda de fogo.", range: "melee", learnLevel: 15 },
-  { id: "cotton-spore", name: "Cotton Spore", type: "grass", power: 0, accuracy: 10, description: "Esporos de algodao reduzem velocidade.", range: "short", learnLevel: 12 },
-  { id: "reversal", name: "Reversal", type: "fighting", power: 60, accuracy: 7, description: "Mais forte com menos HP.", range: "melee", learnLevel: 20 },
-  { id: "mirror-coat", name: "Mirror Coat", type: "psychic", power: 0, accuracy: 7, description: "Reflete ataques especiais.", range: "melee", learnLevel: 25 },
-  { id: "counter", name: "Counter", type: "fighting", power: 0, accuracy: 7, description: "Reflete ataques fisicos.", range: "melee", learnLevel: 20 },
+  m({ id: "cross-chop", name: "Cross Chop", type: "fighting", power: 100, accuracy: 10, description: "Golpe cruzado devastador.", range: "melee", learnLevel: 35 }),
+  m({ id: "dynamic-punch", name: "Dynamic Punch", type: "fighting", power: 100, accuracy: 13, description: "Soco dinamico que confunde.", range: "melee", learnLevel: 35 }),
+  m({ id: "mach-punch", name: "Mach Punch", type: "fighting", power: 40, accuracy: 5, description: "Soco rapido, sempre ataca primeiro.", range: "melee", learnLevel: 5 }),
+  m({ id: "vital-throw", name: "Vital Throw", type: "fighting", power: 70, accuracy: 2, description: "Arremesso certeiro.", range: "melee", learnLevel: 20 }),
+  m({ id: "shadow-ball", name: "Shadow Ball", type: "ghost", power: 80, accuracy: 7, description: "Esfera sombria fantasmagorica.", range: "medium", learnLevel: 25 }),
+  m({ id: "megahorn", name: "Megahorn", type: "bug", power: 120, accuracy: 10, description: "Chifrada poderosa.", range: "melee", learnLevel: 35 }),
+  m({ id: "sacred-fire", name: "Sacred Fire", type: "fire", power: 100, accuracy: 7, description: "Chamas sagradas de Ho-Oh.", range: "long", learnLevel: 45 }),
+  m({ id: "aeroblast", name: "Aeroblast", type: "flying", power: 100, accuracy: 7, description: "Rajada aerea de Lugia.", range: "long", learnLevel: 45 }),
+  m({ id: "spark", name: "Spark", type: "electric", power: 65, accuracy: 7, description: "Eletricidade ao colidir.", range: "melee", learnLevel: 15 }),
+  m({ id: "zap-cannon", name: "Zap Cannon", type: "electric", power: 120, accuracy: 14, description: "Canhao eletrico paralisante.", range: "long", learnLevel: 40 }),
+  m({ id: "extreme-speed", name: "Extreme Speed", type: "normal", power: 80, accuracy: 5, description: "Velocidade extrema.", range: "short", learnLevel: 30 }),
+  m({ id: "return", name: "Return", type: "normal", power: 102, accuracy: 7, description: "Ataque baseado na felicidade.", range: "melee", learnLevel: 15 }),
+  m({ id: "rapid-spin", name: "Rapid Spin", type: "normal", power: 50, accuracy: 7, description: "Giro rapido remove armadilhas.", range: "melee", learnLevel: 12 }),
+  m({ id: "giga-drain", name: "Giga Drain", type: "grass", power: 75, accuracy: 7, description: "Drena muita energia do alvo.", range: "medium", learnLevel: 25 }),
+  m({ id: "sludge-bomb", name: "Sludge Bomb", type: "poison", power: 90, accuracy: 7, description: "Bomba de lodo toxico.", range: "medium", learnLevel: 30 }),
+  m({ id: "rollout", name: "Rollout", type: "rock", power: 30, accuracy: 8, description: "Rola com forca crescente.", range: "melee", learnLevel: 10 }),
+  m({ id: "ancient-power", name: "Ancient Power", type: "rock", power: 60, accuracy: 7, description: "Poder ancestral, pode subir stats.", range: "medium", learnLevel: 20 }),
+  m({ id: "mud-slap", name: "Mud-Slap", type: "ground", power: 20, accuracy: 6, description: "Joga lama que reduz precisao.", range: "short", learnLevel: 5 }),
+  m({ id: "icy-wind", name: "Icy Wind", type: "ice", power: 55, accuracy: 7, description: "Vento gelado que reduz velocidade.", range: "medium", learnLevel: 15 }),
+  m({ id: "powder-snow", name: "Powder Snow", type: "ice", power: 40, accuracy: 7, description: "Neve em po congelante.", range: "short", learnLevel: 5 }),
+  m({ id: "future-sight", name: "Future Sight", type: "psychic", power: 120, accuracy: 12, description: "Ataque psiquico do futuro.", range: "long", learnLevel: 35 }),
+  m({ id: "whirlpool", name: "Whirlpool", type: "water", power: 35, accuracy: 10, description: "Redemoinho que prende o alvo.", range: "short", learnLevel: 12 }),
+  m({ id: "octazooka", name: "Octazooka", type: "water", power: 65, accuracy: 10, description: "Tinta que reduz precisao.", range: "medium", learnLevel: 20 }),
+  m({ id: "flame-wheel", name: "Flame Wheel", type: "fire", power: 60, accuracy: 7, description: "Roda de fogo.", range: "melee", learnLevel: 15 }),
+  m({ id: "cotton-spore", name: "Cotton Spore", type: "grass", power: 0, accuracy: 10, description: "Esporos de algodao reduzem velocidade.", range: "short", learnLevel: 12 }),
+  m({ id: "reversal", name: "Reversal", type: "fighting", power: 60, accuracy: 7, description: "Mais forte com menos HP.", range: "melee", learnLevel: 20 }),
+  m({ id: "mirror-coat", name: "Mirror Coat", type: "psychic", power: 0, accuracy: 7, description: "Reflete ataques especiais.", range: "melee", learnLevel: 25 }),
+  m({ id: "counter", name: "Counter", type: "fighting", power: 0, accuracy: 7, description: "Reflete ataques fisicos.", range: "melee", learnLevel: 20 }),
 ];
 
 // Helper to get move by ID
@@ -1296,6 +1370,120 @@ export function getHitResultColor(result: HitResult): string {
     case "hit": return "#22C55E";
     case "strong-hit": return "#3B82F6";
     case "critical-hit": return "#F59E0B";
+  }
+}
+
+// ========== RPG Dice Damage Calculation ==========
+
+export interface DamageBreakdown {
+  moveName: string;
+  diceString: string | null;     // e.g. "2d8"
+  diceRolls: number[];           // individual dice results [5, 3]
+  diceTotal: number;             // sum of dice
+  scalingAttr: string | null;    // which attribute is used for bonus
+  attrBonus: number;             // modifier from attribute (acrobaciaMod or felicidadeMod)
+  hitMultiplierLabel: string;    // "Critico x2", "Golpe Forte x1.5", etc.
+  hitMultiplier: number;         // 0, 1, 1.5, or 2
+  defenseReduction: number;      // floor(defesa / 3)
+  rawTotal: number;              // (diceTotal + attrBonus) * hitMultiplier
+  finalDamage: number;           // max(1, rawTotal - defenseReduction) for hits, 0 for miss
+  isStatus: boolean;             // true for moves with power=0
+  formula: string;               // human-readable formula string
+}
+
+/**
+ * Calculate full RPG battle damage with dice rolls, attribute bonuses, hit multipliers, and defense.
+ * 
+ * Formula: finalDamage = max(1, ((diceRoll + attrBonus) * hitMultiplier) - defenseReduction)
+ * 
+ * - diceRoll: roll the move's damage_dice (e.g. "2d8" -> roll 2d8)
+ * - attrBonus: attacker's attribute modifier (acrobaciaMod for physical, felicidadeMod for special)
+ * - hitMultiplier: from D20 hit result (0 for miss, 1 for hit, 1.5 for strong, 2 for critical)
+ * - defenseReduction: floor(targetDefesa / 3)
+ */
+export function calculateBattleDamage(
+  move: Move,
+  hitResult: HitResult,
+  attackerAttrs: PokemonComputedAttributes,
+  targetDefesa: number
+): DamageBreakdown {
+  const isStatus = move.damage_type === "status";
+  const multiplier = getDamageMultiplier(hitResult);
+
+  if (isStatus || !move.damage_dice) {
+    return {
+      moveName: move.name,
+      diceString: null,
+      diceRolls: [],
+      diceTotal: 0,
+      scalingAttr: null,
+      attrBonus: 0,
+      hitMultiplierLabel: getHitMultiplierLabel(hitResult),
+      hitMultiplier: multiplier,
+      defenseReduction: 0,
+      rawTotal: 0,
+      finalDamage: 0,
+      isStatus: true,
+      formula: "Status - sem dano",
+    };
+  }
+
+  // Roll dice
+  const { rolls, sum: diceTotal } = rollDiceString(move.damage_dice);
+
+  // Get attribute bonus based on move classification
+  let attrBonus = 0;
+  let scalingAttr: string | null = null;
+  if (move.damage_type === "physical") {
+    attrBonus = attackerAttrs.acrobaciaMod;
+    scalingAttr = "Acrobacia";
+  } else if (move.damage_type === "special") {
+    attrBonus = attackerAttrs.felicidadeMod;
+    scalingAttr = "Felicidade";
+  }
+
+  // Calculate raw total before defense
+  const rawTotal = Math.floor((diceTotal + attrBonus) * multiplier);
+
+  // Defense reduction
+  const defenseReduction = Math.floor(targetDefesa / 3);
+
+  // Final damage (min 1 if hit, 0 if miss)
+  const isMiss = hitResult === "miss" || hitResult === "critical-miss";
+  const finalDamage = isMiss ? 0 : Math.max(1, rawTotal - defenseReduction);
+
+  // Build formula string
+  const formulaParts: string[] = [];
+  formulaParts.push(`${move.damage_dice} [${rolls.join("+")}=${diceTotal}]`);
+  if (attrBonus > 0) formulaParts.push(`+${attrBonus} ${scalingAttr}`);
+  if (multiplier !== 1) formulaParts.push(`x${multiplier}`);
+  formulaParts.push(`= ${rawTotal}`);
+  if (!isMiss && defenseReduction > 0) formulaParts.push(`- ${defenseReduction} DEF = ${finalDamage}`);
+
+  return {
+    moveName: move.name,
+    diceString: move.damage_dice,
+    diceRolls: rolls,
+    diceTotal,
+    scalingAttr,
+    attrBonus,
+    hitMultiplierLabel: getHitMultiplierLabel(hitResult),
+    hitMultiplier: multiplier,
+    defenseReduction: isMiss ? 0 : defenseReduction,
+    rawTotal,
+    finalDamage,
+    isStatus: false,
+    formula: formulaParts.join(" "),
+  };
+}
+
+function getHitMultiplierLabel(result: HitResult): string {
+  switch (result) {
+    case "critical-miss": return "Falha Critica x0";
+    case "miss": return "Errou x0";
+    case "hit": return "Acertou x1";
+    case "strong-hit": return "Golpe Forte x1.5";
+    case "critical-hit": return "Critico x2";
   }
 }
 
