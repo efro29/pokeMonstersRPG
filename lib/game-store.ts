@@ -1199,7 +1199,7 @@ export const useGameStore = create<GameState>()(
           trainer.defesa = trainer.defesa ?? 10;
           state.trainer = trainer;
         }
-        return state as GameState;
+        return state as unknown as GameState;
       },
     }
   )
