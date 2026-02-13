@@ -1259,6 +1259,12 @@ export const useGameStore = create<GameState>()(
           trainer.defesa = trainer.defesa ?? 10;
           state.trainer = trainer;
         }
+        if (version < 7) {
+          state.pendingEvolution = null;
+          const battle = (state.battle as Record<string, unknown>) || {};
+          battle.damageBreakdown = battle.damageBreakdown ?? null;
+          state.battle = battle;
+        }
         return state as unknown as GameState;
       },
     }

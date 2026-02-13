@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSpriteUrl, getPokemon } from "@/lib/pokemon-data";
 import { playEvolve } from "@/lib/sounds";
@@ -22,28 +22,25 @@ export function EvolutionAnimation({
   const [stage, setStage] = useState<"intro" | "transform" | "reveal" | "complete">("intro");
   const fromSpecies = getPokemon(fromSpeciesId);
   const toSpecies = getPokemon(toSpeciesId);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
     playEvolve();
 
     // Stage timeline (total ~10 seconds)
-    const timeline = [
-      { delay: 0, stage: "intro" as const },       // 0-2s
-      { delay: 2000, stage: "transform" as const },  // 2-6s
-      { delay: 6000, stage: "reveal" as const },     // 6-9s
-      { delay: 9000, stage: "complete" as const },   // 9-10s
-      { delay: 10000, fn: onComplete },              // 10s - close
-    ];
+    const t1 = setTimeout(() => setStage("transform"), 2000);
+    const t2 = setTimeout(() => setStage("reveal"), 6000);
+    const t3 = setTimeout(() => setStage("complete"), 9000);
+    const t4 = setTimeout(() => onCompleteRef.current(), 10500);
 
-    const timeouts = timeline.map(({ delay, stage, fn }) =>
-      setTimeout(() => {
-        if (stage) setStage(stage);
-        if (fn) fn();
-      }, delay)
-    );
-
-    return () => timeouts.forEach(clearTimeout);
-  }, [onComplete]);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <motion.div
@@ -58,14 +55,14 @@ export function EvolutionAnimation({
           <motion.div
             key={i}
             className="absolute w-1 h-1 bg-white rounded-full"
-            initial={{
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight,
-              opacity: 0,
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
             }}
+            initial={{ opacity: 0 }}
             animate={{
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight,
+              x: [0, (Math.random() - 0.5) * 200],
+              y: [0, (Math.random() - 0.5) * 200],
               opacity: [0, 1, 0],
             }}
             transition={{

@@ -14,6 +14,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Pill, CircleDot, Beaker, Package, Plus, Minus, Gem } from "lucide-react";
 import { playButtonClick, playHeal } from "@/lib/sounds";

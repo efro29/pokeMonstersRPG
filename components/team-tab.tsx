@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/lib/game-store";
 import {
   getSpriteUrl,
@@ -24,6 +25,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Tabs,
@@ -46,6 +48,7 @@ import {
   Shield,
   Wind,
 } from "lucide-react";
+import { EvolutionAnimation } from "@/components/evolution-animation";
 
 interface TeamTabProps {
   onStartBattle: (uid: string) => void;
@@ -64,6 +67,8 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
     useStone,
     evolveByTrade,
     useRareCandy,
+    pendingEvolution,
+    completeEvolution,
   } = useGameStore();
 
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
@@ -73,6 +78,10 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
   const hasRareCandy = bag.some(
     (b) => b.itemId === "rare-candy" && b.quantity > 0
   );
+
+  const handleEvolutionComplete = useCallback(() => {
+    completeEvolution();
+  }, [completeEvolution]);
 
   // Derive selectedPokemon directly from store state so it's always fresh
   const selectedPokemon = selectedUid
@@ -97,6 +106,18 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Evolution animation overlay */}
+      <AnimatePresence>
+        {pendingEvolution && (
+          <EvolutionAnimation
+            fromSpeciesId={pendingEvolution.fromSpeciesId}
+            toSpeciesId={pendingEvolution.toSpeciesId}
+            pokemonName={pendingEvolution.pokemonName}
+            onComplete={handleEvolutionComplete}
+          />
+        )}
+      </AnimatePresence>
+
       <div className="p-4 border-b border-border">
         <h2 className="font-semibold text-foreground">
           Minha Equipe ({team.length}/6)
@@ -304,6 +325,7 @@ function PokemonDetailContent({
             Lv.{level}
           </span>
         </DialogTitle>
+      <DialogDescription className="sr-only">Detalhes e gerenciamento do Pokemon selecionado.</DialogDescription>
       </DialogHeader>
       <Tabs defaultValue="info" className="w-full">
         <TabsList className="w-full bg-secondary">
