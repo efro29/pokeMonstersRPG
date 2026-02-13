@@ -212,12 +212,20 @@ export interface BattleState {
   attributeTestResult: AttributeTestResult | null;
 }
 
+export interface PendingEvolution {
+  uid: string;
+  pokemonName: string;
+  fromSpeciesId: number;
+  toSpeciesId: number;
+}
+
 interface GameState {
   trainer: TrainerProfile;
   team: TeamPokemon[];
   bag: BagItem[];
   battle: BattleState;
   npcs: NpcEnemy[];
+  pendingEvolution: PendingEvolution | null;
   // Trainer management
   updateTrainer: (data: Partial<TrainerProfile>) => void;
   addMoney: (amount: number) => void;
@@ -276,6 +284,9 @@ interface GameState {
   addNpcPokemon: (npcId: string, speciesId: number, level: number) => void;
   removeNpcPokemon: (npcId: string, index: number) => void;
   updateNpcPokemonLevel: (npcId: string, index: number, level: number) => void;
+  // Evolution queue
+  triggerEvolution: (evolution: PendingEvolution) => void;
+  completeEvolution: () => void;
 }
 
 function generateUid(): string {
@@ -310,6 +321,7 @@ export const useGameStore = create<GameState>()(
         { itemId: "revive", quantity: 2 },
       ],
       npcs: [],
+      pendingEvolution: null,
       battle: {
         phase: "idle",
         activePokemonUid: null,
@@ -825,6 +837,25 @@ export const useGameStore = create<GameState>()(
               : p
           ),
         });
+
+        // Auto-trigger evolution if level requirement met
+        if (levelsGained > 0) {
+          const evo = canEvolveByLevel(pokemon.speciesId, newLevel);
+          if (evo) {
+            const evolvedSpecies = getPokemon(evo.to);
+            if (evolvedSpecies) {
+              // Small delay so the level-up state is rendered first
+              setTimeout(() => {
+                get().triggerEvolution({
+                  uid,
+                  pokemonName: pokemon.name,
+                  fromSpeciesId: pokemon.speciesId,
+                  toSpeciesId: evo.to,
+                });
+              }, 300);
+            }
+          }
+        }
       },
 
       setLevel: (uid, level) => {
@@ -857,6 +888,24 @@ export const useGameStore = create<GameState>()(
               : p
           ),
         });
+
+        // Auto-trigger evolution if level requirement met
+        if (levelDiff > 0) {
+          const evo = canEvolveByLevel(pokemon.speciesId, level);
+          if (evo) {
+            const evolvedSpecies = getPokemon(evo.to);
+            if (evolvedSpecies) {
+              setTimeout(() => {
+                get().triggerEvolution({
+                  uid,
+                  pokemonName: pokemon.name,
+                  fromSpeciesId: pokemon.speciesId,
+                  toSpeciesId: evo.to,
+                });
+              }, 300);
+            }
+          }
+        }
       },
 
       evolvePokemon: (uid, toSpeciesId) => {
@@ -1160,10 +1209,21 @@ export const useGameStore = create<GameState>()(
           }),
         });
       },
+
+      triggerEvolution: (evolution) => {
+        set({ pendingEvolution: evolution });
+      },
+
+      completeEvolution: () => {
+        const { pendingEvolution } = get();
+        if (!pendingEvolution) return;
+        get().evolvePokemon(pendingEvolution.uid, pendingEvolution.toSpeciesId);
+        set({ pendingEvolution: null });
+      },
     }),
     {
       name: getGameStoreKey(),
-      version: 6,
+      version: 7,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         if (version < 2) {
@@ -1198,6 +1258,12 @@ export const useGameStore = create<GameState>()(
           trainer.currentHp = trainer.currentHp ?? 20;
           trainer.defesa = trainer.defesa ?? 10;
           state.trainer = trainer;
+        }
+        if (version < 7) {
+          state.pendingEvolution = null;
+          const battle = (state.battle as Record<string, unknown>) || {};
+          battle.damageBreakdown = battle.damageBreakdown ?? null;
+          state.battle = battle;
         }
         return state as unknown as GameState;
       },

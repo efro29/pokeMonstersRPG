@@ -169,15 +169,39 @@ export function playLevelUp() {
 }
 
 export function playEvolve() {
-  // Dramatic ascending with sustain
-  const notes = [262, 330, 392, 523, 659, 784, 1047];
-  notes.forEach((freq, i) => {
-    setTimeout(() => playTone(freq, 0.2, "sine", 0.1), i * 100);
+  // Stage 1 (0-2s): Mystery rising tones
+  const introNotes = [262, 294, 330, 370, 392, 440];
+  introNotes.forEach((freq, i) => {
+    setTimeout(() => playTone(freq, 0.35, "sine", 0.07), i * 300);
   });
+
+  // Stage 2 (2-6s): Rapid pulsing energy, getting faster
+  for (let i = 0; i < 16; i++) {
+    const delay = 2000 + i * 220 - i * 8;
+    const freq = 500 + i * 50;
+    setTimeout(() => playTone(freq, 0.12, "square", 0.06 + i * 0.003), delay);
+  }
+
+  // Stage 3 (6-8s): Climax ascending burst
+  const burstNotes = [523, 587, 659, 698, 784, 880, 988, 1047, 1175, 1319];
+  burstNotes.forEach((freq, i) => {
+    setTimeout(() => playTone(freq, 0.25, "sine", 0.09), 6000 + i * 100);
+  });
+
+  // Stage 4 (8-9s): Triumphant fanfare
   setTimeout(() => {
     playTone(1047, 0.6, "sine", 0.12);
-    playTone(1319, 0.6, "sine", 0.08);
-  }, 700);
+    playTone(1319, 0.6, "sine", 0.09);
+    playTone(1568, 0.6, "sine", 0.07);
+  }, 8000);
+
+  // Final chord (9-10s)
+  setTimeout(() => {
+    playTone(1047, 0.8, "sine", 0.1);
+    playTone(1319, 0.8, "sine", 0.08);
+    playTone(1568, 0.8, "sine", 0.06);
+    playTone(2093, 0.8, "sine", 0.05);
+  }, 9000);
 }
 
 export function playHeal() {
