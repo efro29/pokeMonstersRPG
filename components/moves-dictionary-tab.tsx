@@ -9,7 +9,7 @@ import {
   getSpriteUrl,
   POKEMON,
 } from "@/lib/pokemon-data";
-import type { PokemonType, MoveRange, Move } from "@/lib/pokemon-data";
+import type { PokemonType, MoveRange, Move, DamageType } from "@/lib/pokemon-data";
 import { useGameStore } from "@/lib/game-store";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Search, Target, GraduationCap, ChevronLeft, Check } from "lucide-react";
 import { playButtonClick, playGift } from "@/lib/sounds";
@@ -107,6 +108,12 @@ function RangeGridPopup({ move, onClose }: { move: Move; onClose: () => void }) 
         <div>
           <h4 className="font-bold text-foreground">{move.name}</h4>
           <p className="text-xs text-muted-foreground">{rangeInfo.labelPt} - {rangeInfo.description}</p>
+          <div className="flex items-center gap-2 mt-1 text-[10px]">
+            {move.damage_dice && <span className="font-mono font-bold text-accent">{move.damage_dice}</span>}
+            <span className="text-muted-foreground">
+              {move.damage_type === "physical" ? "Fisico" : move.damage_type === "special" ? "Especial" : "Status"}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -323,12 +330,21 @@ export function MovesDictionaryTab() {
                 </div>
 
                 {/* Stats row */}
-                <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                  {move.power > 0 && (
-                    <span className="flex items-center gap-1">
-                      <span className="font-bold text-foreground">PWR</span> {move.power}
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-wrap">
+                  {move.damage_dice && (
+                    <span className="font-mono bg-secondary px-1.5 py-0.5 rounded text-foreground font-bold">
+                      {move.damage_dice}
                     </span>
                   )}
+                  <span
+                    className="px-1.5 py-0.5 rounded text-[9px] font-bold"
+                    style={{
+                      backgroundColor: move.damage_type === "physical" ? "#EF444422" : move.damage_type === "special" ? "#8B5CF622" : "#6B728022",
+                      color: move.damage_type === "physical" ? "#EF4444" : move.damage_type === "special" ? "#8B5CF6" : "#6B7280",
+                    }}
+                  >
+                    {move.damage_type === "physical" ? "Fisico" : move.damage_type === "special" ? "Especial" : "Status"}
+                  </span>
                   <span className="flex items-center gap-1">
                     <span className="font-bold text-foreground">ACC</span> D20 {">"}= {move.accuracy}
                   </span>
@@ -337,6 +353,13 @@ export function MovesDictionaryTab() {
                     Lv.{move.learnLevel}
                   </span>
                 </div>
+                {/* Scaling info */}
+                {move.scaling_attribute && (
+                  <div className="text-[9px] text-muted-foreground">
+                    Bonus: {move.damage_type === "physical" ? "Acrobacia" : "Felicidade"} mod
+                    {move.uses_contact && <span className="ml-2 text-red-400">(Contato)</span>}
+                  </div>
+                )}
 
                 {/* Description */}
                 <p className="text-[11px] text-muted-foreground">
@@ -398,6 +421,7 @@ export function MovesDictionaryTab() {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Alcance do Golpe</DialogTitle>
+            <DialogDescription>Visualizacao do alcance do golpe no grid 8x8 do tabuleiro.</DialogDescription>
           </DialogHeader>
           {selectedMove && (
             <RangeGridPopup
@@ -423,6 +447,7 @@ export function MovesDictionaryTab() {
             <DialogTitle>
               Ensinar {teachMove?.name}
             </DialogTitle>
+            <DialogDescription>Escolha um Pokemon do time para aprender este golpe.</DialogDescription>
           </DialogHeader>
           {teachMove && (
             <div className="flex flex-col gap-2">

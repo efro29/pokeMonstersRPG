@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { PokemonSpecies, BagItemDef, PokemonBaseAttributes } from "./pokemon-data";
+import type { PokemonSpecies, BagItemDef, PokemonBaseAttributes, DamageBreakdown, HitResult } from "./pokemon-data";
 import { getGameStoreKey } from "./mode-store";
-import { BAG_ITEMS, getMove, getPokemon, canEvolveByLevel, canEvolveByStone, canEvolveByTrade, xpForLevel, computeAttributes, getBaseAttributes, applyFaintPenalty, applyLevelUpBonus, rollDamageAgainstPokemon } from "./pokemon-data";
+import { BAG_ITEMS, getMove, getPokemon, canEvolveByLevel, canEvolveByStone, canEvolveByTrade, xpForLevel, computeAttributes, getBaseAttributes, applyFaintPenalty, applyLevelUpBonus, rollDamageAgainstPokemon, calculateHitResult, calculateBattleDamage, getDamageMultiplier } from "./pokemon-data";
 
 export type PokemonAttributeKey = keyof PokemonBaseAttributes;
 
@@ -204,6 +204,7 @@ export interface BattleState {
   diceRoll: number | null;
   hitResult: string | null;
   damageDealt: number | null;
+  damageBreakdown: DamageBreakdown | null;
   battleLog: string[];
   // Attribute test
   selectedAttribute: PokemonAttributeKey | null;
@@ -316,6 +317,7 @@ export const useGameStore = create<GameState>()(
         diceRoll: null,
         hitResult: null,
         damageDealt: null,
+  damageBreakdown: null,
         battleLog: [],
         selectedAttribute: null,
         attributeTestDC: 10,
@@ -547,6 +549,7 @@ export const useGameStore = create<GameState>()(
             diceRoll: null,
             hitResult: null,
             damageDealt: null,
+  damageBreakdown: null,
             battleLog: [],
             selectedAttribute: null,
             attributeTestDC: 10,
@@ -564,6 +567,7 @@ export const useGameStore = create<GameState>()(
             diceRoll: null,
             hitResult: null,
             damageDealt: null,
+  damageBreakdown: null,
             battleLog: [],
             selectedAttribute: null,
             attributeTestDC: 10,
@@ -604,45 +608,49 @@ export const useGameStore = create<GameState>()(
             diceRoll: null,
             hitResult: null,
             damageDealt: null,
+  damageBreakdown: null,
           },
         });
       },
 
       resolveDiceRoll: (roll) => {
-        const { battle, trainer } = get();
+        const { battle, trainer, team } = get();
         const move = getMove(battle.selectedMoveId || "");
         if (!move) return;
 
-        const attrs = trainer.attributes || DEFAULT_ATTRIBUTES;
+        const trainerAttrs = trainer.attributes || DEFAULT_ATTRIBUTES;
         // Combate: +1 to effective roll per 2 points
-        const combateBonus = Math.floor(attrs.combate / 2);
+        const combateBonus = Math.floor(trainerAttrs.combate / 2);
         // Sorte: expands crit range by 1 per 2 points (20 -> 19 -> 18...)
-        const critExpansion = Math.floor(attrs.sorte / 2);
+        const critExpansion = Math.floor(trainerAttrs.sorte / 2);
         const critThreshold = Math.max(15, 20 - critExpansion);
 
         const effectiveRoll = roll + combateBonus;
 
-        let hitResult: string;
-        let damageDealt = 0;
-
+        // Determine hit result using effective roll with trainer bonuses
+        let hitResult: HitResult;
         if (roll === 1) {
-          // Natural 1 always critical miss (unaffected by bonuses)
           hitResult = "critical-miss";
-          damageDealt = 0;
         } else if (roll >= critThreshold) {
-          // Critical hit: natural roll >= crit threshold
           hitResult = "critical-hit";
-          damageDealt = Math.floor(move.power * 2);
         } else if (effectiveRoll >= move.accuracy + 5) {
           hitResult = "strong-hit";
-          damageDealt = Math.floor(move.power * 1.5);
         } else if (effectiveRoll >= move.accuracy) {
           hitResult = "hit";
-          damageDealt = move.power;
         } else {
           hitResult = "miss";
-          damageDealt = 0;
         }
+
+        // Get active Pokemon's computed attributes for damage scaling
+        const activePokemon = team.find((p) => p.uid === battle.activePokemonUid);
+        const pokemonAttrs = activePokemon
+          ? computeAttributes(activePokemon.speciesId, activePokemon.level, activePokemon.customAttributes)
+          : computeAttributes(1, 5); // fallback
+
+        // Calculate dice-based damage with full breakdown
+        const breakdown = calculateBattleDamage(move, hitResult, pokemonAttrs, 0);
+        // damageDealt = the raw total before target defense (target defense is applied on applyOpponentDamage)
+        const damageDealt = breakdown.rawTotal;
 
         set({
           battle: {
@@ -651,6 +659,7 @@ export const useGameStore = create<GameState>()(
             diceRoll: roll,
             hitResult,
             damageDealt,
+            damageBreakdown: breakdown,
           },
         });
       },
@@ -727,6 +736,7 @@ export const useGameStore = create<GameState>()(
             diceRoll: null,
             hitResult: null,
             damageDealt: null,
+  damageBreakdown: null,
             phase: "menu",
             selectedAttribute: null,
             attributeTestResult: null,
