@@ -33,6 +33,46 @@ export const MOVE_RANGE_INFO: Record<MoveRange, { label: string; labelPt: string
   area: { label: "Area", labelPt: "Area", tiles: 6, description: "6 casas em 4 colunas" },
 };
 
+export type PowerCategory = "weak" | "medium" | "strong" | "very_strong" | "ultimate";
+export type ScalingAttribute = "attack" | "sp_attack" | null;
+export type DamageType = "physical" | "special" | "status";
+
+export const POWER_CATEGORY_LABEL: Record<PowerCategory, string> = {
+  weak: "Fraco",
+  medium: "Medio",
+  strong: "Forte",
+  very_strong: "Muito Forte",
+  ultimate: "Devastador",
+};
+
+/** Derive dice damage fields from the existing power field */
+export function deriveDiceFromPower(power: number): { damage_dice: string | null; power_category: PowerCategory; damage_type: DamageType } {
+  if (power === 0) return { damage_dice: null, power_category: "weak", damage_type: "status" };
+  if (power <= 40) return { damage_dice: "1d6", power_category: "weak", damage_type: "physical" };
+  if (power <= 60) return { damage_dice: "1d8", power_category: "medium", damage_type: "physical" };
+  if (power <= 80) return { damage_dice: "1d10", power_category: "medium", damage_type: "physical" };
+  if (power <= 100) return { damage_dice: "2d8", power_category: "strong", damage_type: "physical" };
+  if (power <= 120) return { damage_dice: "2d10", power_category: "strong", damage_type: "physical" };
+  if (power <= 150) return { damage_dice: "2d12", power_category: "very_strong", damage_type: "physical" };
+  return { damage_dice: "3d12", power_category: "ultimate", damage_type: "physical" };
+}
+
+/** Physical move types (melee/contact-based) - all others are special */
+const PHYSICAL_TYPES: Set<PokemonType> = new Set([
+  "normal", "fighting", "ground", "rock", "bug", "steel",
+]);
+
+/** Determine if a move is physical, special, or status based on type and range */
+export function classifyMove(move: { type: PokemonType; power: number; range: MoveRange }): { damage_type: DamageType; scaling_attribute: ScalingAttribute; uses_contact: boolean } {
+  if (move.power === 0) return { damage_type: "status", scaling_attribute: null, uses_contact: false };
+  const isPhysical = PHYSICAL_TYPES.has(move.type) || move.range === "melee";
+  return {
+    damage_type: isPhysical ? "physical" : "special",
+    scaling_attribute: isPhysical ? "attack" : "sp_attack",
+    uses_contact: move.range === "melee",
+  };
+}
+
 export interface Move {
   id: string;
   name: string;
@@ -42,6 +82,26 @@ export interface Move {
   description: string;
   range: MoveRange;
   learnLevel: number; // Nivel minimo para aprender
+  // Dice damage system (auto-derived from power, kept for display)
+  damage_dice: string | null;
+  power_category: PowerCategory;
+  damage_type: DamageType;
+  scaling_attribute: ScalingAttribute;
+  uses_contact: boolean;
+}
+
+/** Parse dice string like "2d8" into { count, sides } */
+export function parseDice(dice: string): { count: number; sides: number } {
+  const match = dice.match(/^(\d+)d(\d+)$/);
+  if (!match) return { count: 1, sides: 6 };
+  return { count: parseInt(match[1]), sides: parseInt(match[2]) };
+}
+
+/** Roll a dice string like "2d8" and return individual rolls + sum */
+export function rollDiceString(dice: string): { rolls: number[]; sum: number } {
+  const { count, sides } = parseDice(dice);
+  const rolls = Array.from({ length: count }, () => Math.floor(Math.random() * sides) + 1);
+  return { rolls, sum: rolls.reduce((a, b) => a + b, 0) };
 }
 
 export interface PokemonSpecies {
@@ -53,10 +113,24 @@ export interface PokemonSpecies {
   learnableMoves: string[];
 }
 
+/** Auto-enrich a raw move definition with dice damage fields */
+function m(raw: Omit<Move, "damage_dice" | "power_category" | "damage_type" | "scaling_attribute" | "uses_contact">): Move {
+  const dice = deriveDiceFromPower(raw.power);
+  const classification = classifyMove(raw);
+  return {
+    ...raw,
+    damage_dice: dice.damage_dice,
+    power_category: raw.power === 0 ? "weak" : dice.power_category,
+    damage_type: classification.damage_type,
+    scaling_attribute: classification.scaling_attribute,
+    uses_contact: classification.uses_contact,
+  };
+}
+
 export const MOVES: Move[] = [
   // Normal
-  { id: "tackle", name: "Tackle", type: "normal", power: 40, accuracy: 6, description: "Um ataque corpo a corpo simples.", range: "melee", learnLevel: 1 },
-  { id: "scratch", name: "Scratch", type: "normal", power: 40, accuracy: 6, description: "Arranha o inimigo com garras afiadas.", range: "melee", learnLevel: 1 },
+  m({ id: "tackle", name: "Tackle", type: "normal", power: 40, accuracy: 6, description: "Um ataque corpo a corpo simples.", range: "melee", learnLevel: 1 }),
+  m({ id: "scratch", name: "Scratch", type: "normal", power: 40, accuracy: 6, description: "Arranha o inimigo com garras afiadas.", range: "melee", learnLevel: 1 },
   { id: "pound", name: "Pound", type: "normal", power: 40, accuracy: 6, description: "Golpeia o alvo com a pata.", range: "melee", learnLevel: 1 },
   { id: "quick-attack", name: "Quick Attack", type: "normal", power: 40, accuracy: 5, description: "Ataque extremamente rapido.", range: "short", learnLevel: 5 },
   { id: "slam", name: "Slam", type: "normal", power: 80, accuracy: 10, description: "Golpe poderoso que arremessa o alvo.", range: "melee", learnLevel: 20 },
