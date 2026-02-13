@@ -212,12 +212,20 @@ export interface BattleState {
   attributeTestResult: AttributeTestResult | null;
 }
 
+export interface PendingEvolution {
+  uid: string;
+  pokemonName: string;
+  fromSpeciesId: number;
+  toSpeciesId: number;
+}
+
 interface GameState {
   trainer: TrainerProfile;
   team: TeamPokemon[];
   bag: BagItem[];
   battle: BattleState;
   npcs: NpcEnemy[];
+  pendingEvolution: PendingEvolution | null;
   // Trainer management
   updateTrainer: (data: Partial<TrainerProfile>) => void;
   addMoney: (amount: number) => void;
@@ -276,6 +284,9 @@ interface GameState {
   addNpcPokemon: (npcId: string, speciesId: number, level: number) => void;
   removeNpcPokemon: (npcId: string, index: number) => void;
   updateNpcPokemonLevel: (npcId: string, index: number, level: number) => void;
+  // Evolution queue
+  triggerEvolution: (evolution: PendingEvolution) => void;
+  completeEvolution: () => void;
 }
 
 function generateUid(): string {
