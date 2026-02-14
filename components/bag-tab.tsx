@@ -41,19 +41,8 @@ export function BagTab() {
   } | null>(null);
   const [addItemDialog, setAddItemDialog] = useState(false);
   const [addQty, setAddQty] = useState(1);
-  const uid = ""; // Declare uid variable here
-  const p = { uid: "" }; // Declare p variable here
 
   const categories = ["potion", "pokeball", "status", "other"] as const;
-
-  const handleUseItem = (itemId: string, uid: string) => {
-    playHeal();
-    setUseTarget(null);
-  };
-
-  const useBagItemHook = (itemId: string, uid: string) => {
-    useBagItem(itemId, uid);
-  };
 
   return (
     <div className="flex flex-col h-full">
@@ -112,8 +101,8 @@ export function BagTab() {
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                useBagItem(item.itemId, p.uid);
-                                handleUseItem(item.itemId, p.uid);
+                                playButtonClick();
+                                setUseTarget({ itemId: item.itemId, itemName: def.name });
                               }}
                               className="text-xs border-border text-foreground bg-transparent hover:bg-secondary"
                             >
@@ -140,51 +129,70 @@ export function BagTab() {
 
       {/* Use item target dialog */}
       <Dialog open={!!useTarget} onOpenChange={() => setUseTarget(null)}>
-        {useTarget && (
-          <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
-            <DialogHeader>
-              <DialogTitle className="text-foreground">
-                Usar {useTarget.itemName}
-              </DialogTitle>
-            </DialogHeader>
-            <p className="text-sm text-muted-foreground mb-2">
-              Escolha um Pokemon:
-            </p>
-            <div className="flex flex-col gap-2">
-              {team.map((p) => (
-                <Button
-                  key={p.uid}
-                  variant="outline"
-                  onClick={() => {
-                    useBagItem(useTarget.itemId, p.uid);
-                    handleUseItem(useTarget.itemId, p.uid);
-                  }}
-                  className="flex items-center justify-start gap-3 h-auto py-2 border-border text-foreground bg-transparent hover:bg-secondary"
-                >
-                  <img
-                    src={getSpriteUrl(p.speciesId) || "/placeholder.svg"}
-                    alt={p.name}
-                    width={40}
-                    height={40}
-                    className="pixelated"
-                    crossOrigin="anonymous"
-                  />
-                  <div className="text-left">
-                    <span className="text-sm font-medium">{p.name}</span>
-                    <span className="text-[10px] block text-muted-foreground">
-                      HP: {p.currentHp}/{p.maxHp}
-                    </span>
-                  </div>
-                </Button>
-              ))}
-              {team.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Nenhum Pokemon na equipe.
-                </p>
-              )}
-            </div>
-          </DialogContent>
-        )}
+        {useTarget && (() => {
+          const itemDef = BAG_ITEMS.find((d) => d.id === useTarget.itemId);
+          const isRevive = useTarget.itemId === "revive";
+          // Filter: revive only shows fainted, potions only show alive
+          const filteredTeam = isRevive
+            ? team.filter((p) => p.currentHp <= 0)
+            : team.filter((p) => p.currentHp > 0);
+
+          return (
+            <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
+              <DialogHeader>
+                <DialogTitle className="text-foreground">
+                  Usar {useTarget.itemName}
+                </DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  {isRevive
+                    ? "Escolha um Pokemon desmaiado para reviver:"
+                    : "Escolha um Pokemon:"}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col gap-2">
+                {filteredTeam.map((p) => {
+                  const isFainted = p.currentHp <= 0;
+                  return (
+                    <Button
+                      key={p.uid}
+                      variant="outline"
+                      onClick={() => {
+                        useBagItem(useTarget.itemId, p.uid);
+                        playHeal();
+                        setUseTarget(null);
+                      }}
+                      className={`flex items-center justify-start gap-3 h-auto py-2 border-border bg-transparent hover:bg-secondary ${
+                        isFainted ? "text-red-400 border-red-500/30" : "text-foreground"
+                      }`}
+                    >
+                      <img
+                        src={getSpriteUrl(p.speciesId) || "/placeholder.svg"}
+                        alt={p.name}
+                        width={40}
+                        height={40}
+                        className={`pixelated ${isFainted ? "grayscale opacity-60" : ""}`}
+                        crossOrigin="anonymous"
+                      />
+                      <div className="text-left">
+                        <span className="text-sm font-medium">{p.name}</span>
+                        <span className={`text-[10px] block ${isFainted ? "text-red-400" : "text-muted-foreground"}`}>
+                          {isFainted ? "DESMAIADO" : `HP: ${p.currentHp}/${p.maxHp}`}
+                        </span>
+                      </div>
+                    </Button>
+                  );
+                })}
+                {filteredTeam.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    {isRevive
+                      ? "Nenhum Pokemon desmaiado."
+                      : "Nenhum Pokemon disponivel."}
+                  </p>
+                )}
+              </div>
+            </DialogContent>
+          );
+        })()}
       </Dialog>
 
       {/* Add item dialog */}

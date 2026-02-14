@@ -14,6 +14,20 @@ export interface ActiveMove {
   maxPP: number;
 }
 
+export interface PokemonNeeds {
+  hunger: number;   // 0-100, 100 = full, decays over time
+  thirst: number;   // 0-100, 100 = full, decays over time
+  sleep: number;    // 0-100, 100 = fully rested, decays over time
+  lastTickAt: number; // timestamp of last decay tick
+}
+
+export const DEFAULT_NEEDS: PokemonNeeds = {
+  hunger: 100,
+  thirst: 100,
+  sleep: 100,
+  lastTickAt: Date.now(),
+};
+
 export interface TeamPokemon {
   uid: string;
   speciesId: number;
@@ -26,6 +40,8 @@ export interface TeamPokemon {
   learnableMoves: string[];
   /** Override base attributes (modified by faint penalties and level-up bonuses) */
   customAttributes?: PokemonBaseAttributes;
+  /** Tamagotchi needs */
+  needs?: PokemonNeeds;
 }
 
 export interface BagItem {
@@ -160,6 +176,13 @@ export const SHOP_ITEMS: ShopItem[] = [
   // Rare items
   { id: "rare-candy", name: "Rare Candy", price: 4800, description: "Sobe 1 nivel instantaneamente.", category: "rare" },
   { id: "master-ball", name: "Master Ball", price: 50000, description: "Captura garantida. Rarissima.", category: "rare" },
+  // Tamagotchi care items
+  { id: "berry", name: "Berry", price: 100, description: "Mata a fome. +30 fome.", category: "food" },
+  { id: "poffin", name: "Poffin", price: 250, description: "Refeicao completa. +60 fome.", category: "food" },
+  { id: "fresh-water", name: "Agua Fresca", price: 80, description: "Mata a sede. +30 sede.", category: "food" },
+  { id: "moomoo-milk", name: "Moomoo Milk", price: 200, description: "Hidratacao completa. +60 sede.", category: "food" },
+  { id: "lava-cookie", name: "Lava Cookie", price: 150, description: "Lanchinho que ajuda a descansar. +30 sono.", category: "food" },
+  { id: "old-gateau", name: "Old Gateau", price: 350, description: "Descanso profundo. +60 sono.", category: "food" },
 ];
 
 // NPC / Enemy system (master mode)
@@ -307,6 +330,11 @@ interface GameState {
   // Evolution queue
   triggerEvolution: (evolution: PendingEvolution) => void;
   completeEvolution: () => void;
+  // Tamagotchi needs
+  feedPokemon: (uid: string, amount: number) => void;
+  hydratePokemon: (uid: string, amount: number) => void;
+  restPokemon: (uid: string, amount: number) => void;
+  tickAllNeeds: () => void;
   // Card system
   drawBattleCard: () => BattleCard;
   replaceCardInSlot: (slotIndex: number, card: BattleCard) => void;
@@ -1576,10 +1604,69 @@ export const useGameStore = create<GameState>()(
         return { isCrit, alignment: card.alignment };
       },
 
+      // ── Tamagotchi needs ─────────────────────────────────
+      feedPokemon: (uid: string, amount: number) => {
+        const { team } = get();
+        set({
+          team: team.map((p) => {
+            if (p.uid !== uid) return p;
+            const needs = p.needs ?? { ...DEFAULT_NEEDS };
+            return { ...p, needs: { ...needs, hunger: Math.min(100, needs.hunger + amount) } };
+          }),
+        });
+      },
+
+      hydratePokemon: (uid: string, amount: number) => {
+        const { team } = get();
+        set({
+          team: team.map((p) => {
+            if (p.uid !== uid) return p;
+            const needs = p.needs ?? { ...DEFAULT_NEEDS };
+            return { ...p, needs: { ...needs, thirst: Math.min(100, needs.thirst + amount) } };
+          }),
+        });
+      },
+
+      restPokemon: (uid: string, amount: number) => {
+        const { team } = get();
+        set({
+          team: team.map((p) => {
+            if (p.uid !== uid) return p;
+            const needs = p.needs ?? { ...DEFAULT_NEEDS };
+            return { ...p, needs: { ...needs, sleep: Math.min(100, needs.sleep + amount) } };
+          }),
+        });
+      },
+
+      tickAllNeeds: () => {
+        const { team } = get();
+        const now = Date.now();
+        // Decay rates: per minute of real time
+        const HUNGER_DECAY_PER_MIN = 0.8;
+        const THIRST_DECAY_PER_MIN = 1.2;
+        const SLEEP_DECAY_PER_MIN = 0.5;
+
+        const updated = team.map((p) => {
+          const needs = p.needs ?? { ...DEFAULT_NEEDS, lastTickAt: now };
+          const elapsed = (now - needs.lastTickAt) / 60000; // minutes
+          if (elapsed < 0.5) return p; // skip if less than 30 seconds
+          return {
+            ...p,
+            needs: {
+              hunger: Math.max(0, needs.hunger - elapsed * HUNGER_DECAY_PER_MIN),
+              thirst: Math.max(0, needs.thirst - elapsed * THIRST_DECAY_PER_MIN),
+              sleep: Math.max(0, needs.sleep - elapsed * SLEEP_DECAY_PER_MIN),
+              lastTickAt: now,
+            },
+          };
+        });
+        set({ team: updated });
+      },
+
     }),
     {
       name: getGameStoreKey(),
-      version: 10,
+      version: 11,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         if (version < 2) {
@@ -1642,6 +1729,13 @@ export const useGameStore = create<GameState>()(
             duration: 0,
           };
           state.battle = battle;
+        }
+        if (version < 11) {
+          const team = (state.team as TeamPokemon[]) || [];
+          state.team = team.map((p) => ({
+            ...p,
+            needs: p.needs ?? { ...DEFAULT_NEEDS, lastTickAt: Date.now() },
+          }));
         }
         return state as unknown as GameState;
       },
