@@ -55,6 +55,7 @@ import {
   playButtonClick,
   playFlee,
   playHeal,
+  playCardActivateDamage,
 } from "@/lib/sounds";
 import { BattleCards } from "./battle-cards";
 import { BattleParticles } from "./battle-particles";
@@ -151,8 +152,35 @@ const getRandomArena = () => {
     if (Number.isNaN(dmg) || dmg <= 0) return;
     applyOpponentDamage(dmg);
     playDamageReceived();
+    playCardActivateDamage();
     setDamageInput("");
     setShowDamageInput(false);
+
+    // Trigger damage animation + particles on the pokemon
+    const state = useGameStore.getState();
+    useGameStore.setState({
+      battle: {
+        ...state.battle,
+        pokemonAnimationState: {
+          isAnimating: true,
+          effectType: "damage",
+          duration: 600,
+        },
+      },
+    });
+    setTimeout(() => {
+      const s = useGameStore.getState();
+      useGameStore.setState({
+        battle: {
+          ...s.battle,
+          pokemonAnimationState: {
+            isAnimating: false,
+            effectType: "none",
+            duration: 0,
+          },
+        },
+      });
+    }, 600);
   };
 
   const handlePokeball = () => {
