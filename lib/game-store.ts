@@ -1451,7 +1451,7 @@ export const useGameStore = create<GameState>()(
           let updatedTeam = team;
 
           if (activeMon) {
-            const trioDamage = Math.round(activeMon.currentHp * 0.5);
+            const trioDamage = Math.round(activeMon.currentHp * 0.8);
             const newHp = Math.max(0, activeMon.currentHp - trioDamage);
             updatedTeam = team.map((p) =>
               p.uid === activeMon.uid ? { ...p, currentHp: newHp } : p
