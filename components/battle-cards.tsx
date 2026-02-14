@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/lib/game-store";
 import type { BattleCard } from "@/lib/card-data";
-import { ELEMENT_COLORS } from "@/lib/card-data";
+import { ELEMENT_COLORS, ELEMENT_NAMES_PT } from "@/lib/card-data";
 import {
   playCardDraw,
   playCardLuck,
@@ -33,6 +33,12 @@ import {
   Star,
   Circle,
   Wind,
+  Sword,
+  Bug,
+  Skull,
+  Shield,
+  Cog,
+  Footprints,
 } from "lucide-react";
 
 // Element icon map
@@ -48,6 +54,12 @@ const ELEMENT_ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   dragon: Star,
   normal: Circle,
   flying: Wind,
+  fighting: Sword,
+  poison: Skull,
+  ground: Footprints,
+  bug: Bug,
+  dark: Shield,
+  steel: Cog,
 };
 
 function ElementIcon({ element, className }: { element: string; className?: string }) {
@@ -55,72 +67,248 @@ function ElementIcon({ element, className }: { element: string; className?: stri
   return <Icon className={className} />;
 }
 
-// -- Card Slot Component --
-function CardSlot({
+// ============================================================
+// YU-GI-OH STYLE CARD
+// ============================================================
+function YuGiOhCard({
   card,
-  index,
+  size = "small",
   onClick,
 }: {
-  card: BattleCard | null;
-  index: number;
-  onClick: (card: BattleCard) => void;
+  card: BattleCard;
+  size?: "small" | "large";
+  onClick?: () => void;
 }) {
-  if (!card) {
+  const isLuck = card.alignment === "luck";
+  const elColor = ELEMENT_COLORS[card.element] || "#888";
+  const elName = ELEMENT_NAMES_PT[card.element] || card.element;
+
+  // Color scheme
+  const borderColor = isLuck ? "#C5A026" : "#5A1A1A";
+  const outerBg = isLuck
+    ? "linear-gradient(180deg, #F5E6A3 0%, #D4AF37 8%, #C5A026 92%, #8B7118 100%)"
+    : "linear-gradient(180deg, #5A2D2D 0%, #4A1515 8%, #3A0A0A 92%, #1A0505 100%)";
+  const innerBg = isLuck
+    ? "linear-gradient(180deg, #FFFDE0 0%, #FFF9C4 100%)"
+    : "linear-gradient(180deg, #2D1515 0%, #1A0A0A 100%)";
+  const textColor = isLuck ? "#3E2723" : "#E8C8C8";
+  const subTextColor = isLuck ? "#5D4037" : "#B0888A";
+  const nameBg = isLuck
+    ? "linear-gradient(90deg, #F9F0D0 0%, #FFF8DC 50%, #F9F0D0 100%)"
+    : "linear-gradient(90deg, #2A1010 0%, #3A1818 50%, #2A1010 100%)";
+
+  if (size === "small") {
     return (
-      <div className="w-14 h-20 rounded-lg border border-dashed border-muted-foreground/30 bg-secondary/20 flex items-center justify-center">
-        <span className="text-[9px] text-muted-foreground/40">{index + 1}</span>
-      </div>
+      <motion.button
+        onClick={onClick}
+        initial={{ rotateY: 180, opacity: 0 }}
+        animate={{ rotateY: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        whileHover={{ scale: 1.06, y: -3 }}
+        whileTap={{ scale: 0.97 }}
+        className="relative flex flex-col rounded-[5px] overflow-hidden cursor-pointer"
+        style={{
+          width: 52,
+          height: 76,
+          background: outerBg,
+          border: `1.5px solid ${borderColor}`,
+          boxShadow: isLuck
+            ? "0 2px 8px rgba(197,160,38,0.4), inset 0 1px 0 rgba(255,255,255,0.2)"
+            : "0 2px 8px rgba(90,26,26,0.6), inset 0 1px 0 rgba(255,255,255,0.05)",
+        }}
+      >
+        {/* Element type strip at top */}
+        <div
+          className="flex items-center justify-center gap-0.5 py-[2px]"
+          style={{ background: `${elColor}33` }}
+        >
+          <ElementIcon element={card.element} className="w-2.5 h-2.5" />
+          <span className="text-[6px] font-bold uppercase" style={{ color: elColor }}>
+            {elName}
+          </span>
+        </div>
+
+        {/* Image area */}
+        <div
+          className="mx-[3px] mt-[2px] flex items-center justify-center rounded-[2px]"
+          style={{
+            height: 28,
+            background: innerBg,
+            border: `0.5px solid ${borderColor}55`,
+          }}
+        >
+          <span className="text-[18px] leading-none drop-shadow-sm">
+            {isLuck ? "\u2618" : "\u2620"}
+          </span>
+        </div>
+
+        {/* Name */}
+        <div
+          className="mx-[3px] mt-[2px] px-1 py-[1px] rounded-[1px] text-center"
+          style={{ background: nameBg }}
+        >
+          <span
+            className="text-[5.5px] font-bold leading-tight block truncate"
+            style={{ color: textColor }}
+          >
+            {card.name}
+          </span>
+        </div>
+
+        {/* Description area */}
+        <div
+          className="mx-[3px] mt-[1px] mb-[2px] flex-1 px-1 py-[1px] rounded-[1px] flex items-center"
+          style={{
+            background: innerBg,
+            border: `0.5px solid ${borderColor}33`,
+          }}
+        >
+          <span
+            className="text-[4.5px] leading-[1.3] text-center w-full line-clamp-2"
+            style={{ color: subTextColor }}
+          >
+            {card.description}
+          </span>
+        </div>
+
+        {/* Bad luck lock indicator */}
+        {!isLuck && (
+          <div className="absolute bottom-[1px] right-[2px]">
+            <span className="text-[5px] text-red-400/80">X</span>
+          </div>
+        )}
+      </motion.button>
     );
   }
 
-  const isLuck = card.alignment === "luck";
-  const bgColor = isLuck ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)";
-  const borderColor = isLuck ? "rgba(34,197,94,0.5)" : "rgba(239,68,68,0.5)";
-  const locked = card.alignment === "bad-luck";
-
+  // LARGE card (dialog view)
   return (
-    <motion.button
-      initial={{ rotateY: 180, opacity: 0 }}
-      animate={{ rotateY: 0, opacity: 1 }}
-      transition={{ duration: 0.4, delay: 0.1 }}
-      onClick={() => onClick(card)}
-      className="relative w-14 h-20 rounded-lg flex flex-col items-center justify-center gap-0.5 cursor-pointer hover:scale-105 transition-transform"
+    <motion.div
+      initial={{ scale: 0.6, rotateY: 180 }}
+      animate={{ scale: 1, rotateY: 0 }}
+      transition={{ type: "spring", damping: 14 }}
+      className="relative flex flex-col rounded-lg overflow-hidden mx-auto"
       style={{
-        background: bgColor,
-        border: `1.5px solid ${borderColor}`,
+        width: 220,
+        background: outerBg,
+        border: `3px solid ${borderColor}`,
+        boxShadow: isLuck
+          ? "0 8px 32px rgba(197,160,38,0.5), inset 0 2px 0 rgba(255,255,255,0.15)"
+          : "0 8px 32px rgba(90,26,26,0.7), inset 0 2px 0 rgba(255,255,255,0.05)",
       }}
     >
-      {/* Element icon - top left */}
-      <div className="absolute top-0.5 left-0.5">
-        <ElementIcon
-          element={card.element}
-          className="w-3 h-3"
-          // @ts-expect-error - style is valid
-          style={{ color: ELEMENT_COLORS[card.element] }}
-        />
+      {/* Element type strip */}
+      <div
+        className="flex items-center justify-between px-3 py-1.5"
+        style={{ background: `${elColor}22` }}
+      >
+        <div className="flex items-center gap-1.5">
+          <div
+            className="w-6 h-6 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: `${elColor}33`, border: `1px solid ${elColor}66` }}
+          >
+            <ElementIcon element={card.element} className="w-3.5 h-3.5" />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: elColor }}>
+            {elName}
+          </span>
+        </div>
+        <span
+          className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+          style={{
+            background: isLuck ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)",
+            color: isLuck ? "#4ADE80" : "#F87171",
+            border: `1px solid ${isLuck ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
+          }}
+        >
+          {isLuck ? "SORTE" : "AZAR"}
+        </span>
       </div>
 
-      {/* Lock badge for bad luck */}
-      {locked && (
-        <div className="absolute top-0.5 right-0.5">
-          <span className="text-[7px] text-red-400">X</span>
+      {/* Image area */}
+      <div
+        className="mx-3 mt-2 flex items-center justify-center rounded"
+        style={{
+          height: 120,
+          background: innerBg,
+          border: `1.5px solid ${borderColor}88`,
+        }}
+      >
+        <motion.span
+          className="text-6xl drop-shadow-lg"
+          animate={{
+            scale: [1, 1.08, 1],
+            rotate: isLuck ? [0, 3, -3, 0] : [0, -2, 2, 0],
+          }}
+          transition={{ duration: 2.5, repeat: Infinity }}
+        >
+          {isLuck ? "\u2618" : "\u2620"}
+        </motion.span>
+      </div>
+
+      {/* Name bar */}
+      <div
+        className="mx-3 mt-2 px-3 py-1.5 rounded text-center"
+        style={{ background: nameBg, border: `1px solid ${borderColor}44` }}
+      >
+        <h3 className="text-sm font-bold tracking-wide" style={{ color: textColor }}>
+          {card.name}
+        </h3>
+      </div>
+
+      {/* Description box */}
+      <div
+        className="mx-3 mt-1.5 mb-3 px-3 py-2 rounded flex items-center justify-center min-h-[48px]"
+        style={{
+          background: innerBg,
+          border: `1px solid ${borderColor}44`,
+        }}
+      >
+        <p
+          className="text-xs leading-relaxed text-center"
+          style={{ color: subTextColor }}
+        >
+          {card.description}
+        </p>
+      </div>
+
+      {/* Bad luck penalty notice */}
+      {!isLuck && (
+        <div
+          className="mx-3 mb-2 py-1.5 px-2 rounded text-center"
+          style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.2)" }}
+        >
+          <span className="text-[9px] text-red-400">
+            -2 dano (ou -4 se mesmo tipo) | Nao pode ser substituida
+          </span>
         </div>
       )}
-
-      {/* Alignment symbol */}
-      <span className="text-lg leading-none">
-        {isLuck ? "\u2618" : "\u2620"}
-      </span>
-
-      {/* Card name */}
-      <span className="text-[7px] text-center leading-tight text-foreground/80 px-0.5 line-clamp-2">
-        {card.name}
-      </span>
-    </motion.button>
+    </motion.div>
   );
 }
 
-// -- Card Viewer Dialog --
+// ============================================================
+// EMPTY SLOT
+// ============================================================
+function EmptySlot({ index }: { index: number }) {
+  return (
+    <div
+      className="relative flex flex-col items-center justify-center rounded-[5px]"
+      style={{
+        width: 52,
+        height: 76,
+        background: "linear-gradient(180deg, rgba(30,30,30,0.6) 0%, rgba(20,20,20,0.8) 100%)",
+        border: "1.5px dashed rgba(255,255,255,0.1)",
+      }}
+    >
+      <span className="text-[9px] text-muted-foreground/30 font-mono">{index + 1}</span>
+    </div>
+  );
+}
+
+// ============================================================
+// CARD VIEWER DIALOG
+// ============================================================
 function CardViewer({
   card,
   open,
@@ -131,89 +319,23 @@ function CardViewer({
   onClose: () => void;
 }) {
   if (!card) return null;
-  const isLuck = card.alignment === "luck";
-  const bgGradient = isLuck
-    ? "linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%)"
-    : "linear-gradient(135deg, #450a0a 0%, #7f1d1d 50%, #991b1b 100%)";
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-[280px] mx-auto p-0 overflow-hidden border-none bg-transparent">
+      <DialogContent className="max-w-[260px] mx-auto p-4 overflow-visible border-none bg-transparent">
         <DialogHeader className="sr-only">
           <DialogTitle>{card.name}</DialogTitle>
           <DialogDescription>Detalhes da carta de batalha</DialogDescription>
         </DialogHeader>
-        <motion.div
-          initial={{ scale: 0.5, rotateY: 180 }}
-          animate={{ scale: 1, rotateY: 0 }}
-          transition={{ type: "spring", damping: 15 }}
-          className="relative rounded-xl overflow-hidden"
-          style={{ background: bgGradient }}
-        >
-          {/* Top-left element icon */}
-          <div className="absolute top-3 left-3 flex items-center gap-1.5">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: `${ELEMENT_COLORS[card.element]}33` }}
-            >
-              <ElementIcon
-                element={card.element}
-                className="w-5 h-5"
-              />
-            </div>
-            <span className="text-xs font-bold text-white/80 capitalize">
-              {card.element}
-            </span>
-          </div>
-
-          {/* Alignment badge */}
-          <div className="absolute top-3 right-3">
-            <span
-              className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                isLuck
-                  ? "bg-green-500/30 text-green-300"
-                  : "bg-red-500/30 text-red-300"
-              }`}
-            >
-              {isLuck ? "Sorte" : "Azar"}
-            </span>
-          </div>
-
-          {/* Center alignment symbol */}
-          <div className="flex flex-col items-center justify-center py-12 px-6">
-            <motion.span
-              className="text-7xl mb-3"
-              animate={{
-                scale: [1, 1.1, 1],
-                rotate: isLuck ? [0, 5, -5, 0] : [0, -3, 3, 0],
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              {isLuck ? "\u2618" : "\u2620"}
-            </motion.span>
-            <h3 className="text-xl font-bold text-white text-center mb-2">
-              {card.name}
-            </h3>
-            <p className="text-sm text-white/70 text-center leading-relaxed">
-              {card.description}
-            </p>
-          </div>
-
-          {/* Bad luck lock notice */}
-          {!isLuck && (
-            <div className="mx-4 mb-4 bg-red-900/40 rounded-lg py-1.5 px-3 text-center">
-              <span className="text-[10px] text-red-300/80">
-                Carta bloqueada - nao pode ser substituida
-              </span>
-            </div>
-          )}
-        </motion.div>
+        <YuGiOhCard card={card} size="large" />
       </DialogContent>
     </Dialog>
   );
 }
 
-// -- Replace Card Modal --
+// ============================================================
+// REPLACE CARD MODAL (when 6th card drawn)
+// ============================================================
 function ReplaceCardModal({
   open,
   card,
@@ -228,61 +350,46 @@ function ReplaceCardModal({
   onCancel: () => void;
 }) {
   if (!card) return null;
-  const isLuck = card.alignment === "luck";
 
   return (
     <Dialog open={open} onOpenChange={onCancel}>
       <DialogContent className="max-w-sm mx-auto bg-card border-border text-foreground">
         <DialogHeader>
-          <DialogTitle>Substituir Carta</DialogTitle>
-          <DialogDescription>
-            Escolha uma carta para substituir. Cartas de Azar nao podem ser substituidas.
+          <DialogTitle className="text-center text-base">Substituir uma carta de Sorte</DialogTitle>
+          <DialogDescription className="text-center text-xs text-muted-foreground">
+            Slots cheios! Escolha uma carta de Sorte para substituir. Cartas de Azar sao bloqueadas.
           </DialogDescription>
         </DialogHeader>
-        <div className="mb-3 flex items-center gap-2 p-3 rounded-lg" style={{
-          background: isLuck ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
-          border: `1px solid ${isLuck ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
-        }}>
-          <span className="text-2xl">{isLuck ? "\u2618" : "\u2620"}</span>
-          <div>
-            <p className="text-sm font-bold">{card.name}</p>
-            <p className="text-xs text-muted-foreground">{card.description}</p>
-          </div>
+
+        {/* New card preview */}
+        <div className="flex justify-center mb-3">
+          <YuGiOhCard card={card} size="small" />
         </div>
-        <div className="flex gap-2 justify-center">
+
+        {/* Field cards to choose from */}
+        <div className="flex gap-2 justify-center flex-wrap">
           {fieldCards.map((fieldCard, i) => {
             if (!fieldCard) return null;
-            const isFieldLuck = fieldCard.alignment === "luck";
             const isLocked = fieldCard.alignment === "bad-luck";
             return (
-              <button
-                key={i}
-                onClick={() => !isLocked && onReplace(i)}
-                disabled={isLocked}
-                className={`relative w-14 h-20 rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all ${
-                  isLocked
-                    ? "opacity-40 cursor-not-allowed"
-                    : "cursor-pointer hover:ring-2 hover:ring-accent"
-                }`}
-                style={{
-                  background: isFieldLuck ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
-                  border: `1.5px solid ${isFieldLuck ? "rgba(34,197,94,0.5)" : "rgba(239,68,68,0.5)"}`,
-                }}
-              >
-                <span className="text-lg">{isFieldLuck ? "\u2618" : "\u2620"}</span>
-                <span className="text-[7px] text-center leading-tight text-foreground/80 px-0.5 line-clamp-2">
-                  {fieldCard.name}
-                </span>
+              <div key={i} className="relative">
+                <div
+                  className={`transition-all ${isLocked ? "opacity-30 pointer-events-none" : "cursor-pointer hover:ring-2 hover:ring-yellow-400 rounded-[5px]"}`}
+                  onClick={() => !isLocked && onReplace(i)}
+                >
+                  <YuGiOhCard card={fieldCard} size="small" />
+                </div>
                 {isLocked && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-background/60 rounded-lg">
-                    <span className="text-[9px] text-red-400 font-bold">BLOQ</span>
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded-[5px]">
+                    <span className="text-[8px] text-red-400 font-bold bg-background/80 px-1.5 py-0.5 rounded">BLOQ</span>
                   </div>
                 )}
-              </button>
+              </div>
             );
           })}
         </div>
-        <Button variant="outline" onClick={onCancel} className="mt-2 border-border text-foreground">
+
+        <Button variant="outline" size="sm" onClick={onCancel} className="mt-2 border-border text-foreground w-full">
           Cancelar
         </Button>
       </DialogContent>
@@ -290,19 +397,17 @@ function ReplaceCardModal({
   );
 }
 
-// -- Trio Event Overlay --
+// ============================================================
+// TRIO EVENT OVERLAY
+// ============================================================
 function TrioEventOverlay() {
   const { battle, dismissTrioEvent } = useGameStore();
   const event = battle.cardTrioEvent;
   if (!event) return null;
 
   const isLuck = event.type === "luck";
-  const effectName = event.hasAffinity
-    ? event.effect.affinityName
-    : event.effect.name;
-  const effectDesc = event.hasAffinity
-    ? event.effect.affinityDescription
-    : event.effect.description;
+  const effectName = event.hasAffinity ? event.effect.affinityName : event.effect.name;
+  const effectDesc = event.hasAffinity ? event.effect.affinityDescription : event.effect.description;
 
   return (
     <motion.div
@@ -312,24 +417,20 @@ function TrioEventOverlay() {
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{
         background: isLuck
-          ? "radial-gradient(ellipse at center, rgba(234,179,8,0.3) 0%, rgba(0,0,0,0.9) 70%)"
+          ? "radial-gradient(ellipse at center, rgba(197,160,38,0.3) 0%, rgba(0,0,0,0.92) 70%)"
           : "radial-gradient(ellipse at center, rgba(127,29,29,0.4) 0%, rgba(0,0,0,0.95) 70%)",
       }}
     >
-      {/* Screen shake for bad luck */}
       <motion.div
         animate={
           isLuck
             ? {}
-            : {
-                x: [0, -4, 4, -3, 3, -1, 1, 0],
-                y: [0, 2, -2, 1, -1, 0],
-              }
+            : { x: [0, -5, 5, -3, 3, -1, 1, 0], y: [0, 3, -3, 1, -1, 0] }
         }
-        transition={{ duration: 0.5, repeat: 2 }}
-        className="flex flex-col items-center gap-6 px-6"
+        transition={{ duration: 0.5, repeat: 3 }}
+        className="flex flex-col items-center gap-5 px-6"
       >
-        {/* Particle effects */}
+        {/* Particles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {[...Array(30)].map((_, i) => (
             <motion.div
@@ -352,7 +453,7 @@ function TrioEventOverlay() {
               transition={{
                 duration: 2 + Math.random() * 2,
                 repeat: Infinity,
-                delay: Math.random() * 1,
+                delay: Math.random(),
               }}
             />
           ))}
@@ -366,23 +467,28 @@ function TrioEventOverlay() {
           className="text-center"
         >
           <motion.span
-            className="text-6xl block mb-2"
+            className="text-5xl block mb-2"
             animate={{ scale: [1, 1.2, 1], rotate: [0, 5, -5, 0] }}
             transition={{ duration: 1.5, repeat: Infinity }}
           >
             {isLuck ? "\u2618\u2618\u2618" : "\u2620\u2620\u2620"}
           </motion.span>
           <h2
-            className="text-3xl font-black tracking-wider"
+            className="text-2xl font-black tracking-wider"
             style={{
-              color: isLuck ? "#F59E0B" : "#EF4444",
+              color: isLuck ? "#D4AF37" : "#EF4444",
               textShadow: isLuck
-                ? "0 0 30px rgba(245,158,11,0.5)"
+                ? "0 0 30px rgba(212,175,55,0.5)"
                 : "0 0 30px rgba(239,68,68,0.5)",
             }}
           >
             {isLuck ? "SUPER VANTAGEM!" : "SUPER PUNICAO!"}
           </h2>
+          {!isLuck && (
+            <p className="text-xs text-red-400/70 mt-1">
+              Todos os slots serao limpos!
+            </p>
+          )}
         </motion.div>
 
         {/* Affinity notice */}
@@ -393,9 +499,9 @@ function TrioEventOverlay() {
             transition={{ delay: 0.3 }}
             className="px-4 py-1.5 rounded-full text-xs font-bold"
             style={{
-              background: isLuck ? "rgba(245,158,11,0.2)" : "rgba(239,68,68,0.2)",
+              background: isLuck ? "rgba(212,175,55,0.2)" : "rgba(239,68,68,0.2)",
               color: isLuck ? "#FCD34D" : "#FCA5A5",
-              border: `1px solid ${isLuck ? "rgba(245,158,11,0.4)" : "rgba(239,68,68,0.4)"}`,
+              border: `1px solid ${isLuck ? "rgba(212,175,55,0.4)" : "rgba(239,68,68,0.4)"}`,
             }}
           >
             Afinidade Elemental - Efeito DOBRADO!
@@ -410,13 +516,13 @@ function TrioEventOverlay() {
           className="w-full max-w-xs rounded-xl p-5 text-center"
           style={{
             background: isLuck
-              ? "linear-gradient(135deg, rgba(234,179,8,0.15) 0%, rgba(234,179,8,0.05) 100%)"
+              ? "linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.05) 100%)"
               : "linear-gradient(135deg, rgba(239,68,68,0.15) 0%, rgba(239,68,68,0.05) 100%)",
-            border: `1px solid ${isLuck ? "rgba(234,179,8,0.3)" : "rgba(239,68,68,0.3)"}`,
+            border: `1px solid ${isLuck ? "rgba(212,175,55,0.3)" : "rgba(239,68,68,0.3)"}`,
           }}
         >
           <h3
-            className="text-xl font-bold mb-2"
+            className="text-lg font-bold mb-1.5"
             style={{ color: isLuck ? "#FCD34D" : "#FCA5A5" }}
           >
             {effectName}
@@ -424,12 +530,8 @@ function TrioEventOverlay() {
           <p className="text-sm text-foreground/80">{effectDesc}</p>
         </motion.div>
 
-        {/* Dismiss button */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5 }}
-        >
+        {/* Dismiss */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
           <Button
             onClick={() => {
               playButtonClick();
@@ -437,7 +539,7 @@ function TrioEventOverlay() {
             }}
             className="px-8 py-2"
             style={{
-              backgroundColor: isLuck ? "#D97706" : "#DC2626",
+              backgroundColor: isLuck ? "#B8860B" : "#DC2626",
               color: "#fff",
             }}
           >
@@ -449,7 +551,9 @@ function TrioEventOverlay() {
   );
 }
 
-// -- Main BattleCards Component --
+// ============================================================
+// MAIN BATTLE CARDS COMPONENT
+// ============================================================
 export function BattleCards() {
   const {
     battle,
@@ -463,6 +567,9 @@ export function BattleCards() {
 
   const fieldCards = battle.cardField;
   const hasEmptySlot = fieldCards.some((c) => c === null);
+  const luckCount = fieldCards.filter((c) => c?.alignment === "luck").length;
+  const badLuckCount = fieldCards.filter((c) => c?.alignment === "bad-luck").length;
+  const penalty = battle.badLuckPenalty;
 
   const handleDraw = useCallback(() => {
     if (isDrawing) return;
@@ -471,9 +578,10 @@ export function BattleCards() {
 
     const card = drawBattleCard();
 
-    // Check if all slots were full - need replace modal
+    // Check if card ended up as lastDrawnCard (all slots full -> need replace)
     const state = useGameStore.getState();
-    const allFull = state.battle.cardField.every((c) => c !== null);
+    const cardNotPlaced = state.battle.lastDrawnCard?.id === card.id &&
+      state.battle.cardField.every((c) => c !== null);
 
     setTimeout(() => {
       if (card.alignment === "luck") {
@@ -482,12 +590,12 @@ export function BattleCards() {
         playCardBadLuck();
       }
 
-      // If all slots are full and this card wasn't auto-placed, show replace modal
-      if (allFull) {
+      if (cardNotPlaced) {
+        // Need to replace a luck card
         setPendingCard(card);
       }
 
-      // Check if trio happened
+      // Check trio
       const currentState = useGameStore.getState();
       if (currentState.battle.cardTrioEvent) {
         if (currentState.battle.cardTrioEvent.type === "luck") {
@@ -498,7 +606,7 @@ export function BattleCards() {
       }
 
       setIsDrawing(false);
-    }, 300);
+    }, 350);
   }, [isDrawing, drawBattleCard]);
 
   const handleReplace = (slotIndex: number) => {
@@ -506,7 +614,6 @@ export function BattleCards() {
     replaceCardInSlot(slotIndex, pendingCard);
     setPendingCard(null);
 
-    // Check for trio after replace
     setTimeout(() => {
       const state = useGameStore.getState();
       if (state.battle.cardTrioEvent) {
@@ -519,41 +626,46 @@ export function BattleCards() {
     }, 100);
   };
 
-  const luckCount = fieldCards.filter((c) => c?.alignment === "luck").length;
-  const badLuckCount = fieldCards.filter((c) => c?.alignment === "bad-luck").length;
-
   return (
     <>
-      {/* Card field area */}
-      <div className="flex flex-col gap-2">
-        {/* Card slots */}
+      <div className="flex flex-col gap-1.5">
+        {/* 5 card slots */}
         <div className="flex items-center justify-center gap-1.5">
-          {fieldCards.map((card, i) => (
-            <CardSlot key={i} card={card} index={i} onClick={setViewingCard} />
-          ))}
+          {fieldCards.map((card, i) =>
+            card ? (
+              <YuGiOhCard key={`${card.id}-${i}`} card={card} size="small" onClick={() => setViewingCard(card)} />
+            ) : (
+              <EmptySlot key={`empty-${i}`} index={i} />
+            )
+          )}
         </div>
 
-        {/* Count indicators and draw button */}
+        {/* Info strip + draw button */}
         <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2 text-[10px]">
+          <div className="flex items-center gap-2 text-[9px]">
             {luckCount > 0 && (
-              <span className="text-green-400 font-mono">
-                {"\u2618"}{luckCount}
+              <span className="text-yellow-500 font-mono font-bold">
+                Sorte: {luckCount}
               </span>
             )}
             {badLuckCount > 0 && (
-              <span className="text-red-400 font-mono">
-                {"\u2620"}{badLuckCount}
+              <span className="text-red-400 font-mono font-bold">
+                Azar: {badLuckCount}
               </span>
             )}
-            {luckCount >= 2 && (
-              <span className="text-[9px] text-yellow-400/80 animate-pulse">
-                Falta {3 - luckCount} p/ Trio!
+            {penalty < 0 && (
+              <span className="text-red-300/80 font-mono text-[8px]">
+                ({penalty} dano)
               </span>
             )}
-            {badLuckCount >= 2 && (
-              <span className="text-[9px] text-red-400/80 animate-pulse">
-                Azar: {badLuckCount}/3
+            {luckCount === 2 && (
+              <span className="text-yellow-400/80 animate-pulse text-[8px]">
+                Falta 1 p/ Trio!
+              </span>
+            )}
+            {badLuckCount === 2 && (
+              <span className="text-red-400/80 animate-pulse text-[8px]">
+                Perigo! 2/3 azar
               </span>
             )}
           </div>
@@ -561,17 +673,23 @@ export function BattleCards() {
             size="sm"
             onClick={handleDraw}
             disabled={isDrawing || !!battle.cardTrioEvent}
-            className="h-7 text-xs bg-accent text-accent-foreground hover:bg-accent/90 px-3"
+            className="h-6 text-[10px] px-3 rounded"
+            style={{
+              background: "linear-gradient(180deg, #D4AF37 0%, #B8860B 100%)",
+              color: "#1a1a1a",
+              fontWeight: 700,
+              border: "1px solid #C5A026",
+            }}
           >
-            {isDrawing ? "..." : "Comprar"}
+            {isDrawing ? "..." : "Comprar Carta"}
           </Button>
         </div>
       </div>
 
-      {/* Card viewer dialog */}
+      {/* Card viewer */}
       <CardViewer card={viewingCard} open={!!viewingCard} onClose={() => setViewingCard(null)} />
 
-      {/* Replace card modal */}
+      {/* Replace modal (6th card drawn) */}
       <ReplaceCardModal
         open={!!pendingCard && !hasEmptySlot}
         card={pendingCard}

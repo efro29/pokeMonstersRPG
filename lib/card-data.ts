@@ -1,14 +1,21 @@
 // Battle Card system - Types, deck generation, and card effects
+// Trio rules:
+//   - Super Advantage: 3 LUCK cards with same element OR 3 different elements
+//   - Super Punishment: 3 BAD-LUCK cards -> clears all slots
+//   - Bad luck cards: -2 damage penalty each (-4 if pokemon shares the card element type)
+//   - Luck cards: slots remain after trio, only cleared on bad-luck trio
 
 export type CardAlignment = "luck" | "bad-luck";
 
 export type CardElement =
   | "fire" | "water" | "grass" | "electric" | "ice"
-  | "rock" | "psychic" | "ghost" | "dragon" | "normal" | "flying";
+  | "rock" | "psychic" | "ghost" | "dragon" | "normal" | "flying"
+  | "fighting" | "poison" | "ground" | "bug" | "dark" | "steel";
 
 export const CARD_ELEMENTS: CardElement[] = [
   "fire", "water", "grass", "electric", "ice",
   "rock", "psychic", "ghost", "dragon", "normal", "flying",
+  "fighting", "poison", "ground", "bug", "dark", "steel",
 ];
 
 export const ELEMENT_COLORS: Record<CardElement, string> = {
@@ -23,20 +30,32 @@ export const ELEMENT_COLORS: Record<CardElement, string> = {
   dragon: "#7038F8",
   normal: "#A8A878",
   flying: "#A890F0",
+  fighting: "#C03028",
+  poison: "#A040A0",
+  ground: "#E0C068",
+  bug: "#A8B820",
+  dark: "#705848",
+  steel: "#B8B8D0",
 };
 
-export const ELEMENT_ICONS: Record<CardElement, string> = {
-  fire: "Flame",
-  water: "Droplets",
-  grass: "Leaf",
-  electric: "Zap",
-  ice: "Snowflake",
-  rock: "Mountain",
-  psychic: "Brain",
-  ghost: "Ghost",
-  dragon: "Star",
-  normal: "Circle",
-  flying: "Wind",
+export const ELEMENT_NAMES_PT: Record<CardElement, string> = {
+  fire: "Fogo",
+  water: "Agua",
+  grass: "Planta",
+  electric: "Eletrico",
+  ice: "Gelo",
+  rock: "Pedra",
+  psychic: "Psiquico",
+  ghost: "Fantasma",
+  dragon: "Dragao",
+  normal: "Normal",
+  flying: "Voador",
+  fighting: "Lutador",
+  poison: "Veneno",
+  ground: "Terra",
+  bug: "Inseto",
+  dark: "Sombrio",
+  steel: "Aco",
 };
 
 export interface BattleCard {
@@ -56,10 +75,10 @@ export interface LuckCardDef {
 }
 
 export const LUCK_CARDS: LuckCardDef[] = [
-  { effectKey: "crit-chance", name: "Olhar Afiado", description: "+5% chance de critico" },
+  { effectKey: "crit-chance", name: "Olhar Afiado", description: "+5% chance de critico neste combate" },
   { effectKey: "regen-hp", name: "Aura Vital", description: "Cura 8% HP por turno" },
-  { effectKey: "accuracy-up", name: "Mira Precisa", description: "+10% precisao" },
-  { effectKey: "speed-up", name: "Passo Rapido", description: "+1 velocidade" },
+  { effectKey: "accuracy-up", name: "Mira Precisa", description: "+10% precisao nos ataques" },
+  { effectKey: "speed-up", name: "Passo Rapido", description: "+1 velocidade no combate" },
   { effectKey: "damage-reduce", name: "Barreira Leve", description: "Reduz dano recebido em 5%" },
   { effectKey: "pp-recover", name: "Energia Fluida", description: "Recupera 1 PP por turno" },
   { effectKey: "element-damage", name: "Ressonancia", description: "+12% dano se mesmo elemento" },
@@ -75,17 +94,17 @@ export interface BadLuckCardDef {
 
 export const BAD_LUCK_CARDS: BadLuckCardDef[] = [
   { effectKey: "bleed-hp", name: "Sangramento", description: "Perde 3% HP por turno" },
-  { effectKey: "accuracy-down", name: "Visao Turva", description: "-10% precisao" },
+  { effectKey: "accuracy-down", name: "Visao Turva", description: "-10% precisao nos ataques" },
   { effectKey: "attack-fail", name: "Hesitacao", description: "Chance do ataque falhar" },
-  { effectKey: "no-items", name: "Maldição do Bolso", description: "Nao pode usar itens" },
+  { effectKey: "no-items", name: "Maldicao do Bolso", description: "Nao pode usar itens" },
   { effectKey: "double-pp", name: "Gasto Excessivo", description: "Consumo dobrado de PP" },
-  { effectKey: "extra-damage", name: "Guarda Baixa", description: "Dano recebido aumentado" },
+  { effectKey: "extra-damage", name: "Guarda Baixa", description: "Dano recebido +15%" },
   { effectKey: "enemy-crit", name: "Ameaca Crescente", description: "Inimigo ganha chance de critico" },
   { effectKey: "enemy-atk-up", name: "Furia Inimiga", description: "Ataque do inimigo aumenta" },
-  { effectKey: "enemy-speed-up", name: "Inimigo Agil", description: "Velocidade do inimigo aumenta" },
+  { effectKey: "enemy-speed-up", name: "Inimigo Agil", description: "Velocidade do inimigo +1" },
   { effectKey: "enemy-shield", name: "Escudo Sombrio", description: "Inimigo ganha escudo" },
   { effectKey: "enemy-regen", name: "Cura Sombria", description: "Inimigo cura 10% HP por turno" },
-  { effectKey: "enemy-pp-recover", name: "Fonte Negra", description: "Inimigo recupera PP" },
+  { effectKey: "enemy-pp-recover", name: "Fonte Negra", description: "Inimigo recupera PP extra" },
   { effectKey: "enemy-clear-status", name: "Purificacao Hostil", description: "Status do inimigo removidos" },
 ];
 
@@ -182,9 +201,9 @@ export const SUPER_PUNISHMENTS: SuperEffect[] = [
   },
   {
     key: "status-condition",
-    name: "Maldição",
+    name: "Maldicao",
     description: "Ganha uma condicao de status severa!",
-    affinityName: "Maldição Multipla",
+    affinityName: "Maldicao Multipla",
     affinityDescription: "Ganha multiplas condicoes de status!",
   },
 ];
@@ -199,48 +218,7 @@ function randomElement(): CardElement {
   return CARD_ELEMENTS[Math.floor(Math.random() * CARD_ELEMENTS.length)];
 }
 
-/** Generate a full 40-card deck: 22 Luck + 18 Bad Luck, shuffled */
-export function generateDeck(): BattleCard[] {
-  const deck: BattleCard[] = [];
-
-  // 22 Luck cards
-  for (let i = 0; i < 22; i++) {
-    const def = LUCK_CARDS[Math.floor(Math.random() * LUCK_CARDS.length)];
-    const element = randomElement();
-    deck.push({
-      id: nextCardId(),
-      alignment: "luck",
-      element,
-      name: def.name,
-      description: def.description,
-      effectKey: def.effectKey,
-    });
-  }
-
-  // 18 Bad Luck cards
-  for (let i = 0; i < 18; i++) {
-    const def = BAD_LUCK_CARDS[Math.floor(Math.random() * BAD_LUCK_CARDS.length)];
-    const element = randomElement();
-    deck.push({
-      id: nextCardId(),
-      alignment: "bad-luck",
-      element,
-      name: def.name,
-      description: def.description,
-      effectKey: def.effectKey,
-    });
-  }
-
-  // Shuffle (Fisher-Yates)
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
-
-  return deck;
-}
-
-/** Draw a single card from the deck (weighted: 55% luck, 45% bad luck) */
+/** Draw a single card (weighted: 55% luck, 45% bad luck) */
 export function drawCard(): BattleCard {
   const isLuck = Math.random() < 0.55;
   const element = randomElement();
@@ -268,24 +246,66 @@ export function drawCard(): BattleCard {
   }
 }
 
-/** Check if a trio is formed in the field. Returns "luck" | "bad-luck" | null */
-export function checkTrio(fieldCards: (BattleCard | null)[]): CardAlignment | null {
-  const active = fieldCards.filter((c): c is BattleCard => c !== null);
-  const luckCount = active.filter((c) => c.alignment === "luck").length;
-  const badLuckCount = active.filter((c) => c.alignment === "bad-luck").length;
+/**
+ * Check if a luck trio is formed:
+ *   - Need exactly 3 luck cards
+ *   - All 3 same element OR all 3 different elements
+ * Returns the matching trio cards if found, null otherwise
+ */
+export function checkLuckTrio(fieldCards: (BattleCard | null)[]): BattleCard[] | null {
+  const luckCards = fieldCards.filter((c): c is BattleCard => c !== null && c.alignment === "luck");
+  if (luckCards.length < 3) return null;
 
-  if (luckCount >= 3) return "luck";
-  if (badLuckCount >= 3) return "bad-luck";
+  // Check last 3 luck cards (or all if exactly 3)
+  const toCheck = luckCards.slice(-3);
+  const elements = toCheck.map((c) => c.element);
+
+  // All same element
+  if (elements[0] === elements[1] && elements[1] === elements[2]) {
+    return toCheck;
+  }
+
+  // All different elements
+  if (elements[0] !== elements[1] && elements[1] !== elements[2] && elements[0] !== elements[2]) {
+    return toCheck;
+  }
+
   return null;
 }
 
-/** Check if the active Pokemon's type matches at least one card element in the field */
+/**
+ * Check if 3 bad-luck cards are in the field -> triggers punishment + clears field
+ */
+export function checkBadLuckTrio(fieldCards: (BattleCard | null)[]): boolean {
+  const badLuckCount = fieldCards.filter((c) => c !== null && c.alignment === "bad-luck").length;
+  return badLuckCount >= 3;
+}
+
+/**
+ * Calculate total bad-luck damage penalty.
+ * -2 per bad luck card, -4 if pokemon shares the card's element type.
+ */
+export function calculateBadLuckPenalty(
+  fieldCards: (BattleCard | null)[],
+  pokemonTypes: string[]
+): number {
+  let penalty = 0;
+  const normalizedTypes = pokemonTypes.map((t) => t.toLowerCase());
+  for (const card of fieldCards) {
+    if (card && card.alignment === "bad-luck") {
+      const sameType = normalizedTypes.includes(card.element.toLowerCase());
+      penalty += sameType ? -4 : -2;
+    }
+  }
+  return penalty;
+}
+
+/** Check if the active Pokemon's type matches at least one card element in the trio */
 export function checkElementalAffinity(
   pokemonTypes: string[],
-  fieldCards: (BattleCard | null)[]
+  trioCards: BattleCard[]
 ): boolean {
-  const active = fieldCards.filter((c): c is BattleCard => c !== null);
-  return active.some((card) =>
+  return trioCards.some((card) =>
     pokemonTypes.some((type) => type.toLowerCase() === card.element.toLowerCase())
   );
 }
