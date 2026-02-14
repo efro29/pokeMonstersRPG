@@ -452,8 +452,8 @@ const [arena] = useState(getRandomArena());
                   transition={{ duration: 0.5 }}
                 />
               </div>
-              <span className="text-[10px] font-mono text-muted-foreground w-16 text-right">
-                {pokemon.currentHp}/{pokemon.maxHp}
+              <span   style={{ color: hpColor }} className="text-[10px] font-mono text-muted-foreground w-16 text-right">
+                {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
               </span>
             </div>
           </div>

@@ -1446,10 +1446,12 @@ export const useGameStore = create<GameState>()(
 
         if (event.type === "bad-luck") {
           // Apply 20 damage to active Pokemon from trio punishment
-          const trioDamage = 20;
+          // const trioDamage = 20;
           const activeMon = team.find((p) => p.uid === battle.activePokemonUid);
           let updatedTeam = team;
+
           if (activeMon) {
+            const trioDamage = Math.round(activeMon.currentHp * 0.5);
             const newHp = Math.max(0, activeMon.currentHp - trioDamage);
             updatedTeam = team.map((p) =>
               p.uid === activeMon.uid ? { ...p, currentHp: newHp } : p
@@ -1519,9 +1521,13 @@ export const useGameStore = create<GameState>()(
           const isSameType = pokemonTypes.some((t) => t.toLowerCase() === card.element.toLowerCase());
           isCrit = isSameType;
           const baseDamage = 2; // Base bad luck damage
-          const damage = isSameType ? baseDamage * 2 : baseDamage; // Double if same type
 
-          const newHp = Math.max(0, activeMon.currentHp - damage);
+         const damage = Math.round(activeMon.currentHp * 0.3);
+ 
+
+          const damageHit = isSameType ? damage * 2 : damage; // Double if same type
+
+          const newHp = Math.max(0, activeMon.currentHp - damageHit);
           const updatedTeam = team.map((p) =>
             p.uid === activeMon.uid ? { ...p, currentHp: newHp } : p
           );

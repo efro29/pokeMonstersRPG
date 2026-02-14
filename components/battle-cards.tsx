@@ -810,15 +810,17 @@ export function BattleCards() {
             )
           )}
            <div
-      className="relative flex flex-col items-center justify-center rounded-[5px]"
+             onClick={handleDraw}
+      className="relative flex flex-col items-center justify-center rounded-[5px] "
       style={{
+        cursor:'pointer',
         width: 52,
         height: 76,
         background: "linear-gradient(180deg, rgba(2, 2, 26, 0.6) 0%, rgba(1, 1, 3, 0.8) 100%)",
         borderColor: "rgb(7, 18, 119)",borderWidth:1
       }}
     >
-      <span     onClick={handleDraw} className="text-[9px]  font-mono">
+      <span    className="text-[9px]  font-mono">
                  
       Compre
       </span>
