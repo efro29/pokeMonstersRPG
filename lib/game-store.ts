@@ -3,6 +3,8 @@ import { persist } from "zustand/middleware";
 import type { PokemonSpecies, BagItemDef, PokemonBaseAttributes, DamageBreakdown, HitResult } from "./pokemon-data";
 import { getGameStoreKey } from "./mode-store";
 import { BAG_ITEMS, getMove, getPokemon, canEvolveByLevel, canEvolveByStone, canEvolveByTrade, xpForLevel, computeAttributes, getBaseAttributes, applyFaintPenalty, applyLevelUpBonus, rollDamageAgainstPokemon, calculateHitResult, calculateBattleDamage, getDamageMultiplier } from "./pokemon-data";
+import type { BattleCard, CardAlignment, SuperEffect } from "./card-data";
+import { drawCard, checkLuckTrio, checkBadLuckTrio, checkElementalAffinity, calculateBadLuckPenalty, rollSuperAdvantage, rollSuperPunishment } from "./card-data";
 
 export type PokemonAttributeKey = keyof PokemonBaseAttributes;
 
@@ -197,6 +199,12 @@ export interface AttributeTestResult {
   criticalFail: boolean;
 }
 
+export interface CardTrioEvent {
+  type: CardAlignment;
+  effect: SuperEffect;
+  hasAffinity: boolean;
+}
+
 export interface BattleState {
   phase: BattlePhase;
   activePokemonUid: string | null;
@@ -210,6 +218,12 @@ export interface BattleState {
   selectedAttribute: PokemonAttributeKey | null;
   attributeTestDC: number;
   attributeTestResult: AttributeTestResult | null;
+  // Card system
+  cardField: (BattleCard | null)[];
+  lastDrawnCard: BattleCard | null;
+  cardTrioEvent: CardTrioEvent | null;
+  cardDrawCount: number;
+  badLuckPenalty: number; // cumulative -2 per bad card (-4 if same type)
 }
 
 export interface PendingEvolution {
@@ -287,6 +301,12 @@ interface GameState {
   // Evolution queue
   triggerEvolution: (evolution: PendingEvolution) => void;
   completeEvolution: () => void;
+  // Card system
+  drawBattleCard: () => BattleCard;
+  replaceCardInSlot: (slotIndex: number, card: BattleCard) => void;
+  clearCardField: () => void;
+  dismissTrioEvent: () => void;
+  recalcBadLuckPenalty: () => void;
 }
 
 function generateUid(): string {
@@ -334,6 +354,12 @@ export const useGameStore = create<GameState>()(
         selectedAttribute: null,
         attributeTestDC: 10,
         attributeTestResult: null,
+        // Card system
+        cardField: [null, null, null, null, null],
+        lastDrawnCard: null,
+        cardTrioEvent: null,
+        cardDrawCount: 0,
+        badLuckPenalty: 0,
       },
 
       updateTrainer: (data) => {
@@ -561,11 +587,16 @@ export const useGameStore = create<GameState>()(
             diceRoll: null,
             hitResult: null,
             damageDealt: null,
-  damageBreakdown: null,
+            damageBreakdown: null,
             battleLog: [],
             selectedAttribute: null,
             attributeTestDC: 10,
             attributeTestResult: null,
+            cardField: [null, null, null, null, null],
+            lastDrawnCard: null,
+            cardTrioEvent: null,
+            cardDrawCount: 0,
+            badLuckPenalty: 0,
           },
         });
       },
@@ -579,11 +610,16 @@ export const useGameStore = create<GameState>()(
             diceRoll: null,
             hitResult: null,
             damageDealt: null,
-  damageBreakdown: null,
+            damageBreakdown: null,
             battleLog: [],
             selectedAttribute: null,
             attributeTestDC: 10,
             attributeTestResult: null,
+            cardField: [null, null, null, null, null],
+            lastDrawnCard: null,
+            cardTrioEvent: null,
+            cardDrawCount: 0,
+            badLuckPenalty: 0,
           },
         });
       },
@@ -1220,10 +1256,206 @@ export const useGameStore = create<GameState>()(
         get().evolvePokemon(pendingEvolution.uid, pendingEvolution.toSpeciesId);
         set({ pendingEvolution: null });
       },
+
+      // -- Card system --
+      drawBattleCard: () => {
+        const card = drawCard();
+        const { battle, team } = get();
+        const newField = [...battle.cardField];
+        const newCount = battle.cardDrawCount + 1;
+        const activeMon = team.find((p) => p.uid === battle.activePokemonUid);
+        const activeSpecies = activeMon ? getPokemon(activeMon.speciesId) : null;
+        const pokemonTypes = activeSpecies ? [activeSpecies.type1, activeSpecies.type2].filter(Boolean) as string[] : [];
+
+        // Find first empty slot
+        const emptyIndex = newField.findIndex((c) => c === null);
+
+        if (emptyIndex !== -1) {
+          // Place in empty slot
+          newField[emptyIndex] = card;
+        } else {
+          // 6th card: must replace a luck card (UI will handle choosing which)
+          // Set as lastDrawnCard for the replace modal
+          set({
+            battle: {
+              ...battle,
+              lastDrawnCard: card,
+              cardDrawCount: newCount,
+            },
+          });
+          return card;
+        }
+
+        // Recalc bad luck penalty
+        const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
+
+        // Check for bad luck trio (3 bad luck -> punishment + clear field)
+        if (checkBadLuckTrio(newField)) {
+          const hasAffinity = checkElementalAffinity(
+            pokemonTypes,
+            newField.filter((c): c is BattleCard => c !== null && c.alignment === "bad-luck")
+          );
+          const effect = rollSuperPunishment();
+          set({
+            battle: {
+              ...battle,
+              cardField: newField,
+              lastDrawnCard: card,
+              cardDrawCount: newCount,
+              badLuckPenalty: penalty,
+              cardTrioEvent: { type: "bad-luck", effect, hasAffinity },
+            },
+          });
+          return card;
+        }
+
+        // Check for luck trio (3 luck with same element or all different)
+        const luckTrio = checkLuckTrio(newField);
+        if (luckTrio) {
+          const hasAffinity = checkElementalAffinity(pokemonTypes, luckTrio);
+          const effect = rollSuperAdvantage();
+          set({
+            battle: {
+              ...battle,
+              cardField: newField,
+              lastDrawnCard: card,
+              cardDrawCount: newCount,
+              badLuckPenalty: penalty,
+              cardTrioEvent: { type: "luck", effect, hasAffinity },
+            },
+          });
+          return card;
+        }
+
+        // No trio - just update field
+        set({
+          battle: {
+            ...battle,
+            cardField: newField,
+            lastDrawnCard: card,
+            cardDrawCount: newCount,
+            badLuckPenalty: penalty,
+            cardTrioEvent: null,
+          },
+        });
+        return card;
+      },
+
+      replaceCardInSlot: (slotIndex, card) => {
+        const { battle, team } = get();
+        const existing = battle.cardField[slotIndex];
+        // Cannot replace bad luck cards
+        if (existing && existing.alignment === "bad-luck") return;
+
+        const newField = [...battle.cardField];
+        newField[slotIndex] = card;
+
+        const activeMon = team.find((p) => p.uid === battle.activePokemonUid);
+        const activeSpecies = activeMon ? getPokemon(activeMon.speciesId) : null;
+        const pokemonTypes = activeSpecies ? [activeSpecies.type1, activeSpecies.type2].filter(Boolean) as string[] : [];
+        const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
+
+        // Check for bad luck trio
+        if (checkBadLuckTrio(newField)) {
+          const hasAffinity = checkElementalAffinity(
+            pokemonTypes,
+            newField.filter((c): c is BattleCard => c !== null && c.alignment === "bad-luck")
+          );
+          const effect = rollSuperPunishment();
+          set({
+            battle: {
+              ...battle,
+              cardField: newField,
+              lastDrawnCard: null,
+              badLuckPenalty: penalty,
+              cardTrioEvent: { type: "bad-luck", effect, hasAffinity },
+            },
+          });
+          return;
+        }
+
+        // Check for luck trio
+        const luckTrio = checkLuckTrio(newField);
+        if (luckTrio) {
+          const hasAffinity = checkElementalAffinity(pokemonTypes, luckTrio);
+          const effect = rollSuperAdvantage();
+          set({
+            battle: {
+              ...battle,
+              cardField: newField,
+              lastDrawnCard: null,
+              badLuckPenalty: penalty,
+              cardTrioEvent: { type: "luck", effect, hasAffinity },
+            },
+          });
+          return;
+        }
+
+        set({
+          battle: {
+            ...battle,
+            cardField: newField,
+            lastDrawnCard: null,
+            badLuckPenalty: penalty,
+            cardTrioEvent: null,
+          },
+        });
+      },
+
+      clearCardField: () => {
+        const { battle } = get();
+        set({
+          battle: {
+            ...battle,
+            cardField: [null, null, null, null, null],
+            lastDrawnCard: null,
+            cardTrioEvent: null,
+            badLuckPenalty: 0,
+          },
+        });
+      },
+
+      recalcBadLuckPenalty: () => {
+        const { battle, team } = get();
+        const activeMon = team.find((p) => p.uid === battle.activePokemonUid);
+        const activeSpecies = activeMon ? getPokemon(activeMon.speciesId) : null;
+        const pokemonTypes = activeSpecies ? [activeSpecies.type1, activeSpecies.type2].filter(Boolean) as string[] : [];
+        const penalty = calculateBadLuckPenalty(battle.cardField, pokemonTypes);
+        set({ battle: { ...battle, badLuckPenalty: penalty } });
+      },
+
+      dismissTrioEvent: () => {
+        const { battle } = get();
+        const event = battle.cardTrioEvent;
+        if (!event) return;
+        const desc = event.hasAffinity ? event.effect.affinityDescription : event.effect.description;
+        get().addBattleLog(`[CARTA] ${event.type === "luck" ? "Super Vantagem" : "Super Punicao"}: ${event.effect.name} - ${desc}`);
+
+        if (event.type === "bad-luck") {
+          // Bad luck trio -> clear ALL slots
+          set({
+            battle: {
+              ...battle,
+              cardField: [null, null, null, null, null],
+              lastDrawnCard: null,
+              cardTrioEvent: null,
+              badLuckPenalty: 0,
+            },
+          });
+        } else {
+          // Luck trio -> keep slots (don't clear)
+          set({
+            battle: {
+              ...battle,
+              cardTrioEvent: null,
+            },
+          });
+        }
+      },
     }),
     {
       name: getGameStoreKey(),
-      version: 7,
+      version: 9,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         if (version < 2) {
@@ -1263,6 +1495,19 @@ export const useGameStore = create<GameState>()(
           state.pendingEvolution = null;
           const battle = (state.battle as Record<string, unknown>) || {};
           battle.damageBreakdown = battle.damageBreakdown ?? null;
+          state.battle = battle;
+        }
+        if (version < 8) {
+          const battle = (state.battle as Record<string, unknown>) || {};
+          battle.cardField = battle.cardField ?? [null, null, null, null, null];
+          battle.lastDrawnCard = battle.lastDrawnCard ?? null;
+          battle.cardTrioEvent = battle.cardTrioEvent ?? null;
+          battle.cardDrawCount = battle.cardDrawCount ?? 0;
+          state.battle = battle;
+        }
+        if (version < 9) {
+          const battle = (state.battle as Record<string, unknown>) || {};
+          battle.badLuckPenalty = battle.badLuckPenalty ?? 0;
           state.battle = battle;
         }
         return state as unknown as GameState;

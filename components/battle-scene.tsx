@@ -55,6 +55,7 @@ import {
   playFlee,
   playHeal,
 } from "@/lib/sounds";
+import { BattleCards } from "./battle-cards";
 
 export function BattleScene() {
   const {
@@ -189,21 +190,78 @@ export function BattleScene() {
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Battle header */}
-      <div className="flex items-center gap-3 p-3 border-b border-border bg-card">
+      <div className="flex flex-center   gap-3 p-3 border-b border-border bg-card">
         <Button
-          size="sm"
-          variant="ghost"
           onClick={endBattle}
-          className="text-foreground hover:bg-secondary"
-        >
-          <ChevronLeft className="w-5 h-5" />
+          variant="ghost"
+          className="self-start  hover:text-foreground"
+        >   <ChevronLeft className="w-5 h-5" />
+          <Swords className="w-5 h-5 text-primary" />
+
+          <span className="font-semibold text-foreground">Batalha</span>
         </Button>
-        <Swords className="w-5 h-5 text-primary" />
-        <span className="font-semibold text-foreground">Batalha</span>
+
+
+
+
+
+
+
+
+        {battle.phase === "result" && (
+          <div className=" flex gap-2  w-full">
+            <Button
+              size={'sm'}
+              onClick={() => {
+                const bd = battle.damageBreakdown;
+                const logMsg = bd && !bd.isStatus
+                  ? `${pokemon.name} usou ${selectedMove?.name}: D20=${battle.diceRoll} - ${getHitResultLabel(battle.hitResult as HitResult)} | ${bd.formula} => ${bd.rawTotal} dano`
+                  : `${pokemon.name} usou ${selectedMove?.name}: rolou ${battle.diceRoll} - ${getHitResultLabel(battle.hitResult as HitResult)} (${battle.damageDealt} dano)`;
+                addBattleLog(logMsg);
+                setBattlePhase("menu");
+              }}
+              className="flex-1 bg-blue-800 text-primary-foreground hover:bg-primary/90"
+            >
+              Continuar
+            </Button>
+            {/* <Button
+                 size={'sm'}
+                  onClick={() => setShowDamageInput(true)}
+                  variant="outline"
+                  className="flex-1 border-border text-foreground bg-red-600 hover:bg-secondary"
+                >
+                  <Shield className="w-4 h-4 mr-1" />
+                   Dano
+                </Button> */}
+          </div>)}
+
+
+
+
+
+
+
+        {battle.phase === "attribute-test-select" && pokemonAttrs && (
+
+          <Button
+            size="sm"
+
+            onClick={() => setBattlePhase("menu")}
+            className="self-start  hover:text-foreground"
+          >
+            <ChevronLeft className="w-4 " /> Voltar
+          </Button>
+
+        )
+
+        }
+
+
+
       </div>
 
       {/* Pokemon display area - Battle arena */}
-      <div className="relative flex flex-col items-center px-4 gap-2">
+      <div className="relative flex flex-col items-center ">
         {/* Arena background */}
         <div
           className="absolute inset-0 overflow-hidden"
@@ -222,15 +280,16 @@ export function BattleScene() {
               ? { opacity: 0.3, y: 20 }
               : { opacity: 1, y: 0 }
           }
-          className="relative z-10 pt- pb-1"
-        > <br /><br /><br /> <br />
+          style={{ top: 85 }}
+          className="absolute z-10 "
+        > <br />
           <img
             src={getBattleSpriteUrl(pokemon.speciesId)}
             alt={pokemon.name}
             width={200}
             height={150}
 
-            style={{ imageRendering: "auto", minHeight: 180 }}
+            style={{ imageRendering: "auto", minHeight: 150, minWidth: 200 }}
             crossOrigin="anonymous"
             onError={(e) => {
               (e.target as HTMLImageElement).src = getSpriteUrl(pokemon.speciesId);
@@ -293,10 +352,10 @@ export function BattleScene() {
                   disabled={isActive || isFaintedMember || isSwitching}
                   whileTap={!isActive && !isFaintedMember ? { scale: 0.9 } : undefined}
                   className={`relative flex items-center justify-center w-11 h-11 rounded-full transition-all ${isActive
-                      ? "ring-2 ring-accent opacity-100"
-                      : isFaintedMember
-                        ? "opacity-30 cursor-not-allowed"
-                        : "opacity-70 hover:opacity-100 hover:scale-110 cursor-pointer"
+                    ? "ring-2 ring-accent opacity-100"
+                    : isFaintedMember
+                      ? "opacity-30 cursor-not-allowed"
+                      : "opacity-70 hover:opacity-100 hover:scale-110 cursor-pointer"
                     }`}
                   title={`${p.name} ${isFaintedMember ? "(KO)" : `HP: ${p.currentHp}/${p.maxHp}`}`}
                 >
@@ -341,7 +400,7 @@ export function BattleScene() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
               className="absolute inset-0 z-30 flex items-center justify-center"
-              style={{ background: "rgba(15, 23, 41, 0.85)" }}
+              style={{ background: "rgba(15, 23, 41, 0.85)", top: 230 }}
             >
               <motion.div
                 initial={{ scale: 0, rotate: -180 }}
@@ -354,12 +413,17 @@ export function BattleScene() {
                   <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
                   <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#F1F5F9" />
                   <circle cx="50" cy="50" r="16" fill="#F1F5F9" stroke="#1E293B" strokeWidth="3" />
-                  <circle cx="50" cy="50" r="8" fill="#F59E0B" />
+                  <circle cx="50" cy="50" r="8" fill="#0f0f0f" />
                 </svg>
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+
+      {/* Card field - always visible below pokemon */}
+      <div className="px-3 py-2 border-b border-border/50 bg-background/50">
+        <BattleCards />
       </div>
 
       {/* Battle content area */}
@@ -372,7 +436,7 @@ export function BattleScene() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="grid grid-cols-2 gap-3 mt-auto"
+              className="grid grid-cols-4 gap-3 mt-auto"
             >
               <Button
                 onClick={() => setBattlePhase("attack-select")}
@@ -382,14 +446,7 @@ export function BattleScene() {
                 <Swords className="w-6 h-6" />
                 <span className="text-sm font-bold">Atacar</span>
               </Button>
-              <Button
-                onClick={() => { playFlee(); endBattle(); }}
-                variant="outline"
-                className="h-16 flex flex-col gap-1 border-border text-foreground bg-red-500 hover:bg-secondary"
-              >
-                <ArrowLeft className="w-6 h-6" />
-                <span className="text-sm font-bold">Fugir</span>
-              </Button>
+
               <Button
                 onClick={() => setShowBagDialog(true)}
                 variant="outline"
@@ -398,7 +455,6 @@ export function BattleScene() {
                 <Backpack className="w-6 h-6" />
                 <span className="text-sm font-bold">Bolsa</span>
               </Button>
-
 
               <Button
                 onClick={() => {
@@ -410,8 +466,20 @@ export function BattleScene() {
                 className="h-16 flex flex-col gap-1 border-border text-foreground bg-blue-500 hover:bg-secondary"
               >
                 <Dices className="w-6 h-6" />
-                <span className="text-sm font-bold">Rolar um Teste</span>
+                <span className="text-sm font-bold">Teste</span>
               </Button>
+
+              {/* Receive damage from opponent */}
+              {battle.phase === "menu" && !showDamageInput && !isFainted && (
+                <Button
+                  onClick={() => setShowDamageInput(true)}
+                  variant="outline"
+                  className="h-16 flex flex-col gap-1 border-border text-foreground bg-red-500 hover:bg-secondary"
+                >
+                  <Shield className="w-6 h-6" />
+                  <span className="text-sm font-bold">Dano</span>
+                </Button>
+              )}
             </motion.div>
           )}
 
@@ -473,20 +541,22 @@ export function BattleScene() {
           {/* Dice rolling */}
           {battle.phase === "rolling" && (
             <motion.div
+              style={{ position: 'absolute', top: 360, zIndex: 10, width: '90%' }}
               key="rolling"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              className="flex flex-col items-center gap-4 my-auto"
+              className="flex flex-col items-center  my-auto"
             >
               {selectedMove && (
                 <div className="text-center mb-2">
-                  <span className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     {pokemon.name} usou
-                  </span>
-                  <h4 className="text-lg font-bold text-foreground">
-                    {selectedMove.name}!
-                  </h4>
+                    <b className="text-white">
+                      {selectedMove.name}!
+                    </b>
+                  </p>
+
                   <span className="text-xs text-muted-foreground">
                     Precisa rolar D20 {">"}= {selectedMove.accuracy} para acertar
                   </span>
@@ -513,11 +583,12 @@ export function BattleScene() {
           {/* Result */}
           {battle.phase === "result" && (
             <motion.div
+              style={{ position: 'absolute', top: 300, zIndex: 10, width: '90%' }}
               key="result"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center gap-4 my-auto"
+              className=" flex flex-col items-center gap-1 my-auto"
             >
               <motion.div
                 initial={{ scale: 0 }}
@@ -525,7 +596,7 @@ export function BattleScene() {
                 transition={{ type: "spring", damping: 10 }}
                 className="w-24 h-24 rounded-full flex flex-col items-center justify-center"
                 style={{
-                  backgroundColor: `${getHitResultColor(battle.hitResult as HitResult)}22`,
+                  backgroundColor: `rgb(0,0,0,0.9)`,
                   border: `3px solid ${getHitResultColor(battle.hitResult as HitResult)}`,
                 }}
               >
@@ -632,48 +703,20 @@ export function BattleScene() {
                 </motion.div>
               )}
 
-              <div className="flex gap-2 mt-4 w-full">
-                <Button
-                  onClick={() => {
-                    const bd = battle.damageBreakdown;
-                    const logMsg = bd && !bd.isStatus
-                      ? `${pokemon.name} usou ${selectedMove?.name}: D20=${battle.diceRoll} - ${getHitResultLabel(battle.hitResult as HitResult)} | ${bd.formula} => ${bd.rawTotal} dano`
-                      : `${pokemon.name} usou ${selectedMove?.name}: rolou ${battle.diceRoll} - ${getHitResultLabel(battle.hitResult as HitResult)} (${battle.damageDealt} dano)`;
-                    addBattleLog(logMsg);
-                    setBattlePhase("menu");
-                  }}
-                  className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  Continuar
-                </Button>
-                <Button
-                  onClick={() => setShowDamageInput(true)}
-                  variant="outline"
-                  className="flex-1 border-border text-foreground bg-transparent hover:bg-secondary"
-                >
-                  <Shield className="w-4 h-4 mr-1" />
-                  Receber Dano
-                </Button>
-              </div>
+
             </motion.div>
           )}
           {/* Attribute test - select attribute */}
           {battle.phase === "attribute-test-select" && pokemonAttrs && (
+
             <motion.div
               key="attr-test-select"
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -40 }}
-              className="flex flex-col gap-3 mt-auto"
+              style={{ backgroundColor: 'rgb(0,0,0,0.3)' }}
+              className=" p-2 rounded-sm flex flex-col gap-3 mt-auto z-10 "
             >
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setBattlePhase("menu")}
-                className="self-start text-muted-foreground hover:text-foreground"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
-              </Button>
 
               <div className="text-center mb-1">
                 <h4 className="text-base font-bold text-foreground">Rolar um Teste</h4>
@@ -867,7 +910,7 @@ export function BattleScene() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-background/80"
+              className="fixed inset-0 z- flex items-center justify-center bg-background/80"
             >
               <motion.div
                 initial={{ scale: 0, y: -100 }}
@@ -892,19 +935,6 @@ export function BattleScene() {
           )}
         </AnimatePresence>
 
-        {/* Receive damage from opponent - always accessible from menu */}
-        {battle.phase === "menu" && !showDamageInput && !isFainted && (
-          <div className="mt-3">
-            <Button
-              onClick={() => setShowDamageInput(true)}
-              variant="outline"
-              className="w-full border-destructive/50 text-destructive bg-transparent hover:bg-destructive/10"
-            >
-              <Shield className="w-4 h-4 mr-2" />
-              Receber Dano do Adversario
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Damage input dialog */}
@@ -1007,7 +1037,7 @@ export function BattleScene() {
         </DialogContent>
       </Dialog>
 
-      {/* Battle log */}
+
 
     </div>
   );

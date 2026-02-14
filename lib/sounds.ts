@@ -228,3 +228,49 @@ export function playFlee() {
   setTimeout(() => playTone(400, 0.08, "square", 0.06), 120);
   setTimeout(() => playTone(300, 0.12, "square", 0.06), 180);
 }
+
+// -- Card system sounds --
+
+export function playCardDraw() {
+  // Card flip swoosh
+  playNoise(0.06, 0.08);
+  setTimeout(() => playTone(800, 0.06, "sine", 0.06), 30);
+  setTimeout(() => playTone(1200, 0.08, "sine", 0.08), 80);
+}
+
+export function playCardLuck() {
+  // Positive sparkle chime
+  playTone(1047, 0.1, "sine", 0.08);
+  setTimeout(() => playTone(1319, 0.1, "sine", 0.08), 80);
+  setTimeout(() => playTone(1568, 0.12, "sine", 0.1), 160);
+}
+
+export function playCardBadLuck() {
+  // Ominous low tone
+  playTone(150, 0.2, "sawtooth", 0.1);
+  setTimeout(() => playTone(120, 0.25, "sawtooth", 0.08), 100);
+}
+
+export function playLuckTrio() {
+  // Triumphant golden fanfare
+  const notes = [523, 659, 784, 1047, 1319, 1568];
+  notes.forEach((freq, i) => {
+    setTimeout(() => playTone(freq, 0.2, "sine", 0.1), i * 100);
+  });
+  setTimeout(() => {
+    playTone(1568, 0.5, "sine", 0.12);
+    playTone(1047, 0.5, "sine", 0.08);
+  }, 700);
+}
+
+export function playBadLuckTrio() {
+  // Dark ominous rumble with dissonant chords
+  playTone(80, 0.4, "sawtooth", 0.15);
+  playNoise(0.3, 0.12);
+  setTimeout(() => playTone(100, 0.3, "sawtooth", 0.12), 200);
+  setTimeout(() => playTone(130, 0.3, "sawtooth", 0.1), 350);
+  setTimeout(() => {
+    playTone(60, 0.5, "sawtooth", 0.15);
+    playNoise(0.4, 0.1);
+  }, 500);
+}
