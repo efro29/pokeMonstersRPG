@@ -139,6 +139,8 @@ function YuGiOhCard({
             src={`/images/cards/card${card.cardIndex}.png`}
             alt={card.name}
             className="w-full h-full object-cover"
+            loading="eager"
+            decoding="sync"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = "none";
               (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
@@ -160,6 +162,8 @@ function YuGiOhCard({
               src={`/images/cardsTypes/${card.element}.jpg`}
               alt={card.name}
               className="object-cover"
+              loading="eager"
+              decoding="sync"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
@@ -183,6 +187,8 @@ function YuGiOhCard({
               src={`/images/cardsTypes/genga.jpg`}
               alt={card.name}
               className="object-cover"
+              loading="eager"
+              decoding="sync"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
@@ -231,6 +237,8 @@ function YuGiOhCard({
               src={`/images/cardsTypes/${card.element}.jpg`}
               alt={card.name}
               className="object-cover rounded-full"
+              loading="eager"
+              decoding="sync"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
@@ -245,6 +253,8 @@ function YuGiOhCard({
               src={`/images/cardsTypes/genga.gif`}
               alt={card.name}
               className="object-cover rounded-full"
+              loading="eager"
+              decoding="sync"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
@@ -276,6 +286,8 @@ function YuGiOhCard({
           src={`/images/cards/card${card.cardIndex}.png`}
           alt={card.name}
           className="w-full h-full object-cover"
+          loading="eager"
+          decoding="sync"
           animate={{
             scale: [1, 1.04, 1],
           }}
@@ -524,6 +536,8 @@ function TrioEventOverlay() {
               style={{ width: 50 }}
               src={`/images/cardsTypes/genga.gif`}
               className="object-cover rounded-full"
+              loading="eager"
+              decoding="sync"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
@@ -535,6 +549,8 @@ function TrioEventOverlay() {
               style={{ width: 50 }}
               src={`/images/cardsTypes/genga.gif`}
               className="object-cover rounded-full"
+              loading="eager"
+              decoding="sync"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
@@ -546,6 +562,8 @@ function TrioEventOverlay() {
               style={{ width: 50 }}
               src={`/images/cardsTypes/genga.gif`}
               className="object-cover rounded-full"
+              loading="eager"
+              decoding="sync"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
