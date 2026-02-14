@@ -74,10 +74,12 @@ function YuGiOhCard({
   card,
   size = "small",
   onClick,
+  slotIndex,
 }: {
   card: BattleCard;
   size?: "small" | "large";
   onClick?: () => void;
+  slotIndex?: number;
 }) {
   const isLuck = card.alignment === "luck";
   const elColor = ELEMENT_COLORS[card.element] || "#888";

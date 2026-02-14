@@ -307,6 +307,7 @@ interface GameState {
   clearCardField: () => void;
   dismissTrioEvent: () => void;
   recalcBadLuckPenalty: () => void;
+  activateCardEffect: (slotIndex: number) => void;
 }
 
 function generateUid(): string {
@@ -1452,6 +1453,53 @@ export const useGameStore = create<GameState>()(
           });
         }
       },
+
+      activateCardEffect: (slotIndex: number) => {
+        const { battle, team } = get();
+        const card = battle.cardField[slotIndex];
+        if (!card) return;
+
+        const activeMon = team.find((p) => p.uid === battle.activePokemonUid);
+        if (!activeMon) return;
+
+        const activeSpecies = getPokemon(activeMon.speciesId);
+        const pokemonTypes = [activeSpecies.type1, activeSpecies.type2].filter(Boolean) as string[];
+
+        // Apply damage if bad-luck card
+        if (card.alignment === "bad-luck") {
+          const isSameType = pokemonTypes.some((t) => t.toLowerCase() === card.element.toLowerCase());
+          const baseDamage = 2; // Base bad luck damage
+          const damage = isSameType ? baseDamage * 2 : baseDamage; // Double if same type
+
+          const newHp = Math.max(0, activeMon.currentHp - damage);
+          const updatedTeam = team.map((p) =>
+            p.uid === activeMon.uid ? { ...p, currentHp: newHp } : p
+          );
+
+          const log = isSameType
+            ? `[CARTA] ${card.name} (${card.element}) acerta critico no tipo ${activeSpecies.type1}! ${damage} de dano!`
+            : `[CARTA] ${card.name} (${card.element}) causa ${damage} de dano!`;
+          get().addBattleLog(log);
+
+          set({ team: updatedTeam });
+        }
+
+        // Clear the slot after activation
+        const newField = [...battle.cardField];
+        newField[slotIndex] = null;
+
+        // Recalculate penalty after removing card
+        const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
+
+        set({
+          battle: {
+            ...battle,
+            cardField: newField,
+            badLuckPenalty: penalty,
+          },
+        });
+      },
+
     }),
     {
       name: getGameStoreKey(),
