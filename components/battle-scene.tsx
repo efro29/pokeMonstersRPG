@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
+import { getPokemonAnimationVariants } from "@/lib/card-animations";
 import {
   Swords,
   ArrowLeft,
@@ -276,7 +277,7 @@ const [arena] = useState(getRandomArena());
                   />
 
                   {/* Imagem 2: O Personagem */}
-                  <img
+                  <motion.img
                   src={getBattleSpriteUrl(pokemon.speciesId)}
                   alt={pokemon.name}
                   width={size.width}   
@@ -296,6 +297,7 @@ const [arena] = useState(getRandomArena());
                   onError={(e) => {
                   (e.target as HTMLImageElement).src = getSpriteUrl(pokemon.speciesId);
                   }}
+                  {...getPokemonAnimationVariants(battle.pokemonAnimationState.effectType)}
                   />
                   </div>
 

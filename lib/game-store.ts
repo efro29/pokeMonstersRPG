@@ -224,6 +224,12 @@ export interface BattleState {
   cardTrioEvent: CardTrioEvent | null;
   cardDrawCount: number;
   badLuckPenalty: number; // cumulative -2 per bad card (-4 if same type)
+  // Card animation
+  pokemonAnimationState: {
+    isAnimating: boolean;
+    effectType: "damage" | "heal" | "buff" | "debuff" | "none";
+    duration: number;
+  };
 }
 
 export interface PendingEvolution {
@@ -361,6 +367,12 @@ export const useGameStore = create<GameState>()(
         cardTrioEvent: null,
         cardDrawCount: 0,
         badLuckPenalty: 0,
+        // Card animation
+        pokemonAnimationState: {
+          isAnimating: false,
+          effectType: "none",
+          duration: 0,
+        },
       },
 
       updateTrainer: (data) => {
@@ -1491,13 +1503,35 @@ export const useGameStore = create<GameState>()(
         // Recalculate penalty after removing card
         const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
 
+        // Determine animation type
+        const animationType = card.alignment === "bad-luck" ? "damage" : "heal";
+
         set({
           battle: {
             ...battle,
             cardField: newField,
             badLuckPenalty: penalty,
+            pokemonAnimationState: {
+              isAnimating: true,
+              effectType: animationType,
+              duration: animationType === "damage" ? 500 : 600,
+            },
           },
         });
+
+        // Reset animation state after duration
+        setTimeout(() => {
+          set((state) => ({
+            battle: {
+              ...state.battle,
+              pokemonAnimationState: {
+                isAnimating: false,
+                effectType: "none",
+                duration: 0,
+              },
+            },
+          }));
+        }, animationType === "damage" ? 500 : 600);
       },
 
     }),

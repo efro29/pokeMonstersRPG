@@ -39,6 +39,7 @@ import {
   Shield,
   Cog,
   Footprints,
+  Zap as ZapEffect,
 } from "lucide-react";
 
 // Element icon map
@@ -365,12 +366,24 @@ function CardViewer({
   card,
   open,
   onClose,
+  slotIndex,
 }: {
   card: BattleCard | null;
   open: boolean;
   onClose: () => void;
+  slotIndex?: number;
 }) {
+  const { activateCardEffect } = useGameStore();
+  
   if (!card) return null;
+
+  const handleActivatePower = () => {
+    if (slotIndex !== undefined) {
+      playButtonClick();
+      activateCardEffect(slotIndex);
+      onClose();
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -379,7 +392,24 @@ function CardViewer({
           <DialogTitle>{card.name}</DialogTitle>
           <DialogDescription>Detalhes da carta de batalha</DialogDescription>
         </DialogHeader>
-        <YuGiOhCard card={card} size="large" />
+        
+        <div className="flex flex-col gap-3">
+          <YuGiOhCard card={card} size="large" />
+          
+          {slotIndex !== undefined && (
+            <Button
+              onClick={handleActivatePower}
+              className={`w-full font-bold text-sm transition-all ${
+                card.alignment === "bad-luck"
+                  ? "bg-red-600 hover:bg-red-700 text-white"
+                  : "bg-green-600 hover:bg-green-700 text-white"
+              }`}
+            >
+              <ZapEffect className="w-4 h-4 mr-2" />
+              Ativar Poder
+            </Button>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -668,6 +698,7 @@ export function BattleCards() {
   } = useGameStore();
 
   const [viewingCard, setViewingCard] = useState<BattleCard | null>(null);
+  const [viewingCardSlotIndex, setViewingCardSlotIndex] = useState<number | undefined>(undefined);
   const [pendingCard, setPendingCard] = useState<BattleCard | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
@@ -739,7 +770,16 @@ export function BattleCards() {
         <div className="flex items-center justify-center gap-1.5">
           {fieldCards.map((card, i) => i == 4 ?'':
             card ? (
-              <YuGiOhCard key={`${card.id}-${i}`} card={card} size="small" onClick={() => setViewingCard(card)} />
+              <YuGiOhCard 
+                key={`${card.id}-${i}`} 
+                card={card} 
+                size="small" 
+                onClick={() => {
+                  setViewingCard(card);
+                  setViewingCardSlotIndex(i);
+                }} 
+                slotIndex={i}
+              />
             ) : (
               <EmptySlot key={`empty-${i}`} index={i} />
             )
@@ -784,7 +824,15 @@ export function BattleCards() {
       </div>
 
       {/* Card viewer */}
-      <CardViewer card={viewingCard} open={!!viewingCard} onClose={() => setViewingCard(null)} />
+      <CardViewer 
+        card={viewingCard} 
+        open={!!viewingCard} 
+        onClose={() => {
+          setViewingCard(null);
+          setViewingCardSlotIndex(undefined);
+        }}
+        slotIndex={viewingCardSlotIndex}
+      />
 
       {/* Replace modal (6th card drawn) */}
       <ReplaceCardModal
