@@ -18,11 +18,14 @@ import { TrainerAvatar } from "@/components/trainer-avatar";
 import { getPokemon } from "@/lib/pokemon-data";
 import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords, Crosshair } from "lucide-react";
 import { playTabSwitch, playButtonClick } from "@/lib/sounds";
+import { useImagePreloader } from "@/hooks/use-image-preloader";
 
 type Tab = "team" | "bag" | "pokedex" | "profile" | "shop" | "npcs" | "moves";
 type Screen = "loading" | "mode-select" | "profile-select" | "start" | "game";
 
 export default function Page() {
+  // Pre-load all project images into browser cache on mount
+  useImagePreloader();
   const { mode, setMode, profiles, activeProfileId, setActiveProfile, clearActiveProfile, resetMode } = useModeStore();
   const { battle, startBattle, addToTeamWithLevel, team, trainer } = useGameStore();
 

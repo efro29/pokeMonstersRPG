@@ -241,6 +241,9 @@ const [arena] = useState(getRandomArena());
                   <img
                   src={`/images/arenas/${arena}.gif`} 
                   alt="Campo"
+                  loading="eager"
+                  decoding="sync"
+                  fetchPriority="high"
                   style={{ 
     
                   display: 'block', 
@@ -378,6 +381,8 @@ const [arena] = useState(getRandomArena());
                     src={`/images/pokebola.png`}
                     className="absolute inset-0 w-full h-full object-contain p-1"
                     alt="pokebola"
+                    loading="eager"
+                    decoding="sync"
                   />
 
                   {/* Pokemon mini sprite */}
