@@ -274,3 +274,60 @@ export function playBadLuckTrio() {
     playNoise(0.4, 0.1);
   }, 500);
 }
+
+export function playCardActivateLuck() {
+  // Magic sparkle ascending with shimmer
+  playTone(880, 0.12, "sine", 0.08);
+  setTimeout(() => playTone(1047, 0.12, "sine", 0.08), 80);
+  setTimeout(() => playTone(1319, 0.12, "sine", 0.09), 160);
+  setTimeout(() => playTone(1568, 0.15, "sine", 0.1), 240);
+  setTimeout(() => {
+    playTone(1760, 0.3, "sine", 0.1);
+    playTone(2093, 0.3, "sine", 0.06);
+  }, 320);
+}
+
+export function playCardActivateDamage() {
+  // Dark impact with crackle
+  playTone(120, 0.25, "sawtooth", 0.14, { freq: 60, time: 0.2 });
+  playNoise(0.15, 0.12);
+  setTimeout(() => {
+    playTone(200, 0.12, "square", 0.1, { freq: 80, time: 0.1 });
+    playNoise(0.1, 0.08);
+  }, 100);
+  setTimeout(() => playTone(100, 0.3, "sawtooth", 0.1, { freq: 40, time: 0.25 }), 200);
+}
+
+export function playCardActivateCritDamage() {
+  // Same type match - heavier impact with dissonant ring
+  playTone(80, 0.3, "sawtooth", 0.16, { freq: 40, time: 0.25 });
+  playNoise(0.2, 0.14);
+  setTimeout(() => {
+    playTone(150, 0.15, "square", 0.12, { freq: 60, time: 0.12 });
+    playNoise(0.15, 0.1);
+  }, 80);
+  setTimeout(() => {
+    playTone(250, 0.1, "sawtooth", 0.1);
+    playTone(263, 0.1, "sawtooth", 0.08); // dissonant
+  }, 180);
+  setTimeout(() => playTone(60, 0.4, "sawtooth", 0.12, { freq: 30, time: 0.35 }), 280);
+}
+
+export function playTrioPunishment() {
+  // Massive damage - earthquake rumble + explosion
+  playTone(50, 0.5, "sawtooth", 0.18, { freq: 30, time: 0.4 });
+  playNoise(0.4, 0.16);
+  setTimeout(() => {
+    playTone(80, 0.3, "square", 0.14, { freq: 40, time: 0.25 });
+    playNoise(0.3, 0.14);
+  }, 150);
+  setTimeout(() => {
+    playTone(120, 0.2, "sawtooth", 0.12);
+    playTone(127, 0.2, "sawtooth", 0.1); // dissonant
+    playNoise(0.2, 0.12);
+  }, 300);
+  setTimeout(() => {
+    playTone(60, 0.6, "sawtooth", 0.15, { freq: 25, time: 0.5 });
+    playNoise(0.5, 0.1);
+  }, 500);
+}

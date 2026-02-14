@@ -57,6 +57,7 @@ import {
   playHeal,
 } from "@/lib/sounds";
 import { BattleCards } from "./battle-cards";
+import { BattleParticles } from "./battle-particles";
 import { kantoPokemonSizes } from "@/lib/kantoPokemonSizes";
 
 
@@ -276,9 +277,10 @@ const [arena] = useState(getRandomArena());
                   }}
                   />
 
-                  {/* Imagem 2: O Personagem */}
+                  {/* Imagem 2: O Personagem + Particulas */}
                   {(() => {
                     const effectType = battle.pokemonAnimationState?.effectType ?? "none";
+                    const isAnim = battle.pokemonAnimationState?.isAnimating ?? false;
                     const animProps = getPokemonAnimationVariants(effectType);
                     return (
                       <div
@@ -290,6 +292,9 @@ const [arena] = useState(getRandomArena());
                           pointerEvents: "none",
                         }}
                       >
+                        {/* Particulas ao redor do Pokemon */}
+                        <BattleParticles effectType={effectType} isAnimating={isAnim} />
+                        
                         <motion.img
                           src={getBattleSpriteUrl(pokemon.speciesId)}
                           alt={pokemon.name}

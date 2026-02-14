@@ -12,6 +12,10 @@ import {
   playLuckTrio,
   playBadLuckTrio,
   playButtonClick,
+  playCardActivateLuck,
+  playCardActivateDamage,
+  playCardActivateCritDamage,
+  playTrioPunishment,
 } from "@/lib/sounds";
 import {
   Dialog,
@@ -379,8 +383,19 @@ function CardViewer({
 
   const handleActivatePower = () => {
     if (slotIndex !== undefined) {
-      playButtonClick();
-      activateCardEffect(slotIndex);
+      const result = activateCardEffect(slotIndex);
+      // Play the correct sound based on card type and crit
+      if (result) {
+        if (result.alignment === "bad-luck") {
+          if (result.isCrit) {
+            playCardActivateCritDamage();
+          } else {
+            playCardActivateDamage();
+          }
+        } else {
+          playCardActivateLuck();
+        }
+      }
       onClose();
     }
   };
@@ -397,17 +412,23 @@ function CardViewer({
           <YuGiOhCard card={card} size="large" />
           
           {slotIndex !== undefined && (
-            <Button
-              onClick={handleActivatePower}
-              className={`w-full font-bold text-sm transition-all ${
-                card.alignment === "bad-luck"
-                  ? "bg-red-600 hover:bg-red-700 text-white"
-                  : "bg-green-600 hover:bg-green-700 text-white"
-              }`}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
             >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Ativar Poder
-            </Button>
+              <Button
+                onClick={handleActivatePower}
+                className={`w-full font-bold text-sm transition-all ${
+                  card.alignment === "bad-luck"
+                    ? "bg-red-600 hover:bg-red-700 text-white"
+                    : "bg-green-600 hover:bg-green-700 text-white"
+                }`}
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                {card.alignment === "bad-luck" ? "Ativar Maldicao" : "Ativar Poder"}
+              </Button>
+            </motion.div>
           )}
         </div>
       </DialogContent>
@@ -670,7 +691,11 @@ function TrioEventOverlay() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
           <Button
             onClick={() => {
-              playButtonClick();
+              if (!isLuck) {
+                playTrioPunishment();
+              } else {
+                playButtonClick();
+              }
               dismissTrioEvent();
             }}
             className="px-8 py-2"
@@ -679,7 +704,7 @@ function TrioEventOverlay() {
               color: "#fff",
             }}
           >
-            Continuar
+            {isLuck ? "Continuar" : "Receber Punicao (-20 HP)"}
           </Button>
         </motion.div>
       </motion.div>
