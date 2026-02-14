@@ -431,6 +431,7 @@ export function BattleScene() {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
+            style={{ zIndex: 300 }}
             className="overflow-hidden border-b border-border bg-card/50"
           >
             <div className="px-4 py-3">
