@@ -1,9 +1,10 @@
 // Battle Card system - Types, deck generation, and card effects
 // Trio rules:
-//   - Super Advantage: 3 LUCK cards with same element OR 3 different elements
+//   - Super Advantage: 3 LUCK cards with SAME element (e.g. fire+fire+fire)
 //   - Super Punishment: 3 BAD-LUCK cards -> clears all slots
 //   - Bad luck cards: -2 damage penalty each (-4 if pokemon shares the card element type)
 //   - Luck cards: slots remain after trio, only cleared on bad-luck trio
+//   - Deck: 27 luck / 13 bad luck cards
 
 export type CardAlignment = "luck" | "bad-luck";
 
@@ -65,6 +66,8 @@ export interface BattleCard {
   name: string;
   description: string;
   effectKey: string;
+  /** Index used for the card image: /images/cards/card{cardIndex}.png */
+  cardIndex: number;
 }
 
 // -- LUCK CARD DEFINITIONS --
@@ -218,13 +221,14 @@ function randomElement(): CardElement {
   return CARD_ELEMENTS[Math.floor(Math.random() * CARD_ELEMENTS.length)];
 }
 
-/** Draw a single card (weighted: 55% luck, 45% bad luck) */
+/** Draw a single card (weighted: 27 luck / 13 bad luck = 67.5% luck, 32.5% bad luck) */
 export function drawCard(): BattleCard {
-  const isLuck = Math.random() < 0.55;
+  const isLuck = Math.random() < 0.675;
   const element = randomElement();
 
   if (isLuck) {
-    const def = LUCK_CARDS[Math.floor(Math.random() * LUCK_CARDS.length)];
+    const defIndex = Math.floor(Math.random() * LUCK_CARDS.length);
+    const def = LUCK_CARDS[defIndex];
     return {
       id: nextCardId(),
       alignment: "luck",
@@ -232,9 +236,11 @@ export function drawCard(): BattleCard {
       name: def.name,
       description: def.description,
       effectKey: def.effectKey,
+      cardIndex: defIndex, // 0-7 for luck cards
     };
   } else {
-    const def = BAD_LUCK_CARDS[Math.floor(Math.random() * BAD_LUCK_CARDS.length)];
+    const defIndex = Math.floor(Math.random() * BAD_LUCK_CARDS.length);
+    const def = BAD_LUCK_CARDS[defIndex];
     return {
       id: nextCardId(),
       alignment: "bad-luck",
@@ -242,32 +248,33 @@ export function drawCard(): BattleCard {
       name: def.name,
       description: def.description,
       effectKey: def.effectKey,
+      cardIndex: LUCK_CARDS.length + defIndex, // 8-20 for bad luck cards
     };
   }
 }
 
 /**
  * Check if a luck trio is formed:
- *   - Need exactly 3 luck cards
- *   - All 3 same element OR all 3 different elements
+ *   - Need at least 3 luck cards
+ *   - All 3 must be the SAME element (e.g. fire+fire+fire)
  * Returns the matching trio cards if found, null otherwise
  */
 export function checkLuckTrio(fieldCards: (BattleCard | null)[]): BattleCard[] | null {
   const luckCards = fieldCards.filter((c): c is BattleCard => c !== null && c.alignment === "luck");
   if (luckCards.length < 3) return null;
 
-  // Check last 3 luck cards (or all if exactly 3)
-  const toCheck = luckCards.slice(-3);
-  const elements = toCheck.map((c) => c.element);
-
-  // All same element
-  if (elements[0] === elements[1] && elements[1] === elements[2]) {
-    return toCheck;
+  // Group luck cards by element
+  const byElement: Record<string, BattleCard[]> = {};
+  for (const card of luckCards) {
+    if (!byElement[card.element]) byElement[card.element] = [];
+    byElement[card.element].push(card);
   }
 
-  // All different elements
-  if (elements[0] !== elements[1] && elements[1] !== elements[2] && elements[0] !== elements[2]) {
-    return toCheck;
+  // Find any element with 3+ cards
+  for (const element of Object.keys(byElement)) {
+    if (byElement[element].length >= 3) {
+      return byElement[element].slice(0, 3);
+    }
   }
 
   return null;

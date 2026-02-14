@@ -130,16 +130,22 @@ function YuGiOhCard({
 
         {/* Image area */}
         <div
-          className="mx-[3px] mt-[2px] flex items-center justify-center rounded-[2px]"
+          className="mx-[3px] mt-[2px] flex items-center justify-center rounded-[2px] overflow-hidden"
           style={{
             height: 28,
             background: innerBg,
             border: `0.5px solid ${borderColor}55`,
           }}
         >
-          <span className="text-[18px] leading-none drop-shadow-sm">
-            {isLuck ? "\u2618" : "\u2620"}
-          </span>
+          <img
+            src={`/images/cards/card${card.cardIndex}.png`}
+            alt={card.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+              (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
+            }}
+          />
         </div>
 
         {/* Name */}
@@ -227,23 +233,29 @@ function YuGiOhCard({
 
       {/* Image area */}
       <div
-        className="mx-3 mt-2 flex items-center justify-center rounded"
+        className="mx-3 mt-2 flex items-center justify-center rounded overflow-hidden"
         style={{
           height: 120,
           background: innerBg,
           border: `1.5px solid ${borderColor}88`,
         }}
       >
-        <motion.span
-          className="text-6xl drop-shadow-lg"
+        <motion.img
+          src={`/images/cards/card${card.cardIndex}.png`}
+          alt={card.name}
+          className="w-full h-full object-cover"
           animate={{
-            scale: [1, 1.08, 1],
-            rotate: isLuck ? [0, 3, -3, 0] : [0, -2, 2, 0],
+            scale: [1, 1.04, 1],
           }}
           transition={{ duration: 2.5, repeat: Infinity }}
-        >
-          {isLuck ? "\u2618" : "\u2620"}
-        </motion.span>
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = "none";
+            const fallback = document.createElement("span");
+            fallback.className = "text-6xl drop-shadow-lg";
+            fallback.textContent = isLuck ? "\u2618" : "\u2620";
+            (e.target as HTMLImageElement).parentElement!.appendChild(fallback);
+          }}
+        />
       </div>
 
       {/* Name bar */}
@@ -658,9 +670,9 @@ export function BattleCards() {
                 ({penalty} dano)
               </span>
             )}
-            {luckCount === 2 && (
+            {luckCount >= 2 && (
               <span className="text-yellow-400/80 animate-pulse text-[8px]">
-                Falta 1 p/ Trio!
+                3 iguais = Trio!
               </span>
             )}
             {badLuckCount === 2 && (
