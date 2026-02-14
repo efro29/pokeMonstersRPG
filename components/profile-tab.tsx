@@ -32,6 +32,8 @@ import {
   ArrowUp,
 } from "lucide-react";
 import { playBadgeObtained, playBadgeRemoved, playButtonClick } from "@/lib/sounds";
+import { useModeStore } from "@/lib/mode-store";
+import { TrainerAvatar } from "@/components/trainer-avatar";
 
 const TRAINER_CLASSES = [
   "Treinador Pokemon",
@@ -59,6 +61,8 @@ const ATTR_ICONS: Record<keyof TrainerAttributes, React.ReactNode> = {
 
 export function ProfileTab() {
   const { trainer, updateTrainer, updateAttributes, addMoney, toggleBadge, toggleJohtoBadge, addTrainerXp, setTrainerLevel, damageTrainer, healTrainer, recalcTrainerStats } = useGameStore();
+  const { profiles, activeProfileId } = useModeStore();
+  const activeProfile = profiles.find((p) => p.id === activeProfileId);
   const [editing, setEditing] = useState(!trainer.name);
   const [moneyDialog, setMoneyDialog] = useState(false);
   const [moneyAmount, setMoneyAmount] = useState("");
@@ -124,9 +128,13 @@ export function ProfileTab() {
               </span>
             </div>
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-secondary border-2 border-border flex items-center justify-center">
-                <User className="w-8 h-8 text-muted-foreground" />
-              </div>
+              {activeProfile ? (
+                <TrainerAvatar avatarId={activeProfile.avatarId} size={64} />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-secondary border-2 border-border flex items-center justify-center">
+                  <User className="w-8 h-8 text-muted-foreground" />
+                </div>
+              )}
               <div>
                 <h2 className="text-lg font-bold text-foreground">
                   {trainer.name || "Novo Treinador"}
