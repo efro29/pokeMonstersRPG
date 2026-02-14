@@ -12,6 +12,10 @@ import {
   playLuckTrio,
   playBadLuckTrio,
   playButtonClick,
+  playCardActivateLuck,
+  playCardActivateDamage,
+  playCardActivateCritDamage,
+  playTrioPunishment,
 } from "@/lib/sounds";
 import {
   Dialog,
@@ -39,6 +43,7 @@ import {
   Shield,
   Cog,
   Footprints,
+  Sparkles,
 } from "lucide-react";
 
 // Element icon map
@@ -74,10 +79,12 @@ function YuGiOhCard({
   card,
   size = "small",
   onClick,
+  slotIndex,
 }: {
   card: BattleCard;
   size?: "small" | "large";
   onClick?: () => void;
+  slotIndex?: number;
 }) {
   const isLuck = card.alignment === "luck";
   const elColor = ELEMENT_COLORS[card.element] || "#888";
@@ -363,12 +370,35 @@ function CardViewer({
   card,
   open,
   onClose,
+  slotIndex,
 }: {
   card: BattleCard | null;
   open: boolean;
   onClose: () => void;
+  slotIndex?: number;
 }) {
+  const { activateCardEffect } = useGameStore();
+  
   if (!card) return null;
+
+  const handleActivatePower = () => {
+    if (slotIndex !== undefined) {
+      const result = activateCardEffect(slotIndex);
+      // Play the correct sound based on card type and crit
+      if (result) {
+        if (result.alignment === "bad-luck") {
+          if (result.isCrit) {
+            playCardActivateCritDamage();
+          } else {
+            playCardActivateDamage();
+          }
+        } else {
+          playCardActivateLuck();
+        }
+      }
+      onClose();
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -377,7 +407,30 @@ function CardViewer({
           <DialogTitle>{card.name}</DialogTitle>
           <DialogDescription>Detalhes da carta de batalha</DialogDescription>
         </DialogHeader>
-        <YuGiOhCard card={card} size="large" />
+        
+        <div className="flex flex-col gap-3">
+          <YuGiOhCard card={card} size="large" />
+          
+          {slotIndex !== undefined && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Button
+                onClick={handleActivatePower}
+                className={`w-full font-bold text-sm transition-all ${
+                  card.alignment === "bad-luck"
+                    ? "bg-red-600 hover:bg-red-700 text-white"
+                    : "bg-green-600 hover:bg-green-700 text-white"
+                }`}
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                {card.alignment === "bad-luck" ? "Ativar Maldicao" : "Ativar Poder"}
+              </Button>
+            </motion.div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -638,7 +691,11 @@ function TrioEventOverlay() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
           <Button
             onClick={() => {
-              playButtonClick();
+              if (!isLuck) {
+                playTrioPunishment();
+              } else {
+                playButtonClick();
+              }
               dismissTrioEvent();
             }}
             className="px-8 py-2"
@@ -647,7 +704,7 @@ function TrioEventOverlay() {
               color: "#fff",
             }}
           >
-            Continuar
+            {isLuck ? "Continuar" : "Receber Punicao (-20 HP)"}
           </Button>
         </motion.div>
       </motion.div>
@@ -666,6 +723,7 @@ export function BattleCards() {
   } = useGameStore();
 
   const [viewingCard, setViewingCard] = useState<BattleCard | null>(null);
+  const [viewingCardSlotIndex, setViewingCardSlotIndex] = useState<number | undefined>(undefined);
   const [pendingCard, setPendingCard] = useState<BattleCard | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
@@ -737,7 +795,16 @@ export function BattleCards() {
         <div className="flex items-center justify-center gap-1.5">
           {fieldCards.map((card, i) => i == 4 ?'':
             card ? (
-              <YuGiOhCard key={`${card.id}-${i}`} card={card} size="small" onClick={() => setViewingCard(card)} />
+              <YuGiOhCard 
+                key={`${card.id}-${i}`} 
+                card={card} 
+                size="small" 
+                onClick={() => {
+                  setViewingCard(card);
+                  setViewingCardSlotIndex(i);
+                }} 
+                slotIndex={i}
+              />
             ) : (
               <EmptySlot key={`empty-${i}`} index={i} />
             )
@@ -782,7 +849,15 @@ export function BattleCards() {
       </div>
 
       {/* Card viewer */}
-      <CardViewer card={viewingCard} open={!!viewingCard} onClose={() => setViewingCard(null)} />
+      <CardViewer 
+        card={viewingCard} 
+        open={!!viewingCard} 
+        onClose={() => {
+          setViewingCard(null);
+          setViewingCardSlotIndex(undefined);
+        }}
+        slotIndex={viewingCardSlotIndex}
+      />
 
       {/* Replace modal (6th card drawn) */}
       <ReplaceCardModal

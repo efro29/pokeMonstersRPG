@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
+import { getPokemonAnimationVariants } from "@/lib/card-animations";
 import {
   Swords,
   ArrowLeft,
@@ -56,6 +57,7 @@ import {
   playHeal,
 } from "@/lib/sounds";
 import { BattleCards } from "./battle-cards";
+import { BattleParticles } from "./battle-particles";
 import { kantoPokemonSizes } from "@/lib/kantoPokemonSizes";
 
 
@@ -275,28 +277,46 @@ const [arena] = useState(getRandomArena());
                   }}
                   />
 
-                  {/* Imagem 2: O Personagem */}
-                  <img
-                  src={getBattleSpriteUrl(pokemon.speciesId)}
-                  alt={pokemon.name}
-                  width={size.width}   
-                  height={size.height} 
-                  className="absolute z-10"
-                  style={{ 
-                    
-                  bottom: '15%',           
-                  left: '50%',            
-                  transform: 'translateX(-50%)', 
-                  imageRendering: "auto", 
-                  minHeight: 80, 
-                  minWidth: 80,
-                  pointerEvents: "none"
-                  }}
-                  crossOrigin="anonymous"
-                  onError={(e) => {
-                  (e.target as HTMLImageElement).src = getSpriteUrl(pokemon.speciesId);
-                  }}
-                  />
+                  {/* Imagem 2: O Personagem + Particulas */}
+                  {(() => {
+                    const effectType = battle.pokemonAnimationState?.effectType ?? "none";
+                    const isAnim = battle.pokemonAnimationState?.isAnimating ?? false;
+                    const animProps = getPokemonAnimationVariants(effectType);
+                    return (
+                      <div
+                        className="absolute z-10 flex justify-center"
+                        style={{
+                          bottom: '15%',
+                          left: 0,
+                          right: 0,
+                          pointerEvents: "none",
+                        }}
+                      >
+                        {/* Particulas ao redor do Pokemon */}
+                        <BattleParticles effectType={effectType} isAnimating={isAnim} />
+                        
+                        <motion.img
+                          src={getBattleSpriteUrl(pokemon.speciesId)}
+                          alt={pokemon.name}
+                          width={size.width}
+                          height={size.height}
+                          style={{
+                            imageRendering: "auto",
+                            minHeight: 80,
+                            minWidth: 80,
+                          }}
+                          crossOrigin="anonymous"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = getSpriteUrl(pokemon.speciesId);
+                          }}
+                          initial={animProps.initial}
+                          animate={animProps.animate}
+                          transition={animProps.transition}
+                          key={effectType === "none" ? "idle" : `anim-${Date.now()}`}
+                        />
+                      </div>
+                    );
+                  })()}
                   </div>
 
           {isFainted && (

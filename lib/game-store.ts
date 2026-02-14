@@ -224,6 +224,12 @@ export interface BattleState {
   cardTrioEvent: CardTrioEvent | null;
   cardDrawCount: number;
   badLuckPenalty: number; // cumulative -2 per bad card (-4 if same type)
+  // Card animation
+  pokemonAnimationState: {
+    isAnimating: boolean;
+    effectType: "damage" | "heal" | "buff" | "debuff" | "none";
+    duration: number;
+  };
 }
 
 export interface PendingEvolution {
@@ -307,6 +313,7 @@ interface GameState {
   clearCardField: () => void;
   dismissTrioEvent: () => void;
   recalcBadLuckPenalty: () => void;
+  activateCardEffect: (slotIndex: number) => { isCrit: boolean; alignment: string } | undefined;
 }
 
 function generateUid(): string {
@@ -360,6 +367,12 @@ export const useGameStore = create<GameState>()(
         cardTrioEvent: null,
         cardDrawCount: 0,
         badLuckPenalty: 0,
+        // Card animation
+        pokemonAnimationState: {
+          isAnimating: false,
+          effectType: "none",
+          duration: 0,
+        },
       },
 
       updateTrainer: (data) => {
@@ -1425,23 +1438,57 @@ export const useGameStore = create<GameState>()(
       },
 
       dismissTrioEvent: () => {
-        const { battle } = get();
+        const { battle, team } = get();
         const event = battle.cardTrioEvent;
         if (!event) return;
         const desc = event.hasAffinity ? event.effect.affinityDescription : event.effect.description;
         get().addBattleLog(`[CARTA] ${event.type === "luck" ? "Super Vantagem" : "Super Punicao"}: ${event.effect.name} - ${desc}`);
 
         if (event.type === "bad-luck") {
-          // Bad luck trio -> clear ALL slots
+          // Apply 20 damage to active Pokemon from trio punishment
+          const trioDamage = 20;
+          const activeMon = team.find((p) => p.uid === battle.activePokemonUid);
+          let updatedTeam = team;
+          if (activeMon) {
+            const newHp = Math.max(0, activeMon.currentHp - trioDamage);
+            updatedTeam = team.map((p) =>
+              p.uid === activeMon.uid ? { ...p, currentHp: newHp } : p
+            );
+            get().addBattleLog(`[CARTA] Super Punicao causa ${trioDamage} de dano em ${activeMon.name}!`);
+          }
+
+          // Re-read battle after addBattleLog
+          const currentBattle = get().battle;
+          // Bad luck trio -> clear ALL slots + damage animation
           set({
+            team: updatedTeam,
             battle: {
-              ...battle,
+              ...currentBattle,
               cardField: [null, null, null, null, null],
               lastDrawnCard: null,
               cardTrioEvent: null,
               badLuckPenalty: 0,
+              pokemonAnimationState: {
+                isAnimating: true,
+                effectType: "damage",
+                duration: 800,
+              },
             },
           });
+
+          // Reset animation after duration
+          setTimeout(() => {
+            set((state) => ({
+              battle: {
+                ...state.battle,
+                pokemonAnimationState: {
+                  isAnimating: false,
+                  effectType: "none",
+                  duration: 0,
+                },
+              },
+            }));
+          }, 800);
         } else {
           // Luck trio -> keep slots (don't clear)
           set({
@@ -1452,10 +1499,87 @@ export const useGameStore = create<GameState>()(
           });
         }
       },
+
+      activateCardEffect: (slotIndex: number) => {
+        const { battle, team } = get();
+        if (!battle || !battle.cardField) return undefined;
+        const card = battle.cardField[slotIndex];
+        if (!card) return undefined;
+
+        const activeMon = team.find((p) => p.uid === battle.activePokemonUid);
+        if (!activeMon) return undefined;
+
+        const activeSpecies = getPokemon(activeMon.speciesId);
+        const pokemonTypes = [activeSpecies.type1, activeSpecies.type2].filter(Boolean) as string[];
+
+        let isCrit = false;
+
+        // Apply damage if bad-luck card
+        if (card.alignment === "bad-luck") {
+          const isSameType = pokemonTypes.some((t) => t.toLowerCase() === card.element.toLowerCase());
+          isCrit = isSameType;
+          const baseDamage = 2; // Base bad luck damage
+          const damage = isSameType ? baseDamage * 2 : baseDamage; // Double if same type
+
+          const newHp = Math.max(0, activeMon.currentHp - damage);
+          const updatedTeam = team.map((p) =>
+            p.uid === activeMon.uid ? { ...p, currentHp: newHp } : p
+          );
+
+          const log = isSameType
+            ? `[CARTA] ${card.name} (${card.element}) acerta critico no tipo ${activeSpecies.type1}! ${damage} de dano!`
+            : `[CARTA] ${card.name} (${card.element}) causa ${damage} de dano!`;
+          get().addBattleLog(log);
+
+          set({ team: updatedTeam });
+        }
+
+        // Clear the slot after activation
+        const newField = [...battle.cardField];
+        newField[slotIndex] = null;
+
+        // Recalculate penalty after removing card
+        const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
+
+        // Determine animation type
+        const animationType = card.alignment === "bad-luck" ? "damage" : "heal";
+
+        // Re-read current battle state (may have changed via addBattleLog/set above)
+        const currentBattle = get().battle;
+        set({
+          battle: {
+            ...currentBattle,
+            cardField: newField,
+            badLuckPenalty: penalty,
+            pokemonAnimationState: {
+              isAnimating: true,
+              effectType: animationType,
+              duration: animationType === "damage" ? 500 : 600,
+            },
+          },
+        });
+
+        // Reset animation state after duration
+        setTimeout(() => {
+          set((state) => ({
+            battle: {
+              ...state.battle,
+              pokemonAnimationState: {
+                isAnimating: false,
+                effectType: "none",
+                duration: 0,
+              },
+            },
+          }));
+        }, animationType === "damage" ? 500 : 600);
+
+        return { isCrit, alignment: card.alignment };
+      },
+
     }),
     {
       name: getGameStoreKey(),
-      version: 9,
+      version: 10,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         if (version < 2) {
@@ -1508,6 +1632,15 @@ export const useGameStore = create<GameState>()(
         if (version < 9) {
           const battle = (state.battle as Record<string, unknown>) || {};
           battle.badLuckPenalty = battle.badLuckPenalty ?? 0;
+          state.battle = battle;
+        }
+        if (version < 10) {
+          const battle = (state.battle as Record<string, unknown>) || {};
+          battle.pokemonAnimationState = battle.pokemonAnimationState ?? {
+            isAnimating: false,
+            effectType: "none",
+            duration: 0,
+          };
           state.battle = battle;
         }
         return state as unknown as GameState;
