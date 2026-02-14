@@ -34,14 +34,24 @@ export default function RootLayout({
         <link rel="preload" href="/images/pokebola.png" as="image" />
         <link rel="preload" href="/images/cardsTypes/genga.gif" as="image" />
         <link rel="preload" href="/images/cardsTypes/genga.jpg" as="image" />
-        {/* Preload all card images */}
-        {Array.from({ length: 18 }, (_, i) => (
-          <link key={`card-${i}`} rel="preload" href={`/images/cards/card${i}.png`} as="image" />
-        ))}
-        {/* Preload card type backgrounds */}
-        {["bug","dark","dragon","electric","fairy","fighting","fire","flying","ghost","grass","ground","ice","normal","poison","psychic","rock","steel","water"].map((t) => (
-          <link key={`type-${t}`} rel="preload" href={`/images/cardsTypes/${t}.jpg`} as="image" />
-        ))}
+        <link rel="preload" href="/images/cards/card0.png" as="image" />
+        <link rel="preload" href="/images/cards/card1.png" as="image" />
+        <link rel="preload" href="/images/cards/card2.png" as="image" />
+        <link rel="preload" href="/images/cards/card3.png" as="image" />
+        <link rel="preload" href="/images/cards/card4.png" as="image" />
+        <link rel="preload" href="/images/cards/card5.png" as="image" />
+        <link rel="preload" href="/images/cards/card6.png" as="image" />
+        <link rel="preload" href="/images/cards/card7.png" as="image" />
+        <link rel="preload" href="/images/cards/card8.png" as="image" />
+        <link rel="preload" href="/images/cards/card9.png" as="image" />
+        <link rel="preload" href="/images/cards/card10.png" as="image" />
+        <link rel="preload" href="/images/cards/card11.png" as="image" />
+        <link rel="preload" href="/images/cards/card12.png" as="image" />
+        <link rel="preload" href="/images/cards/card13.png" as="image" />
+        <link rel="preload" href="/images/cards/card14.png" as="image" />
+        <link rel="preload" href="/images/cards/card15.png" as="image" />
+        <link rel="preload" href="/images/cards/card16.png" as="image" />
+        <link rel="preload" href="/images/cards/card17.png" as="image" />
       </head>
       <body className={`${_inter.variable} ${_pixel.variable} font-sans antialiased`}>{children}</body>
     </html>

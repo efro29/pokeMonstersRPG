@@ -1468,6 +1468,7 @@ export const useGameStore = create<GameState>()(
 
       activateCardEffect: (slotIndex: number) => {
         const { battle, team } = get();
+        if (!battle || !battle.cardField) return;
         const card = battle.cardField[slotIndex];
         if (!card) return;
 
@@ -1506,9 +1507,11 @@ export const useGameStore = create<GameState>()(
         // Determine animation type
         const animationType = card.alignment === "bad-luck" ? "damage" : "heal";
 
+        // Re-read current battle state (may have changed via addBattleLog/set above)
+        const currentBattle = get().battle;
         set({
           battle: {
-            ...battle,
+            ...currentBattle,
             cardField: newField,
             badLuckPenalty: penalty,
             pokemonAnimationState: {
@@ -1537,7 +1540,7 @@ export const useGameStore = create<GameState>()(
     }),
     {
       name: getGameStoreKey(),
-      version: 9,
+      version: 10,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         if (version < 2) {
@@ -1590,6 +1593,15 @@ export const useGameStore = create<GameState>()(
         if (version < 9) {
           const battle = (state.battle as Record<string, unknown>) || {};
           battle.badLuckPenalty = battle.badLuckPenalty ?? 0;
+          state.battle = battle;
+        }
+        if (version < 10) {
+          const battle = (state.battle as Record<string, unknown>) || {};
+          battle.pokemonAnimationState = battle.pokemonAnimationState ?? {
+            isAnimating: false,
+            effectType: "none",
+            duration: 0,
+          };
           state.battle = battle;
         }
         return state as unknown as GameState;

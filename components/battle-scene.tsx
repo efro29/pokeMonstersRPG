@@ -277,28 +277,41 @@ const [arena] = useState(getRandomArena());
                   />
 
                   {/* Imagem 2: O Personagem */}
-                  <motion.img
-                  src={getBattleSpriteUrl(pokemon.speciesId)}
-                  alt={pokemon.name}
-                  width={size.width}   
-                  height={size.height} 
-                  className="absolute z-10"
-                  style={{ 
-                    
-                  bottom: '15%',           
-                  left: '50%',            
-                  transform: 'translateX(-50%)', 
-                  imageRendering: "auto", 
-                  minHeight: 80, 
-                  minWidth: 80,
-                  pointerEvents: "none"
-                  }}
-                  crossOrigin="anonymous"
-                  onError={(e) => {
-                  (e.target as HTMLImageElement).src = getSpriteUrl(pokemon.speciesId);
-                  }}
-                  {...getPokemonAnimationVariants(battle.pokemonAnimationState.effectType)}
-                  />
+                  {(() => {
+                    const effectType = battle.pokemonAnimationState?.effectType ?? "none";
+                    const animProps = getPokemonAnimationVariants(effectType);
+                    return (
+                      <div
+                        className="absolute z-10 flex justify-center"
+                        style={{
+                          bottom: '15%',
+                          left: 0,
+                          right: 0,
+                          pointerEvents: "none",
+                        }}
+                      >
+                        <motion.img
+                          src={getBattleSpriteUrl(pokemon.speciesId)}
+                          alt={pokemon.name}
+                          width={size.width}
+                          height={size.height}
+                          style={{
+                            imageRendering: "auto",
+                            minHeight: 80,
+                            minWidth: 80,
+                          }}
+                          crossOrigin="anonymous"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = getSpriteUrl(pokemon.speciesId);
+                          }}
+                          initial={animProps.initial}
+                          animate={animProps.animate}
+                          transition={animProps.transition}
+                          key={effectType === "none" ? "idle" : `anim-${Date.now()}`}
+                        />
+                      </div>
+                    );
+                  })()}
                   </div>
 
           {isFainted && (

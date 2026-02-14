@@ -39,7 +39,7 @@ import {
   Shield,
   Cog,
   Footprints,
-  Zap as ZapEffect,
+  Sparkles,
 } from "lucide-react";
 
 // Element icon map
@@ -405,7 +405,7 @@ function CardViewer({
                   : "bg-green-600 hover:bg-green-700 text-white"
               }`}
             >
-              <ZapEffect className="w-4 h-4 mr-2" />
+              <Sparkles className="w-4 h-4 mr-2" />
               Ativar Poder
             </Button>
           )}

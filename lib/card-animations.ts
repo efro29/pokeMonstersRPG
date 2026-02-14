@@ -14,70 +14,65 @@ export interface PokemonAnimationState {
 }
 
 // Retorna as variantes de animação baseado no tipo de efeito
+// Usa keyframe arrays por propriedade (formato correto do framer-motion)
 export const getPokemonAnimationVariants = (effectType: CardEffectType) => {
   switch (effectType) {
     case "damage":
       return {
-        initial: { x: 0, rotate: 0, filter: "brightness(1)" },
-        animate: [
-          { x: -10, rotate: -2, filter: "brightness(1.3)" },
-          { x: 10, rotate: 2, filter: "brightness(1.3)" },
-          { x: -10, rotate: -2, filter: "brightness(1.3)" },
-          { x: 0, rotate: 0, filter: "brightness(1)" },
-        ],
+        initial: { x: 0, opacity: 1 },
+        animate: {
+          x: [-8, 8, -8, 6, -4, 0],
+          opacity: [1, 0.4, 1, 0.4, 1, 1],
+        },
         transition: {
           duration: 0.5,
-          times: [0, 0.25, 0.5, 0.75, 1],
           ease: "easeInOut",
         },
       };
 
     case "heal":
       return {
-        initial: { scale: 1, filter: "drop-shadow(0 0 0px rgba(34, 197, 94, 0))" },
-        animate: [
-          { scale: 1.05, filter: "drop-shadow(0 0 10px rgba(34, 197, 94, 0.8))" },
-          { scale: 1, filter: "drop-shadow(0 0 0px rgba(34, 197, 94, 0))" },
-        ],
+        initial: { scale: 1, opacity: 1 },
+        animate: {
+          scale: [1, 1.06, 1],
+          opacity: [1, 0.85, 1],
+        },
         transition: {
           duration: 0.6,
-          times: [0, 0.5, 1],
           ease: "easeInOut",
         },
       };
 
     case "buff":
       return {
-        initial: { scale: 1, filter: "drop-shadow(0 0 0px rgba(251, 191, 36, 0))" },
-        animate: [
-          { scale: 1.08, filter: "drop-shadow(0 0 15px rgba(251, 191, 36, 0.9))" },
-          { scale: 1, filter: "drop-shadow(0 0 0px rgba(251, 191, 36, 0))" },
-        ],
+        initial: { scale: 1, opacity: 1 },
+        animate: {
+          scale: [1, 1.1, 1],
+          opacity: [1, 0.8, 1],
+        },
         transition: {
           duration: 0.7,
-          times: [0, 0.5, 1],
           ease: "easeInOut",
         },
       };
 
     case "debuff":
       return {
-        initial: { scale: 1, filter: "drop-shadow(0 0 0px rgba(239, 68, 68, 0))" },
-        animate: [
-          { scale: 1.05, filter: "drop-shadow(0 0 12px rgba(239, 68, 68, 0.8))" },
-          { scale: 1, filter: "drop-shadow(0 0 0px rgba(239, 68, 68, 0))" },
-        ],
+        initial: { scale: 1, opacity: 1 },
+        animate: {
+          scale: [1, 0.92, 1],
+          opacity: [1, 0.5, 1],
+        },
         transition: {
           duration: 0.6,
-          times: [0, 0.5, 1],
           ease: "easeInOut",
         },
       };
 
     default:
       return {
-        initial: { scale: 1 },
-        animate: { scale: 1 },
+        initial: {},
+        animate: {},
         transition: { duration: 0 },
       };
   }
