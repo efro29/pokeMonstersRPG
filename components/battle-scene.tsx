@@ -56,6 +56,14 @@ import {
   playHeal,
 } from "@/lib/sounds";
 import { BattleCards } from "./battle-cards";
+import { kantoPokemonSizes } from "@/lib/kantoPokemonSizes";
+
+
+
+type Props = {
+  number: number;
+};
+
 
 export function BattleScene() {
   const {
@@ -184,13 +192,13 @@ export function BattleScene() {
 
   // Compute pokemon attributes for display (using customAttributes if modified by faint/level)
   const pokemonAttrs = pokemon ? computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes) : null;
-
+  const size = kantoPokemonSizes[pokemon?.speciesId] ?? { width: 80, height: 80 };
   if (!pokemon) return null;
 
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Battle header */}
-      <div className="flex flex-center   gap-3 p-3 border-b border-border bg-card">
+      <div className="flex flex-center  border-border bg-card">
         <Button
           onClick={endBattle}
           variant="ghost"
@@ -228,18 +236,9 @@ export function BattleScene() {
                    Dano
                 </Button> */}
           </div>)}
-
-
-
-
-
-
-
         {battle.phase === "attribute-test-select" && pokemonAttrs && (
-
           <Button
             size="sm"
-
             onClick={() => setBattlePhase("menu")}
             className="self-start  hover:text-foreground"
           >
@@ -250,23 +249,13 @@ export function BattleScene() {
 
         }
 
-
-
       </div>
 
       {/* Pokemon display area - Battle arena */}
-      <div className="relative flex flex-col items-center ">
+      <div  className="relative flex flex-col items-center ">
         {/* Arena background */}
-        <div
-          className="absolute inset-0 overflow-hidden"
-          style={{
-            background: "#0F1729",
-          }}
-        >
-          {/* Arena floor ellipse */}
-
-        </div>
-
+      
+        
         {/* Pokemon sprite */}
         <motion.div
           animate={
@@ -274,16 +263,16 @@ export function BattleScene() {
               ? { opacity: 0.3, y: 20 }
               : { opacity: 1, y: 0 }
           }
-          style={{ top: 45 }}
-          className="absolute z-10 "
+          style={{ top: size.top }}
+          className="absolute z-1"
         > <br />
           <img
             src={getBattleSpriteUrl(pokemon.speciesId)}
             alt={pokemon.name}
-            width={200}
-            height={150}
+            width={size.width}
+            height={size.height}
 
-            style={{ imageRendering: "auto", minHeight: 150, minWidth: 200 }}
+            style={{ imageRendering: "auto", minHeight: 80, minWidth: 80 }}
             crossOrigin="anonymous"
             onError={(e) => {
               (e.target as HTMLImageElement).src = getSpriteUrl(pokemon.speciesId);
@@ -298,18 +287,26 @@ export function BattleScene() {
           )}
         </motion.div>
               {/* Card field - always visible below pokemon */}
-              
-      <div style={{position:'absolute',top:350}} className="top-100 px-3 py-2  bg-background/50">
+               {battle.phase === "attribute-test-select" && pokemonAttrs || 
+               battle.phase === "attribute-test-rolling" && battle.selectedAttribute && pokemonAttrs ||
+               battle.phase === "attribute-test-result" && battle.attributeTestResult ||
+               battle.phase === "result" ||
+               battle.phase === "attack-select"
+               ? '':
+ <div style={{position:'absolute',top:380,}} className="top-100 px-3 py-2  bg-blue/30">
         <BattleCards />
       </div>
 
+               }
+     
+        {/* style={{zIndex:200, backgroundColor:'rgb(0,0,0,0.9)',padding:10,borderRadius:8}} */}
         {/* Name + HP overlay on the arena */}
 
         <div style={{ width: 280 }} className="absolute top-3 left-1  max-w-xs -mt-1 pb-3">
 
-          <div className="bg-card/90 backdrop-blur-sm rounded-xl border border-border p-3">
+          <div style={{backgroundColor:'rgb(0,0,0,0.2)'}} className="backdrop-blur-sm rounded-xl bg-black-100 p-3">
             <div className="flex items-center justify-between mb-1.5">
-              <h3 className="text-base font-bold text-foreground">{pokemon.name}</h3>
+              <h3 className="text-base font-bold text-foreground"><span className="text-blue-400">#{pokemon.speciesId}</span> {pokemon.name} </h3>
               <div className="flex items-center gap-2">
                 {pokemonAttrs && (
                   <span className="text-[9px] font-mono text-blue-400 bg-blue-400/10 rounded-full px-1.5 py-0.5">
@@ -350,34 +347,31 @@ export function BattleScene() {
                   onClick={() => handleSwitchPokemon(p.uid)}
                   disabled={isActive || isFaintedMember || isSwitching}
                   whileTap={!isActive && !isFaintedMember ? { scale: 0.9 } : undefined}
-                  className={`relative flex items-center justify-center w-11 h-11 rounded-full transition-all ${isActive
-                    ? "ring-2 ring-accent opacity-100"
-                    : isFaintedMember
-                      ? "opacity-30 cursor-not-allowed"
+                  className={`relative flex items-center w-11 h-11 rounded-full transition-all ${isActive
+                    ? "ring-0 bg-green-200/50 ring-accent opacity-100"
+                    : isFaintedMember  ? "opacity-20 cursor-not-allowed"
                       : "opacity-70 hover:opacity-100 hover:scale-110 cursor-pointer"
                     }`}
                   title={`${p.name} ${isFaintedMember ? "(KO)" : `HP: ${p.currentHp}/${p.maxHp}`}`}
                 >
                   {/* Pokeball background */}
-                  <svg
-                    width="44"
-                    height="44"
-                    viewBox="0 0 100 100"
-                    className="absolute inset-0"
-                  >
-                    <circle cx="50" cy="50" r="48" fill="#EF4444" stroke="#1E293B" strokeWidth="4" />
-                    <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
-                    <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#F1F5F9" />
-                    <circle cx="50" cy="50" r="14" fill="#F1F5F9" stroke="#1E293B" strokeWidth="3" />
-                    <circle cx="50" cy="50" r="6" fill={isActive ? "#F59E0B" : "#1E293B"} />
-                  </svg>
+                  <img
+            src={`/images/pokebola.png`}
+      
+            className="w-full h-full object-cover "
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+              (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
+            }}
+          />
                   {/* Pokemon mini sprite on top */}
                   <img
                     src={getSpriteUrl(p.speciesId)}
+                    
                     alt={p.name}
-                    width={28}
-                    height={28}
-                    className="relative z-10 right-3 top-3  drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+                    width={40}
+                    height={40}
+                    className="relative z-10 right-14 top-2  drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
                     style={{
                       imageRendering: "pixelated",
                       filter: isFaintedMember ? "grayscale(1)" : undefined,
@@ -439,8 +433,8 @@ export function BattleScene() {
                 disabled={isFainted}
                 className="h-16 flex flex-col gap-1 bg-orange-500 text-primary-foreground hover:bg-primary/90"
               >
-                <Swords className="w-6 h-6" />
-                <span className="text-sm font-bold">Atacar</span>
+                <Swords className="w-30 h-10" />
+                <span className="text-[7px] font-bold">Atacar</span>
               </Button>
 
               <Button
@@ -449,7 +443,7 @@ export function BattleScene() {
                 className="h-16 flex flex-col gap-1 border-border text-foreground bg-green-500 hover:bg-secondary"
               >
                 <Backpack className="w-6 h-6" />
-                <span className="text-sm font-bold">Bolsa</span>
+                <span className="text-[7px] font-bold">Bolsa</span>
               </Button>
 
               <Button
@@ -462,7 +456,7 @@ export function BattleScene() {
                 className="h-16 flex flex-col gap-1 border-border text-foreground bg-blue-500 hover:bg-secondary"
               >
                 <Dices className="w-6 h-6" />
-                <span className="text-sm font-bold">Teste</span>
+                <span className="text-[7px] font-bold">Teste</span>
               </Button>
 
               {/* Receive damage from opponent */}
@@ -472,8 +466,8 @@ export function BattleScene() {
                   variant="outline"
                   className="h-16 flex flex-col gap-1 border-border text-foreground bg-red-500 hover:bg-secondary"
                 >
-                  <Shield className="w-6 h-6" />
-                  <span className="text-sm font-bold">Dano</span>
+                  <Shield className="w-7 h-6" />
+                  <span className="text-[7px] font-bold">Dano</span>
                 </Button>
               )}
             </motion.div>
@@ -786,6 +780,7 @@ export function BattleScene() {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
+                      style={{zIndex:200, backgroundColor:'rgb(0,0,0,0.9)',padding:10,borderRadius:8}}
               className="flex flex-col items-center gap-4 my-auto"
             >
               <div className="text-center mb-2">
@@ -815,7 +810,8 @@ export function BattleScene() {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center gap-4 my-auto"
+              style={{zIndex:200, backgroundColor:'rgb(0,0,0,0.9)',padding:10,borderRadius:8}}
+              className="flex flex-col items-center gap-4 my-auto "
             >
               {(() => {
                 const r = battle.attributeTestResult;

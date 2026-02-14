@@ -294,7 +294,21 @@ function EmptySlot({ index }: { index: number }) {
         border: "1.5px dashed rgba(255,255,255,0.1)",
       }}
     >
-      <span className="text-[9px] text-muted-foreground/30 font-mono">{index + 1}</span>
+      <span className="text-[9px] text-muted-foreground/30 font-mono">
+                 <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 100 100"
+                    className=""
+                  >
+                    <circle cx="50" cy="50" r="48" fill="#2b2424" stroke="#1E293B" strokeWidth="4" />
+                    <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
+                    <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#606264" />
+                    <circle cx="50" cy="50" r="14" fill="#3c3d3d" stroke="#1E293B" strokeWidth="3" />
+                    <circle cx="50" cy="50" r="6" fill={  "#1E293B"} />
+                  </svg>
+      
+      </span>
     </div>
   );
 }
@@ -362,7 +376,11 @@ function ReplaceCardModal({
         {/* Field cards to choose from */}
         <div className="flex gap-2 justify-center flex-wrap">
           {fieldCards.map((fieldCard, i) => {
+            
+            
             if (!fieldCard) return null;
+            if (i == 4) return null;
+            
             const isLocked = fieldCard.alignment === "bad-luck";
             return (
               <div key={i} className="relative">
@@ -624,45 +642,36 @@ export function BattleCards() {
       <div className="flex flex-col gap-1.5">
         {/* 5 card slots */}
         <div className="flex items-center justify-center gap-1.5">
-          {fieldCards.map((card, i) =>
+          {fieldCards.map((card, i) => i == 4 ?'':
             card ? (
               <YuGiOhCard key={`${card.id}-${i}`} card={card} size="small" onClick={() => setViewingCard(card)} />
             ) : (
               <EmptySlot key={`empty-${i}`} index={i} />
             )
           )}
+           <div
+      className="relative flex flex-col items-center justify-center rounded-[5px]"
+      style={{
+        width: 52,
+        height: 76,
+        background: "linear-gradient(180deg, rgba(2, 2, 26, 0.6) 0%, rgba(1, 1, 3, 0.8) 100%)",
+        borderColor: "rgb(7, 18, 119)",borderWidth:1
+      }}
+    >
+      <span     onClick={handleDraw} className="text-[9px]  font-mono">
+                 
+      Compre
+      </span>
+    </div>
+          
         </div>
 
         {/* Info strip + draw button */}
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2 text-[9px]">
-            {/* {luckCount > 0 && (
-              <span className="text-yellow-500 font-mono font-bold">
-                Sorte: {luckCount}
-              </span>
-            )}
-            {badLuckCount > 0 && (
-              <span className="text-red-400 font-mono font-bold">
-                Azar: {badLuckCount}
-              </span>
-            )}
-            {penalty < 0 && (
-              <span className="text-red-300/80 font-mono text-[8px]">
-                ({penalty} dano)
-              </span>
-            )}
-            {luckCount >= 2 && (
-              <span className="text-yellow-400/80 animate-pulse text-[8px]">
-                3 iguais = Trio!
-              </span>
-            )}
-            {badLuckCount === 2 && (
-              <span className="text-red-400/80 animate-pulse text-[8px]">
-                Perigo! 2/3 azar
-              </span>
-            )} */}
+           
           </div>
-          <Button
+          {/* <Button
             size="sm"
             onClick={handleDraw}
             disabled={isDrawing || !!battle.cardTrioEvent}
@@ -675,7 +684,7 @@ export function BattleCards() {
             }}
           >
             {isDrawing ? "..." : "Comprar Carta"}
-          </Button>
+          </Button> */}
         </div>
       </div>
 

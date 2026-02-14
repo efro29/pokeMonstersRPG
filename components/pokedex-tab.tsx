@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { POKEMON, TYPE_COLORS, getSpriteUrl, getMove } from "@/lib/pokemon-data";
+import { POKEMON, TYPE_COLORS, getSpriteUrl, getMove, getBattleSpriteUrl } from "@/lib/pokemon-data";
 import type { PokemonType } from "@/lib/pokemon-data";
 import { useGameStore } from "@/lib/game-store";
 import { useModeStore } from "@/lib/mode-store";
@@ -218,7 +218,8 @@ export function PokedexTab({ onStartBattleWithPokemon }: PokedexTabProps = {}) {
 
             <div className="flex flex-col items-center gap-3">
               <img
-                src={getSpriteUrl(selectedPokemon.id) || "/placeholder.svg"}
+                
+                            src={getBattleSpriteUrl(selectedPokemon.id)}
                 alt={selectedPokemon.name}
                 width={96}
                 height={96}
