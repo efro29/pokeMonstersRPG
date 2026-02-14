@@ -202,12 +202,6 @@ export function BattleScene() {
         </Button>
 
 
-
-
-
-
-
-
         {battle.phase === "result" && (
           <div className=" flex gap-2  w-full">
             <Button
@@ -280,7 +274,7 @@ export function BattleScene() {
               ? { opacity: 0.3, y: 20 }
               : { opacity: 1, y: 0 }
           }
-          style={{ top: 85 }}
+          style={{ top: 45 }}
           className="absolute z-10 "
         > <br />
           <img
@@ -303,6 +297,11 @@ export function BattleScene() {
             </div>
           )}
         </motion.div>
+              {/* Card field - always visible below pokemon */}
+              
+      <div style={{position:'absolute',top:350}} className="top-100 px-3 py-2  bg-background/50">
+        <BattleCards />
+      </div>
 
         {/* Name + HP overlay on the arena */}
 
@@ -421,10 +420,7 @@ export function BattleScene() {
         </AnimatePresence>
       </div>
 
-      {/* Card field - always visible below pokemon */}
-      <div className="px-3 py-2 border-b border-border/50 bg-background/50">
-        <BattleCards />
-      </div>
+
 
       {/* Battle content area */}
       <div className="flex-1 px-4 pb-8 flex flex-col">

@@ -80,12 +80,12 @@ export interface LuckCardDef {
 export const LUCK_CARDS: LuckCardDef[] = [
   { effectKey: "crit-chance", name: "Olhar Afiado", description: "+5% chance de critico neste combate" },
   { effectKey: "regen-hp", name: "Aura Vital", description: "Cura 8% HP por turno" },
-  { effectKey: "accuracy-up", name: "Mira Precisa", description: "+10% precisao nos ataques" },
-  { effectKey: "speed-up", name: "Passo Rapido", description: "+1 velocidade no combate" },
+  { effectKey: "accuracy-up", name: "Confio em você!", description: "+10% precisao nos ataques" },
+  { effectKey: "speed-up", name: "Veloz como um Raio", description: "+1 velocidade no combate" },
   { effectKey: "damage-reduce", name: "Barreira Leve", description: "Reduz dano recebido em 5%" },
-  { effectKey: "pp-recover", name: "Energia Fluida", description: "Recupera 1 PP por turno" },
-  { effectKey: "element-damage", name: "Ressonancia", description: "+12% dano se mesmo elemento" },
-  { effectKey: "first-action", name: "Impulso Inicial", description: "Acao garantida primeiro" },
+  { effectKey: "pp-recover", name: "Barreira Pesada", description: "Recupera 1 HP por turno" },
+  { effectKey: "element-damage", name: "Acredito em voce!", description: "1 Critico ao movimentar" },
+  { effectKey: "first-action", name: "Barriga Cheia", description: "Acao garantida primeiro" },
 ];
 
 // -- BAD LUCK CARD DEFINITIONS --
@@ -106,9 +106,7 @@ export const BAD_LUCK_CARDS: BadLuckCardDef[] = [
   { effectKey: "enemy-atk-up", name: "Furia Inimiga", description: "Ataque do inimigo aumenta" },
   { effectKey: "enemy-speed-up", name: "Inimigo Agil", description: "Velocidade do inimigo +1" },
   { effectKey: "enemy-shield", name: "Escudo Sombrio", description: "Inimigo ganha escudo" },
-  { effectKey: "enemy-regen", name: "Cura Sombria", description: "Inimigo cura 10% HP por turno" },
-  { effectKey: "enemy-pp-recover", name: "Fonte Negra", description: "Inimigo recupera PP extra" },
-  { effectKey: "enemy-clear-status", name: "Purificacao Hostil", description: "Status do inimigo removidos" },
+
 ];
 
 // -- SUPER ADVANTAGES (Luck Trio) --

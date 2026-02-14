@@ -195,11 +195,12 @@ function YuGiOhCard({
       transition={{ type: "spring", damping: 14 }}
       className="relative flex flex-col rounded-lg overflow-hidden mx-auto"
       style={{
+        height:300,
         width: 220,
         background: outerBg,
         border: `3px solid ${borderColor}`,
         boxShadow: isLuck
-          ? "0 8px 32px rgba(197,160,38,0.5), inset 0 2px 0 rgba(255,255,255,0.15)"
+          ? "0 8px 32px rgba(236, 183, 6, 0.5), inset 0 2px 0 rgba(255,255,255,0.15)"
           : "0 8px 32px rgba(90,26,26,0.7), inset 0 2px 0 rgba(255,255,255,0.05)",
       }}
     >
@@ -215,20 +216,11 @@ function YuGiOhCard({
           >
             <ElementIcon element={card.element} className="w-3.5 h-3.5" />
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: elColor }}>
-            {elName}
+          <span className="text-sm font-bold  tracking-wider" style={{ color: 'black' }}>
+            {elName} 
           </span>
         </div>
-        <span
-          className="text-[9px] font-bold px-2 py-0.5 rounded-full"
-          style={{
-            background: isLuck ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)",
-            color: isLuck ? "#4ADE80" : "#F87171",
-            border: `1px solid ${isLuck ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
-          }}
-        >
-          {isLuck ? "SORTE" : "AZAR"}
-        </span>
+       
       </div>
 
       {/* Image area */}
@@ -264,37 +256,26 @@ function YuGiOhCard({
         style={{ background: nameBg, border: `1px solid ${borderColor}44` }}
       >
         <h3 className="text-sm font-bold tracking-wide" style={{ color: textColor }}>
-          {card.name}
+          {card.name} 
         </h3>
       </div>
 
       {/* Description box */}
       <div
-        className="mx-3 mt-1.5 mb-3 px-3 py-2 rounded flex items-center justify-center min-h-[48px]"
+        className="mx-3 mt-1.5 mb-3 px-3 py-2 rounded flex items-center justify-center min-h-[70px]"
         style={{
           background: innerBg,
           border: `1px solid ${borderColor}44`,
         }}
       >
         <p
-          className="text-xs leading-relaxed text-center"
+          className="text-[10px] leading-relaxed text-center"
           style={{ color: subTextColor }}
         >
           {card.description}
         </p>
       </div>
 
-      {/* Bad luck penalty notice */}
-      {!isLuck && (
-        <div
-          className="mx-3 mb-2 py-1.5 px-2 rounded text-center"
-          style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.2)" }}
-        >
-          <span className="text-[9px] text-red-400">
-            -2 dano (ou -4 se mesmo tipo) | Nao pode ser substituida
-          </span>
-        </div>
-      )}
     </motion.div>
   );
 }
@@ -655,7 +636,7 @@ export function BattleCards() {
         {/* Info strip + draw button */}
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2 text-[9px]">
-            {luckCount > 0 && (
+            {/* {luckCount > 0 && (
               <span className="text-yellow-500 font-mono font-bold">
                 Sorte: {luckCount}
               </span>
@@ -679,7 +660,7 @@ export function BattleCards() {
               <span className="text-red-400/80 animate-pulse text-[8px]">
                 Perigo! 2/3 azar
               </span>
-            )}
+            )} */}
           </div>
           <Button
             size="sm"
