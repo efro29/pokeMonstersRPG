@@ -3,6 +3,8 @@ import { persist } from "zustand/middleware";
 import type { PokemonSpecies, BagItemDef, PokemonBaseAttributes, DamageBreakdown, HitResult } from "./pokemon-data";
 import { getGameStoreKey } from "./mode-store";
 import { BAG_ITEMS, getMove, getPokemon, canEvolveByLevel, canEvolveByStone, canEvolveByTrade, xpForLevel, computeAttributes, getBaseAttributes, applyFaintPenalty, applyLevelUpBonus, rollDamageAgainstPokemon, calculateHitResult, calculateBattleDamage, getDamageMultiplier } from "./pokemon-data";
+import type { BattleCard, CardAlignment, SuperEffect } from "./card-data";
+import { drawCard, checkTrio, checkElementalAffinity, rollSuperAdvantage, rollSuperPunishment } from "./card-data";
 
 export type PokemonAttributeKey = keyof PokemonBaseAttributes;
 
@@ -197,6 +199,12 @@ export interface AttributeTestResult {
   criticalFail: boolean;
 }
 
+export interface CardTrioEvent {
+  type: CardAlignment;
+  effect: SuperEffect;
+  hasAffinity: boolean;
+}
+
 export interface BattleState {
   phase: BattlePhase;
   activePokemonUid: string | null;
@@ -210,6 +218,11 @@ export interface BattleState {
   selectedAttribute: PokemonAttributeKey | null;
   attributeTestDC: number;
   attributeTestResult: AttributeTestResult | null;
+  // Card system
+  cardField: (BattleCard | null)[];
+  lastDrawnCard: BattleCard | null;
+  cardTrioEvent: CardTrioEvent | null;
+  cardDrawCount: number;
 }
 
 export interface PendingEvolution {
@@ -287,6 +300,12 @@ interface GameState {
   // Evolution queue
   triggerEvolution: (evolution: PendingEvolution) => void;
   completeEvolution: () => void;
+  // Card system
+  drawBattleCard: () => BattleCard;
+  placeCardInSlot: (slotIndex: number, card: BattleCard) => void;
+  replaceCardInSlot: (slotIndex: number, card: BattleCard) => void;
+  clearCardField: () => void;
+  dismissTrioEvent: () => void;
 }
 
 function generateUid(): string {
@@ -334,6 +353,11 @@ export const useGameStore = create<GameState>()(
         selectedAttribute: null,
         attributeTestDC: 10,
         attributeTestResult: null,
+        // Card system
+        cardField: [null, null, null, null, null],
+        lastDrawnCard: null,
+        cardTrioEvent: null,
+        cardDrawCount: 0,
       },
 
       updateTrainer: (data) => {
@@ -561,11 +585,15 @@ export const useGameStore = create<GameState>()(
             diceRoll: null,
             hitResult: null,
             damageDealt: null,
-  damageBreakdown: null,
+            damageBreakdown: null,
             battleLog: [],
             selectedAttribute: null,
             attributeTestDC: 10,
             attributeTestResult: null,
+            cardField: [null, null, null, null, null],
+            lastDrawnCard: null,
+            cardTrioEvent: null,
+            cardDrawCount: 0,
           },
         });
       },
@@ -579,11 +607,15 @@ export const useGameStore = create<GameState>()(
             diceRoll: null,
             hitResult: null,
             damageDealt: null,
-  damageBreakdown: null,
+            damageBreakdown: null,
             battleLog: [],
             selectedAttribute: null,
             attributeTestDC: 10,
             attributeTestResult: null,
+            cardField: [null, null, null, null, null],
+            lastDrawnCard: null,
+            cardTrioEvent: null,
+            cardDrawCount: 0,
           },
         });
       },
@@ -1220,10 +1252,133 @@ export const useGameStore = create<GameState>()(
         get().evolvePokemon(pendingEvolution.uid, pendingEvolution.toSpeciesId);
         set({ pendingEvolution: null });
       },
+
+      // -- Card system --
+      drawBattleCard: () => {
+        const card = drawCard();
+        const { battle } = get();
+        const newField = [...battle.cardField];
+        const newCount = battle.cardDrawCount + 1;
+
+        // Find first empty slot
+        const emptyIndex = newField.findIndex((c) => c === null);
+
+        if (emptyIndex !== -1) {
+          // Auto-place in empty slot
+          newField[emptyIndex] = card;
+          // Check for trio
+          const trioType = checkTrio(newField);
+          if (trioType) {
+            const pokemon = get().team.find((p) => p.uid === battle.activePokemonUid);
+            const pokemonSpecies = pokemon ? getPokemon(pokemon.speciesId) : null;
+            const pokemonTypes = pokemonSpecies ? [pokemonSpecies.type1, pokemonSpecies.type2].filter(Boolean) as string[] : [];
+            const hasAffinity = checkElementalAffinity(pokemonTypes, newField);
+            const effect = trioType === "luck" ? rollSuperAdvantage() : rollSuperPunishment();
+            set({
+              battle: {
+                ...battle,
+                cardField: newField,
+                lastDrawnCard: card,
+                cardDrawCount: newCount,
+                cardTrioEvent: { type: trioType, effect, hasAffinity },
+              },
+            });
+          } else {
+            set({
+              battle: {
+                ...battle,
+                cardField: newField,
+                lastDrawnCard: card,
+                cardDrawCount: newCount,
+                cardTrioEvent: null,
+              },
+            });
+          }
+        } else {
+          // All slots full - set lastDrawnCard so UI shows replace modal
+          // Bad luck cards auto-replace is not possible when full, so user must replace a non-bad-luck card
+          set({
+            battle: {
+              ...battle,
+              lastDrawnCard: card,
+              cardDrawCount: newCount,
+            },
+          });
+        }
+
+        return card;
+      },
+
+      placeCardInSlot: (slotIndex, card) => {
+        const { battle } = get();
+        const newField = [...battle.cardField];
+        newField[slotIndex] = card;
+        const trioType = checkTrio(newField);
+        if (trioType) {
+          const pokemon = get().team.find((p) => p.uid === battle.activePokemonUid);
+          const pokemonSpecies = pokemon ? getPokemon(pokemon.speciesId) : null;
+          const pokemonTypes = pokemonSpecies ? [pokemonSpecies.type1, pokemonSpecies.type2].filter(Boolean) as string[] : [];
+          const hasAffinity = checkElementalAffinity(pokemonTypes, newField);
+          const effect = trioType === "luck" ? rollSuperAdvantage() : rollSuperPunishment();
+          set({
+            battle: {
+              ...battle,
+              cardField: newField,
+              lastDrawnCard: null,
+              cardTrioEvent: { type: trioType, effect, hasAffinity },
+            },
+          });
+        } else {
+          set({
+            battle: {
+              ...battle,
+              cardField: newField,
+              lastDrawnCard: null,
+              cardTrioEvent: null,
+            },
+          });
+        }
+      },
+
+      replaceCardInSlot: (slotIndex, card) => {
+        const { battle } = get();
+        const existing = battle.cardField[slotIndex];
+        // Cannot replace bad luck cards
+        if (existing && existing.alignment === "bad-luck") return;
+        get().placeCardInSlot(slotIndex, card);
+      },
+
+      clearCardField: () => {
+        const { battle } = get();
+        set({
+          battle: {
+            ...battle,
+            cardField: [null, null, null, null, null],
+            lastDrawnCard: null,
+            cardTrioEvent: null,
+          },
+        });
+      },
+
+      dismissTrioEvent: () => {
+        const { battle } = get();
+        const event = battle.cardTrioEvent;
+        if (!event) return;
+        const desc = event.hasAffinity ? event.effect.affinityDescription : event.effect.description;
+        get().addBattleLog(`[CARTA] ${event.type === "luck" ? "Super Vantagem" : "Super Punicao"}: ${event.effect.name} - ${desc}`);
+        set({
+          battle: {
+            ...battle,
+            cardField: [null, null, null, null, null],
+            lastDrawnCard: null,
+            cardTrioEvent: null,
+          },
+        });
+      },
     }),
     {
       name: getGameStoreKey(),
-      version: 7,
+      version: 8,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         if (version < 2) {
@@ -1263,6 +1418,14 @@ export const useGameStore = create<GameState>()(
           state.pendingEvolution = null;
           const battle = (state.battle as Record<string, unknown>) || {};
           battle.damageBreakdown = battle.damageBreakdown ?? null;
+          state.battle = battle;
+        }
+        if (version < 8) {
+          const battle = (state.battle as Record<string, unknown>) || {};
+          battle.cardField = battle.cardField ?? [null, null, null, null, null];
+          battle.lastDrawnCard = battle.lastDrawnCard ?? null;
+          battle.cardTrioEvent = battle.cardTrioEvent ?? null;
+          battle.cardDrawCount = battle.cardDrawCount ?? 0;
           state.battle = battle;
         }
         return state as unknown as GameState;

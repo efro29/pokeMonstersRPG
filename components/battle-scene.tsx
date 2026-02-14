@@ -55,6 +55,8 @@ import {
   playFlee,
   playHeal,
 } from "@/lib/sounds";
+import { BattleCards } from "./battle-cards";
+import { Layers } from "lucide-react";
 
 export function BattleScene() {
   const {
@@ -87,6 +89,7 @@ export function BattleScene() {
   const [isTestRolling, setIsTestRolling] = useState(false);
   const [testDC, setTestDC] = useState("10");
   const [isSwitching, setIsSwitching] = useState(false);
+  const [showCards, setShowCards] = useState(false);
 
   const handleSwitchPokemon = (uid: string) => {
     if (uid === battle.activePokemonUid) return;
@@ -420,6 +423,23 @@ export function BattleScene() {
         </AnimatePresence>
       </div>
 
+      {/* Card field area - shown when toggled */}
+      <AnimatePresence>
+        {showCards && battle.phase === "menu" && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden border-b border-border bg-card/50"
+          >
+            <div className="px-4 py-3">
+              <BattleCards />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Battle content area */}
       <div className="flex-1 px-4 pb-8 flex flex-col">
         <AnimatePresence mode="wait">
@@ -430,15 +450,15 @@ export function BattleScene() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="grid grid-cols-4 gap-3 mt-auto"
+              className="grid grid-cols-5 gap-2 mt-auto"
             >
               <Button
                 onClick={() => setBattlePhase("attack-select")}
                 disabled={isFainted}
-                className=" h-16 flex flex-col gap-1 bg-orange-500 text-primary-foreground hover:bg-primary/90"
+                className="h-16 flex flex-col gap-1 bg-orange-500 text-primary-foreground hover:bg-primary/90"
               >
-                <Swords className="w-6 h-6" />
-                <span className="text-sm font-bold">Atacar</span>
+                <Swords className="w-5 h-5" />
+                <span className="text-[11px] font-bold">Atacar</span>
               </Button>
 
               <Button
@@ -446,10 +466,22 @@ export function BattleScene() {
                 variant="outline"
                 className="h-16 flex flex-col gap-1 border-border text-foreground bg-green-500 hover:bg-secondary"
               >
-                <Backpack className="w-6 h-6" />
-                <span className="text-sm font-bold">Bolsa</span>
+                <Backpack className="w-5 h-5" />
+                <span className="text-[11px] font-bold">Bolsa</span>
               </Button>
 
+              <Button
+                onClick={() => {
+                  playButtonClick();
+                  setShowCards((v) => !v);
+                }}
+                disabled={isFainted}
+                variant="outline"
+                className={`h-16 flex flex-col gap-1 border-border text-foreground hover:bg-secondary ${showCards ? "bg-yellow-600 ring-2 ring-yellow-400" : "bg-yellow-500"}`}
+              >
+                <Layers className="w-5 h-5" />
+                <span className="text-[11px] font-bold">Card</span>
+              </Button>
 
               <Button
                 onClick={() => {
@@ -460,26 +492,21 @@ export function BattleScene() {
                 variant="outline"
                 className="h-16 flex flex-col gap-1 border-border text-foreground bg-blue-500 hover:bg-secondary"
               >
-                <Dices className="w-6 h-6" />
-                <span className="text-sm font-bold">Teste</span>
+                <Dices className="w-5 h-5" />
+                <span className="text-[11px] font-bold">Teste</span>
               </Button>
-
 
               {/* Receive damage from opponent - always accessible from menu */}
               {battle.phase === "menu" && !showDamageInput && !isFainted && (
-
                 <Button
                   onClick={() => setShowDamageInput(true)}
                   variant="outline"
                   className="h-16 flex flex-col gap-1 border-border text-foreground bg-red-500 hover:bg-secondary"
                 >
-                  <Shield className="w-6 h-6" />
-                  Dano
+                  <Shield className="w-5 h-5" />
+                  <span className="text-[11px] font-bold">Dano</span>
                 </Button>
-
               )}
-
-
             </motion.div>
           )}
 
