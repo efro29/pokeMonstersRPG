@@ -162,7 +162,7 @@ export function StartScreen({
             className="font-pixel text-sm leading-relaxed tracking-widest"
             style={{ color: "#F59E0B" }}
           >
-            MANAUS EDITION
+            MANAUS EDITION Beta
           </h2>
         </motion.div>
 

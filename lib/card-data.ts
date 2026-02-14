@@ -221,7 +221,7 @@ function randomElement(): CardElement {
 
 /** Draw a single card (weighted: 27 luck / 13 bad luck = 67.5% luck, 32.5% bad luck) */
 export function drawCard(): BattleCard {
-  const isLuck = Math.random() < 0.500;
+  const isLuck = Math.random() < 0.750;
   const element = randomElement();
 
   if (isLuck) {

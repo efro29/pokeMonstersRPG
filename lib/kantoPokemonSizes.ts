@@ -4,10 +4,10 @@ export type PokemonSize = {
    top: number;
 };
 
-const SMALL = { width: 100, height: 80, top: 150};
-const MEDIUM = { width: 200, height: 80, top: 80};
-const BIG = { width: 200, height: 250 ,top: 125};
-const MEGA = { width: 300, height: 300,top:10 };
+const SMALL = { width: 70, height: 60, top: 150,left:100};
+const MEDIUM = { width: 200, height: 80, top: 80,left:100};
+const BIG = { width: 150, height: 80 ,top: 10,left:100};
+const MEGA = { width: 200, height: 80,top:10,left:100 };
 
 export const kantoPokemonSizes: Record<number, PokemonSize> = {
   1: SMALL,   // Bulbasaur

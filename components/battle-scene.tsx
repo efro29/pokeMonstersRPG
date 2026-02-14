@@ -96,6 +96,14 @@ export function BattleScene() {
   const [isTestRolling, setIsTestRolling] = useState(false);
   const [testDC, setTestDC] = useState("10");
   const [isSwitching, setIsSwitching] = useState(false);
+  const ARENAS = [
+  "campo"
+];
+
+const getRandomArena = () => {
+  const randomIndex = Math.floor(Math.random() * ARENAS.length);
+  return ARENAS[randomIndex];
+};
 
   const handleSwitchPokemon = (uid: string) => {
     if (uid === battle.activePokemonUid) return;
@@ -174,7 +182,7 @@ export function BattleScene() {
     setShowBagDialog(false);
     setBattlePhase("menu");
   };
-
+const [arena] = useState(getRandomArena());
   const handleSelectAttribute = (attr: PokemonAttributeKey) => {
     const dc = parseInt(testDC) || 10;
     selectAttributeTest(attr, dc);
@@ -198,7 +206,7 @@ export function BattleScene() {
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Battle header */}
-      <div className="flex flex-center  border-border bg-card">
+      <div  className="flex flex-center  border-border bg-card ">
         <Button
           onClick={endBattle}
           variant="ghost"
@@ -210,74 +218,84 @@ export function BattleScene() {
         </Button>
 
 
-        {battle.phase === "result" && (
-          <div className=" flex gap-2  w-full">
-            <Button
-              size={'sm'}
-              onClick={() => {
-                const bd = battle.damageBreakdown;
-                const logMsg = bd && !bd.isStatus
-                  ? `${pokemon.name} usou ${selectedMove?.name}: D20=${battle.diceRoll} - ${getHitResultLabel(battle.hitResult as HitResult)} | ${bd.formula} => ${bd.rawTotal} dano`
-                  : `${pokemon.name} usou ${selectedMove?.name}: rolou ${battle.diceRoll} - ${getHitResultLabel(battle.hitResult as HitResult)} (${battle.damageDealt} dano)`;
-                addBattleLog(logMsg);
-                setBattlePhase("menu");
-              }}
-              className="flex-1 bg-blue-800 text-primary-foreground hover:bg-primary/90"
-            >
-              Continuar
-            </Button>
-            {/* <Button
-                 size={'sm'}
-                  onClick={() => setShowDamageInput(true)}
-                  variant="outline"
-                  className="flex-1 border-border text-foreground bg-red-600 hover:bg-secondary"
-                >
-                  <Shield className="w-4 h-4 mr-1" />
-                   Dano
-                </Button> */}
-          </div>)}
-        {battle.phase === "attribute-test-select" && pokemonAttrs && (
-          <Button
-            size="sm"
-            onClick={() => setBattlePhase("menu")}
-            className="self-start  hover:text-foreground"
-          >
-            <ChevronLeft className="w-4 " /> Voltar
-          </Button>
-
-        )
-
-        }
+     
 
       </div>
-
-      {/* Pokemon display area - Battle arena */}
-      <div  className="relative flex flex-col items-center ">
-        {/* Arena background */}
-      
+        <div style={{paddingBottom:10}}></div>
         
-        {/* Pokemon sprite */}
+      <div  className=" relative flex flex-col items-center  ">
+
         <motion.div
           animate={
             isFainted
               ? { opacity: 0.3, y: 20 }
               : { opacity: 1, y: 0 }
           }
-          style={{ top: size.top }}
+         
           className="absolute z-1"
-        > <br />
-          <img
-            src={getBattleSpriteUrl(pokemon.speciesId)}
-            alt={pokemon.name}
-            width={size.width}
-            height={size.height}
+        > 
+                    
+                  <div className="relative"> 
 
-            style={{ imageRendering: "auto", minHeight: 80, minWidth: 80 }}
-            crossOrigin="anonymous"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = getSpriteUrl(pokemon.speciesId);
-            }}
-          />
+                  {/* Imagem 1: O Campo (Fundo) */}
+                  <img
+                  src={`/images/arenas/${arena}.gif`} 
+                  alt="Campo"
+                  style={{ 
+    
+                  display: 'block', 
+                  imageRendering: "pixelated", 
+                  width: '100%',
+                   height: '270px',   // 👈 define a altura
+                 objectFit: 'fill', // 👈 força esticar
+                  maxWidth: 'none',
+                  minHeight: 80, 
+                  minWidth: 80, 
+                
+                  }}
+                  crossOrigin="anonymous"
+                  />
+
+                  {/* SOMBRA: Fica entre o campo e o personagem */}
+                  <div 
+                  className="absolute z-0" 
+                  style={{
+                  bottom: '12%',            // Mesma posição da base do Pokémon
+                  left: '50%',              // Centralizado
+                  transform: 'translateX(-50%)',
+                  width: '90px',            // Largura da sombra
+                  height: '30px',           // Altura da sombra (achatada)
+                  background: 'rgba(0, 0, 0, 0.35)', // Cor preta com transparência
+                  borderRadius: '50%',      // Formato oval
+                  filter: 'blur(4px)',      // Suaviza as bordas
+                  pointerEvents: 'none'
+                  }}
+                  />
+
+                  {/* Imagem 2: O Personagem */}
+                  <img
+                  src={getBattleSpriteUrl(pokemon.speciesId)}
+                  alt={pokemon.name}
+                  width={size.width}   
+                  height={size.height} 
+                  className="absolute z-10"
+                  style={{ 
+                    
+                  bottom: '15%',           
+                  left: '50%',            
+                  transform: 'translateX(-50%)', 
+                  imageRendering: "auto", 
+                  minHeight: 80, 
+                  minWidth: 80,
+                  pointerEvents: "none"
+                  }}
+                  crossOrigin="anonymous"
+                  onError={(e) => {
+                  (e.target as HTMLImageElement).src = getSpriteUrl(pokemon.speciesId);
+                  }}
+                  />
+                  </div>
+
           {isFainted && (
             <div className="absolute inset-0 flex items-center justify-center">
               <span className="text-destructive font-bold text-xl bg-background/80 px-3 py-1.5 rounded-lg">
@@ -291,20 +309,101 @@ export function BattleScene() {
                battle.phase === "attribute-test-rolling" && battle.selectedAttribute && pokemonAttrs ||
                battle.phase === "attribute-test-result" && battle.attributeTestResult ||
                battle.phase === "result" ||
-               battle.phase === "attack-select"
+               battle.phase === "attack-select" ||
+               battle.phase === "rolling"
                ? '':
- <div style={{position:'absolute',top:380,}} className="top-100 px-3 py-2  bg-blue/30">
+
+               
+    <div style={{position:'absolute',top:350,}} className="top-100 px-3 py-2  bg-blue/30">
+          <div className="flex items-center gap-3 mb-1 w-full ">
+            <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/50"></div>
+            <span style={{color:'silver'}} className=" text-[10px] font-bold uppercase tracking-widest drop-shadow-md">
+               Cartas
+            </span>
+            <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/50"></div>
+          </div>
         <BattleCards />
       </div>
+      
 
                }
-     
-        {/* style={{zIndex:200, backgroundColor:'rgb(0,0,0,0.9)',padding:10,borderRadius:8}} */}
+{/* Container Principal: Absolute no topo, largura total e Flex Coluna */}
+<div 
+  style={{ position: 'absolute', top: 280 }} 
+  className="w-full flex flex-col items-center z-20"
+>
+  
+    {/* Título: My Team com linhas laterais */}
+ 
+
+        {/* Team pokeball strip */}
+          {battle.phase === "attribute-test-select" && pokemonAttrs || 
+               battle.phase === "attribute-test-rolling" && battle.selectedAttribute && pokemonAttrs ||
+               battle.phase === "attribute-test-result" && battle.attributeTestResult ||
+               battle.phase === "result" ||
+        
+               battle.phase === "rolling"
+               ? '': <>
+                        <div className="flex items-center gap-3 mb-1 w-full px-10">
+            <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/50"></div>
+            <span style={{color:'silver'}} className=" text-[10px] font-bold uppercase tracking-widest drop-shadow-md">
+               Equipe
+            </span>
+            <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/50"></div>
+          </div>
+        {team.length > 1 && (
+          <div 
+            style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '12px' }} 
+            className="backdrop-blur-md flex flex-row items-center gap-3  border border-white/10"
+          >
+            {team.map((p) => {
+              const isActive = p.uid === battle.activePokemonUid;
+              const isFaintedMember = p.currentHp <= 0;
+              
+              return (
+                <motion.button
+                  key={p.uid}
+                  onClick={() => handleSwitchPokemon(p.uid)}
+                  disabled={isActive || isFaintedMember || isSwitching}
+                  whileTap={!isActive && !isFaintedMember ? { scale: 0.9 } : undefined}
+                  className={`relative flex items-center justify-center w-12 h-12 rounded-full transition-all ${
+                    isActive
+                      ? "ring-2 ring-green-400 bg-green-400/20 shadow-[0_0_10px_rgba(74,222,128,0.5)]"
+                      : isFaintedMember ? "opacity-30 grayscale cursor-not-allowed"
+                      : "opacity-80 hover:opacity-100 hover:scale-110 cursor-pointer"
+                  }`}
+                >
+                  {/* Pokeball background */}
+                  <img
+                    src={`/images/pokebola.png`}
+                    className="absolute inset-0 w-full h-full object-contain p-1"
+                    alt="pokebola"
+                  />
+
+                  {/* Pokemon mini sprite */}
+                  <img
+                    src={getSpriteUrl(p.speciesId)}
+                    alt={p.name}
+                    width={38}
+                    height={38}
+                    className="relative z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]"
+                    style={{
+                      imageRendering: "pixelated",
+                      filter: isFaintedMember ? "grayscale(1)" : undefined,
+                    }}
+                    crossOrigin="anonymous"
+                  />
+                </motion.button>
+              );
+            })}
+          </div>
+        )}  </>}
+      </div>
+
         {/* Name + HP overlay on the arena */}
+        <div  className="absolute  left-0 p-2  w-full">
 
-        <div style={{ width: 280 }} className="absolute top-3 left-1  max-w-xs -mt-1 pb-3">
-
-          <div style={{backgroundColor:'rgb(0,0,0,0.2)'}} className="backdrop-blur-sm rounded-xl bg-black-100 p-3">
+          <div style={{backgroundColor:'rgb(0,0,0,0.7)'}} className="backdrop-blur-sm rounded-xl bg-black-100 p-3">
             <div className="flex items-center justify-between mb-1.5">
               <h3 className="text-base font-bold text-foreground"><span className="text-blue-400">#{pokemon.speciesId}</span> {pokemon.name} </h3>
               <div className="flex items-center gap-2">
@@ -335,54 +434,7 @@ export function BattleScene() {
           </div>
         </div>
 
-        {/* Team pokeball strip - right side */}
-        {team.length > 1 && (
-          <div className="absolute right-2 top-2 z-20 flex flex-col gap-1.5">
-            {team.map((p) => {
-              const isActive = p.uid === battle.activePokemonUid;
-              const isFaintedMember = p.currentHp <= 0;
-              return (
-                <motion.button
-                  key={p.uid}
-                  onClick={() => handleSwitchPokemon(p.uid)}
-                  disabled={isActive || isFaintedMember || isSwitching}
-                  whileTap={!isActive && !isFaintedMember ? { scale: 0.9 } : undefined}
-                  className={`relative flex items-center w-11 h-11 rounded-full transition-all ${isActive
-                    ? "ring-0 bg-green-200/50 ring-accent opacity-100"
-                    : isFaintedMember  ? "opacity-20 cursor-not-allowed"
-                      : "opacity-70 hover:opacity-100 hover:scale-110 cursor-pointer"
-                    }`}
-                  title={`${p.name} ${isFaintedMember ? "(KO)" : `HP: ${p.currentHp}/${p.maxHp}`}`}
-                >
-                  {/* Pokeball background */}
-                  <img
-            src={`/images/pokebola.png`}
-      
-            className="w-full h-full object-cover "
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-              (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
-            }}
-          />
-                  {/* Pokemon mini sprite on top */}
-                  <img
-                    src={getSpriteUrl(p.speciesId)}
-                    
-                    alt={p.name}
-                    width={40}
-                    height={40}
-                    className="relative z-10 right-14 top-2  drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
-                    style={{
-                      imageRendering: "pixelated",
-                      filter: isFaintedMember ? "grayscale(1)" : undefined,
-                    }}
-                    crossOrigin="anonymous"
-                  />
-                </motion.button>
-              );
-            })}
-          </div>
-        )}
+
 
         {/* Switch transition overlay */}
         <AnimatePresence>
@@ -418,6 +470,8 @@ export function BattleScene() {
 
       {/* Battle content area */}
       <div className="flex-1 px-4 pb-8 flex flex-col">
+        
+        
         <AnimatePresence mode="wait">
           {/* Main menu */}
           {battle.phase === "menu" && (
@@ -480,7 +534,8 @@ export function BattleScene() {
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -40 }}
-              className="flex flex-col gap-2 mt-auto"
+                    style={{ backgroundColor: 'rgb(0,0,0,0.3)' }}
+              className="p-3 rounded-sm flex flex-col gap-3 mt-auto z-10 h-[30vh] "
             >
               <Button
                 size="sm"
@@ -500,7 +555,7 @@ export function BattleScene() {
                       key={m.moveId}
                       onClick={() => handleAttackSelect(m.moveId)}
                       disabled={noPP}
-                      className="h-auto py-2 px-3 flex flex-col items-start gap-0.5 text-left"
+                      className="h-[70px] py-2 px-3 flex flex-col items-start gap-0.5 text-left"
                       style={{
                         backgroundColor: noPP
                           ? undefined
@@ -528,174 +583,9 @@ export function BattleScene() {
             </motion.div>
           )}
 
-          {/* Dice rolling */}
-          {battle.phase === "rolling" && (
-            <motion.div
-              style={{ position: 'absolute', top: 360, zIndex: 10, width: '90%' }}
-              key="rolling"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="flex flex-col items-center  my-auto"
-            >
-              {selectedMove && (
-                <div className="text-center mb-2">
-                  <p className="text-sm text-muted-foreground">
-                    {pokemon.name} usou
-                    <b className="text-white">
-                      {selectedMove.name}!
-                    </b>
-                  </p>
-
-                  <span className="text-xs text-muted-foreground">
-                    Precisa rolar D20 {">"}= {selectedMove.accuracy} para acertar
-                  </span>
-                  {(combateBonus > 0 || critExpansion > 0) && (
-                    <div className="flex flex-wrap items-center justify-center gap-2 mt-1.5">
-                      {combateBonus > 0 && (
-                        <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                          Combate +{combateBonus}
-                        </span>
-                      )}
-                      {critExpansion > 0 && (
-                        <span className="text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded-full">
-                          Crit {critThreshold}+
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-              <D20Dice onResult={handleDiceResult} rolling={isRolling} />
-            </motion.div>
-          )}
-
+   
           {/* Result */}
-          {battle.phase === "result" && (
-            <motion.div
-              style={{ position: 'absolute', top: 300, zIndex: 10, width: '90%' }}
-              key="result"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              className=" flex flex-col items-center gap-1 my-auto"
-            >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", damping: 10 }}
-                className="w-24 h-24 rounded-full flex flex-col items-center justify-center"
-                style={{
-                  backgroundColor: `rgb(0,0,0,0.9)`,
-                  border: `3px solid ${getHitResultColor(battle.hitResult as HitResult)}`,
-                }}
-              >
-                <span
-                  className="text-3xl font-bold font-mono"
-                  style={{
-                    color: getHitResultColor(battle.hitResult as HitResult),
-                  }}
-                >
-                  {battle.diceRoll}
-                </span>
-                {combateBonus > 0 && (
-                  <span className="text-[10px] font-mono text-primary">
-                    +{combateBonus} = {(battle.diceRoll || 0) + combateBonus}
-                  </span>
-                )}
-              </motion.div>
-
-              <motion.h3
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="text-2xl font-bold"
-                style={{
-                  color: getHitResultColor(battle.hitResult as HitResult),
-                }}
-              >
-                {getHitResultLabel(battle.hitResult as HitResult)}
-              </motion.h3>
-
-              {/* Dice Damage Breakdown */}
-              {battle.damageBreakdown && !battle.damageBreakdown.isStatus && (
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="w-full max-w-xs bg-card/80 backdrop-blur-sm rounded-lg border border-border p-3 text-xs"
-                >
-                  {/* Dice rolls */}
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-muted-foreground font-mono">Dados:</span>
-                    <span className="font-bold text-foreground">{battle.damageBreakdown.diceString}</span>
-                    <span className="font-mono text-accent">
-                      [{battle.damageBreakdown.diceRolls.join(" + ")}] = {battle.damageBreakdown.diceTotal}
-                    </span>
-                  </div>
-                  {/* Attribute bonus */}
-                  {battle.damageBreakdown.attrBonus > 0 && (
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-muted-foreground font-mono">Bonus:</span>
-                      <span className="text-foreground">
-                        +{battle.damageBreakdown.attrBonus} {battle.damageBreakdown.scalingAttr}
-                      </span>
-                    </div>
-                  )}
-                  {/* Hit multiplier */}
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-muted-foreground font-mono">Acerto:</span>
-                    <span
-                      className="font-bold"
-                      style={{ color: getHitResultColor(battle.hitResult as HitResult) }}
-                    >
-                      {battle.damageBreakdown.hitMultiplierLabel}
-                    </span>
-                  </div>
-                  {/* Total damage */}
-                  <div className="flex items-center gap-2 pt-1.5 border-t border-border">
-                    <Zap className="w-4 h-4 text-accent shrink-0" />
-                    <span className="font-bold text-accent text-sm">
-                      {battle.damageBreakdown.rawTotal > 0 ? `${battle.damageBreakdown.rawTotal} de dano!` : "Sem dano"}
-                    </span>
-                  </div>
-                  {/* Formula */}
-                  <div className="mt-1.5 text-[10px] text-muted-foreground font-mono break-all">
-                    {battle.damageBreakdown.formula}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Status move fallback */}
-              {battle.damageBreakdown?.isStatus && (
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="text-sm text-muted-foreground"
-                >
-                  Golpe de status - sem dano direto
-                </motion.div>
-              )}
-
-              {/* Legacy fallback for when breakdown is null */}
-              {!battle.damageBreakdown && battle.damageDealt !== null && battle.damageDealt > 0 && (
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="flex items-center gap-2"
-                >
-                  <Zap className="w-5 h-5 text-accent" />
-                  <span className="text-xl font-bold text-accent">
-                    {battle.damageDealt} de dano!
-                  </span>
-                </motion.div>
-              )}
-
-
-            </motion.div>
-          )}
+      
           {/* Attribute test - select attribute */}
           {battle.phase === "attribute-test-select" && pokemonAttrs && (
 
@@ -705,19 +595,21 @@ export function BattleScene() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -40 }}
               style={{ backgroundColor: 'rgb(0,0,0,0.3)' }}
-              className=" p-2 rounded-sm flex flex-col gap-3 mt-auto z-10 "
+              className="p-3 rounded-sm flex flex-col gap-3 mt-auto z-10 "
             >
-
-              <div className="text-center mb-1">
-                <h4 className="text-base font-bold text-foreground">Rolar um Teste</h4>
-                <p className="text-xs text-muted-foreground">
-                  Escolha o atributo e a dificuldade (DC) para rolar D20
-                </p>
-              </div>
+               <Button
+                size="sm"
+                variant="ghost"
+                         onClick={() => setBattlePhase("menu")}
+                className="self-start text-muted-foreground hover:text-foreground"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
+              </Button>
+              
 
               {/* DC input */}
               <div className="flex items-center justify-center gap-2 mb-1">
-                <span className="text-xs text-muted-foreground">DC:</span>
+                <span className="text-xs text-muted-foreground">Dificuldade:</span>
                 <div className="flex items-center gap-1">
                   {[5, 10, 15, 20].map((dc) => (
                     <Button
@@ -730,14 +622,14 @@ export function BattleScene() {
                       {dc}
                     </Button>
                   ))}
-                  <Input
+                  {/* <Input
                     type="number"
                     value={testDC}
                     onChange={(e) => setTestDC(e.target.value)}
                     className="w-16 h-8 text-xs text-center bg-secondary border-border text-foreground"
                     min={1}
                     max={30}
-                  />
+                  /> */}
                 </div>
               </div>
 
@@ -926,8 +818,183 @@ export function BattleScene() {
             </motion.div>
           )}
         </AnimatePresence>
-
+       {/* Dice Result */}
       </div>
+          {battle.phase === "result" && (
+            <motion.div
+                onClick={() => {
+                const bd = battle.damageBreakdown;
+                const logMsg = bd && !bd.isStatus
+                  ? `${pokemon.name} usou ${selectedMove?.name}: D20=${battle.diceRoll} - ${getHitResultLabel(battle.hitResult as HitResult)} | ${bd.formula} => ${bd.rawTotal} dano`
+                  : `${pokemon.name} usou ${selectedMove?.name}: rolou ${battle.diceRoll} - ${getHitResultLabel(battle.hitResult as HitResult)} (${battle.damageDealt} dano)`;
+                addBattleLog(logMsg);
+                setBattlePhase("menu");
+              }}
+              style={{  backgroundColor: 'rgb(0,0,0,0.3)', zIndex: 10,padding:10,borderRadius:8 }}
+              key="result"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+                   
+              className="  flex flex-col items-center gap-1 "
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", damping: 10 }}
+                className="w-24 h-24 rounded-full flex flex-col items-center justify-center"
+                style={{
+                  backgroundColor: `rgb(0,0,0,0.9)`,
+                  border: `3px solid ${getHitResultColor(battle.hitResult as HitResult)}`,
+                }}
+              >
+                <span
+                  className="text-3xl font-bold font-mono"
+                  style={{
+                    color: getHitResultColor(battle.hitResult as HitResult),
+                  }}
+                >
+                  {battle.diceRoll}
+                </span>
+                {combateBonus > 0 && (
+                  <span className="text-[10px] font-mono text-primary">
+                    +{combateBonus} = {(battle.diceRoll || 0) + combateBonus}
+                  </span>
+                )}
+              </motion.div>
+
+              <motion.h3
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="text-2xl font-bold"
+                style={{
+                  color: getHitResultColor(battle.hitResult as HitResult),
+                }}
+              >
+                {getHitResultLabel(battle.hitResult as HitResult)}
+              </motion.h3>
+
+              {/* Dice Damage Breakdown */}
+              {battle.damageBreakdown && !battle.damageBreakdown.isStatus && (
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="w-full max-w-xs bg-card/80 backdrop-blur-sm rounded-lg border border-border p-3 text-xs"
+                >
+                  {/* Dice rolls */}
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-muted-foreground font-mono">Dados:</span>
+                    <span className="font-bold text-foreground">{battle.damageBreakdown.diceString}</span>
+                    <span className="font-mono text-accent">
+                      [{battle.damageBreakdown.diceRolls.join(" + ")}] = {battle.damageBreakdown.diceTotal}
+                    </span>
+                  </div>
+                  {/* Attribute bonus */}
+                  {battle.damageBreakdown.attrBonus > 0 && (
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-muted-foreground font-mono">Bonus:</span>
+                      <span className="text-foreground">
+                        +{battle.damageBreakdown.attrBonus} {battle.damageBreakdown.scalingAttr}
+                      </span>
+                    </div>
+                  )}
+                  {/* Hit multiplier */}
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-muted-foreground font-mono">Acerto:</span>
+                    <span
+                      className="font-bold"
+                      style={{ color: getHitResultColor(battle.hitResult as HitResult) }}
+                    >
+                      {battle.damageBreakdown.hitMultiplierLabel}
+                    </span>
+                  </div>
+                  {/* Total damage */}
+                  <div className="flex items-center gap-2 pt-1.5 border-t border-border">
+                    <Zap className="w-4 h-4 text-accent shrink-0" />
+                    <span className="font-bold text-accent text-sm">
+                      {battle.damageBreakdown.rawTotal > 0 ? `${battle.damageBreakdown.rawTotal} de dano!` : "Sem dano"}
+                    </span>
+                  </div>
+                  {/* Formula */}
+                  <div className="mt-1.5 text-[10px] text-muted-foreground font-mono break-all">
+                    {battle.damageBreakdown.formula}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Status move fallback */}
+              {battle.damageBreakdown?.isStatus && (
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-sm text-muted-foreground"
+                >
+                  Golpe de status - sem dano direto
+                </motion.div>
+              )}
+
+              {/* Legacy fallback for when breakdown is null */}
+              {!battle.damageBreakdown && battle.damageDealt !== null && battle.damageDealt > 0 && (
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="flex items-center gap-2"
+                >
+                  <Zap className="w-5 h-5 text-accent" />
+                  <span className="text-xl font-bold text-accent">
+                    {battle.damageDealt} de dano!
+                  </span>
+                </motion.div>
+              )}
+
+
+            </motion.div>
+          )}
+       {/* Dice rolling */}
+          {battle.phase === "rolling" && (
+            <motion.div
+             style={{  backgroundColor: 'rgb(0,0,0,0.6)' , zIndex: 10,padding:10,borderRadius:8 }}
+              key="rolling"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+       
+            >
+              {selectedMove && (
+                <div className="text-center mb-2">
+                  <p className="text-sm text-muted-foreground">
+                    {pokemon.name} usou
+                    <b className="text-white">
+                      {selectedMove.name}!
+                    </b>
+                  </p>
+
+                  <span className="text-xs text-muted-foreground">
+                    Precisa rolar D20 {">"}= {selectedMove.accuracy} para acertar
+                  </span>
+                  {(combateBonus > 0 || critExpansion > 0) && (
+                    <div className="flex flex-wrap items-center justify-center gap-2 mt-1.5">
+                      {combateBonus > 0 && (
+                        <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                          Combate +{combateBonus}
+                        </span>
+                      )}
+                      {critExpansion > 0 && (
+                        <span className="text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded-full">
+                          Crit {critThreshold}+
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+              <D20Dice onResult={handleDiceResult} rolling={isRolling} />
+            </motion.div>
+          )}
 
       {/* Damage input dialog */}
       <Dialog open={showDamageInput} onOpenChange={setShowDamageInput}>

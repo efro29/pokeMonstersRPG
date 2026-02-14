@@ -84,18 +84,18 @@ function YuGiOhCard({
   const elName = ELEMENT_NAMES_PT[card.element] || card.element;
 
   // Color scheme
-  const borderColor = isLuck ? "#C5A026" : "#5A1A1A";
+  const borderColor = isLuck ? "#e0dcce" : "#24065c";
   const outerBg = isLuck
-    ? "linear-gradient(180deg, #F5E6A3 0%, #D4AF37 8%, #C5A026 92%, #8B7118 100%)"
-    : "linear-gradient(180deg, #5A2D2D 0%, #4A1515 8%, #3A0A0A 92%, #1A0505 100%)";
+    ? "linear-gradient(180deg, #e9e4d0 0%, #c5bfac 8%, #e7e2cf 92%, #ecebe5 100%)"
+    : "linear-gradient(180deg, #502d5a 0%, #4a1547 8%, #2b0a3a 92%, #1A0505 100%)";
   const innerBg = isLuck
-    ? "linear-gradient(180deg, #FFFDE0 0%, #FFF9C4 100%)"
+    ? "linear-gradient(180deg, #FFFDE0 0%, #e9e8e4 100%)"
     : "linear-gradient(180deg, #2D1515 0%, #1A0A0A 100%)";
   const textColor = isLuck ? "#3E2723" : "#E8C8C8";
   const subTextColor = isLuck ? "#5D4037" : "#B0888A";
   const nameBg = isLuck
     ? "linear-gradient(90deg, #F9F0D0 0%, #FFF8DC 50%, #F9F0D0 100%)"
-    : "linear-gradient(90deg, #2A1010 0%, #3A1818 50%, #2A1010 100%)";
+    : "linear-gradient(90deg, #1d102a 0%, #33183a 50%, #21102a 100%)";
 
   if (size === "small") {
     return (
@@ -106,7 +106,7 @@ function YuGiOhCard({
         transition={{ duration: 0.5 }}
         whileHover={{ scale: 1.06, y: -3 }}
         whileTap={{ scale: 0.97 }}
-        className="relative flex flex-col rounded-[5px] overflow-hidden cursor-pointer"
+        className="relative flex flex-col rounded-[2px] overflow-hidden cursor-pointer"
         style={{
           width: 52,
           height: 76,
@@ -114,27 +114,25 @@ function YuGiOhCard({
           border: `1.5px solid ${borderColor}`,
           boxShadow: isLuck
             ? "0 2px 8px rgba(197,160,38,0.4), inset 0 1px 0 rgba(255,255,255,0.2)"
-            : "0 2px 8px rgba(90,26,26,0.6), inset 0 1px 0 rgba(255,255,255,0.05)",
+            : "0 2px 8px rgba(17, 1, 22, 0.6), inset 0 1px 0 rgba(42, 14, 54, 0.05)",
         }}
       >
-        {/* Element type strip at top */}
+
+        {isLuck?
+      <>
         <div
           className="flex items-center justify-center gap-0.5 py-[2px]"
           style={{ background: `${elColor}33` }}
-        >
-          <ElementIcon element={card.element} className="w-2.5 h-2.5" />
-          <span className="text-[6px] font-bold uppercase" style={{ color: elColor }}>
-            {elName}
+        > <span className="text-[3px] font-bold uppercase " style={{ color: 'black'}}>
+            {card.name}
           </span>
         </div>
-
-        {/* Image area */}
+        <div style={{backgroundColor:'white'}}>
         <div
-          className="mx-[3px] mt-[2px] flex items-center justify-center rounded-[2px] overflow-hidden"
+          className=" mflex items-center justify-center  overflow-hidden"
           style={{
             height: 28,
-            background: innerBg,
-            border: `0.5px solid ${borderColor}55`,
+            background: innerBg,backgroundColor:'white'
           }}
         >
           <img
@@ -147,42 +145,54 @@ function YuGiOhCard({
             }}
           />
         </div>
+   
 
-        {/* Name */}
-        <div
-          className="mx-[3px] mt-[2px] px-1 py-[1px] rounded-[1px] text-center"
-          style={{ background: nameBg }}
-        >
-          <span
-            className="text-[5.5px] font-bold leading-tight block truncate"
-            style={{ color: textColor }}
+          <div
+            className="mx-[3px] mt-[1px] mb-[2px] flex-1 px-1 py-[1px] rounded-[1px] flex justify-center items-center bg-white-200"
+            style={{
+              background: 'white',
+              border: `0.5px solid ${borderColor}33`,
+              minHeight: '30px' // Opcional: Garanta uma altura mínima se o container estiver "esmagado"
+            }}
           >
-            {card.name}
-          </span>
-        </div>
-
-        {/* Description area */}
-        <div
-          className="mx-[3px] mt-[1px] mb-[2px] flex-1 px-1 py-[1px] rounded-[1px] flex items-center"
-          style={{
-            background: innerBg,
-            border: `0.5px solid ${borderColor}33`,
-          }}
-        >
-          <span
-            className="text-[4.5px] leading-[1.3] text-center w-full line-clamp-2"
-            style={{ color: subTextColor }}
-          >
-            {card.description}
-          </span>
-        </div>
-
-        {/* Bad luck lock indicator */}
-        {!isLuck && (
-          <div className="absolute bottom-[1px] right-[2px]">
-            <span className="text-[5px] text-red-400/80">X</span>
+            <img
+              style={{ width: 20, borderRadius:4 }}
+              src={`/images/cardsTypes/${card.element}.jpg`}
+              alt={card.name}
+              className="object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = "none";
+                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
+                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
+              }}
+            />
           </div>
-        )}
+          </div>
+</>
+        : 
+        
+        
+        
+        
+           <div
+            className=" flex justify-center items-center bg-white-200"
+            style={{ minHeight: '30px' }}>
+            <img
+          
+              src={`/images/cardsTypes/genga.jpg`}
+              alt={card.name}
+              className="object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = "none";
+                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
+                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
+              }}
+            />
+          </div>
+        
+        }
       </motion.button>
     );
   }
@@ -193,15 +203,15 @@ function YuGiOhCard({
       initial={{ scale: 0.6, rotateY: 180 }}
       animate={{ scale: 1, rotateY: 0 }}
       transition={{ type: "spring", damping: 14 }}
-      className="relative flex flex-col rounded-lg overflow-hidden mx-auto"
+      className="relative flex flex-col r overflow-hidden mx-auto"
       style={{
-        height:300,
-        width: 220,
+        height:350,
+        width: 250,
         background: outerBg,
         border: `3px solid ${borderColor}`,
         boxShadow: isLuck
           ? "0 8px 32px rgba(236, 183, 6, 0.5), inset 0 2px 0 rgba(255,255,255,0.15)"
-          : "0 8px 32px rgba(90,26,26,0.7), inset 0 2px 0 rgba(255,255,255,0.05)",
+          : "0 8px 32px rgba(30, 2, 41, 0.7), inset 0 2px 0 rgba(255,255,255,0.05)",
       }}
     >
       {/* Element type strip */}
@@ -210,14 +220,44 @@ function YuGiOhCard({
         style={{ background: `${elColor}22` }}
       >
         <div className="flex items-center gap-1.5">
-          <div
-            className="w-6 h-6 rounded-full flex items-center justify-center"
+       
+          
+          {isLuck?
+               <div className=" rounded-full flex items-center justify-center"
             style={{ backgroundColor: `${elColor}33`, border: `1px solid ${elColor}66` }}
-          >
-            <ElementIcon element={card.element} className="w-3.5 h-3.5" />
-          </div>
-          <span className="text-sm font-bold  tracking-wider" style={{ color: 'black' }}>
-            {elName} 
+                 > 
+            <img
+              style={{ width: 20 }}
+              src={`/images/cardsTypes/${card.element}.jpg`}
+              alt={card.name}
+              className="object-cover rounded-full"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = "none";
+                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
+                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
+              }}
+            />
+                </div>
+            :
+               <img
+              style={{ width: 20 }}
+              src={`/images/cardsTypes/genga.gif`}
+              alt={card.name}
+              className="object-cover rounded-full"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = "none";
+                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
+                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
+              }}
+            />
+
+          }
+             
+      
+          <span className="text-sm font-bold  tracking-wider" style={{ color: isLuck?'green':'pink' }}>
+                 {card.name} 
           </span>
         </div>
        
@@ -225,9 +265,9 @@ function YuGiOhCard({
 
       {/* Image area */}
       <div
-        className="mx-3 mt-2 flex items-center justify-center rounded overflow-hidden"
+        className=" mt-2 flex items-center justify-center rounded overflow-hidden"
         style={{
-          height: 120,
+          height: 200,
           background: innerBg,
           border: `1.5px solid ${borderColor}88`,
         }}
@@ -239,7 +279,7 @@ function YuGiOhCard({
           animate={{
             scale: [1, 1.04, 1],
           }}
-          transition={{ duration: 2.5, repeat: Infinity }}
+          transition={{ duration: 1.5, repeat: Infinity }}
           onError={(e) => {
             (e.target as HTMLImageElement).style.display = "none";
             const fallback = document.createElement("span");
@@ -250,22 +290,13 @@ function YuGiOhCard({
         />
       </div>
 
-      {/* Name bar */}
-      <div
-        className="mx-3 mt-2 px-3 py-1.5 rounded text-center"
-        style={{ background: nameBg, border: `1px solid ${borderColor}44` }}
-      >
-        <h3 className="text-sm font-bold tracking-wide" style={{ color: textColor }}>
-          {card.name} 
-        </h3>
-      </div>
 
       {/* Description box */}
       <div
-        className="mx-3 mt-1.5 mb-3 px-3 py-2 rounded flex items-center justify-center min-h-[70px]"
+        className="  rounded flex items-center justify-center min-h-[90px]"
         style={{
           background: innerBg,
-          border: `1px solid ${borderColor}44`,
+          border: `1px solid ${borderColor}455`,
         }}
       >
         <p
@@ -482,24 +513,68 @@ function TrioEventOverlay() {
             animate={{ scale: [1, 1.2, 1], rotate: [0, 5, -5, 0] }}
             transition={{ duration: 1.5, repeat: Infinity }}
           >
-            {isLuck ? "\u2618\u2618\u2618" : "\u2620\u2620\u2620"}
+            {isLuck ? "\u2618\u2618\u2618" : 
+            
+            
+            <>
+            <div style={{display:'flex',justifyContent:'center'}}>
+
+      
+            <img
+              style={{ width: 50 }}
+              src={`/images/cardsTypes/genga.gif`}
+              className="object-cover rounded-full"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = "none";
+                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
+                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
+              }}
+            />
+             <img
+              style={{ width: 50 }}
+              src={`/images/cardsTypes/genga.gif`}
+              className="object-cover rounded-full"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = "none";
+                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
+                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
+              }}
+            />
+             <img
+              style={{ width: 50 }}
+              src={`/images/cardsTypes/genga.gif`}
+              className="object-cover rounded-full"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = "none";
+                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
+                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
+              }}
+            />
+                  </div>
+            </>
+            
+            
+            
+            
+            
+            
+            }
           </motion.span>
           <h2
             className="text-2xl font-black tracking-wider"
             style={{
-              color: isLuck ? "#D4AF37" : "#EF4444",
+              color: isLuck ? "#D4AF37" : "#c86aff",
               textShadow: isLuck
                 ? "0 0 30px rgba(212,175,55,0.5)"
-                : "0 0 30px rgba(239,68,68,0.5)",
+                : "0 0 30px rgba(142, 68, 239, 0.5)",
             }}
           >
             {isLuck ? "SUPER VANTAGEM!" : "SUPER PUNICAO!"}
           </h2>
-          {!isLuck && (
-            <p className="text-xs text-red-400/70 mt-1">
-              Todos os slots serao limpos!
-            </p>
-          )}
+       
         </motion.div>
 
         {/* Affinity notice */}
@@ -510,9 +585,9 @@ function TrioEventOverlay() {
             transition={{ delay: 0.3 }}
             className="px-4 py-1.5 rounded-full text-xs font-bold"
             style={{
-              background: isLuck ? "rgba(212,175,55,0.2)" : "rgba(239,68,68,0.2)",
+              background: isLuck ? "rgba(212,175,55,0.2)" : "rgba(128, 68, 239, 0.2)",
               color: isLuck ? "#FCD34D" : "#FCA5A5",
-              border: `1px solid ${isLuck ? "rgba(212,175,55,0.4)" : "rgba(239,68,68,0.4)"}`,
+              border: `1px solid ${isLuck ? "rgba(212,175,55,0.4)" : "rgba(156, 68, 239, 0.4)"}`,
             }}
           >
             Afinidade Elemental - Efeito DOBRADO!
@@ -528,13 +603,13 @@ function TrioEventOverlay() {
           style={{
             background: isLuck
               ? "linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.05) 100%)"
-              : "linear-gradient(135deg, rgba(239,68,68,0.15) 0%, rgba(239,68,68,0.05) 100%)",
+              : "linear-gradient(135deg, rgba(0, 0, 0, 0.15) 0%, rgba(15, 2, 36, 0.05) 100%)",
             border: `1px solid ${isLuck ? "rgba(212,175,55,0.3)" : "rgba(239,68,68,0.3)"}`,
           }}
         >
           <h3
             className="text-lg font-bold mb-1.5"
-            style={{ color: isLuck ? "#FCD34D" : "#FCA5A5" }}
+            style={{ color: isLuck ? "#FCD34D" : "#e8a5fc" }}
           >
             {effectName}
           </h3>
@@ -550,7 +625,7 @@ function TrioEventOverlay() {
             }}
             className="px-8 py-2"
             style={{
-              backgroundColor: isLuck ? "#B8860B" : "#DC2626",
+              backgroundColor: isLuck ? "#B8860B" : "#7b26dc",
               color: "#fff",
             }}
           >
