@@ -196,13 +196,13 @@ export function ProfileSelectScreen({ onSelectProfile, onBack }: ProfileSelectSc
                   <button
                     key={avatar.id}
                     onClick={() => setSelectedAvatar(avatar.id)}
-                    className="flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all"
+                    className="flex flex-col items-center gap-1 p-2  transition-all"
                     style={{
                       borderColor: selectedAvatar === avatar.id ? "#3B82F6" : "rgba(255,255,255,0.1)",
                       backgroundColor: selectedAvatar === avatar.id ? "rgba(59,130,246,0.1)" : "transparent",
                     }}
                   >
-                    <TrainerAvatar avatarId={avatar.id} size={40} />
+                    <TrainerAvatar avatarId={avatar.id} size={75} />
                     {selectedAvatar === avatar.id && (
                       <Check className="w-3 h-3" style={{ color: "#3B82F6" }} />
                     )}
