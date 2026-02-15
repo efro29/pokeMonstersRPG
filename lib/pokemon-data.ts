@@ -810,26 +810,22 @@ export const EVOLUTIONS: EvolutionData[] = [
   { from: 231, to: 232, method: "level", level: 25 },  // Phanpy -> Donphan
   { from: 246, to: 247, method: "level", level: 30 },  // Larvitar -> Pupitar
   { from: 247, to: 248, method: "level", level: 55 },  // Pupitar -> Tyranitar
+  { from: 252, to: 253, method: "level", level: 16 },
+  { from: 253, to: 254, method: "level", level: 36 }, 
   { from: 255, to: 256, method: "level", level: 16 },  // Torchic -> Combusken
-{ from: 256, to: 257, method: "level", level: 36 },  // Combusken -> Blaziken
-
-{ from: 258, to: 259, method: "level", level: 16 },  // Mudkip -> Marshtomp
-{ from: 259, to: 260, method: "level", level: 36 },  // Marshtomp -> Swampert
-
-{ from: 261, to: 262, method: "level", level: 18 },  // Poochyena -> Mightyena
-
-{ from: 263, to: 264, method: "level", level: 20 },  // Zigzagoon -> Linoone
-
-{ from: 265, to: 266, method: "level", level: 7 },   // Wurmple -> Silcoon
-{ from: 266, to: 267, method: "level", level: 10 },  // Silcoon -> Beautifly
-{ from: 265, to: 268, method: "level", level: 7 },   // Wurmple -> Cascoon
-{ from: 268, to: 269, method: "level", level: 10 },  // Cascoon -> Dustox
-
-{ from: 270, to: 271, method: "level", level: 14 },  // Lotad -> Lombre
-{ from: 271, to: 272, method: "stone", stone: "water-stone" },  // Lombre -> Ludicolo
-
-{ from: 273, to: 274, method: "level", level: 14 },  // Seedot -> Nuzleaf
-{ from: 274, to: 275, method: "stone", stone: "leaf-stone" }   // Nuzleaf -> Shiftry
+  { from: 256, to: 257, method: "level", level: 36 },  // Combusken -> Blaziken
+  { from: 258, to: 259, method: "level", level: 16 },  // Mudkip -> Marshtomp
+  { from: 259, to: 260, method: "level", level: 36 },  // Marshtomp -> Swampert
+  { from: 261, to: 262, method: "level", level: 18 },  // Poochyena -> Mightyena
+  { from: 263, to: 264, method: "level", level: 20 },  // Zigzagoon -> Linoone
+  { from: 265, to: 266, method: "level", level: 7 },   // Wurmple -> Silcoon
+  { from: 266, to: 267, method: "level", level: 10 },  // Silcoon -> Beautifly
+  { from: 265, to: 268, method: "level", level: 7 },   // Wurmple -> Cascoon
+  { from: 268, to: 269, method: "level", level: 10 },  // Cascoon -> Dustox
+  { from: 270, to: 271, method: "level", level: 14 },  // Lotad -> Lombre
+  { from: 271, to: 272, method: "stone", stone: "water-stone" },  // Lombre -> Ludicolo
+  { from: 273, to: 274, method: "level", level: 14 },  // Seedot -> Nuzleaf
+  { from: 274, to: 275, method: "stone", stone: "leaf-stone" }   // Nuzleaf -> Shiftry
 
 ];
 
