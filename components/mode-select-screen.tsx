@@ -101,7 +101,7 @@ export function ModeSelectScreen({ onSelectMode }: ModeSelectScreenProps) {
                   MODO MESTRE
                 </h2>
                 <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
-                  Acesso completo a todos os 151 Pokemon da Pokedex. Ideal para quem conduz a campanha.
+                  Acesso completo a todos os  Pokemon da Pokedex. Ideal para quem conduz a campanha.
                 </p>
               </div>
             </div>

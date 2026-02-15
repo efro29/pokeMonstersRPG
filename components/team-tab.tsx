@@ -16,7 +16,8 @@ import {
   computeAttributes,
   POKEMON_ATTRIBUTE_INFO,
 } from "@/lib/pokemon-data";
-import type { PokemonType, PokemonBaseAttributes } from "@/lib/pokemon-data";
+import { PokemonType, PokemonBaseAttributes,getBaseAttributes } from "@/lib/pokemon-data";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -132,7 +133,7 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
             const xp = pokemon.xp ?? 0;
             const hpPercent =
               pokemon.maxHp > 0
-                ? (pokemon.currentHp / pokemon.maxHp) * 100
+                ? (Math.round(pokemon.currentHp) / pokemon.maxHp) * 100
                 : 0;
             const hpColor =
               hpPercent > 50
@@ -147,9 +148,12 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
             const cardAttrs = computeAttributes(pokemon.speciesId, level, pokemon.customAttributes);
 
             return (
+
+              <div style={{backgroundColor:'rgb(0, 3, 21)'}} className=" text-center rounded-lg">
               <div
                 key={pokemon.uid}
-                className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+              style={{backgroundColor:'rgb(42, 45, 60)'}}
+                className={`flex items-center gap-3 p-3 rounded-lg  transition-all ${
                   isFainted
                     ? "border-destructive/30 bg-destructive/5 opacity-60"
                     : "border-border bg-card"
@@ -207,7 +211,7 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
                         />
                       </div>
                       <span className="text-[10px] font-mono text-muted-foreground w-16 text-right">
-                        {pokemon.currentHp}/{pokemon.maxHp}
+                        {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
                       </span>
                     </div>
                     {/* XP bar */}
@@ -223,6 +227,7 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
                         {xp}/{xpNeeded}
                       </span>
                     </div>
+          
                   </div>
                 </button>
 
@@ -234,9 +239,18 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
                 >
                   <Swords className="w-4 h-4" />
                 </Button>
+                   
+              </div>       
+              <span  className={` items-center  transition-all ${
+                  isFainted
+                    ? "border-destructive/30 bg-destructive/5 opacity-60"
+                    : ""
+                }`}  style={{fontSize:10}}>{getBaseAttributes(pokemon.speciesId).especial}</span>
+         
               </div>
             );
           })}
+          
         </div>
       </ScrollArea>
 
@@ -315,6 +329,7 @@ function PokemonDetailContent({
   const stoneEvos = EVOLUTION_STONES.filter((stone) =>
     canEvolveByStone(pokemon.speciesId, stone.id)
   );
+const habildade_especial = getBaseAttributes(pokemon.speciesId).especial
 
   return (
     <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto max-h-[85vh] overflow-y-auto">
@@ -380,9 +395,15 @@ function PokemonDetailContent({
             <div className="flex items-center gap-2 text-sm">
               <Heart className="w-4 h-4 text-red-400" />
               <span className="text-foreground">
-                {pokemon.currentHp} / {pokemon.maxHp} HP
+                {Math.round(pokemon.currentHp)} / {pokemon.maxHp} HP
               </span>
             </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Star className="w-4 h-4 text-yellow-400" />
+                <p> {habildade_especial.toLowerCase().replace("_"," ")}</p>
+            </div>
+
+                 
             {/* XP display */}
             <div className="w-full bg-secondary/50 rounded-lg p-3">
               <div className="flex items-center justify-between mb-1">
@@ -629,18 +650,24 @@ function PokemonDetailContent({
         <TabsContent value="attrs" className="mt-3">
           {(() => {
             const attrs = computeAttributes(pokemon.speciesId, level, pokemon.customAttributes);
-            const attrKeys: (keyof PokemonBaseAttributes)[] = ["velocidade", "felicidade", "resistencia", "acrobacia"];
+
+            const habildade_especial = getBaseAttributes(pokemon.speciesId).especial
+
+
+            const attrKeys: (keyof PokemonBaseAttributes)[] = ["velocidade", "felicidade", "resistencia", "acrobacia","especial"];
             const attrIcons: Record<string, { icon: typeof Zap; color: string }> = {
               velocidade:  { icon: Zap,    color: "#FACC15" },
               felicidade:  { icon: Heart,  color: "#F472B6" },
               resistencia: { icon: Shield, color: "#60A5FA" },
               acrobacia:   { icon: Wind,   color: "#2DD4BF" },
+               especial:   { icon: Wind,   color: "#e6f511" },
             };
             const isFainted = pokemon.currentHp <= 0;
             return (
               <div className="flex flex-col gap-3">
                 <p className="text-xs text-muted-foreground text-center">
                   Atributos do Pokemon (escalam com o nivel)
+               
                 </p>
                 {isFainted && (
                   <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-2 text-center">
@@ -663,6 +690,8 @@ function PokemonDetailContent({
                 </div>
 
                 {attrKeys.map((attr) => {
+
+             
                   const info = POKEMON_ATTRIBUTE_INFO[attr];
                   const { icon: Icon, color } = attrIcons[attr];
                   const baseVal = attrs[attr];
@@ -670,19 +699,25 @@ function PokemonDetailContent({
                   const mod = attrs[modKey] as number;
                   const barPercent = Math.min(100, baseVal * 10);
                   return (
-                    <div key={attr} className="bg-secondary rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-1.5">
+                    <div key={attr} style={{backgroundColor: attr == 'especial'?'rgb(0,0,0,0.4)':''}}  className="bg-secondary rounded-lg p-3">
+
+                      <div  className="flex items-center gap-2 mb-1.5">
                         <Icon className="w-4 h-4 shrink-0" style={{ color }} />
                         <span className="text-sm font-bold text-foreground">{info.name}</span>
                         <span className="ml-auto text-xs font-mono text-accent">+{mod} mod</span>
                       </div>
                       <div className="flex items-center gap-2 mb-1">
-                        <div className="flex-1 h-2.5 bg-background rounded-full overflow-hidden">
+
+                        {attr == 'especial'?  habildade_especial.replace('_',' ') :
+                          <div className="flex-1 h-2.5 bg-background rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full transition-all duration-300"
                             style={{ width: `${barPercent}%`, backgroundColor: color }}
                           />
                         </div>
+                        
+                        }
+                      
                         <span className="text-xs font-mono text-muted-foreground w-8 text-right">
                           {baseVal}
                         </span>

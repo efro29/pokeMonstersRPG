@@ -1181,15 +1181,16 @@ export const useGameStore = create<GameState>()(
         if (!pokemon || !battle.selectedAttribute) return;
 
         const attrs = computeAttributes(pokemon.speciesId, pokemon.level);
+   
         const attrKey = battle.selectedAttribute;
         const modKey = `${attrKey}Mod` as keyof typeof attrs;
-        const modifier = attrs[modKey] as number;
+        const modifier =  attrs[modKey] as number;
 
         const total = roll + modifier;
         const dc = battle.attributeTestDC;
         const criticalSuccess = roll === 20;
         const criticalFail = roll === 1;
-        const success = criticalFail ? false : criticalSuccess ? true : total >= dc;
+        const success = criticalFail ? false : criticalSuccess ? true : total >= 10;
 
         const result: AttributeTestResult = {
           attribute: attrKey,

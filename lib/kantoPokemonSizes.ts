@@ -4,265 +4,248 @@ export type PokemonSize = {
    top: number;
 };
 
-const SMALL = { width: 70, height: 60, top: 150,left:100};
-const MEDIUM = { width: 200, height: 80, top: 80,left:100};
+const SMALL = { width: 70, height: 80, top: 150,left:100};
+const MEDIUM = { width: 120, height: 80, top: 80,left:100};
 const BIG = { width: 150, height: 80 ,top: 10,left:100};
 const MEGA = { width: 200, height: 80,top:10,left:100 };
 
-export const kantoPokemonSizes: Record<number, PokemonSize> = {
-  1: SMALL,   // Bulbasaur
-  2: MEDIUM,
-  3: BIG,
-  4: SMALL,
-  5: SMALL,
-  6: MEGA,
-  7: SMALL,
-  8: SMALL,
-  9: BIG,
-  10: SMALL,
-  11: SMALL,
-  12: SMALL,
-  13: SMALL,
-  14: SMALL,
-  15: SMALL,
-  16: SMALL,
-  17: SMALL,
-  18: SMALL,
-  19: SMALL,
-  20: SMALL,
-  21: SMALL,
-  22: MEGA,
-  23: SMALL,
-  24: BIG,
-  25: SMALL, // Pikachu
-  26: SMALL,
-  27: SMALL,
-  28: SMALL,
-  29: SMALL,
-  30: SMALL,
-  31: BIG,
-  32: SMALL,
-  33: SMALL,
-  34: BIG,
-  35: SMALL,
-  36: SMALL,
-  37: SMALL,
-  38: SMALL,
-  39: SMALL,
-  40: BIG,
-  41: SMALL,
-  42: MEGA,
-  43: SMALL,
-  44: SMALL,
-  45: SMALL,
-  46: SMALL,
-  47: SMALL,
-  48: SMALL,
-  49: SMALL,
-  50: SMALL,
-  51: SMALL,
-  52: SMALL,
-  53: SMALL,
-  54: SMALL,
-  55: SMALL,
-  56: SMALL,
-  57: SMALL,
-  58: SMALL,
-  59: BIG,
-  60: SMALL,
-  61: SMALL,
-  62: BIG,
-  63: SMALL,
-  64: SMALL,
-  65: BIG,
-  66: SMALL,
-  67: SMALL,
-  68: BIG,
-  69: SMALL,
-  70: SMALL,
-  71: BIG,
-  72: SMALL,
-  73: BIG,
-  74: SMALL,
-  75: SMALL,
-  76: BIG,
-  77: SMALL,
-  78: SMALL,
-  79: SMALL,
-  80: BIG,
-  81: SMALL,
-  82: SMALL,
-  83: SMALL,
-  84: SMALL,
-  85: SMALL,
-  86: SMALL,
-  87: BIG,
-  88: SMALL,
-  89: BIG,
-  90: SMALL,
-  91: BIG,
-  92: SMALL,
-  93: SMALL,
-  94: BIG,
-  95: BIG,
-  96: SMALL,
-  97: SMALL,
-  98: SMALL,
-  99: SMALL,
-  100: SMALL,
-  101: SMALL,
-  102: SMALL,
-  103: BIG,
-  104: SMALL,
-  105: SMALL,
-  106: BIG,
-  107: BIG,
-  108: SMALL,
-  109: SMALL,
-  110: SMALL,
-  111: SMALL,
-  112: BIG,
-  113: SMALL,
-  114: SMALL,
-  115: BIG,
-  116: SMALL,
-  117: SMALL,
-  118: SMALL,
-  119: SMALL,
-  120: SMALL,
-  121: BIG,
-  122: BIG,
-  123: BIG,
-  124: BIG,
-  125: BIG,
-  126: BIG,
-  127: BIG,
-  128: BIG,
-  129: SMALL,
-  130: BIG,
-  131: BIG,
-  132: SMALL,
-  133: SMALL,
-  134: BIG,
-  135: BIG,
-  136: BIG,
-  137: SMALL,
-  138: SMALL,
-  139: SMALL,
-  140: SMALL,
-  141: BIG,
-  142: BIG,
-  143: BIG,
-  144: BIG,
-  145: BIG,
-  146: BIG,
-  147: SMALL,
-  148: SMALL,
-  149: BIG,
-  150: BIG,
-  151: SMALL,
-  // JOHTO (2ª geração)
+export const kantoPokemonSizes: Record<number, PokemonSize> ={
+1: SMALL, 2: MEDIUM, 3: BIG, 4: SMALL, 5: MEDIUM, 6: MEGA,
+7: SMALL, 8: MEDIUM, 9: BIG, 10: SMALL, 11: SMALL, 12: MEDIUM,
+13: SMALL, 14: SMALL, 15: MEDIUM, 16: SMALL, 17: MEDIUM, 18: BIG,
+19: SMALL, 20: MEDIUM, 21: SMALL, 22: MEGA, 23: SMALL, 24: BIG,
+25: SMALL, 26: MEDIUM, 27: SMALL, 28: MEDIUM, 29: SMALL, 30: MEDIUM,
+31: BIG, 32: SMALL, 33: MEDIUM, 34: BIG, 35: SMALL, 36: MEDIUM,
+37: SMALL, 38: MEDIUM, 39: SMALL, 40: BIG, 41: SMALL, 42: MEGA,
+43: SMALL, 44: MEDIUM, 45: BIG, 46: SMALL, 47: MEDIUM, 48: SMALL,
+49: MEDIUM, 50: SMALL, 51: MEDIUM, 52: SMALL, 53: MEDIUM, 54: SMALL,
+55: MEDIUM, 56: SMALL, 57: MEDIUM, 58: SMALL, 59: BIG, 60: SMALL,
+61: MEDIUM, 62: BIG, 63: SMALL, 64: MEDIUM, 65: BIG, 66: SMALL,
+67: MEDIUM, 68: BIG, 69: SMALL, 70: MEDIUM, 71: BIG, 72: SMALL,
+73: BIG, 74: SMALL, 75: MEDIUM, 76: BIG, 77: SMALL, 78: MEDIUM,
+79: SMALL, 80: BIG, 81: SMALL, 82: MEDIUM, 83: SMALL, 84: SMALL,
+85: MEDIUM, 86: SMALL, 87: BIG, 88: SMALL, 89: BIG, 90: SMALL,
+91: BIG, 92: SMALL, 93: MEDIUM, 94: BIG, 95: BIG, 96: SMALL,
+97: MEDIUM, 98: SMALL, 99: MEDIUM, 100: SMALL, 101: MEDIUM, 102: SMALL,
+103: BIG, 104: SMALL, 105: MEDIUM, 106: MEDIUM, 107: MEDIUM, 108: SMALL,
+109: SMALL, 110: MEDIUM, 111: MEDIUM, 112: BIG, 113: SMALL, 114: MEDIUM,
+115: BIG, 116: SMALL, 117: MEDIUM, 118: SMALL, 119: MEDIUM, 120: SMALL,
+121: BIG, 122: MEDIUM, 123: BIG, 124: MEDIUM, 125: MEDIUM, 126: MEDIUM,
+127: BIG, 128: BIG, 129: SMALL, 130: BIG, 131: BIG, 132: SMALL,
+133: SMALL, 134: BIG, 135: BIG, 136: BIG, 137: SMALL, 138: SMALL,
+139: MEDIUM, 140: SMALL, 141: MEDIUM, 142: BIG, 143: BIG, 144: BIG,
+145: BIG, 146: BIG, 147: SMALL, 148: MEDIUM, 149: BIG, 150: BIG, 151: SMALL,
 
-  152: SMALL, // Chikorita
-  153: SMALL,
-  154: BIG,   // Meganium
-  155: SMALL,
-  156: SMALL,
-  157: BIG,   // Typhlosion
-  158: SMALL,
-  159: SMALL,
-  160: BIG,   // Feraligatr
-  161: SMALL,
-  162: SMALL,
-  163: SMALL,
-  164: SMALL,
-  165: SMALL,
-  166: SMALL,
-  167: SMALL,
-  168: SMALL,
-  169: BIG,   // Crobat
-  170: SMALL,
-  171: BIG,   // Lanturn
-  172: SMALL, // Pichu
-  173: SMALL,
-  174: SMALL,
-  175: SMALL,
-  176: SMALL,
-  177: SMALL,
-  178: SMALL,
-  179: SMALL,
-  180: SMALL,
-  181: BIG,   // Ampharos
-  182: SMALL,
-  183: SMALL,
-  184: SMALL,
-  185: BIG,   // Sudowoodo
-  186: BIG,   // Politoed
-  187: SMALL,
-  188: SMALL,
-  189: SMALL,
-  190: SMALL,
-  191: SMALL,
-  192: SMALL,
-  193: SMALL,
-  194: SMALL,
-  195: BIG,   // Quagsire
-  196: BIG,   // Espeon
-  197: BIG,   // Umbreon
-  198: SMALL,
-  199: BIG,   // Slowking
-  200: SMALL,
-  201: SMALL, // Unown
-  202: BIG,   // Wobbuffet
-  203: SMALL,
-  204: SMALL,
-  205: BIG,   // Forretress
-  206: SMALL,
-  207: SMALL,
-  208: BIG,   // Steelix
-  209: SMALL,
-  210: SMALL,
-  211: SMALL,
-  212: BIG,   // Scizor
-  213: SMALL,
-  214: BIG,   // Heracross
-  215: SMALL,
-  216: SMALL,
-  217: BIG,   // Ursaring
-  218: SMALL,
-  219: SMALL,
-  220: SMALL,
-  221: BIG,   // Piloswine
-  222: SMALL,
-  223: SMALL,
-  224: SMALL,
-  225: SMALL,
-  226: BIG,   // Mantine
-  227: BIG,   // Skarmory
-  228: SMALL,
-  229: BIG,   // Houndoom
-  230: BIG,   // Kingdra
-  231: SMALL,
-  232: BIG,   // Donphan
-  233: SMALL,
-  234: BIG,   // Stantler
-  235: SMALL,
-  236: SMALL,
-  237: BIG,   // Hitmontop
-  238: SMALL,
-  239: SMALL,
-  240: SMALL,
-  241: BIG,   // Miltank
-  242: BIG,   // Blissey
-  243: BIG,   // Raikou
-  244: BIG,   // Entei
-  245: BIG,   // Suicune
-  246: SMALL,
-  247: SMALL,
-  248: BIG,   // Tyranitar
-  249: BIG,   // Lugia
-  250: BIG,   // Ho-Oh
-  251: SMALL  // Celebi
+// JOHTO
+152: SMALL, 153: MEDIUM, 154: BIG, 155: SMALL, 156: MEDIUM, 157: BIG,
+158: SMALL, 159: MEDIUM, 160: BIG, 161: SMALL, 162: MEDIUM, 163: SMALL,
+164: MEDIUM, 165: SMALL, 166: MEDIUM, 167: SMALL, 168: MEDIUM, 169: BIG,
+170: SMALL, 171: BIG, 172: SMALL, 173: SMALL, 174: SMALL, 175: SMALL,
+176: MEDIUM, 177: SMALL, 178: MEDIUM, 179: SMALL, 180: MEDIUM, 181: BIG,
+182: MEDIUM, 183: SMALL, 184: MEDIUM, 185: BIG, 186: BIG, 187: SMALL,
+188: SMALL, 189: MEDIUM, 190: SMALL, 191: SMALL, 192: MEDIUM, 193: SMALL,
+194: SMALL, 195: BIG, 196: BIG, 197: BIG, 198: SMALL, 199: BIG,
+200: SMALL, 201: SMALL, 202: BIG, 203: MEDIUM, 204: SMALL, 205: BIG,
+206: SMALL, 207: MEDIUM, 208: BIG, 209: SMALL, 210: MEDIUM, 211: SMALL,
+212: BIG, 213: SMALL, 214: BIG, 215: SMALL, 216: SMALL, 217: BIG,
+218: SMALL, 219: SMALL, 220: SMALL, 221: BIG, 222: SMALL, 223: SMALL,
+224: MEDIUM, 225: SMALL, 226: BIG, 227: BIG, 228: SMALL, 229: BIG,
+230: BIG, 231: SMALL, 232: BIG, 233: SMALL, 234: BIG, 235: SMALL,
+236: SMALL, 237: BIG, 238: SMALL, 239: SMALL, 240: SMALL, 241: BIG,
+242: BIG, 243: BIG, 244: BIG, 245: BIG, 246: SMALL, 247: MEDIUM,
+248: BIG, 249: MEGA, 250: BIG, 251: SMALL,
+// HOENN (3ª geração)
+
+252: SMALL, // Treecko
+253: MEDIUM,
+254: BIG,   // Sceptile
+255: SMALL,
+256: MEDIUM,
+257: BIG,   // Blaziken
+258: SMALL,
+259: MEDIUM,
+260: BIG,   // Swampert
+
+261: SMALL,
+262: MEDIUM,
+263: SMALL,
+264: SMALL,
+265: SMALL,
+266: SMALL,
+267: MEDIUM,
+268: SMALL,
+269: MEDIUM,
+
+270: SMALL,
+271: MEDIUM,
+272: BIG,   // Ludicolo
+273: SMALL,
+274: MEDIUM,
+275: BIG,   // Shiftry
+
+276: SMALL,
+277: MEDIUM,
+278: SMALL,
+279: BIG,   // Pelipper
+
+280: SMALL,
+281: MEDIUM,
+282: MEDIUM, // Gardevoir (humanoide)
+283: SMALL,
+284: MEDIUM,
+
+285: SMALL,
+286: BIG, // Breloom
+
+287: SMALL,
+288: MEDIUM,
+289: MEGA, // Slaking (chefe natural)
+
+290: SMALL,
+291: SMALL,
+292: SMALL,
+
+293: SMALL,
+294: MEDIUM,
+295: BIG, // Exploud
+
+296: MEDIUM,
+297: BIG,
+
+298: SMALL,
+299: SMALL,
+
+300: SMALL,
+301: SMALL,
+
+302: SMALL,
+303: SMALL,
+
+304: SMALL,
+305: MEDIUM,
+306: BIG, // Aggron
+
+307: SMALL,
+308: MEDIUM,
+
+309: SMALL,
+310: MEDIUM,
+
+311: SMALL,
+312: SMALL,
+
+313: SMALL,
+314: SMALL,
+
+315: SMALL,
+316: SMALL,
+317: BIG,
+
+318: SMALL,
+319: BIG,
+
+320: BIG,
+321: BIG,
+
+322: SMALL,
+323: BIG,
+
+324: BIG,
+
+325: SMALL,
+326: MEDIUM,
+
+327: SMALL,
+
+328: SMALL,
+329: MEDIUM,
+330: BIG,
+
+331: SMALL,
+332: BIG,
+
+333: SMALL,
+334: BIG,
+
+335: MEDIUM,
+336: MEDIUM,
+
+337: SMALL,
+338: SMALL,
+
+339: SMALL,
+340: BIG,
+
+341: SMALL,
+342: MEDIUM,
+
+343: SMALL,
+344: MEDIUM,
+
+345: SMALL,
+346: MEDIUM,
+
+347: SMALL,
+348: BIG,
+
+349: SMALL,
+350: BIG,
+
+351: SMALL,
+
+352: SMALL,
+
+353: SMALL,
+354: MEDIUM,
+
+355: SMALL,
+356: MEDIUM,
+
+357: BIG,
+
+358: SMALL,
+
+359: MEDIUM,
+
+360: SMALL,
+
+361: SMALL,
+362: MEDIUM,
+
+363: SMALL,
+364: MEDIUM,
+365: BIG,
+
+366: SMALL,
+367: MEDIUM,
+368: MEDIUM,
+
+369: BIG,
+
+370: SMALL,
+
+371: SMALL,
+372: MEDIUM,
+373: BIG,
+
+374: SMALL,
+375: MEDIUM,
+376: BIG,
+
+377: MEGA, // Regirock
+378: MEGA, // Regice
+379: MEGA, // Registeel
+
+380: BIG,  // Latias
+381: BIG,  // Latios
+
+382: MEGA, // Kyogre
+383: MEGA, // Groudon
+384: MEGA, // Rayquaza
+
+385: SMALL, // Jirachi
+386: MEGA  // Deoxys
+
 };
 
 

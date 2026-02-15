@@ -558,6 +558,39 @@ const RAW_POKEMON: PokemonRaw[] = [
   [249, "Lugia", ["psychic", "flying"], 106, ["gust", "confusion"], ["aeroblast", "psychic", "hydro-pump", "ice-beam", "hyper-beam", "ancient-power"]],
   [250, "Ho-Oh", ["fire", "flying"], 106, ["peck", "ember"], ["sacred-fire", "fire-blast", "fly", "ancient-power", "hyper-beam", "earthquake"]],
   [251, "Celebi", ["psychic", "grass"], 100, ["confusion", "leech-seed"], ["psychic", "giga-drain", "solar-beam", "ancient-power", "future-sight", "hyper-beam"]],
+  [252, "Treecko", ["grass"], 50, ["pound", "leer"], ["quick-attack", "mega-drain", "slam", "leaf-blade"]],
+  [253, "Grovyle", ["grass"], 70, ["pound", "quick-attack", "leer"], ["leaf-blade", "screech", "agility", "fury-cutter"]],
+  [254, "Sceptile", ["grass"], 100, ["quick-attack", "leer", "fury-cutter"], ["leaf-blade", "dragon-claw", "slam", "solar-beam", "hyper-beam"]],
+
+  [255, "Torchic", ["fire"], 50, ["scratch", "growl"], ["ember", "peck", "focus-energy", "flamethrower"]],
+  [256, "Combusken", ["fire", "fighting"], 70, ["scratch", "ember", "peck"], ["double-kick", "bulk-up", "flamethrower", "sky-uppercut"]],
+  [257, "Blaziken", ["fire", "fighting"], 100, ["ember", "double-kick", "peck"], ["blaze-kick", "sky-uppercut", "bulk-up", "fire-blast", "hyper-beam"]],
+
+  [258, "Mudkip", ["water"], 50, ["tackle", "growl"], ["water-gun", "mud-slap", "bite", "take-down"]],
+  [259, "Marshtomp", ["water", "ground"], 70, ["water-gun", "mud-slap", "tackle"], ["mud-shot", "take-down", "protect", "surf"]],
+  [260, "Swampert", ["water", "ground"], 100, ["water-gun", "mud-shot", "tackle"], ["earthquake", "surf", "muddy-water", "ice-beam", "hyper-beam"]],
+
+  [261, "Poochyena", ["dark"], 45, ["tackle", "howl"], ["bite", "sand-attack", "roar", "crunch"]],
+  [262, "Mightyena", ["dark"], 70, ["bite", "howl", "sand-attack"], ["crunch", "swagger", "take-down", "roar"]],
+
+  [263, "Zigzagoon", ["normal"], 40, ["tackle", "growl"], ["headbutt", "sand-attack", "pin-missile", "rest"]],
+  [264, "Linoone", ["normal"], 70, ["headbutt", "growl", "tackle"], ["slash", "rest", "belly-drum", "hyper-beam"]],
+
+  [265, "Wurmple", ["bug"], 30, ["tackle", "string-shot"], ["poison-sting", "bug-bite"]],
+  [266, "Silcoon", ["bug"], 40, ["harden"], ["iron-defense"]],
+  [267, "Beautifly", ["bug", "flying"], 70, ["gust", "string-shot"], ["silver-wind", "air-cutter", "mega-drain", "stun-spore"]],
+
+  [268, "Cascoon", ["bug"], 40, ["harden"], ["iron-defense"]],
+  [269, "Dustox", ["bug", "poison"], 70, ["gust", "confusion"], ["poison-powder", "psybeam", "silver-wind", "toxic"]],
+
+  [270, "Lotad", ["water", "grass"], 40, ["astonish", "growl"], ["absorb", "bubble-beam", "rain-dance", "mega-drain"]],
+  [271, "Lombre", ["water", "grass"], 70, ["bubble", "astonish"], ["fake-out", "rain-dance", "mega-drain", "nature-power"]],
+  [272, "Ludicolo", ["water", "grass"], 100, ["fake-out", "bubble-beam"], ["rain-dance", "surf", "giga-drain", "hydro-pump", "hyper-beam"]],
+
+  [273, "Seedot", ["grass"], 40, ["bide", "harden"], ["growth", "nature-power", "solar-beam"]],
+  [274, "Nuzleaf", ["grass", "dark"], 70, ["razor-leaf", "growth"], ["fake-out", "torment", "nature-power", "swagger"]],
+  [275, "Shiftry", ["grass", "dark"], 100, ["razor-leaf", "fake-out"], ["leaf-blade", "extrasensory", "hurricane", "solar-beam", "hyper-beam"]]
+
 ];
 
 export const POKEMON: PokemonSpecies[] = RAW_POKEMON.map(([id, name, types, baseHp, startingMoves, learnableMoves]) => ({
@@ -777,6 +810,27 @@ export const EVOLUTIONS: EvolutionData[] = [
   { from: 231, to: 232, method: "level", level: 25 },  // Phanpy -> Donphan
   { from: 246, to: 247, method: "level", level: 30 },  // Larvitar -> Pupitar
   { from: 247, to: 248, method: "level", level: 55 },  // Pupitar -> Tyranitar
+  { from: 255, to: 256, method: "level", level: 16 },  // Torchic -> Combusken
+{ from: 256, to: 257, method: "level", level: 36 },  // Combusken -> Blaziken
+
+{ from: 258, to: 259, method: "level", level: 16 },  // Mudkip -> Marshtomp
+{ from: 259, to: 260, method: "level", level: 36 },  // Marshtomp -> Swampert
+
+{ from: 261, to: 262, method: "level", level: 18 },  // Poochyena -> Mightyena
+
+{ from: 263, to: 264, method: "level", level: 20 },  // Zigzagoon -> Linoone
+
+{ from: 265, to: 266, method: "level", level: 7 },   // Wurmple -> Silcoon
+{ from: 266, to: 267, method: "level", level: 10 },  // Silcoon -> Beautifly
+{ from: 265, to: 268, method: "level", level: 7 },   // Wurmple -> Cascoon
+{ from: 268, to: 269, method: "level", level: 10 },  // Cascoon -> Dustox
+
+{ from: 270, to: 271, method: "level", level: 14 },  // Lotad -> Lombre
+{ from: 271, to: 272, method: "stone", stone: "water-stone" },  // Lombre -> Ludicolo
+
+{ from: 273, to: 274, method: "level", level: 14 },  // Seedot -> Nuzleaf
+{ from: 274, to: 275, method: "stone", stone: "leaf-stone" }   // Nuzleaf -> Shiftry
+
 ];
 
 // Helper to find evolutions for a given Pokemon
@@ -874,6 +928,7 @@ export interface PokemonBaseAttributes {
   felicidade: number;   // 1-10 base
   resistencia: number;  // 1-10 base
   acrobacia: number;    // 1-10 base
+    especial: string;    // 1-10 base
 }
 
 export interface PokemonComputedAttributes extends PokemonBaseAttributes {
@@ -891,6 +946,7 @@ export const POKEMON_ATTRIBUTE_INFO: Record<keyof PokemonBaseAttributes, { name:
   felicidade:  { name: "Felicidade",  desc: "Vinculo com o treinador e carisma.",   icon: "heart" },
   resistencia: { name: "Resistencia", desc: "Vigor fisico e capacidade de aguentar.", icon: "shield" },
   acrobacia:   { name: "Acrobacia",   desc: "Agilidade, esquiva e movimentos aereos.", icon: "wind" },
+    especial:   { name: "Especial",   desc: "Habilidade que somente este pokemon pode fazer", icon: "star" },
 };
 
 // ========== RPG Dice Utilities ==========
@@ -989,306 +1045,403 @@ export function applyLevelUpBonus(base: PokemonBaseAttributes): PokemonBaseAttri
 // Base attributes per species ID. Each value 1-10.
 // Designed to make thematic sense for each Pokemon.
 const SPECIES_BASE_ATTRIBUTES: Record<number, PokemonBaseAttributes> = {
-  // Gen 1 Starters
-  1:   { velocidade: 4, felicidade: 5, resistencia: 5, acrobacia: 4 },  // Bulbasaur
-  2:   { velocidade: 5, felicidade: 5, resistencia: 6, acrobacia: 4 },  // Ivysaur
-  3:   { velocidade: 6, felicidade: 6, resistencia: 8, acrobacia: 5 },  // Venusaur
-  4:   { velocidade: 6, felicidade: 5, resistencia: 4, acrobacia: 5 },  // Charmander
-  5:   { velocidade: 7, felicidade: 5, resistencia: 5, acrobacia: 6 },  // Charmeleon
-  6:   { velocidade: 8, felicidade: 6, resistencia: 6, acrobacia: 9 },  // Charizard
-  7:   { velocidade: 4, felicidade: 6, resistencia: 6, acrobacia: 4 },  // Squirtle
-  8:   { velocidade: 5, felicidade: 6, resistencia: 7, acrobacia: 4 },  // Wartortle
-  9:   { velocidade: 6, felicidade: 6, resistencia: 9, acrobacia: 5 },  // Blastoise
-  // Bug line
-  10:  { velocidade: 3, felicidade: 4, resistencia: 2, acrobacia: 3 },  // Caterpie
-  11:  { velocidade: 2, felicidade: 3, resistencia: 5, acrobacia: 1 },  // Metapod
-  12:  { velocidade: 6, felicidade: 6, resistencia: 4, acrobacia: 8 },  // Butterfree
-  13:  { velocidade: 3, felicidade: 3, resistencia: 2, acrobacia: 3 },  // Weedle
-  14:  { velocidade: 2, felicidade: 2, resistencia: 5, acrobacia: 1 },  // Kakuna
-  15:  { velocidade: 7, felicidade: 4, resistencia: 4, acrobacia: 7 },  // Beedrill
-  // Birds
-  16:  { velocidade: 5, felicidade: 5, resistencia: 3, acrobacia: 6 },  // Pidgey
-  17:  { velocidade: 6, felicidade: 5, resistencia: 4, acrobacia: 7 },  // Pidgeotto
-  18:  { velocidade: 8, felicidade: 6, resistencia: 6, acrobacia: 9 },  // Pidgeot
-  // Rattata line
-  19:  { velocidade: 7, felicidade: 4, resistencia: 2, acrobacia: 5 },  // Rattata
-  20:  { velocidade: 8, felicidade: 4, resistencia: 5, acrobacia: 6 },  // Raticate
-  // Spearow line
-  21:  { velocidade: 6, felicidade: 3, resistencia: 3, acrobacia: 6 },  // Spearow
-  22:  { velocidade: 8, felicidade: 4, resistencia: 5, acrobacia: 8 },  // Fearow
-  // Ekans line
-  23:  { velocidade: 5, felicidade: 3, resistencia: 4, acrobacia: 6 },  // Ekans
-  24:  { velocidade: 6, felicidade: 3, resistencia: 6, acrobacia: 7 },  // Arbok
-  // Pikachu line
-  25:  { velocidade: 8, felicidade: 8, resistencia: 3, acrobacia: 7 },  // Pikachu
-  26:  { velocidade: 9, felicidade: 7, resistencia: 5, acrobacia: 7 },  // Raichu
-  // Sandshrew line
-  27:  { velocidade: 4, felicidade: 4, resistencia: 7, acrobacia: 4 },  // Sandshrew
-  28:  { velocidade: 5, felicidade: 4, resistencia: 8, acrobacia: 5 },  // Sandslash
-  // Nidoran lines
-  29:  { velocidade: 4, felicidade: 5, resistencia: 5, acrobacia: 3 },  // Nidoran F
-  30:  { velocidade: 5, felicidade: 5, resistencia: 6, acrobacia: 4 },  // Nidorina
-  31:  { velocidade: 6, felicidade: 5, resistencia: 8, acrobacia: 5 },  // Nidoqueen
-  32:  { velocidade: 5, felicidade: 4, resistencia: 5, acrobacia: 4 },  // Nidoran M
-  33:  { velocidade: 6, felicidade: 4, resistencia: 6, acrobacia: 5 },  // Nidorino
-  34:  { velocidade: 7, felicidade: 4, resistencia: 8, acrobacia: 6 },  // Nidoking
-  // Clefairy line
-  35:  { velocidade: 3, felicidade: 9, resistencia: 5, acrobacia: 4 },  // Clefairy
-  36:  { velocidade: 4, felicidade: 10, resistencia: 7, acrobacia: 5 }, // Clefable
-  // Vulpix line
-  37:  { velocidade: 6, felicidade: 6, resistencia: 3, acrobacia: 7 },  // Vulpix
-  38:  { velocidade: 8, felicidade: 7, resistencia: 5, acrobacia: 8 },  // Ninetales
-  // Jigglypuff line
-  39:  { velocidade: 3, felicidade: 9, resistencia: 6, acrobacia: 3 },  // Jigglypuff
-  40:  { velocidade: 4, felicidade: 10, resistencia: 8, acrobacia: 3 }, // Wigglytuff
-  // Zubat line
-  41:  { velocidade: 5, felicidade: 3, resistencia: 3, acrobacia: 7 },  // Zubat
-  42:  { velocidade: 7, felicidade: 3, resistencia: 5, acrobacia: 8 },  // Golbat
-  // Oddish line
-  43:  { velocidade: 3, felicidade: 5, resistencia: 4, acrobacia: 2 },  // Oddish
-  44:  { velocidade: 4, felicidade: 5, resistencia: 5, acrobacia: 3 },  // Gloom
-  45:  { velocidade: 4, felicidade: 5, resistencia: 7, acrobacia: 3 },  // Vileplume
-  // Paras line
-  46:  { velocidade: 3, felicidade: 4, resistencia: 4, acrobacia: 3 },  // Paras
-  47:  { velocidade: 3, felicidade: 4, resistencia: 6, acrobacia: 3 },  // Parasect
-  // Venonat line
-  48:  { velocidade: 4, felicidade: 4, resistencia: 5, acrobacia: 4 },  // Venonat
-  49:  { velocidade: 7, felicidade: 4, resistencia: 5, acrobacia: 7 },  // Venomoth
-  // Diglett line
-  50:  { velocidade: 8, felicidade: 4, resistencia: 1, acrobacia: 6 },  // Diglett
-  51:  { velocidade: 9, felicidade: 4, resistencia: 3, acrobacia: 7 },  // Dugtrio
-  // Meowth line
-  52:  { velocidade: 7, felicidade: 6, resistencia: 3, acrobacia: 8 },  // Meowth
-  53:  { velocidade: 8, felicidade: 6, resistencia: 5, acrobacia: 9 },  // Persian
-  // Psyduck line
-  54:  { velocidade: 4, felicidade: 5, resistencia: 4, acrobacia: 4 },  // Psyduck
-  55:  { velocidade: 7, felicidade: 5, resistencia: 6, acrobacia: 6 },  // Golduck
-  // Mankey line
-  56:  { velocidade: 7, felicidade: 3, resistencia: 4, acrobacia: 7 },  // Mankey
-  57:  { velocidade: 8, felicidade: 3, resistencia: 6, acrobacia: 8 },  // Primeape
-  // Growlithe line
-  58:  { velocidade: 6, felicidade: 7, resistencia: 5, acrobacia: 6 },  // Growlithe
-  59:  { velocidade: 8, felicidade: 7, resistencia: 7, acrobacia: 7 },  // Arcanine
-  // Poliwag line
-  60:  { velocidade: 5, felicidade: 5, resistencia: 3, acrobacia: 5 },  // Poliwag
-  61:  { velocidade: 6, felicidade: 5, resistencia: 5, acrobacia: 5 },  // Poliwhirl
-  62:  { velocidade: 6, felicidade: 5, resistencia: 8, acrobacia: 6 },  // Poliwrath
-  // Abra line
-  63:  { velocidade: 7, felicidade: 5, resistencia: 1, acrobacia: 6 },  // Abra
-  64:  { velocidade: 8, felicidade: 5, resistencia: 3, acrobacia: 7 },  // Kadabra
-  65:  { velocidade: 9, felicidade: 5, resistencia: 4, acrobacia: 8 },  // Alakazam
-  // Machop line
-  66:  { velocidade: 3, felicidade: 5, resistencia: 7, acrobacia: 3 },  // Machop
-  67:  { velocidade: 4, felicidade: 5, resistencia: 8, acrobacia: 4 },  // Machoke
-  68:  { velocidade: 5, felicidade: 5, resistencia: 10, acrobacia: 4 }, // Machamp
-  // Bellsprout line
-  69:  { velocidade: 4, felicidade: 5, resistencia: 4, acrobacia: 4 },  // Bellsprout
-  70:  { velocidade: 5, felicidade: 5, resistencia: 5, acrobacia: 5 },  // Weepinbell
-  71:  { velocidade: 6, felicidade: 5, resistencia: 6, acrobacia: 5 },  // Victreebel
-  // Tentacool line
-  72:  { velocidade: 6, felicidade: 4, resistencia: 3, acrobacia: 6 },  // Tentacool
-  73:  { velocidade: 8, felicidade: 4, resistencia: 6, acrobacia: 7 },  // Tentacruel
-  // Geodude line
-  74:  { velocidade: 2, felicidade: 4, resistencia: 8, acrobacia: 1 },  // Geodude
-  75:  { velocidade: 3, felicidade: 4, resistencia: 9, acrobacia: 2 },  // Graveler
-  76:  { velocidade: 3, felicidade: 4, resistencia: 10, acrobacia: 2 }, // Golem
-  // Ponyta line
-  77:  { velocidade: 8, felicidade: 6, resistencia: 4, acrobacia: 7 },  // Ponyta
-  78:  { velocidade: 9, felicidade: 6, resistencia: 5, acrobacia: 8 },  // Rapidash
-  // Slowpoke line
-  79:  { velocidade: 1, felicidade: 6, resistencia: 7, acrobacia: 1 },  // Slowpoke
-  80:  { velocidade: 2, felicidade: 6, resistencia: 8, acrobacia: 2 },  // Slowbro
-  // Magnemite line
-  81:  { velocidade: 4, felicidade: 3, resistencia: 5, acrobacia: 5 },  // Magnemite
-  82:  { velocidade: 5, felicidade: 3, resistencia: 7, acrobacia: 5 },  // Magneton
-  83:  { velocidade: 5, felicidade: 6, resistencia: 4, acrobacia: 5 },  // Farfetch'd
-  // Doduo line
-  84:  { velocidade: 7, felicidade: 4, resistencia: 3, acrobacia: 5 },  // Doduo
-  85:  { velocidade: 9, felicidade: 4, resistencia: 5, acrobacia: 6 },  // Dodrio
-  // Seel line
-  86:  { velocidade: 4, felicidade: 7, resistencia: 6, acrobacia: 5 },  // Seel
-  87:  { velocidade: 5, felicidade: 7, resistencia: 8, acrobacia: 5 },  // Dewgong
-  // Grimer line
-  88:  { velocidade: 2, felicidade: 3, resistencia: 7, acrobacia: 2 },  // Grimer
-  89:  { velocidade: 3, felicidade: 3, resistencia: 9, acrobacia: 2 },  // Muk
-  // Shellder line
-  90:  { velocidade: 4, felicidade: 4, resistencia: 8, acrobacia: 3 },  // Shellder
-  91:  { velocidade: 5, felicidade: 4, resistencia: 10, acrobacia: 3 }, // Cloyster
-  // Gastly line
-  92:  { velocidade: 7, felicidade: 3, resistencia: 2, acrobacia: 8 },  // Gastly
-  93:  { velocidade: 8, felicidade: 3, resistencia: 3, acrobacia: 9 },  // Haunter
-  94:  { velocidade: 9, felicidade: 4, resistencia: 4, acrobacia: 9 },  // Gengar
-  // Onix
-  95:  { velocidade: 5, felicidade: 4, resistencia: 9, acrobacia: 3 },  // Onix
-  // Drowzee line
-  96:  { velocidade: 4, felicidade: 5, resistencia: 5, acrobacia: 3 },  // Drowzee
-  97:  { velocidade: 5, felicidade: 5, resistencia: 7, acrobacia: 4 },  // Hypno
-  // Krabby line
-  98:  { velocidade: 5, felicidade: 4, resistencia: 5, acrobacia: 4 },  // Krabby
-  99:  { velocidade: 6, felicidade: 4, resistencia: 6, acrobacia: 4 },  // Kingler
-  // Voltorb line
-  100: { velocidade: 9, felicidade: 3, resistencia: 3, acrobacia: 5 },  // Voltorb
-  101: { velocidade: 10, felicidade: 3, resistencia: 4, acrobacia: 5 }, // Electrode
-  // Exeggcute line
-  102: { velocidade: 3, felicidade: 5, resistencia: 5, acrobacia: 2 },  // Exeggcute
-  103: { velocidade: 4, felicidade: 5, resistencia: 7, acrobacia: 3 },  // Exeggutor
-  // Cubone line
-  104: { velocidade: 3, felicidade: 4, resistencia: 6, acrobacia: 4 },  // Cubone
-  105: { velocidade: 4, felicidade: 4, resistencia: 7, acrobacia: 5 },  // Marowak
-  // Hitmons
-  106: { velocidade: 7, felicidade: 5, resistencia: 5, acrobacia: 9 },  // Hitmonlee
-  107: { velocidade: 6, felicidade: 5, resistencia: 6, acrobacia: 7 },  // Hitmonchan
-  108: { velocidade: 3, felicidade: 6, resistencia: 7, acrobacia: 3 },  // Lickitung
-  // Koffing line
-  109: { velocidade: 3, felicidade: 3, resistencia: 6, acrobacia: 4 },  // Koffing
-  110: { velocidade: 4, felicidade: 3, resistencia: 8, acrobacia: 4 },  // Weezing
-  // Rhyhorn line
-  111: { velocidade: 3, felicidade: 4, resistencia: 9, acrobacia: 2 },  // Rhyhorn
-  112: { velocidade: 4, felicidade: 4, resistencia: 10, acrobacia: 3 }, // Rhydon
-  113: { velocidade: 4, felicidade: 10, resistencia: 7, acrobacia: 3 }, // Chansey
-  114: { velocidade: 5, felicidade: 5, resistencia: 6, acrobacia: 5 },  // Tangela
-  115: { velocidade: 7, felicidade: 7, resistencia: 8, acrobacia: 5 },  // Kangaskhan
-  // Horsea line
-  116: { velocidade: 5, felicidade: 5, resistencia: 3, acrobacia: 6 },  // Horsea
-  117: { velocidade: 7, felicidade: 5, resistencia: 5, acrobacia: 7 },  // Seadra
-  // Goldeen line
-  118: { velocidade: 6, felicidade: 5, resistencia: 4, acrobacia: 6 },  // Goldeen
-  119: { velocidade: 7, felicidade: 5, resistencia: 6, acrobacia: 6 },  // Seaking
-  // Staryu line
-  120: { velocidade: 7, felicidade: 4, resistencia: 3, acrobacia: 7 },  // Staryu
-  121: { velocidade: 8, felicidade: 4, resistencia: 5, acrobacia: 8 },  // Starmie
-  122: { velocidade: 7, felicidade: 6, resistencia: 4, acrobacia: 7 },  // Mr. Mime
-  123: { velocidade: 8, felicidade: 5, resistencia: 5, acrobacia: 9 },  // Scyther
-  124: { velocidade: 8, felicidade: 5, resistencia: 5, acrobacia: 6 },  // Jynx
-  125: { velocidade: 8, felicidade: 5, resistencia: 5, acrobacia: 6 },  // Electabuzz
-  126: { velocidade: 8, felicidade: 5, resistencia: 5, acrobacia: 5 },  // Magmar
-  127: { velocidade: 7, felicidade: 3, resistencia: 7, acrobacia: 5 },  // Pinsir
-  128: { velocidade: 9, felicidade: 4, resistencia: 7, acrobacia: 5 },  // Tauros
-  129: { velocidade: 6, felicidade: 5, resistencia: 1, acrobacia: 4 },  // Magikarp
-  130: { velocidade: 7, felicidade: 4, resistencia: 8, acrobacia: 6 },  // Gyarados
-  131: { velocidade: 5, felicidade: 8, resistencia: 8, acrobacia: 4 },  // Lapras
-  132: { velocidade: 5, felicidade: 5, resistencia: 5, acrobacia: 5 },  // Ditto
-  133: { velocidade: 5, felicidade: 7, resistencia: 4, acrobacia: 6 },  // Eevee
-  134: { velocidade: 5, felicidade: 7, resistencia: 8, acrobacia: 5 },  // Vaporeon
-  135: { velocidade: 9, felicidade: 7, resistencia: 5, acrobacia: 7 },  // Jolteon
-  136: { velocidade: 6, felicidade: 7, resistencia: 5, acrobacia: 6 },  // Flareon
-  137: { velocidade: 4, felicidade: 4, resistencia: 5, acrobacia: 5 },  // Porygon
-  138: { velocidade: 3, felicidade: 4, resistencia: 6, acrobacia: 3 },  // Omanyte
-  139: { velocidade: 4, felicidade: 4, resistencia: 8, acrobacia: 4 },  // Omastar
-  140: { velocidade: 4, felicidade: 4, resistencia: 6, acrobacia: 4 },  // Kabuto
-  141: { velocidade: 6, felicidade: 4, resistencia: 7, acrobacia: 6 },  // Kabutops
-  142: { velocidade: 9, felicidade: 5, resistencia: 5, acrobacia: 9 },  // Aerodactyl
-  143: { velocidade: 2, felicidade: 6, resistencia: 10, acrobacia: 1 }, // Snorlax
-  144: { velocidade: 7, felicidade: 6, resistencia: 7, acrobacia: 8 },  // Articuno
-  145: { velocidade: 9, felicidade: 6, resistencia: 7, acrobacia: 8 },  // Zapdos
-  146: { velocidade: 8, felicidade: 6, resistencia: 7, acrobacia: 8 },  // Moltres
-  147: { velocidade: 5, felicidade: 5, resistencia: 4, acrobacia: 5 },  // Dratini
-  148: { velocidade: 6, felicidade: 5, resistencia: 5, acrobacia: 6 },  // Dragonair
-  149: { velocidade: 7, felicidade: 6, resistencia: 8, acrobacia: 7 },  // Dragonite
-  150: { velocidade: 9, felicidade: 3, resistencia: 7, acrobacia: 8 },  // Mewtwo
-  151: { velocidade: 8, felicidade: 10, resistencia: 8, acrobacia: 8 }, // Mew
-  // Gen 2 starters
-  152: { velocidade: 4, felicidade: 6, resistencia: 5, acrobacia: 4 },  // Chikorita
-  153: { velocidade: 5, felicidade: 6, resistencia: 6, acrobacia: 4 },  // Bayleef
-  154: { velocidade: 6, felicidade: 7, resistencia: 8, acrobacia: 5 },  // Meganium
-  155: { velocidade: 6, felicidade: 5, resistencia: 4, acrobacia: 5 },  // Cyndaquil
-  156: { velocidade: 7, felicidade: 5, resistencia: 5, acrobacia: 6 },  // Quilava
-  157: { velocidade: 8, felicidade: 6, resistencia: 6, acrobacia: 7 },  // Typhlosion
-  158: { velocidade: 5, felicidade: 5, resistencia: 5, acrobacia: 5 },  // Totodile
-  159: { velocidade: 6, felicidade: 5, resistencia: 6, acrobacia: 5 },  // Croconaw
-  160: { velocidade: 6, felicidade: 5, resistencia: 8, acrobacia: 6 },  // Feraligatr
-  // Gen 2 commons
-  161: { velocidade: 5, felicidade: 5, resistencia: 3, acrobacia: 5 },  // Sentret
-  162: { velocidade: 7, felicidade: 5, resistencia: 5, acrobacia: 7 },  // Furret
-  163: { velocidade: 4, felicidade: 5, resistencia: 4, acrobacia: 5 },  // Hoothoot
-  164: { velocidade: 6, felicidade: 5, resistencia: 6, acrobacia: 6 },  // Noctowl
-  165: { velocidade: 4, felicidade: 5, resistencia: 3, acrobacia: 5 },  // Ledyba
-  166: { velocidade: 6, felicidade: 5, resistencia: 4, acrobacia: 7 },  // Ledian
-  167: { velocidade: 4, felicidade: 4, resistencia: 3, acrobacia: 5 },  // Spinarak
-  168: { velocidade: 6, felicidade: 4, resistencia: 5, acrobacia: 7 },  // Ariados
-  169: { velocidade: 8, felicidade: 4, resistencia: 6, acrobacia: 9 },  // Crobat
-  170: { velocidade: 5, felicidade: 5, resistencia: 4, acrobacia: 5 },  // Chinchou
-  171: { velocidade: 5, felicidade: 5, resistencia: 6, acrobacia: 5 },  // Lanturn
-  172: { velocidade: 7, felicidade: 9, resistencia: 2, acrobacia: 6 },  // Pichu
-  173: { velocidade: 3, felicidade: 9, resistencia: 3, acrobacia: 3 },  // Cleffa
-  174: { velocidade: 3, felicidade: 9, resistencia: 4, acrobacia: 2 },  // Igglybuff
-  175: { velocidade: 3, felicidade: 9, resistencia: 3, acrobacia: 3 },  // Togepi
-  176: { velocidade: 5, felicidade: 9, resistencia: 5, acrobacia: 7 },  // Togetic
-  177: { velocidade: 6, felicidade: 5, resistencia: 3, acrobacia: 6 },  // Natu
-  178: { velocidade: 8, felicidade: 5, resistencia: 5, acrobacia: 8 },  // Xatu
-  179: { velocidade: 3, felicidade: 7, resistencia: 4, acrobacia: 3 },  // Mareep
-  180: { velocidade: 4, felicidade: 7, resistencia: 5, acrobacia: 3 },  // Flaaffy
-  181: { velocidade: 5, felicidade: 7, resistencia: 7, acrobacia: 4 },  // Ampharos
-  182: { velocidade: 4, felicidade: 7, resistencia: 6, acrobacia: 4 },  // Bellossom
-  183: { velocidade: 4, felicidade: 7, resistencia: 5, acrobacia: 4 },  // Marill
-  184: { velocidade: 5, felicidade: 7, resistencia: 7, acrobacia: 4 },  // Azumarill
-  185: { velocidade: 2, felicidade: 5, resistencia: 8, acrobacia: 2 },  // Sudowoodo
-  186: { velocidade: 5, felicidade: 6, resistencia: 7, acrobacia: 5 },  // Politoed
-  187: { velocidade: 4, felicidade: 6, resistencia: 3, acrobacia: 6 },  // Hoppip
-  188: { velocidade: 5, felicidade: 6, resistencia: 4, acrobacia: 7 },  // Skiploom
-  189: { velocidade: 6, felicidade: 6, resistencia: 5, acrobacia: 8 },  // Jumpluff
-  190: { velocidade: 7, felicidade: 7, resistencia: 3, acrobacia: 9 },  // Aipom
-  191: { velocidade: 3, felicidade: 5, resistencia: 3, acrobacia: 2 },  // Sunkern
-  192: { velocidade: 4, felicidade: 6, resistencia: 5, acrobacia: 3 },  // Sunflora
-  193: { velocidade: 8, felicidade: 4, resistencia: 4, acrobacia: 9 },  // Yanma
-  194: { velocidade: 2, felicidade: 6, resistencia: 5, acrobacia: 2 },  // Wooper
-  195: { velocidade: 2, felicidade: 6, resistencia: 8, acrobacia: 2 },  // Quagsire
-  196: { velocidade: 9, felicidade: 8, resistencia: 5, acrobacia: 7 },  // Espeon
-  197: { velocidade: 5, felicidade: 7, resistencia: 8, acrobacia: 6 },  // Umbreon
-  198: { velocidade: 7, felicidade: 4, resistencia: 4, acrobacia: 7 },  // Murkrow
-  199: { velocidade: 2, felicidade: 6, resistencia: 8, acrobacia: 2 },  // Slowking
-  200: { velocidade: 7, felicidade: 3, resistencia: 3, acrobacia: 7 },  // Misdreavus
-  201: { velocidade: 5, felicidade: 5, resistencia: 5, acrobacia: 5 },  // Unown
-  202: { velocidade: 3, felicidade: 6, resistencia: 9, acrobacia: 2 },  // Wobbuffet
-  203: { velocidade: 7, felicidade: 5, resistencia: 5, acrobacia: 5 },  // Girafarig
-  204: { velocidade: 2, felicidade: 4, resistencia: 7, acrobacia: 2 },  // Pineco
-  205: { velocidade: 3, felicidade: 4, resistencia: 10, acrobacia: 2 }, // Forretress
-  206: { velocidade: 3, felicidade: 5, resistencia: 6, acrobacia: 3 },  // Dunsparce
-  207: { velocidade: 7, felicidade: 4, resistencia: 6, acrobacia: 8 },  // Gligar
-  208: { velocidade: 3, felicidade: 4, resistencia: 10, acrobacia: 3 }, // Steelix
-  209: { velocidade: 3, felicidade: 7, resistencia: 5, acrobacia: 3 },  // Snubbull
-  210: { velocidade: 4, felicidade: 6, resistencia: 7, acrobacia: 3 },  // Granbull
-  211: { velocidade: 7, felicidade: 3, resistencia: 5, acrobacia: 5 },  // Qwilfish
-  212: { velocidade: 5, felicidade: 5, resistencia: 8, acrobacia: 7 },  // Scizor
-  213: { velocidade: 1, felicidade: 4, resistencia: 10, acrobacia: 1 }, // Shuckle
-  214: { velocidade: 7, felicidade: 5, resistencia: 8, acrobacia: 6 },  // Heracross
-  215: { velocidade: 8, felicidade: 3, resistencia: 4, acrobacia: 8 },  // Sneasel
-  216: { velocidade: 4, felicidade: 7, resistencia: 5, acrobacia: 4 },  // Teddiursa
-  217: { velocidade: 5, felicidade: 5, resistencia: 8, acrobacia: 4 },  // Ursaring
-  218: { velocidade: 3, felicidade: 4, resistencia: 6, acrobacia: 3 },  // Slugma
-  219: { velocidade: 3, felicidade: 4, resistencia: 8, acrobacia: 2 },  // Magcargo
-  220: { velocidade: 4, felicidade: 6, resistencia: 5, acrobacia: 3 },  // Swinub
-  221: { velocidade: 5, felicidade: 5, resistencia: 8, acrobacia: 4 },  // Piloswine
-  222: { velocidade: 3, felicidade: 6, resistencia: 6, acrobacia: 3 },  // Corsola
-  223: { velocidade: 5, felicidade: 4, resistencia: 4, acrobacia: 5 },  // Remoraid
-  224: { velocidade: 5, felicidade: 4, resistencia: 6, acrobacia: 4 },  // Octillery
-  225: { velocidade: 6, felicidade: 8, resistencia: 4, acrobacia: 6 },  // Delibird
-  226: { velocidade: 6, felicidade: 5, resistencia: 5, acrobacia: 8 },  // Mantine
-  227: { velocidade: 5, felicidade: 4, resistencia: 10, acrobacia: 6 }, // Skarmory
-  228: { velocidade: 6, felicidade: 3, resistencia: 4, acrobacia: 5 },  // Houndour
-  229: { velocidade: 8, felicidade: 3, resistencia: 5, acrobacia: 6 },  // Houndoom
-  230: { velocidade: 7, felicidade: 5, resistencia: 7, acrobacia: 6 },  // Kingdra
-  231: { velocidade: 4, felicidade: 6, resistencia: 5, acrobacia: 3 },  // Phanpy
-  232: { velocidade: 5, felicidade: 5, resistencia: 9, acrobacia: 3 },  // Donphan
-  233: { velocidade: 7, felicidade: 4, resistencia: 6, acrobacia: 6 },  // Porygon2
-  234: { velocidade: 7, felicidade: 5, resistencia: 5, acrobacia: 7 },  // Stantler
-  235: { velocidade: 5, felicidade: 7, resistencia: 4, acrobacia: 5 },  // Smeargle
-  236: { velocidade: 5, felicidade: 5, resistencia: 5, acrobacia: 5 },  // Tyrogue
-  237: { velocidade: 7, felicidade: 5, resistencia: 6, acrobacia: 8 },  // Hitmontop
-  238: { velocidade: 6, felicidade: 7, resistencia: 3, acrobacia: 5 },  // Smoochum
-  239: { velocidade: 8, felicidade: 6, resistencia: 3, acrobacia: 6 },  // Elekid
-  240: { velocidade: 7, felicidade: 6, resistencia: 3, acrobacia: 5 },  // Magby
-  241: { velocidade: 8, felicidade: 8, resistencia: 7, acrobacia: 4 },  // Miltank
-  242: { velocidade: 4, felicidade: 10, resistencia: 8, acrobacia: 3 }, // Blissey
-  243: { velocidade: 8, felicidade: 5, resistencia: 7, acrobacia: 7 },  // Raikou
-  244: { velocidade: 8, felicidade: 5, resistencia: 7, acrobacia: 7 },  // Entei
-  245: { velocidade: 7, felicidade: 6, resistencia: 8, acrobacia: 7 },  // Suicune
-  246: { velocidade: 4, felicidade: 3, resistencia: 6, acrobacia: 3 },  // Larvitar
-  247: { velocidade: 5, felicidade: 3, resistencia: 7, acrobacia: 4 },  // Pupitar
-  248: { velocidade: 6, felicidade: 4, resistencia: 10, acrobacia: 5 }, // Tyranitar
-  249: { velocidade: 8, felicidade: 7, resistencia: 9, acrobacia: 8 },  // Lugia
-  250: { velocidade: 8, felicidade: 8, resistencia: 9, acrobacia: 8 },  // Ho-Oh
-  251: { velocidade: 8, felicidade: 10, resistencia: 8, acrobacia: 8 }, // Celebi
+  1:  { velocidade: 4, felicidade: 5, resistencia: 5, acrobacia: 4, especial: "Faz brotar vinhas e plantas pelo campo." },   // Bulbasaur
+2:  { velocidade: 5, felicidade: 5, resistencia: 6, acrobacia: 4, especial: "Acelera o crescimento natural ao redor." },  // Ivysaur
+3:  { velocidade: 6, felicidade: 6, resistencia: 8, acrobacia: 5, especial: "Cria vegetação densa que protege aliados." },  // Venusaur
+
+4:  { velocidade: 6, felicidade: 5, resistencia: 4, acrobacia: 5, especial: "Aquece o ambiente suavemente." },      // Charmander
+5:  { velocidade: 7, felicidade: 5, resistencia: 5, acrobacia: 6, especial: "Ilumina áreas escuras com sua chama." },  // Charmeleon
+6:  { velocidade: 8, felicidade: 6, resistencia: 6, acrobacia: 9, especial: "Permite voar carregando um treinador." },      // Charizard
+
+7:  { velocidade: 4, felicidade: 6, resistencia: 6, acrobacia: 4, especial: "Flutua e atravessa água calma." },      // Squirtle
+8:  { velocidade: 5, felicidade: 6, resistencia: 7, acrobacia: 4, especial: "Mergulha por longos períodos." }, // Wartortle
+9:  { velocidade: 6, felicidade: 6, resistencia: 9, acrobacia: 5, especial: "Dispara jato de água para empurrar obstáculos." },        // Blastoise
+
+10: { velocidade: 3, felicidade: 4, resistencia: 2, acrobacia: 3, especial: "Produz fios de seda criando trilhas." },      // Caterpie
+11: { velocidade: 2, felicidade: 3, resistencia: 5, acrobacia: 1, especial: "Endurece o corpo bloqueando ataques." },   // Metapod
+12: { velocidade: 6, felicidade: 6, resistencia: 4, acrobacia: 8, especial: "Espalha pó que causa sono." },     // Butterfree
+
+13: { velocidade: 3, felicidade: 3, resistencia: 2, acrobacia: 3, especial: "Deixa rastro venenoso no chão." },     // Weedle
+14: { velocidade: 2, felicidade: 2, resistencia: 5, acrobacia: 1, especial: "Ergue espinhos defensivos." },     // Kakuna
+15: { velocidade: 7, felicidade: 4, resistencia: 4, acrobacia: 7, especial: "Invoca um enxame de insetos aliados." },     // Beedrill
+
+16: { velocidade: 5, felicidade: 5, resistencia: 3, acrobacia: 6, especial: "Cria rajadas de vento." },    // Pidgey
+17: { velocidade: 6, felicidade: 5, resistencia: 4, acrobacia: 7, especial: "Plana carregando mensagens ou itens." },            // Pidgeotto
+18: { velocidade: 8, felicidade: 6, resistencia: 6, acrobacia: 9, especial: "Guia viajantes pelo céu." },        // Pidgeot
+
+19: { velocidade: 7, felicidade: 4, resistencia: 2, acrobacia: 5, especial: "Escapa rapidamente de perigos." },       // Rattata
+20: { velocidade: 8, felicidade: 4, resistencia: 5, acrobacia: 6, especial: "Encontra comida e objetos escondidos." },    // Raticate
+
+21: { velocidade: 6, felicidade: 3, resistencia: 3, acrobacia: 6, especial: "Atrai Pokémon selvagens próximos." },  // Spearow
+22: { velocidade: 8, felicidade: 4, resistencia: 5, acrobacia: 8, especial: "Afugenta criaturas ao redor." },// Fearow
+
+23: { velocidade: 5, felicidade: 3, resistencia: 4, acrobacia: 6, especial: "Enxerga perfeitamente no escuro." },     // Ekans
+24: { velocidade: 6, felicidade: 3, resistencia: 6, acrobacia: 7, especial: "Intimida inimigos com o olhar." }, // Arbok
+
+25: { velocidade: 8, felicidade: 8, resistencia: 3, acrobacia: 7, especial: "Encontra moedas perdidas." },    // Pikachu
+26: { velocidade: 9, felicidade: 7, resistencia: 5, acrobacia: 7, especial: "Gera eletricidade para iluminar locais." },     // Raichu
+
+27: { velocidade: 4, felicidade: 4, resistencia: 7, acrobacia: 4, especial: "Cava abrigo subterrâneo." },        // Sandshrew
+28: { velocidade: 5, felicidade: 4, resistencia: 8, acrobacia: 5, especial: "Cria uma tempestade de areia." },    // Sandslash
+
+29: { velocidade: 4, felicidade: 5, resistencia: 5, acrobacia: 3, especial: "Protege filhotes e aliados." },    // Nidoran F
+30: { velocidade: 5, felicidade: 5, resistencia: 6, acrobacia: 4, especial: "Defende o grupo próximo." },      // Nidorina
+31: { velocidade: 6, felicidade: 5, resistencia: 8, acrobacia: 5, especial: "Ergue barreira protetora natural." },    // Nidoqueen
+
+32: { velocidade: 5, felicidade: 4, resistencia: 5, acrobacia: 4, especial: "Provoca inimigos para chamar atenção." },   // Nidoran M
+33: { velocidade: 6, felicidade: 4, resistencia: 6, acrobacia: 5, especial: "Perfura obstáculos com o chifre." },   // Nidorino
+34: { velocidade: 7, felicidade: 4, resistencia: 8, acrobacia: 6, especial: "Domina território ao redor." },     // Nidoking
+
+35: { velocidade: 3, felicidade: 9, resistencia: 5, acrobacia: 4, especial: "Canta e acalma criaturas." },      // Clefairy
+36: { velocidade: 4, felicidade: 10, resistencia: 7, acrobacia: 5, especial: "Concede energia lunar restauradora." },       // Clefable
+
+37: { velocidade: 6, felicidade: 6, resistencia: 3, acrobacia: 7, especial: "Aquece o ambiente com fogo suave." },          // Vulpix
+38: { velocidade: 8, felicidade: 7, resistencia: 5, acrobacia: 8, especial: "Guia pessoas com chamas místicas." },          // Ninetales
+
+39: { velocidade: 3, felicidade: 9, resistencia: 6, acrobacia: 3, especial: "Canta fazendo alvos dormirem." },         // Jigglypuff
+40: { velocidade: 4, felicidade: 10, resistencia: 8, acrobacia: 3, especial: "Induz sono profundo em área." },      // Wigglytuff
+41: { velocidade: 5, felicidade: 3, resistencia: 3, acrobacia: 7, especial: "Localiza tudo ao redor por ecolocalização." },     // Zubat
+42: { velocidade: 7, felicidade: 3, resistencia: 5, acrobacia: 8, especial: "Mapeia cavernas enquanto voa." },      // Golbat
+
+43: { velocidade: 3, felicidade: 5, resistencia: 4, acrobacia: 2, especial: "Espalha sementes pelo terreno." },      // Oddish
+44: { velocidade: 4, felicidade: 5, resistencia: 5, acrobacia: 3, especial: "Libera aroma que atrai criaturas." },      // Gloom
+45: { velocidade: 4, felicidade: 5, resistencia: 7, acrobacia: 3, especial: "Transforma a área em jardim florido." },         // Vileplume
+
+46: { velocidade: 3, felicidade: 4, resistencia: 4, acrobacia: 3, especial: "Coleta e cultiva cogumelos úteis." },   // Paras
+47: { velocidade: 3, felicidade: 4, resistencia: 6, acrobacia: 3, especial: "Regenera ferimentos naturalmente." },        // Parasect
+
+48: { velocidade: 4, felicidade: 4, resistencia: 5, acrobacia: 4, especial: "Solta pó que confunde inimigos." },         // Venonat
+49: { velocidade: 7, felicidade: 4, resistencia: 5, acrobacia: 7, especial: "Dispersa escamas brilhantes cegantes." },  // Venomoth
+
+50: { velocidade: 8, felicidade: 4, resistencia: 1, acrobacia: 6, especial: "Abre túneis rapidamente no solo." },   // Diglett
+51: { velocidade: 9, felicidade: 4, resistencia: 3, acrobacia: 7, especial: "Cria rede de túneis subterrâneos." },     // Dugtrio
+
+52: { velocidade: 7, felicidade: 6, resistencia: 3, acrobacia: 8, especial: "Encontra moedas escondidas." },        // Meowth
+53: { velocidade: 8, felicidade: 6, resistencia: 5, acrobacia: 9, especial: "Move-se sem fazer ruído." },   // Persian
+
+54: { velocidade: 4, felicidade: 5, resistencia: 4, acrobacia: 4, especial: "Prevê mudanças no clima." },   // Psyduck
+55: { velocidade: 7, felicidade: 5, resistencia: 6, acrobacia: 6, especial: "Nada velozmente em rios." },        // Golduck
+
+56: { velocidade: 7, felicidade: 3, resistencia: 4, acrobacia: 7, especial: "Escala paredes e árvores." },    // Mankey
+57: { velocidade: 8, felicidade: 3, resistencia: 6, acrobacia: 8, especial: "Quebra obstáculos com força bruta." },        // Primeape
+
+58: { velocidade: 6, felicidade: 7, resistencia: 5, acrobacia: 6, especial: "Fareja itens e pessoas distantes." },      // Growlithe
+59: { velocidade: 8, felicidade: 7, resistencia: 7, acrobacia: 7, especial: "Corre carregando um treinador." },   // Arcanine
+
+60: { velocidade: 5, felicidade: 5, resistencia: 3, acrobacia: 5, especial: "Nada facilmente em lagos." },         // Poliwag
+61: { velocidade: 6, felicidade: 5, resistencia: 5, acrobacia: 5, especial: "Guia nadadores com segurança." },    // Poliwhirl
+62: { velocidade: 6, felicidade: 5, resistencia: 8, acrobacia: 6, especial: "Resgata pessoas na água." },    // Poliwrath
+
+63: { velocidade: 7, felicidade: 5, resistencia: 1, acrobacia: 6, especial: "Teleporta-se para local seguro." },   // Abra
+64: { velocidade: 8, felicidade: 5, resistencia: 3, acrobacia: 7, especial: "Abre portais curtos." },       // Kadabra
+65: { velocidade: 9, felicidade: 5, resistencia: 4, acrobacia: 8, especial: "Abre portais de longa distância." },       // Alakazam
+
+66: { velocidade: 3, felicidade: 5, resistencia: 7, acrobacia: 3, especial: "Empurra grandes rochas." },    // Machop
+67: { velocidade: 4, felicidade: 5, resistencia: 8, acrobacia: 4, especial: "Carrega objetos pesados." },   // Machoke
+68: { velocidade: 5, felicidade: 5, resistencia: 10, acrobacia: 4, especial: "Esmaga pedras gigantes." },    // Machamp
+
+69: { velocidade: 4, felicidade: 5, resistencia: 4, acrobacia: 4, especial: "Corta vegetação densa." },      // Bellsprout
+70: { velocidade: 5, felicidade: 5, resistencia: 5, acrobacia: 5, especial: "Arma armadilhas com vinhas." },   // Weepinbell
+71: { velocidade: 6, felicidade: 5, resistencia: 6, acrobacia: 5, especial: "Devora pragas do ambiente." },     // Victreebel
+
+72: { velocidade: 6, felicidade: 4, resistencia: 3, acrobacia: 6, especial: "Purifica água contaminada." },     // Tentacool
+73: { velocidade: 8, felicidade: 4, resistencia: 6, acrobacia: 7, especial: "Cria fortes correntes marítimas." },   // Tentacruel
+
+74: { velocidade: 2, felicidade: 4, resistencia: 8, acrobacia: 1, especial: "Rola por encostas montanhosas." },     // Geodude
+75: { velocidade: 3, felicidade: 4, resistencia: 9, acrobacia: 2, especial: "Escala paredões rochosos." },   // Graveler
+76: { velocidade: 4, felicidade: 4, resistencia: 10, acrobacia: 2, especial: "Destrói rochas enormes." }, // Golem
+
+77: { velocidade: 8, felicidade: 6, resistencia: 4, acrobacia: 7, especial: "Galopa rapidamente por terra." },          // Ponyta
+78: { velocidade: 9, felicidade: 6, resistencia: 6, acrobacia: 8, especial: "Dispara corrida em chamas." },            // Rapidash
+
+79: { velocidade: 2, felicidade: 7, resistencia: 8, acrobacia: 2, especial: "Fisga peixes sem esforço." },          // Slowpoke
+80: { velocidade: 3, felicidade: 7, resistencia: 10, acrobacia: 2, especial: "Mergulha lentamente por longos períodos." }  ,       // Slowbro
+81: { velocidade: 3, felicidade: 4, resistencia: 6, acrobacia: 3, especial: "Detecta metais e objetos escondidos." },             // Magnemite
+82: { velocidade: 5, felicidade: 4, resistencia: 8, acrobacia: 4, especial: "Cria campo magnético que move metal." },         // Magneton
+
+83: { velocidade: 7, felicidade: 6, resistencia: 5, acrobacia: 8, especial: "Corta árvores e galhos grossos." },          // Farfetch'd
+
+84: { velocidade: 8, felicidade: 5, resistencia: 4, acrobacia: 8, especial: "Corre rapidamente em terreno aberto." },          // Doduo
+85: { velocidade: 9, felicidade: 5, resistencia: 6, acrobacia: 9, especial: "Transporta pessoas por terra." },    // Dodrio
+
+86: { velocidade: 5, felicidade: 7, resistencia: 6, acrobacia: 5, especial: "Nada em águas geladas sem esforço." },               // Seel
+87: { velocidade: 6, felicidade: 7, resistencia: 8, acrobacia: 6, especial: "Quebra gelo espesso." },            // Dewgong
+
+88: { velocidade: 4, felicidade: 3, resistencia: 7, acrobacia: 3, especial: "Move-se por resíduos e esgoto." },           // Grimer
+89: { velocidade: 5, felicidade: 3, resistencia: 9, acrobacia: 4, especial: "Absorve toxinas do ambiente." },        // Muk
+
+90: { velocidade: 4, felicidade: 4, resistencia: 6, acrobacia: 3, especial: "Abre conchas e cascos duros." },           // Shellder
+91: { velocidade: 6, felicidade: 4, resistencia: 10, acrobacia: 4, especial: "Mergulha em águas profundas." },      // Cloyster
+
+92: { velocidade: 7, felicidade: 3, resistencia: 2, acrobacia: 7, especial: "Atravessa paredes e objetos." },      // Gastly
+93: { velocidade: 8, felicidade: 3, resistencia: 3, acrobacia: 8, especial: "Assombra e afugenta inimigos." },               // Haunter
+94: { velocidade: 9, felicidade: 3, resistencia: 5, acrobacia: 8, especial: "Abre passagem pelo mundo das sombras." },           // Gengar
+
+95: { velocidade: 3, felicidade: 4, resistencia: 10, acrobacia: 2, especial: "Escava longos túneis rochosos." },          // Onix
+
+96: { velocidade: 4, felicidade: 5, resistencia: 3, acrobacia: 5, especial: "Hipnotiza criaturas ou pessoas." },             // Drowzee
+97: { velocidade: 6, felicidade: 5, resistencia: 6, acrobacia: 6, especial: "Restaura energia através de sonhos." },       // Hypno
+
+98: { velocidade: 7, felicidade: 5, resistencia: 4, acrobacia: 7, especial: "Corta objetos com precisão." },           // Krabby
+99: { velocidade: 8, felicidade: 5, resistencia: 6, acrobacia: 8, especial: "Quebra troncos grossos." },         // Kingler
+
+100: { velocidade: 8, felicidade: 4, resistencia: 5, acrobacia: 7, especial: "Explode abrindo passagem em rochas." },
+101: { velocidade: 9, felicidade: 4, resistencia: 7, acrobacia: 8, especial: "Detona explosões controladas." },    // Electrode
+
+102: { velocidade: 3, felicidade: 5, resistencia: 5, acrobacia: 3, especial: "Planta sementes rapidamente." },      // Exeggcute
+103: { velocidade: 5, felicidade: 6, resistencia: 7, acrobacia: 5, especial: "Faz surgir palmeiras no terreno." },       // Exeggutor
+
+104: { velocidade: 4, felicidade: 5, resistencia: 6, acrobacia: 4, especial: "Encontra ossos e relíquias." },       // Cubone
+105: { velocidade: 5, felicidade: 5, resistencia: 8, acrobacia: 5, especial: "Protege áreas espirituais." },     // Marowak
+
+106: { velocidade: 7, felicidade: 5, resistencia: 6, acrobacia: 8, especial: "Salta alturas impressionantes." },            // Hitmonlee
+107: { velocidade: 7, felicidade: 5, resistencia: 7, acrobacia: 7, especial: "Desfere sequência de socos rápidos." },         // Hitmonchan
+
+108: { velocidade: 4, felicidade: 7, resistencia: 8, acrobacia: 3, especial: "Alcança objetos distantes com a língua." },        // Lickitung
+
+109: { velocidade: 5, felicidade: 3, resistencia: 4, acrobacia: 4, especial: "Libera gás venenoso." },            // Koffing
+110: { velocidade: 6, felicidade: 3, resistencia: 7, acrobacia: 5, especial: "Cria névoa tóxica na área." },        // Weezing
+
+111: { velocidade: 3, felicidade: 4, resistencia: 9, acrobacia: 2, especial: "Empurra grandes pedras." },       // Rhyhorn
+112: { velocidade: 4, felicidade: 4, resistencia: 10, acrobacia: 3, especial: "Arromba paredes sólidas." },      // Rhydon
+
+113: { velocidade: 3, felicidade: 10, resistencia: 7, acrobacia: 2, especial: "Cura ferimentos do grupo." },           // Chansey
+
+114: { velocidade: 5, felicidade: 7, resistencia: 6, acrobacia: 6, especial: "Estende cipós como cordas." },            // Tangela
+
+115: { velocidade: 7, felicidade: 7, resistencia: 8, acrobacia: 7, especial: "Guarda itens na bolsa marsupial." },           // Kangaskhan
+
+116: { velocidade: 5, felicidade: 6, resistencia: 3, acrobacia: 6, especial: "Nada calmamente no mar." },           // Horsea
+117: { velocidade: 7, felicidade: 6, resistencia: 5, acrobacia: 7, especial: "Cria correnteza na água." },            // Seadra
+
+118: { velocidade: 7, felicidade: 7, resistencia: 4, acrobacia: 7, especial: "Atrai peixes raros." },           // Goldeen
+119: { velocidade: 8, felicidade: 7, resistencia: 6, acrobacia: 8, especial: "Nada contra fortes correntes." },       // Seaking
+
+120: { velocidade: 6, felicidade: 6, resistencia: 5, acrobacia: 6, especial: "Brilha iluminando a noite." }    ,     // Staryu
+
+121: { velocidade: 8, felicidade: 6, resistencia: 7, acrobacia: 8, especial: "Ilumina o fundo do mar." },     // Starmie
+
+122: { velocidade: 7, felicidade: 6, resistencia: 5, acrobacia: 7, especial: "Imita pessoas e gestos perfeitamente." },            // Mr. Mime
+
+123: { velocidade: 8, felicidade: 6, resistencia: 6, acrobacia: 9, especial: "Corta árvores rapidamente." },       // Scyther
+
+124: { velocidade: 7, felicidade: 6, resistencia: 5, acrobacia: 7, especial: "Congela água ao tocar." },         // Jynx
+
+125: { velocidade: 9, felicidade: 5, resistencia: 5, acrobacia: 8, especial: "Gera energia elétrica utilizável." },
+126: { velocidade: 7, felicidade: 5, resistencia: 6, acrobacia: 7, especial: "Derrete gelo e neve." },        // Magmar
+127: { velocidade: 7, felicidade: 5, resistencia: 7, acrobacia: 8, especial: "Parte troncos gigantes." }, // Pinsir
+128: { velocidade: 6, felicidade: 5, resistencia: 8, acrobacia: 5, especial: "Ara o solo com investidas." },           // Tauros
+
+129: { velocidade: 6, felicidade: 4, resistencia: 2, acrobacia: 5, especial: "Salta alto fora d'água." },           // Magikarp
+130: { velocidade: 8, felicidade: 5, resistencia: 9, acrobacia: 8, especial: "Transporta pessoas sobre as águas." },               // Gyarados
+
+131: { velocidade: 6, felicidade: 7, resistencia: 10, acrobacia: 6, especial: "Serve como montaria marítima." },  // Lapras
+
+132: { velocidade: 5, felicidade: 5, resistencia: 5, acrobacia: 5, especial: "Copia a forma de outro Pokémon." },          // Ditto
+
+133: { velocidade: 7, felicidade: 9, resistencia: 5, acrobacia: 7, especial: "Rastreia caminhos e trilhas." },      // Eevee
+134: { velocidade: 7, felicidade: 9, resistencia: 7, acrobacia: 7, especial: "Purifica água poluída." },       // Vaporeon
+135: { velocidade: 9, felicidade: 9, resistencia: 5, acrobacia: 9, especial: "Ativa máquinas elétricas." },      // Jolteon
+136: { velocidade: 8, felicidade: 9, resistencia: 6, acrobacia: 8, especial: "Acende fogueiras e tochas." },       // Flareon
+
+137: { velocidade: 5, felicidade: 5, resistencia: 5, acrobacia: 5, especial: "Analisa dados e mecanismos." },       // Porygon
+
+138: { velocidade: 4, felicidade: 5, resistencia: 6, acrobacia: 4, especial: "Reage a fósseis antigos." },       // Omanyte
+139: { velocidade: 5, felicidade: 5, resistencia: 8, acrobacia: 5, especial: "Quebra conchas resistentes." },      // Omastar
+
+140: { velocidade: 6, felicidade: 5, resistencia: 5, acrobacia: 7, especial: "Escala quedas d'água." },    // Kabuto
+141: { velocidade: 7, felicidade: 5, resistencia: 7, acrobacia: 8, especial: "Sobe cachoeiras velozmente." },      // Kabutops
+
+142: { velocidade: 9, felicidade: 5, resistencia: 6, acrobacia: 10, especial: "Voa livremente pelos céus." },                // Aerodactyl
+
+143: { velocidade: 3, felicidade: 10, resistencia: 10, acrobacia: 2, especial: "Recupera energia ao dormir." },     // Snorlax
+
+144: { velocidade: 8, felicidade: 8, resistencia: 7, acrobacia: 9, especial: "Provoca nevasca contínua." },      // Articuno
+145: { velocidade: 9, felicidade: 8, resistencia: 7, acrobacia: 9, especial: "Invoca tempestade elétrica." },  // Zapdos
+146: { velocidade: 9, felicidade: 8, resistencia: 8, acrobacia: 9, especial: "Cria clima ensolarado intenso." },     // Moltres
+
+147: { velocidade: 4, felicidade: 7, resistencia: 5, acrobacia: 4, especial: "Sente grandes massas de água." },          // Dratini
+148: { velocidade: 6, felicidade: 7, resistencia: 7, acrobacia: 6, especial: "Nada longas distâncias oceânicas." },          // Dragonair
+149: { velocidade: 9, felicidade: 7, resistencia: 10, acrobacia: 9, especial: "Realiza voos intercontinentais." },        // Dragonite
+
+150: { velocidade: 10, felicidade: 5, resistencia: 10, acrobacia: 10, especial: "Move objetos com telecinese." },  // Mewtwo
+151: { velocidade: 10, felicidade: 10, resistencia: 10, acrobacia: 10, especial: "Purifica energia e ambiente." },    // Mew
+
+152: { velocidade: 4, felicidade: 6, resistencia: 5, acrobacia: 4, especial: "Faz plantas crescerem sob seus pés." },        // Chikorita
+153: { velocidade: 5, felicidade: 6, resistencia: 6, acrobacia: 4, especial: "Cria trilhas floridas." },     // Bayleef
+154: { velocidade: 6, felicidade: 7, resistencia: 8, acrobacia: 5, especial: "Restaura a natureza ao redor." },  // Meganium
+
+155: { velocidade: 6, felicidade: 5, resistencia: 4, acrobacia: 5, especial: "Acende pequenas chamas." },      // Cyndaquil
+156: { velocidade: 7, felicidade: 5, resistencia: 5, acrobacia: 6, especial: "Mantém fogo contínuo." },       // Quilava
+157: { velocidade: 8, felicidade: 6, resistencia: 6, acrobacia: 7, especial: "Libera explosão de calor." },    // Typhlosion
+
+158: { velocidade: 5, felicidade: 5, resistencia: 5, acrobacia: 5, especial: "Morde enquanto nada." },    // Totodile
+159: { velocidade: 6, felicidade: 5, resistencia: 6, acrobacia: 5, especial: "Abre passagens aquáticas." },     // Croconaw
+160: { velocidade: 6, felicidade: 5, resistencia: 8, acrobacia: 6, especial: "Arrebenta correntes e grades." } ,  // Feraligatr
+
+161: { velocidade: 5, felicidade: 5, resistencia: 3, acrobacia: 5, especial: "Observa e mapeia os arredores." },         // Sentret
+162: { velocidade: 7, felicidade: 5, resistencia: 5, acrobacia: 7, especial: "Atravessa longas distâncias rapidamente." },    // Furret
+
+163: { velocidade: 4, felicidade: 5, resistencia: 4, acrobacia: 5, especial: "Enxerga perfeitamente à noite." },       // Hoothoot
+164: { velocidade: 6, felicidade: 5, resistencia: 6, acrobacia: 6, especial: "Vigia áreas do alto." },       // Noctowl
+
+165: { velocidade: 4, felicidade: 5, resistencia: 3, acrobacia: 5, especial: "Poliniza flores do ambiente." },           // Ledyba
+166: { velocidade: 6, felicidade: 5, resistencia: 4, acrobacia: 7, especial: "Cria correntes de ar ao voar." },          // Ledian
+
+167: { velocidade: 4, felicidade: 4, resistencia: 3, acrobacia: 5, especial: "Sobe paredes usando teias." },       // Spinarak
+168: { velocidade: 6, felicidade: 4, resistencia: 5, acrobacia: 7, especial: "Arma teias para bloquear passagem." },      // Ariados
+169: { velocidade: 8, felicidade: 4, resistencia: 6, acrobacia: 9, especial: "Voa silenciosamente na escuridão." },      // Crobat
+
+170: { velocidade: 5, felicidade: 5, resistencia: 4, acrobacia: 5, especial: "Ilumina águas profundas." },   // Chinchou
+171: { velocidade: 5, felicidade: 5, resistencia: 6, acrobacia: 5, especial: "Energiza equipamentos submersos." },   // Lanturn
+
+172: { velocidade: 7, felicidade: 9, resistencia: 2, acrobacia: 6, especial: "Libera pequenas descargas elétricas." },   // Pichu
+173: { velocidade: 3, felicidade: 9, resistencia: 3, acrobacia: 3, especial: "Encanta pessoas ao redor." },    // Cleffa
+174: { velocidade: 3, felicidade: 9, resistencia: 4, acrobacia: 2, especial: "Canta alegremente animando aliados." },       // Igglybuff
+
+175: { velocidade: 3, felicidade: 9, resistencia: 3, acrobacia: 3, especial: "Abençoa com boa sorte." },      // Togepi
+176: { velocidade: 5, felicidade: 9, resistencia: 5, acrobacia: 7, especial: "Espalha energia positiva ao voar." },        // Togetic
+
+177: { velocidade: 6, felicidade: 5, resistencia: 3, acrobacia: 6, especial: "Percebe eventos futuros próximos." },           // Natu
+178: { velocidade: 8, felicidade: 5, resistencia: 5, acrobacia: 8, especial: "Prevê rotas seguras." },      // Xatu
+
+179: { velocidade: 3, felicidade: 7, resistencia: 4, acrobacia: 3, especial: "Armazena eletricidade na lã." },    // Mareep
+180: { velocidade: 4, felicidade: 7, resistencia: 5, acrobacia: 3, especial: "Amplifica energia elétrica." },    // Flaaffy
+181: { velocidade: 5, felicidade: 7, resistencia: 7, acrobacia: 4, especial: "Funciona como farol elétrico." },      // Ampharos
+
+182: { velocidade: 4, felicidade: 7, resistencia: 6, acrobacia: 4, especial: "Dança que cura ferimentos leves." },      // Bellossom
+
+183: { velocidade: 4, felicidade: 7, resistencia: 5, acrobacia: 4, especial: "Flutua sobre a água." },        // Marill
+184: { velocidade: 5, felicidade: 7, resistencia: 7, acrobacia: 4, especial: "Cria ondas protetoras." },      // Azumarill
+
+185: { velocidade: 2, felicidade: 5, resistencia: 8, acrobacia: 2, especial: "Imita árvore para se esconder." },   // Sudowoodo
+186: { velocidade: 5, felicidade: 6, resistencia: 7, acrobacia: 5, especial: "Invoca chuva contínua." },     // Politoed
+
+187: { velocidade: 4, felicidade: 6, resistencia: 3, acrobacia: 6, especial: "É levado pelo vento." },         // Hoppip
+188: { velocidade: 5, felicidade: 6, resistencia: 4, acrobacia: 7, especial: "Flutua com correntes de ar." },      // Skiploom
+189: { velocidade: 6, felicidade: 6, resistencia: 5, acrobacia: 8, especial: "Controla ventos altos." },        // Jumpluff
+
+190: { velocidade: 7, felicidade: 7, resistencia: 3, acrobacia: 9, especial: "Escala rapidamente usando a cauda." },      // Aipom
+
+191: { velocidade: 3, felicidade: 5, resistencia: 3, acrobacia: 2, especial: "Absorve luz solar lentamente." },  // Sunkern
+192: { velocidade: 4, felicidade: 6, resistencia: 5, acrobacia: 3, especial: "Dispara energia solar concentrada." },       // Sunflora
+
+193: { velocidade: 8, felicidade: 4, resistencia: 4, acrobacia: 9, especial: "Patrulha o céu rapidamente." },      // Yanma
+
+194: { velocidade: 2, felicidade: 6, resistencia: 5, acrobacia: 2, especial: "Atravessa áreas pantanosas." },  // Wooper
+195: { velocidade: 2, felicidade: 6, resistencia: 8, acrobacia: 2, especial: "Move-se livremente na lama." },      // Quagsire
+
+196: { velocidade: 9, felicidade: 8, resistencia: 5, acrobacia: 7, especial: "Lê pensamentos próximos." },       // Espeon
+197: { velocidade: 5, felicidade: 7, resistencia: 8, acrobacia: 6, especial: "Cria barreira sombria defensiva." },      // Umbreon
+
+198: { velocidade: 7, felicidade: 4, resistencia: 4, acrobacia: 7, especial: "Rouba pequenos objetos." },       // Murkrow
+199: { velocidade: 2, felicidade: 6, resistencia: 8, acrobacia: 2, especial: "Oferece conselhos sábios." },      // Slowking
+
+200: { velocidade: 7, felicidade: 3, resistencia: 3, acrobacia: 7, especial: "Produz ecos fantasmagóricos." }  ,      // Misdreavus
+
+201: { velocidade: 5, felicidade: 5, resistencia: 5, acrobacia: 5, especial: "Emite runas com mensagens místicas." },      // Unown
+202: { velocidade: 3, felicidade: 6, resistencia: 9, acrobacia: 2, especial: "Reflete ataques recebidos." },       // Wobbuffet
+
+203: { velocidade: 7, felicidade: 5, resistencia: 5, acrobacia: 5, especial: "Observa em duas direções ao mesmo tempo." },         // Girafarig
+
+204: { velocidade: 2, felicidade: 4, resistencia: 7, acrobacia: 2, especial: "Fecha-se em casulo protetor." },       // Pineco
+205: { velocidade: 3, felicidade: 4, resistencia: 10, acrobacia: 2, especial: "Ergue defesa impenetrável." },     // Forretress
+
+206: { velocidade: 3, felicidade: 5, resistencia: 6, acrobacia: 3, especial: "Escapa por túneis estreitos." },    // Dunsparce
+207: { velocidade: 7, felicidade: 4, resistencia: 6, acrobacia: 8, especial: "Plana por penhascos." },     // Gligar
+208: { velocidade: 3, felicidade: 4, resistencia: 10, acrobacia: 3, especial: "Escava túneis metálicos." },     // Steelix
+
+209: { velocidade: 3, felicidade: 7, resistencia: 5, acrobacia: 3, especial: "Intimida com latido feroz." },  // Snubbull
+210: { velocidade: 4, felicidade: 6, resistencia: 7, acrobacia: 3, especial: "Protege aliados próximos." },    // Granbull
+
+211: { velocidade: 7, felicidade: 3, resistencia: 5, acrobacia: 5, especial: "Ergue espinhos venenosos na água." },   // Qwilfish
+212: { velocidade: 5, felicidade: 5, resistencia: 8, acrobacia: 7, especial: "Corta metal com pinças." },      // Scizor
+213: { velocidade: 1, felicidade: 4, resistencia: 10, acrobacia: 1, especial: "Suporta qualquer impacto." },    // Shuckle
+
+214: { velocidade: 7, felicidade: 5, resistencia: 8, acrobacia: 6, especial: "Investida extremamente poderosa." },     // Heracross
+215: { velocidade: 8, felicidade: 3, resistencia: 4, acrobacia: 8, especial: "Escala superfícies congeladas." },     // Sneasel
+
+216: { velocidade: 4, felicidade: 7, resistencia: 5, acrobacia: 4, especial: "Coleta mel nas árvores." },          // Teddiursa
+217: { velocidade: 5, felicidade: 5, resistencia: 8, acrobacia: 4, especial: "Ergue objetos pesados com facilidade." },         // Ursaring
+
+218: { velocidade: 3, felicidade: 4, resistencia: 6, acrobacia: 3, especial: "Derrete obstáculos com calor." },  // Slugma
+219: { velocidade: 3, felicidade: 4, resistencia: 8, acrobacia: 2, especial: "Funde rochas ao redor." },         // Magcargo
+
+220: { velocidade: 4, felicidade: 6, resistencia: 5, acrobacia: 3, especial: "Rastreia trilhas na neve." },        // Swinub
+221: { velocidade: 5, felicidade: 5, resistencia: 8, acrobacia: 4, especial: "Provoca pequenas avalanches." },            // Piloswine
+
+222: { velocidade: 3, felicidade: 6, resistencia: 6, acrobacia: 3, especial: "Forma recifes de coral." },          // Corsola
+223: { velocidade: 5, felicidade: 4, resistencia: 4, acrobacia: 5, especial: "Dispara jatos de água." },           // Remoraid
+224: { velocidade: 5, felicidade: 4, resistencia: 6, acrobacia: 4, especial: "Atira projéteis aquáticos." },   // Octillery
+
+225: { velocidade: 6, felicidade: 8, resistencia: 4, acrobacia: 6, especial: "Entrega itens e mensagens." },  // Delibird
+226: { velocidade: 6, felicidade: 5, resistencia: 5, acrobacia: 8, especial: "Plana sobre o oceano." },           // Mantine
+227: { velocidade: 5, felicidade: 4, resistencia: 10, acrobacia: 6, especial: "Protege o céu com asas metálicas." },        // Skarmory
+
+228: { velocidade: 6, felicidade: 3, resistencia: 4, acrobacia: 5, especial: "Segue rastros na escuridão." },       // Houndour
+229: { velocidade: 8, felicidade: 3, resistencia: 5, acrobacia: 6, especial: "Libera chamas infernais." },        // Houndoom
+
+230: { velocidade: 7, felicidade: 5, resistencia: 7, acrobacia: 6, especial: "Controla correntes marítimas." },        // Kingdra
+
+231: { velocidade: 4, felicidade: 6, resistencia: 5, acrobacia: 3, especial: "Escava com a tromba." },            // Phanpy
+232: { velocidade: 5, felicidade: 5, resistencia: 9, acrobacia: 3, especial: "Atropela abrindo caminho." },     // Donphan
+
+233: { velocidade: 7, felicidade: 4, resistencia: 6, acrobacia: 6, especial: "Simula sistemas complexos." },   // Porygon2
+234: { velocidade: 7, felicidade: 5, resistencia: 5, acrobacia: 7, especial: "Guia viajantes pela floresta." },       // Stantler
+235: { velocidade: 5, felicidade: 7, resistencia: 4, acrobacia: 5, especial: "Copia técnicas observadas." },    // Smeargle
+
+236: { velocidade: 5, felicidade: 5, resistencia: 5, acrobacia: 5, especial: "Treina combate com aliados." },      // Tyrogue
+237: { velocidade: 7, felicidade: 5, resistencia: 6, acrobacia: 8, especial: "Gira desviando ataques." },       // Hitmontop
+
+238: { velocidade: 6, felicidade: 7, resistencia: 3, acrobacia: 5, especial: "Congela com beijo gelado." },         // Smoochum
+239: { velocidade: 8, felicidade: 6, resistencia: 3, acrobacia: 6, especial: "Solta descarga elétrica intensa." },           // Elekid
+240: { velocidade: 7, felicidade: 6, resistencia: 3, acrobacia: 5, especial: "Acende fogo instantaneamente." },       // Magby
+
+241: { velocidade: 8, felicidade: 8, resistencia: 7, acrobacia: 4, especial: "Produz leite nutritivo." },       // Miltank
+242: { velocidade: 4, felicidade: 10, resistencia: 8, acrobacia: 3, especial: "Realiza cura completa." },        // Blissey
+
+243: { velocidade: 8, felicidade: 5, resistencia: 7, acrobacia: 7, especial: "Move tempestades ao correr." },    // Raikou
+244: { velocidade: 8, felicidade: 5, resistencia: 7, acrobacia: 7, especial: "Abre caminho com erupções." },     // Entei
+245: { velocidade: 7, felicidade: 6, resistencia: 8, acrobacia: 7, especial: "Purifica águas ao passar." },   // Suicune
+
+246: { velocidade: 4, felicidade: 3, resistencia: 6, acrobacia: 3, especial: "Sente vibrações do solo." },        // Larvitar
+247: { velocidade: 5, felicidade: 3, resistencia: 7, acrobacia: 4, especial: "Protege-se em casulo rochoso." },       // Pupitar
+248: { velocidade: 6, felicidade: 4, resistencia: 10, acrobacia: 5, especial: "Altera o terreno ao redor." },    // Tyranitar
+
+249: { velocidade: 8, felicidade: 7, resistencia: 9, acrobacia: 8, especial: "Acalma mares e tempestades." },            // Lugia
+250: { velocidade: 8, felicidade: 8, resistencia: 9, acrobacia: 8, especial: "Renasce e cura com chamas sagradas." },     // Ho-Oh
+251: { velocidade: 8, felicidade: 10, resistencia: 8, acrobacia: 8, especial: "Viaja pelo tempo e restaura florestas." } ,    // Celebi
+252: { velocidade: 7, felicidade: 6, resistencia: 4, acrobacia: 8, especial: "Escala paredes e árvores rapidamente." }, // Treecko
+253: { velocidade: 8, felicidade: 6, resistencia: 5, acrobacia: 9, especial: "Move-se entre galhos sem ser visto." }, // Grovyle
+254: { velocidade: 9, felicidade: 7, resistencia: 7, acrobacia: 9, especial: "Corta obstáculos com lâminas de folhas." }, // Sceptile
+
+255: { velocidade: 6, felicidade: 7, resistencia: 4, acrobacia: 6, especial: "Solta pequenas labaredas ao redor." }, // Torchic
+256: { velocidade: 7, felicidade: 7, resistencia: 6, acrobacia: 7, especial: "Golpeia com chutes em sequência." }, // Combusken
+257: { velocidade: 8, felicidade: 8, resistencia: 7, acrobacia: 8, especial: "Salta alto deixando rastro de fogo." }, // Blaziken
+
+258: { velocidade: 4, felicidade: 7, resistencia: 6, acrobacia: 3, especial: "Nada em lama sem afundar." }, // Mudkip
+259: { velocidade: 4, felicidade: 7, resistencia: 7, acrobacia: 3, especial: "Cria lama para dificultar avanço." }, // Marshtomp
+260: { velocidade: 5, felicidade: 8, resistencia: 9, acrobacia: 4, especial: "Provoca tremores ao golpear o chão." }, // Swampert
+
+261: { velocidade: 6, felicidade: 5, resistencia: 4, acrobacia: 5, especial: "Rastreia presas pelo cheiro." }, // Poochyena
+262: { velocidade: 7, felicidade: 5, resistencia: 6, acrobacia: 6, especial: "Intimida inimigos com uivo." }, // Mightyena
+
+263: { velocidade: 6, felicidade: 7, resistencia: 4, acrobacia: 6, especial: "Procura itens escondidos." }, // Zigzagoon
+264: { velocidade: 7, felicidade: 7, resistencia: 5, acrobacia: 7, especial: "Corre veloz abrindo trilhas." }, // Linoone
+
+265: { velocidade: 3, felicidade: 5, resistencia: 3, acrobacia: 2, especial: "Produz fios para se prender." }, // Wurmple
+266: { velocidade: 2, felicidade: 5, resistencia: 6, acrobacia: 1, especial: "Endurece o casulo defensivamente." }, // Silcoon
+267: { velocidade: 6, felicidade: 6, resistencia: 5, acrobacia: 7, especial: "Espalha pólen que enfraquece." }, // Beautifly
+
+268: { velocidade: 2, felicidade: 5, resistencia: 6, acrobacia: 1, especial: "Resiste ataques protegido no casulo." }, // Cascoon
+269: { velocidade: 5, felicidade: 5, resistencia: 6, acrobacia: 6, especial: "Libera nuvem venenosa." }, // Dustox
+270: { velocidade: 3, felicidade: 6, resistencia: 5, acrobacia: 3, especial: "Flutua sobre a água parada." }, // Lotad
+271: { velocidade: 4, felicidade: 6, resistencia: 6, acrobacia: 4, especial: "Dança invocando chuva leve." }, // Lombre
+272: { velocidade: 5, felicidade: 7, resistencia: 7, acrobacia: 5, especial: "Cria chuva intensa ao dançar." }, // Ludicolo
+273: { velocidade: 3, felicidade: 5, resistencia: 4, acrobacia: 2, especial: "Finge ser planta para se esconder." }, // Seedot
+274: { velocidade: 5, felicidade: 5, resistencia: 5, acrobacia: 5, especial: "Assusta inimigos surgindo das árvores." }, // Nuzleaf
+275: { velocidade: 7, felicidade: 6, resistencia: 7, acrobacia: 7, especial: "Controla rajadas de vento cortante." } // Shiftry
+
 };
 
 const DEFAULT_POKEMON_ATTRIBUTES: PokemonBaseAttributes = {
@@ -1326,6 +1479,7 @@ export function computeAttributes(speciesId: number, level: number, overrideBase
     acrobacia: base.acrobacia,
     velocidadeMod: Math.floor(base.velocidade / 2) + levelBonus,
     felicidadeMod: Math.floor(base.felicidade / 2) + levelBonus,
+    especialMod: Math.floor(base.felicidade / 2) + levelBonus,
     resistenciaMod,
     acrobaciaMod: Math.floor(base.acrobacia / 2) + levelBonus,
     defesa,

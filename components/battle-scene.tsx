@@ -14,7 +14,7 @@ import {
   POKEMON_ATTRIBUTE_INFO,
   MOVE_RANGE_INFO,
 } from "@/lib/pokemon-data";
-import type { PokemonType, HitResult, PokemonBaseAttributes, MoveRange, DamageBreakdown } from "@/lib/pokemon-data";
+import { PokemonType, HitResult, PokemonBaseAttributes, MoveRange, DamageBreakdown,getBaseAttributes } from "@/lib/pokemon-data";
 import type { PokemonAttributeKey } from "@/lib/game-store";
 import { D20Dice } from "./d20-dice";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ import {
   Wind,
   CheckCircle,
   XCircle,
+  Star,
 } from "lucide-react";
 import {
   playAttack,
@@ -199,7 +200,7 @@ const [arena] = useState(getRandomArena());
     },
     [resolveAttributeTest]
   );
-
+  const habildade_especial = getBaseAttributes(pokemon?.speciesId).especial
   // Compute pokemon attributes for display (using customAttributes if modified by faint/level)
   const pokemonAttrs = pokemon ? computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes) : null;
   const size = kantoPokemonSizes[pokemon?.speciesId] ?? { width: 80, height: 80 };
@@ -619,7 +620,7 @@ const [arena] = useState(getRandomArena());
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -40 }}
-              style={{ backgroundColor: 'rgb(0,0,0,0.3)' }}
+              style={{ backgroundColor: 'rgb(0,0,0,0.9)' }}
               className="p-3 rounded-sm flex flex-col gap-3 mt-auto z-10 "
             >
                <Button
@@ -660,33 +661,102 @@ const [arena] = useState(getRandomArena());
 
               {/* Attribute buttons */}
               <div className="grid grid-cols-2 gap-2">
-                {(Object.keys(POKEMON_ATTRIBUTE_INFO) as PokemonAttributeKey[]).map((attr) => {
+                {(Object.keys(POKEMON_ATTRIBUTE_INFO) as PokemonAttributeKey[]).filter((t=> t !== 'especial')).map((attr) => {
                   const info = POKEMON_ATTRIBUTE_INFO[attr];
                   const modKey = `${attr}Mod` as keyof typeof pokemonAttrs;
-                  const mod = pokemonAttrs[modKey] as number;
+                  const mod =  pokemonAttrs[modKey] as number;
                   const base = pokemonAttrs[attr];
                   return (
+
+
                     <Button
                       key={attr}
                       onClick={() => handleSelectAttribute(attr)}
+                
                       className="h-auto py-3 px-3 flex flex-col items-start gap-1 text-left bg-secondary text-foreground hover:bg-accent/20 border border-border"
                       variant="outline"
-                    >
+                    >  
                       <div className="flex items-center gap-2 w-full">
                         {attr === "velocidade" && <Zap className="w-4 h-4 text-yellow-400 shrink-0" />}
                         {attr === "felicidade" && <Heart className="w-4 h-4 text-pink-400 shrink-0" />}
                         {attr === "resistencia" && <Shield className="w-4 h-4 text-blue-400 shrink-0" />}
                         {attr === "acrobacia" && <Wind className="w-4 h-4 text-teal-400 shrink-0" />}
+
                         <span className="text-sm font-bold">{info.name}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+               
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                         <span>Base: {base}</span>
                         <span className="text-accent font-medium">+{mod} mod</span>
                       </div>
+                      
+             
+                    
                     </Button>
+       
                   );
+
+                        
                 })}
-              </div>
+           </div>
+     <div className="flex flex-col justify-center items-center gap-3">
+          {(Object.keys(POKEMON_ATTRIBUTE_INFO) as PokemonAttributeKey[])
+            .filter((t => t === 'especial'))
+            .map((attr) => {
+
+              return (
+
+                <div
+                  key={attr}
+                  className="
+                  p-[2px] rounded-xl
+                  bg-gradient-to-r 
+                  from-purple-500 
+                  via-pink-500 
+                  to-yellow-400
+                  animate-gradient
+                  shadow-lg shadow-purple-500/30
+                  "
+                >
+                  <Button
+                    onClick={() => handleSelectAttribute(attr)}
+                    variant="outline"
+                    className="
+                    w-64
+                    h-auto py-4 px-4
+                    flex flex-col items-center gap-2
+                    text-center
+                    rounded-xl
+                    bg-background/90 backdrop-blur-md
+                    border-0
+                    hover:bg-background
+                    transition-all duration-300
+                    hover:scale-105
+                    "
+                  >
+                    <div className="flex items-center gap-2 justify-center w-full">
+                      {attr === "especial" && (
+                        <Star className="w-5 h-5 text-yellow-400 animate-pulse" />
+                      )}
+                      <span className="text-base font-bold tracking-wide">
+                        Habilidade Única
+                      </span>
+                    </div>
+
+                    <div className="text-sm opacity-80">
+                      {habildade_especial}
+                    </div>
+                  </Button>
+                </div>
+
+              );
+            })}
+        </div>
+
+
+
+
+   
             </motion.div>
           )}
 
@@ -732,6 +802,7 @@ const [arena] = useState(getRandomArena());
             >
               {(() => {
                 const r = battle.attributeTestResult;
+          
                 const isSuccess = r.success;
                 const color = r.criticalSuccess ? "#F59E0B" : r.criticalFail ? "#EF4444" : isSuccess ? "#22C55E" : "#9CA3AF";
                 const label = r.criticalSuccess
@@ -741,7 +812,7 @@ const [arena] = useState(getRandomArena());
                     : isSuccess
                       ? "Sucesso!"
                       : "Falhou!";
-
+                
                 return (
                   <>
                     <motion.div
@@ -791,7 +862,12 @@ const [arena] = useState(getRandomArena());
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         Rolou {r.roll} + {r.modifier} mod = {r.total} vs DC {r.dc}
-                      </p>
+                      </p>  
+
+
+                     <p style={{padding:10}}>USE: {habildade_especial.replace("_"," ")}</p>
+
+           
                     </motion.div>
 
                     <Button
