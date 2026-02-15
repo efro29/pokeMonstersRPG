@@ -149,7 +149,7 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
 
             return (
 
-              <div style={{backgroundColor:'rgb(0, 3, 21)'}} className=" text-center rounded-lg">
+              <div key={pokemon.speciesId} style={{backgroundColor:'rgb(0, 3, 21)'}} className=" text-center rounded-lg">
               <div
                 key={pokemon.uid}
               style={{backgroundColor:'rgb(42, 45, 60)'}}

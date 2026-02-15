@@ -51,6 +51,11 @@ const PARTICLE_CONFIG: Record<
     count: 18,
     glow: "rgba(168, 85, 247, 0.6)",
   },
+    changed: {
+    colors: ["#f7ec55", "#e4ea33", "#3ad8ed", "#fcc084", "#dbf979"],
+    count: 18,
+    glow: "rgba(247, 215, 85, 0.6)",
+  },
 };
 
 export function BattleParticles({
@@ -142,7 +147,33 @@ export function BattleParticles({
         )}
 
         {/* Heal-specific: rising sparkles */}
-        {effectType === "heal" &&
+        {effectType === "changed" &&
+          Array.from({ length: 8 }, (_, i) => (
+            <motion.div
+              key={`sparkle-${i}`}
+              className="absolute"
+              style={{
+                left: `${30 + Math.random() * 40}%`,
+                bottom: "20%",
+                width: 4,
+                height: 4,
+                backgroundColor: config.colors[i % config.colors.length],
+                borderRadius: "50%",
+                boxShadow: `0 0 6px ${config.colors[i % config.colors.length]}`,
+              }}
+              initial={{ y: 0, opacity: 0 }}
+              animate={{
+                y: [0, -40 - Math.random() * 40],
+                opacity: [0, 1, 0],
+              }}
+              transition={{
+                duration: 0.6,
+                delay: i * 0.06,
+                ease: "easeOut",
+              }}
+            />
+          ))}
+     {effectType === "heal" &&
           Array.from({ length: 8 }, (_, i) => (
             <motion.div
               key={`sparkle-${i}`}

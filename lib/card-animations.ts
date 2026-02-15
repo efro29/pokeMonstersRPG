@@ -1,5 +1,5 @@
 // Tipos de animação para eventos de carta
-export type CardEffectType = "damage" | "heal" | "buff" | "debuff" | "none";
+export type CardEffectType = "damage" | "heal" | "buff" | "debuff" | "none" | "changed";
 
 // Mapeamento de tipos de carta para efeito de animação
 export const getCardEffectAnimation = (alignment: "luck" | "bad-luck"): CardEffectType => {
@@ -59,6 +59,19 @@ export const getPokemonAnimationVariants = (effectType: CardEffectType) => {
     case "debuff":
       return {
         initial: { scale: 1, opacity: 1 },
+        animate: {
+          scale: [1, 0.92, 1],
+          opacity: [1, 0.5, 1],
+        },
+        transition: {
+          duration: 0.6,
+          ease: "easeInOut",
+        },
+      };
+
+      case "changed":
+      return {
+       initial: { scale: 1, opacity: 1 },
         animate: {
           scale: [1, 0.92, 1],
           opacity: [1, 0.5, 1],

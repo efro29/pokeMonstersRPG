@@ -56,6 +56,7 @@ import {
   playButtonClick,
   playFlee,
   playHeal,
+  playSendPokemon,
 } from "@/lib/sounds";
 import { BattleCards } from "./battle-cards";
 import { BattleParticles } from "./battle-particles";
@@ -90,7 +91,8 @@ export function BattleScene() {
   const combateBonus = Math.floor(attrs.combate / 2);
   const critExpansion = Math.floor(attrs.sorte / 2);
   const critThreshold = Math.max(15, 20 - critExpansion);
-
+  const [showParticles, setShowParticles] = useState(false);   
+    const [showParticlePok, setShowParticlesPok] = useState(false);   
   const [isRolling, setIsRolling] = useState(false);
   const [showDamageInput, setShowDamageInput] = useState(false);
   const [damageInput, setDamageInput] = useState("");
@@ -99,9 +101,13 @@ export function BattleScene() {
   const [isTestRolling, setIsTestRolling] = useState(false);
   const [testDC, setTestDC] = useState("10");
   const [isSwitching, setIsSwitching] = useState(false);
+  const [showDefeatMessage, setShowDefeatMessage] = useState(false);
+
   const ARENAS = [
   "campo"
 ];
+
+
 
 const getRandomArena = () => {
   const randomIndex = Math.floor(Math.random() * ARENAS.length);
@@ -112,8 +118,11 @@ const getRandomArena = () => {
     if (uid === battle.activePokemonUid) return;
     const targetPokemon = team.find((p) => p.uid === uid);
     if (!targetPokemon || targetPokemon.currentHp <= 0) return;
+      setShowParticlesPok(true);
+  setTimeout(() => setShowParticlesPok(false), 1000);
+        // playHeal();
     setIsSwitching(true);
-    playPokeball();
+    playSendPokemon();
     addBattleLog(`Trocou para ${targetPokemon.name}!`);
     setTimeout(() => {
       switchBattlePokemon(uid);
@@ -147,14 +156,25 @@ const getRandomArena = () => {
     playDiceRoll();
   };
 
-  const handleApplyDamage = () => {
-    const dmg = parseInt(damageInput);
-    if (Number.isNaN(dmg) || dmg <= 0) return;
-    applyOpponentDamage(dmg);
-    playDamageReceived();
-    setDamageInput("");
-    setShowDamageInput(false);
-  };
+const handleApplyDamage = () => {
+  const dmg = parseInt(damageInput);
+  if (Number.isNaN(dmg) || dmg <= 0) return;
+
+  applyOpponentDamage(dmg);
+  playDamageReceived();
+  
+  // Ativa partículas
+  setShowParticles(true);
+  setTimeout(() => setShowParticles(false), 1000);
+
+  setDamageInput("");
+  setShowDamageInput(false);
+
+
+
+};
+
+
 
   const handlePokeball = () => {
     setShowPokeballAnim(true);
@@ -174,6 +194,10 @@ const getRandomArena = () => {
   const hpPercent = pokemon ? (pokemon.currentHp / pokemon.maxHp) * 100 : 0;
   const hpColor = hpPercent > 50 ? "#22C55E" : hpPercent > 25 ? "#F59E0B" : "#EF4444";
   const isFainted = pokemon ? pokemon.currentHp <= 0 : true;
+  const totalHp = team.reduce((sum, p) => sum + p.currentHp, 0);
+
+
+
 
   const handleUseBagItem = (bagItemId: string) => {
     const def = BAG_ITEMS.find((d) => d.id === bagItemId);
@@ -293,9 +317,9 @@ const [arena] = useState(getRandomArena());
                           pointerEvents: "none",
                         }}
                       >
-                        {/* Particulas ao redor do Pokemon */}
-                        <BattleParticles effectType={effectType} isAnimating={isAnim} />
-                        
+                 {showParticles && (  <BattleParticles effectType={'damage'} isAnimating={true} />)}
+                  {showParticlePok && (  <BattleParticles effectType={'changed'} isAnimating={true} />)}
+        <BattleParticles effectType={effectType} isAnimating={true} />                
                         <motion.img
                           src={getBattleSpriteUrl(pokemon.speciesId)}
                           alt={pokemon.name}
@@ -369,7 +393,7 @@ const [arena] = useState(getRandomArena());
                battle.phase === "rolling"
                ? '': <>
                         <div className="flex items-center gap-3 mb-1 w-full px-10">
-            <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/50"></div>
+            <div className="h-[px] flex-1 bg-gradient-to-r from-transparent to-white/50"></div>
             <span style={{color:'silver'}} className=" text-[10px] font-bold uppercase tracking-widest drop-shadow-md">
                Equipe
             </span>
@@ -385,42 +409,78 @@ const [arena] = useState(getRandomArena());
               const isFaintedMember = p.currentHp <= 0;
               
               return (
-                <motion.button
-                  key={p.uid}
-                  onClick={() => handleSwitchPokemon(p.uid)}
-                  disabled={isActive || isFaintedMember || isSwitching}
-                  whileTap={!isActive && !isFaintedMember ? { scale: 0.9 } : undefined}
-                  className={`relative flex items-center justify-center w-12 h-12 rounded-full transition-all ${
-                    isActive
-                      ? "ring-2 ring-green-400 bg-green-400/20 shadow-[0_0_10px_rgba(74,222,128,0.5)]"
-                      : isFaintedMember ? "opacity-30 grayscale cursor-not-allowed"
-                      : "opacity-80 hover:opacity-100 hover:scale-110 cursor-pointer"
-                  }`}
-                >
-                  {/* Pokeball background */}
-                  <img
-                    src={`/images/pokebola.png`}
-                    className="absolute inset-0 w-full h-full object-contain p-1"
-                    alt="pokebola"
-                    loading="eager"
-                    decoding="sync"
-                  />
+          <motion.button
+  key={p.uid}
+  onClick={() => handleSwitchPokemon(p.uid)}
+  disabled={isActive || isFaintedMember || isSwitching}
+  whileTap={!isActive && !isFaintedMember ? { scale: 0.9 } : undefined}
+  className={`relative flex items-center justify-center w-12 h-12 rounded-full transition-all ${
+   p.currentHp <= 0 ?'opacity-30 grayscale': isActive 
+      ? " ring-blue-400 bg-green-400/20 shadow-[0_0_10px_rgba(74,222,128,0.5)]"
+      : p.currentHp <= 0
+      ? "opacity-30 grayscale cursor-not-allowed"
+      : "opacity-20 hover:opacity-100 hover:scale-110 cursor-pointer"
+  }`}
+>
+  {/* Circulo de HP */}
+  <svg className="absolute w-full h-full" viewBox="0 0 40 40">
+    <circle
+      cx="20"
+      cy="20"
+      r="5"
+      stroke="#ddd"
+      strokeWidth="4"
+      fill="none"
+    />
+    <circle
+      cx="20"
+      cy="20"
+      r="18"
+      stroke={p.currentHp / p.maxHp > 0.5 ? "#22c55e" : p.currentHp / p.maxHp > 0.2 ? "#facc15" : "#ef4444"} // verde, amarelo, vermelho
+      strokeWidth="4"
+      fill="none"
+      strokeDasharray={2 * Math.PI * 18}
+      strokeDashoffset={
+        2 * Math.PI * 18 * (1 - p.currentHp / p.maxHp)
+      }
+      strokeLinecap="round"
+      transform="rotate(-90 20 20)"
+    />
+  </svg>
 
-                  {/* Pokemon mini sprite */}
-                  <img
-                    src={getSpriteUrl(p.speciesId)}
-                    alt={p.name}
-                    width={38}
-                    height={38}
-                    className="relative z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]"
-                    style={{
-                      imageRendering: "pixelated",
-                      filter: isFaintedMember ? "grayscale(1)" : undefined,
-                    }}
-                    crossOrigin="anonymous"
-                  />
-                </motion.button>
+  {/* Pokeball background */}
+  <img
+    src={`/images/pokebola.png`}
+    className="absolute inset-0 w-full h-full object-contain p-1"
+    alt="pokebola"
+    loading="eager"
+    decoding="sync"
+  />
+
+  {/* Pokemon mini sprite */}
+  <img
+    src={getSpriteUrl(p.speciesId)}
+    alt={p.name}
+    width={38}
+    height={38}
+    className="relative z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]"
+    style={{
+      imageRendering: "pixelated",
+      filter: isFaintedMember ? "grayscale(1)" : undefined,
+    }}
+    crossOrigin="anonymous"
+  />
+
+  {/* HP numérico */}
+  <div style={{ zIndex: 100, top: 33}} className="absolute text-[8px] font-bold text-black">
+    {p.currentHp}/{p.maxHp}
+  </div>
+</motion.button>
+
+                
+                
               );
+              
             })}
           </div>
         )}  </>}
@@ -743,7 +803,7 @@ const [arena] = useState(getRandomArena());
                       </span>
                     </div>
 
-                    <div className="text-sm opacity-80">
+                    <div className="text-[10px] opacity-80">
                       {habildade_especial}
                     </div>
                   </Button>
@@ -1142,6 +1202,7 @@ const [arena] = useState(getRandomArena());
             autoFocus
           />
           <div className="flex gap-2">
+
             <Button
               onClick={handleApplyDamage}
               className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -1196,6 +1257,26 @@ const [arena] = useState(getRandomArena());
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      <AnimatePresence>
+  {totalHp <= 0 && (
+    <motion.div
+     onClick={endBattle}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      style={{cursor:'pointer'}}
+      className="absolute inset-0 z-50 flex items-center justify-center bg-black/70"
+    >
+      <div className="text-center p-6 bg-red-600/90 text-white rounded-lg shadow-lg">
+        <h2 className="text-2xl font-bold mb-2">Você foi derrotado!</h2>
+        <p className="text-sm">Todos os seus Pokémon desmaiaram.</p>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
+
 
 
 

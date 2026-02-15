@@ -136,6 +136,21 @@ export function playPokeball() {
   setTimeout(() => playTone(500, 0.08, "sine", 0.06), 350);
   setTimeout(() => playTone(450, 0.06, "sine", 0.05), 450);
 }
+export function playSendPokemon() {
+  // Efeito: Pokémon sendo lançado para o campo
+  // 1. Ascendente rápido - tipo lançamento
+  playTone(600, 0.12, "sine", 0.05, { freq: 1000, time: 0.12 });
+  
+  // 2. Descendente rápido - Pokémon chegando perto do chão
+  setTimeout(() => playTone(550, 0.1, "sine", 0.05, { freq: 800, time: 0.1 }), 100);
+  
+  // 3. Pequeno “impacto” final no chão
+  setTimeout(() => playTone(450, 0.08, "sine", 0.06, { freq: 600, time: 0.08 }), 220);
+  
+  // 4. Um pequeno “pop” ou efeito de brilho (opcional)
+  setTimeout(() => playTone(700, 0.06, "triangle", 0.04), 300);
+}
+
 
 export function playDiceRoll() {
   // Rattling dice
