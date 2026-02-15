@@ -26,6 +26,7 @@ import {
   Check,
   X,
   Gift,
+  UtensilsCrossed,
 } from "lucide-react";
 import { playBuy, playGift, playButtonClick } from "@/lib/sounds";
 
@@ -35,6 +36,7 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   status: <Pill className="w-5 h-5 text-blue-400" />,
   stone: <Gem className="w-5 h-5 text-purple-400" />,
   rare: <Sparkles className="w-5 h-5 text-yellow-400" />,
+  food: <UtensilsCrossed className="w-5 h-5 text-orange-400" />,
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -43,6 +45,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   status: "Status & PP",
   stone: "Pedras de Evolucao",
   rare: "Itens Raros",
+  food: "Cuidados Pokemon",
 };
 
 // Free items the master can give during the campaign
@@ -64,6 +67,12 @@ const GIFT_ITEMS = [
   { id: "moon-stone", name: "Pedra da Lua", qty: 1 },
   { id: "master-ball", name: "Master Ball", qty: 1 },
   { id: "full-heal", name: "Full Heal", qty: 2 },
+  { id: "berry", name: "Berry", qty: 3 },
+  { id: "poffin", name: "Poffin", qty: 2 },
+  { id: "fresh-water", name: "Agua Fresca", qty: 3 },
+  { id: "moomoo-milk", name: "Moomoo Milk", qty: 2 },
+  { id: "lava-cookie", name: "Lava Cookie", qty: 3 },
+  { id: "old-gateau", name: "Old Gateau", qty: 2 },
 ];
 
 export function ShopTab() {
@@ -74,7 +83,7 @@ export function ShopTab() {
   const [showGifts, setShowGifts] = useState(false);
   const [giftFlash, setGiftFlash] = useState<string | null>(null);
 
-  const categories = ["pokeball", "potion", "status", "stone", "rare"] as const;
+  const categories = ["pokeball", "potion", "status", "stone", "rare", "food"] as const;
 
   const handleBuy = () => {
     if (!buyDialog) return;

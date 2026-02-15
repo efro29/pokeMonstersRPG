@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Pill, CircleDot, Beaker, Package, Plus, Minus, Gem } from "lucide-react";
+import { Pill, CircleDot, Beaker, Package, Plus, Minus, Gem, UtensilsCrossed } from "lucide-react";
 import { playButtonClick, playHeal } from "@/lib/sounds";
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -42,7 +42,7 @@ export function BagTab() {
   const [addItemDialog, setAddItemDialog] = useState(false);
   const [addQty, setAddQty] = useState(1);
 
-  const categories = ["potion", "pokeball", "status", "other"] as const;
+  const categories = ["potion", "pokeball", "status", "food", "other"] as const;
 
   return (
     <div className="flex flex-col h-full">

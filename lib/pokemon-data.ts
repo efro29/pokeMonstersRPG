@@ -829,9 +829,13 @@ export interface BagItemDef {
   id: string;
   name: string;
   description: string;
-  category: "potion" | "pokeball" | "status" | "other";
+  category: "potion" | "pokeball" | "status" | "other" | "food";
   healAmount?: number;
   ppRestore?: number;
+  /** Tamagotchi need restoration */
+  feedAmount?: number;
+  hydrateAmount?: number;
+  restAmount?: number;
 }
 
 export const BAG_ITEMS: BagItemDef[] = [
@@ -860,6 +864,13 @@ export const BAG_ITEMS: BagItemDef[] = [
   { id: "up-grade", name: "Up-Grade", description: "Evolui Porygon em Porygon2.", category: "other" },
   // Rare Candy
   { id: "rare-candy", name: "Rare Candy", description: "Sobe 1 nivel instantaneamente.", category: "other" },
+  // Tamagotchi care items
+  { id: "berry", name: "Berry", description: "Mata a fome. +30 fome.", category: "food", feedAmount: 30 },
+  { id: "poffin", name: "Poffin", description: "Refeicao completa. +60 fome.", category: "food", feedAmount: 60 },
+  { id: "fresh-water", name: "Agua Fresca", description: "Mata a sede. +30 sede.", category: "food", hydrateAmount: 30 },
+  { id: "moomoo-milk", name: "Moomoo Milk", description: "Hidratacao completa. +60 sede.", category: "food", hydrateAmount: 60 },
+  { id: "lava-cookie", name: "Lava Cookie", description: "Lanchinho relaxante. +30 sono.", category: "food", restAmount: 30 },
+  { id: "old-gateau", name: "Old Gateau", description: "Descanso profundo. +60 sono.", category: "food", restAmount: 60 },
 ];
 
 // ========== Pokemon RPG Attributes ==========

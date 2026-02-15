@@ -587,6 +587,23 @@ export const useGameStore = create<GameState>()(
           }
         }
 
+        // Tamagotchi food/drink/rest items
+        if (targetUid && (itemDef.feedAmount || itemDef.hydrateAmount || itemDef.restAmount)) {
+          newTeam = newTeam.map((p) => {
+            if (p.uid !== targetUid) return p;
+            const needs = p.needs ?? { ...DEFAULT_NEEDS };
+            return {
+              ...p,
+              needs: {
+                ...needs,
+                hunger: Math.min(100, needs.hunger + (itemDef.feedAmount || 0)),
+                thirst: Math.min(100, needs.thirst + (itemDef.hydrateAmount || 0)),
+                sleep: Math.min(100, needs.sleep + (itemDef.restAmount || 0)),
+              },
+            };
+          });
+        }
+
         if (targetUid && itemDef.ppRestore) {
           if (moveId) {
             newTeam = newTeam.map((p) =>
