@@ -4,7 +4,7 @@ import type { PokemonSpecies, BagItemDef, PokemonBaseAttributes, DamageBreakdown
 import { getGameStoreKey } from "./mode-store";
 import { BAG_ITEMS, getMove, getPokemon, canEvolveByLevel, canEvolveByStone, canEvolveByTrade, xpForLevel, computeAttributes, getBaseAttributes, applyFaintPenalty, applyLevelUpBonus, rollDamageAgainstPokemon, calculateHitResult, calculateBattleDamage, getDamageMultiplier } from "./pokemon-data";
 import type { BattleCard, CardAlignment, SuperEffect } from "./card-data";
-import { drawCard, checkLuckTrio, checkBadLuckTrio, checkElementalAffinity, calculateBadLuckPenalty, rollSuperAdvantage, rollSuperPunishment, countFieldCardsByElement, consumeEnergyCards } from "./card-data";
+import { drawCard, checkLuckTrio, checkBadLuckTrio, checkElementalAffinity, calculateBadLuckPenalty, rollSuperAdvantage, rollSuperPunishment, countFieldCardsByElement, consumeEnergyCards, hasAuraAmplificada, consumeAuraAmplificada } from "./card-data";
 
 export type PokemonAttributeKey = keyof PokemonBaseAttributes;
 
@@ -224,6 +224,7 @@ export interface BattleState {
   cardTrioEvent: CardTrioEvent | null;
   cardDrawCount: number;
   badLuckPenalty: number; // cumulative -2 per bad card (-4 if same type)
+  auraAmplificadaActive: boolean; // When true, hit uses 70% flat chance
   // Card animation
   pokemonAnimationState: {
     isAnimating: boolean;
@@ -362,11 +363,12 @@ export const useGameStore = create<GameState>()(
         attributeTestDC: 10,
         attributeTestResult: null,
         // Card system
-        cardField: [null, null, null, null, null],
+        cardField: [null, null, null, null, null, null],
         lastDrawnCard: null,
         cardTrioEvent: null,
         cardDrawCount: 0,
         badLuckPenalty: 0,
+  auraAmplificadaActive: false,
         // Card animation
         pokemonAnimationState: {
           isAnimating: false,
@@ -605,11 +607,12 @@ export const useGameStore = create<GameState>()(
             selectedAttribute: null,
             attributeTestDC: 10,
             attributeTestResult: null,
-            cardField: [null, null, null, null, null],
+            cardField: [null, null, null, null, null, null],
             lastDrawnCard: null,
             cardTrioEvent: null,
             cardDrawCount: 0,
             badLuckPenalty: 0,
+  auraAmplificadaActive: false,
           },
         });
       },
@@ -628,11 +631,12 @@ export const useGameStore = create<GameState>()(
             selectedAttribute: null,
             attributeTestDC: 10,
             attributeTestResult: null,
-            cardField: [null, null, null, null, null],
+            cardField: [null, null, null, null, null, null],
             lastDrawnCard: null,
             cardTrioEvent: null,
             cardDrawCount: 0,
             badLuckPenalty: 0,
+  auraAmplificadaActive: false,
           },
         });
       },
@@ -653,11 +657,22 @@ export const useGameStore = create<GameState>()(
         if (!moveDef) return;
 
         let updatedCardField = battle.cardField;
+        let useAuraAmplificada = false;
+
         if (moveDef.energy_cost > 0) {
           const available = countFieldCardsByElement(battle.cardField, moveDef.energy_type);
-          if (available < moveDef.energy_cost) return; // Not enough energy cards
-          // Consume energy cards from field
-          updatedCardField = consumeEnergyCards(battle.cardField, moveDef.energy_type, moveDef.energy_cost);
+          const hasAmplificada = hasAuraAmplificada(battle.cardField);
+
+          if (available >= moveDef.energy_cost) {
+            // Enough normal energy - consume it
+            updatedCardField = consumeEnergyCards(updatedCardField, moveDef.energy_type, moveDef.energy_cost);
+          } else if (hasAmplificada) {
+            // Use Aura Amplificada to bypass energy cost
+            updatedCardField = consumeAuraAmplificada(updatedCardField);
+            useAuraAmplificada = true;
+          } else {
+            return; // Not enough energy cards and no aura
+          }
         }
 
         // Recalculate bad luck penalty after consuming cards
@@ -689,6 +704,7 @@ export const useGameStore = create<GameState>()(
             damageBreakdown: null,
             cardField: updatedCardField,
             badLuckPenalty: newPenalty,
+            auraAmplificadaActive: useAuraAmplificada,
           },
         });
       },
@@ -707,9 +723,21 @@ export const useGameStore = create<GameState>()(
 
         const effectiveRoll = roll + combateBonus;
 
-        // Determine hit result using effective roll with trainer bonuses
+        // Determine hit result
         let hitResult: HitResult;
-        if (roll === 1) {
+
+        if (battle.auraAmplificadaActive) {
+          // Aura Amplificada: 70% flat hit chance (D20 roll 1-14 = hit, 15-20 = miss, 20 = crit)
+          if (roll === 1) {
+            hitResult = "critical-miss";
+          } else if (roll >= critThreshold) {
+            hitResult = "critical-hit";
+          } else if (roll <= 14) {
+            hitResult = "hit";
+          } else {
+            hitResult = "miss";
+          }
+        } else if (roll === 1) {
           hitResult = "critical-miss";
         } else if (roll >= critThreshold) {
           hitResult = "critical-hit";
@@ -740,6 +768,7 @@ export const useGameStore = create<GameState>()(
             hitResult,
             damageDealt,
             damageBreakdown: breakdown,
+            auraAmplificadaActive: false,
           },
         });
       },
@@ -1440,10 +1469,11 @@ export const useGameStore = create<GameState>()(
         set({
           battle: {
             ...battle,
-            cardField: [null, null, null, null, null],
+            cardField: [null, null, null, null, null, null],
             lastDrawnCard: null,
             cardTrioEvent: null,
             badLuckPenalty: 0,
+  auraAmplificadaActive: false,
           },
         });
       },
@@ -1486,10 +1516,11 @@ export const useGameStore = create<GameState>()(
             team: updatedTeam,
             battle: {
               ...currentBattle,
-              cardField: [null, null, null, null, null],
+              cardField: [null, null, null, null, null, null],
               lastDrawnCard: null,
               cardTrioEvent: null,
               badLuckPenalty: 0,
+  auraAmplificadaActive: false,
               pokemonAnimationState: {
                 isAnimating: true,
                 effectType: "damage",
@@ -1605,7 +1636,7 @@ export const useGameStore = create<GameState>()(
     }),
     {
       name: getGameStoreKey(),
-      version: 10,
+      version: 11,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         if (version < 2) {
@@ -1649,7 +1680,7 @@ export const useGameStore = create<GameState>()(
         }
         if (version < 8) {
           const battle = (state.battle as Record<string, unknown>) || {};
-          battle.cardField = battle.cardField ?? [null, null, null, null, null];
+          battle.cardField = battle.cardField ?? [null, null, null, null, null, null];
           battle.lastDrawnCard = battle.lastDrawnCard ?? null;
           battle.cardTrioEvent = battle.cardTrioEvent ?? null;
           battle.cardDrawCount = battle.cardDrawCount ?? 0;
@@ -1667,6 +1698,17 @@ export const useGameStore = create<GameState>()(
             effectType: "none",
             duration: 0,
           };
+          state.battle = battle;
+        }
+        if (version < 11) {
+          const battle = (state.battle as Record<string, unknown>) || {};
+          battle.auraAmplificadaActive = battle.auraAmplificadaActive ?? false;
+          // Extend card field from 5 to 6 slots if needed
+          const field = battle.cardField as (unknown | null)[];
+          if (field && field.length < 6) {
+            while (field.length < 6) field.push(null);
+            battle.cardField = field;
+          }
           state.battle = battle;
         }
         return state as unknown as GameState;

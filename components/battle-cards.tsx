@@ -80,37 +80,139 @@ function YuGiOhCard({
   size = "small",
   onClick,
   slotIndex,
+  glowing = false,
 }: {
   card: BattleCard;
   size?: "small" | "large";
   onClick?: () => void;
   slotIndex?: number;
+  glowing?: boolean;
 }) {
   const isLuck = card.alignment === "luck";
-  const elColor = ELEMENT_COLORS[card.element] || "#888";
+  const isAuraElemental = card.alignment === "aura-elemental";
+  const isAuraAmplificada = card.alignment === "aura-amplificada";
+  const isAura = isAuraElemental || isAuraAmplificada;
+  const elColor = isAura ? (isAuraAmplificada ? "#D4AF37" : "#C0C0C0") : (ELEMENT_COLORS[card.element] || "#888");
   const elName = ELEMENT_NAMES_PT[card.element] || card.element;
 
-  // Color scheme
-  const borderColor = isLuck ? "#e0dcce" : "#24065c";
-  const outerBg = isLuck
+  // Color scheme based on card type
+  const borderColor = isAuraAmplificada
+    ? "#D4AF37"
+    : isAuraElemental
+    ? "#C0C0C0"
+    : isLuck
+    ? "#e0dcce"
+    : "#24065c";
+
+  const outerBg = isAuraAmplificada
+    ? "linear-gradient(180deg, #D4AF37 0%, #B8860B 30%, #8B6914 70%, #D4AF37 100%)"
+    : isAuraElemental
+    ? "linear-gradient(180deg, #E8E8E8 0%, #C0C0C0 30%, #A8A8A8 70%, #D0D0D0 100%)"
+    : isLuck
     ? "linear-gradient(180deg, #e9e4d0 0%, #c5bfac 8%, #e7e2cf 92%, #ecebe5 100%)"
     : "linear-gradient(180deg, #502d5a 0%, #4a1547 8%, #2b0a3a 92%, #1A0505 100%)";
-  const innerBg = isLuck
+
+  const innerBg = isAura
+    ? (isAuraAmplificada ? "linear-gradient(180deg, #3a2a00 0%, #1a1200 100%)" : "linear-gradient(180deg, #f0f0f0 0%, #d8d8d8 100%)")
+    : isLuck
     ? "linear-gradient(180deg, #FFFDE0 0%, #e9e8e4 100%)"
     : "linear-gradient(180deg, #2D1515 0%, #1A0A0A 100%)";
-  const textColor = isLuck ? "#3E2723" : "#E8C8C8";
   const subTextColor = isLuck ? "#5D4037" : "#B0888A";
-  const nameBg = isLuck
-    ? "linear-gradient(90deg, #F9F0D0 0%, #FFF8DC 50%, #F9F0D0 100%)"
-    : "linear-gradient(90deg, #1d102a 0%, #33183a 50%, #21102a 100%)";
+
+  // Glow animation for matching cards
+  const glowShadow = glowing
+    ? `0 0 8px 2px ${elColor}, 0 0 16px 4px ${elColor}88`
+    : "";
 
   if (size === "small") {
+    // -- AURA cards small rendering --
+    if (isAura) {
+      return (
+        <motion.button
+          onClick={onClick}
+          initial={{ rotateY: 180, opacity: 0 }}
+          animate={{
+            rotateY: 0,
+            opacity: 1,
+            boxShadow: isAuraAmplificada
+              ? [
+                  "0 0 6px 2px rgba(212,175,55,0.6), 0 0 20px 6px rgba(212,175,55,0.3)",
+                  "0 0 12px 4px rgba(212,175,55,0.9), 0 0 30px 10px rgba(212,175,55,0.5)",
+                  "0 0 6px 2px rgba(212,175,55,0.6), 0 0 20px 6px rgba(212,175,55,0.3)",
+                ]
+              : [
+                  "0 0 6px 2px rgba(192,192,192,0.5), 0 0 18px 5px rgba(192,192,192,0.25)",
+                  "0 0 10px 3px rgba(192,192,192,0.8), 0 0 25px 8px rgba(192,192,192,0.4)",
+                  "0 0 6px 2px rgba(192,192,192,0.5), 0 0 18px 5px rgba(192,192,192,0.25)",
+                ],
+          }}
+          transition={{
+            duration: 0.5,
+            boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+          }}
+          whileHover={{ scale: 1.06, y: -3 }}
+          whileTap={{ scale: 0.97 }}
+          className="relative flex flex-col rounded-[2px] overflow-hidden cursor-pointer"
+          style={{
+            width: 52,
+            height: 76,
+            background: outerBg,
+            border: `1.5px solid ${borderColor}`,
+          }}
+        >
+          <div
+            className="flex items-center justify-center py-[2px]"
+            style={{ background: isAuraAmplificada ? "rgba(0,0,0,0.3)" : "rgba(255,255,255,0.3)" }}
+          >
+            <span
+              className="text-[3px] font-bold uppercase"
+              style={{ color: isAuraAmplificada ? "#FFD700" : "#333" }}
+            >
+              {card.name}
+            </span>
+          </div>
+          <div
+            className="flex items-center justify-center overflow-hidden"
+            style={{ height: 50 }}
+          >
+            <img
+              src={isAuraAmplificada ? "/images/cards/aura-amplificada.jpg" : "/images/cards/aura-elemental.jpg"}
+              alt={card.name}
+              className="w-full h-full object-cover"
+              loading="eager"
+              decoding="sync"
+            />
+          </div>
+          <div
+            className="flex items-center justify-center py-[2px]"
+            style={{ background: isAuraAmplificada ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.4)" }}
+          >
+            <Sparkles className="w-2 h-2" style={{ color: isAuraAmplificada ? "#FFD700" : "#888" }} />
+          </div>
+        </motion.button>
+      );
+    }
+
+    // -- Normal luck/bad-luck small rendering --
     return (
       <motion.button
         onClick={onClick}
         initial={{ rotateY: 180, opacity: 0 }}
-        animate={{ rotateY: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
+        animate={{
+          rotateY: 0,
+          opacity: 1,
+          ...(glowing && {
+            boxShadow: [
+              `0 2px 8px ${elColor}66`,
+              `0 0 12px 4px ${elColor}AA, 0 0 20px 6px ${elColor}55`,
+              `0 2px 8px ${elColor}66`,
+            ],
+          }),
+        }}
+        transition={{
+          duration: 0.5,
+          ...(glowing && { boxShadow: { duration: 1.5, repeat: Infinity, ease: "easeInOut" } }),
+        }}
         whileHover={{ scale: 1.06, y: -3 }}
         whileTap={{ scale: 0.97 }}
         className="relative flex flex-col rounded-[2px] overflow-hidden cursor-pointer"
@@ -118,10 +220,12 @@ function YuGiOhCard({
           width: 52,
           height: 76,
           background: outerBg,
-          border: `1.5px solid ${borderColor}`,
-          boxShadow: isLuck
-            ? "0 2px 8px rgba(197,160,38,0.4), inset 0 1px 0 rgba(255,255,255,0.2)"
-            : "0 2px 8px rgba(17, 1, 22, 0.6), inset 0 1px 0 rgba(42, 14, 54, 0.05)",
+          border: `1.5px solid ${glowing ? elColor : borderColor}`,
+          boxShadow: !glowing
+            ? (isLuck
+              ? "0 2px 8px rgba(197,160,38,0.4), inset 0 1px 0 rgba(255,255,255,0.2)"
+              : "0 2px 8px rgba(17, 1, 22, 0.6), inset 0 1px 0 rgba(42, 14, 54, 0.05)")
+            : undefined,
         }}
       >
 
@@ -161,7 +265,7 @@ function YuGiOhCard({
             style={{
               background: 'white',
               border: `0.5px solid ${borderColor}33`,
-              minHeight: '30px' // Opcional: Garanta uma altura mínima se o container estiver "esmagado"
+              minHeight: '30px'
             }}
           >
             <img
@@ -174,7 +278,6 @@ function YuGiOhCard({
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
-                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
                 target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
               }}
             />
@@ -182,15 +285,10 @@ function YuGiOhCard({
           </div>
 </>
         : 
-        
-        
-        
-        
            <div
             className=" flex justify-center items-center bg-white-200"
             style={{ minHeight: '30px' }}>
             <img
-          
               src={`/images/cardsTypes/genga.jpg`}
               alt={card.name}
               className="object-cover"
@@ -199,32 +297,44 @@ function YuGiOhCard({
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
-                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
                 target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
               }}
             />
           </div>
-        
         }
       </motion.button>
     );
   }
 
   // LARGE card (dialog view)
+  const largeCardImage = isAuraAmplificada
+    ? "/images/cards/aura-amplificada.jpg"
+    : isAuraElemental
+    ? "/images/cards/aura-elemental.jpg"
+    : `/images/cards/card${card.cardIndex}.png`;
+
+  const largeShadow = isAuraAmplificada
+    ? "0 8px 40px rgba(212,175,55,0.7), 0 0 60px rgba(212,175,55,0.3), inset 0 2px 0 rgba(255,255,255,0.15)"
+    : isAuraElemental
+    ? "0 8px 40px rgba(192,192,192,0.6), 0 0 50px rgba(192,192,192,0.25), inset 0 2px 0 rgba(255,255,255,0.15)"
+    : isLuck
+    ? "0 8px 32px rgba(236, 183, 6, 0.5), inset 0 2px 0 rgba(255,255,255,0.15)"
+    : "0 8px 32px rgba(30, 2, 41, 0.7), inset 0 2px 0 rgba(255,255,255,0.05)";
+
+  const nameColor = isAuraAmplificada ? "#FFD700" : isAuraElemental ? "#555" : isLuck ? "green" : "pink";
+
   return (
     <motion.div
       initial={{ scale: 0.6, rotateY: 180 }}
       animate={{ scale: 1, rotateY: 0 }}
       transition={{ type: "spring", damping: 14 }}
-      className="relative flex flex-col r overflow-hidden mx-auto"
+      className="relative flex flex-col overflow-hidden mx-auto"
       style={{
-        height:350,
+        height: 350,
         width: 250,
         background: outerBg,
         border: `3px solid ${borderColor}`,
-        boxShadow: isLuck
-          ? "0 8px 32px rgba(236, 183, 6, 0.5), inset 0 2px 0 rgba(255,255,255,0.15)"
-          : "0 8px 32px rgba(30, 2, 41, 0.7), inset 0 2px 0 rgba(255,255,255,0.05)",
+        boxShadow: largeShadow,
       }}
     >
       {/* Element type strip */}
@@ -233,56 +343,42 @@ function YuGiOhCard({
         style={{ background: `${elColor}22` }}
       >
         <div className="flex items-center gap-1.5">
-       
-          
-          {isLuck?
-               <div className=" rounded-full flex items-center justify-center"
-            style={{ backgroundColor: `${elColor}33`, border: `1px solid ${elColor}66` }}
-                 > 
+          {isAura ? (
+            <Sparkles className="w-5 h-5" style={{ color: isAuraAmplificada ? "#FFD700" : "#999" }} />
+          ) : isLuck ? (
+            <div
+              className="rounded-full flex items-center justify-center"
+              style={{ backgroundColor: `${elColor}33`, border: `1px solid ${elColor}66` }}
+            >
+              <img
+                style={{ width: 20 }}
+                src={`/images/cardsTypes/${card.element}.jpg`}
+                alt={card.name}
+                className="object-cover rounded-full"
+                loading="eager"
+                decoding="sync"
+              />
+            </div>
+          ) : (
             <img
               style={{ width: 20 }}
-              src={`/images/cardsTypes/${card.element}.jpg`}
+              src="/images/cardsTypes/genga.gif"
               alt={card.name}
               className="object-cover rounded-full"
               loading="eager"
               decoding="sync"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
-                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
-              }}
             />
-                </div>
-            :
-               <img
-              style={{ width: 20 }}
-              src={`/images/cardsTypes/genga.gif`}
-              alt={card.name}
-              className="object-cover rounded-full"
-              loading="eager"
-              decoding="sync"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
-                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
-              }}
-            />
+          )}
 
-          }
-             
-      
-          <span className="text-sm font-bold  tracking-wider" style={{ color: isLuck?'green':'pink' }}>
-                 {card.name} 
+          <span className="text-sm font-bold tracking-wider" style={{ color: nameColor }}>
+            {card.name}
           </span>
         </div>
-       
       </div>
 
       {/* Image area */}
       <div
-        className=" mt-2 flex items-center justify-center rounded overflow-hidden"
+        className="mt-2 flex items-center justify-center rounded overflow-hidden"
         style={{
           height: 200,
           background: innerBg,
@@ -290,42 +386,31 @@ function YuGiOhCard({
         }}
       >
         <motion.img
-          src={`/images/cards/card${card.cardIndex}.png`}
+          src={largeCardImage}
           alt={card.name}
           className="w-full h-full object-cover"
           loading="eager"
           decoding="sync"
-          animate={{
-            scale: [1, 1.04, 1],
-          }}
+          animate={{ scale: [1, 1.04, 1] }}
           transition={{ duration: 1.5, repeat: Infinity }}
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = "none";
-            const fallback = document.createElement("span");
-            fallback.className = "text-6xl drop-shadow-lg";
-            fallback.textContent = isLuck ? "\u2618" : "\u2620";
-            (e.target as HTMLImageElement).parentElement!.appendChild(fallback);
-          }}
         />
       </div>
 
-
       {/* Description box */}
       <div
-        className="  rounded flex items-center justify-center min-h-[90px]"
+        className="rounded flex items-center justify-center min-h-[90px] px-3"
         style={{
           background: innerBg,
-          border: `1px solid ${borderColor}455`,
+          border: `1px solid ${borderColor}45`,
         }}
       >
         <p
           className="text-[10px] leading-relaxed text-center"
-          style={{ color: subTextColor }}
+          style={{ color: isAuraAmplificada ? "#FFD700" : isAuraElemental ? "#666" : subTextColor }}
         >
           {card.description}
         </p>
       </div>
-
     </motion.div>
   );
 }
@@ -472,12 +557,8 @@ function ReplaceCardModal({
         {/* Field cards to choose from */}
         <div className="flex gap-2 justify-center flex-wrap">
           {fieldCards.map((fieldCard, i) => {
-            
-            
             if (!fieldCard) return null;
-            if (i == 4) return null;
-            
-            const isLocked = fieldCard.alignment === "bad-luck";
+            const isLocked = fieldCard.alignment === "bad-luck" || fieldCard.alignment === "aura-elemental" || fieldCard.alignment === "aura-amplificada";
             return (
               <div key={i} className="relative">
                 <div
@@ -788,12 +869,26 @@ export function BattleCards() {
     }, 100);
   };
 
+  // Compute which elements have duplicates on the field for glow effect
+  const elementCounts: Record<string, number> = {};
+  for (const card of fieldCards) {
+    if (card && card.alignment === "luck") {
+      elementCounts[card.element] = (elementCounts[card.element] || 0) + 1;
+    }
+  }
+  // Elements with 2+ cards should glow
+  const glowingElements = new Set(
+    Object.entries(elementCounts)
+      .filter(([, count]) => count >= 2)
+      .map(([el]) => el)
+  );
+
   return (
     <>
       <div className="flex flex-col gap-1.5">
-        {/* 5 card slots */}
-        <div className="flex items-center justify-center gap-1.5">
-          {fieldCards.map((card, i) => i == 4 ?'':
+        {/* 6 card slots + draw button */}
+        <div className="flex items-center justify-center gap-1">
+          {fieldCards.map((card, i) =>
             card ? (
               <YuGiOhCard 
                 key={`${card.id}-${i}`} 
@@ -804,49 +899,26 @@ export function BattleCards() {
                   setViewingCardSlotIndex(i);
                 }} 
                 slotIndex={i}
+                glowing={card.alignment === "luck" && glowingElements.has(card.element)}
               />
             ) : (
               <EmptySlot key={`empty-${i}`} index={i} />
             )
           )}
-           <div
-             onClick={handleDraw}
-      className="relative flex flex-col items-center justify-center rounded-[5px] "
-      style={{
-        cursor:'pointer',
-        width: 52,
-        height: 76,
-        background: "linear-gradient(180deg, rgba(2, 2, 26, 0.6) 0%, rgba(1, 1, 3, 0.8) 100%)",
-        borderColor: "rgb(7, 18, 119)",borderWidth:1
-      }}
-    >
-      <span    className="text-[9px]  font-mono">
-                 
-      Compre
-      </span>
-    </div>
-          
-        </div>
-
-        {/* Info strip + draw button */}
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2 text-[9px]">
-           
-          </div>
-          {/* <Button
-            size="sm"
+          <div
             onClick={handleDraw}
-            disabled={isDrawing || !!battle.cardTrioEvent}
-            className="h-6 text-[10px] px-3 rounded"
+            className="relative flex flex-col items-center justify-center rounded-[5px]"
             style={{
-              background: "linear-gradient(180deg, #D4AF37 0%, #B8860B 100%)",
-              color: "#1a1a1a",
-              fontWeight: 700,
-              border: "1px solid #C5A026",
+              cursor: "pointer",
+              width: 52,
+              height: 76,
+              background: "linear-gradient(180deg, rgba(2, 2, 26, 0.6) 0%, rgba(1, 1, 3, 0.8) 100%)",
+              borderColor: "rgb(7, 18, 119)",
+              borderWidth: 1,
             }}
           >
-            {isDrawing ? "..." : "Comprar Carta"}
-          </Button> */}
+            <span className="text-[9px] font-mono">Compre</span>
+          </div>
         </div>
       </div>
 

@@ -6,7 +6,7 @@
 //   - Luck cards: slots remain after trio, only cleared on bad-luck trio
 //   - Deck: 27 luck / 13 bad luck cards
 
-export type CardAlignment = "luck" | "bad-luck";
+export type CardAlignment = "luck" | "bad-luck" | "aura-elemental" | "aura-amplificada";
 
 export type CardElement =
   | "fire" | "water" | "grass" | "electric" | "ice"
@@ -219,10 +219,39 @@ function randomElement(): CardElement {
   return CARD_ELEMENTS[Math.floor(Math.random() * CARD_ELEMENTS.length)];
 }
 
-/** Draw a single card (weighted: 27 luck / 13 bad luck = 67.5% luck, 32.5% bad luck) */
+/** Draw a single card (weighted: 10% aura, then 70% luck / 30% bad luck of remaining) */
 export function drawCard(): BattleCard {
-  const isLuck = Math.random() < 0.750;
+  const roll = Math.random();
   const element = randomElement();
+
+  // 10% chance for Aura cards (5% elemental, 5% amplificada)
+  if (roll < 0.10) {
+    const isAmplificada = Math.random() < 0.5;
+    if (isAmplificada) {
+      return {
+        id: nextCardId(),
+        alignment: "aura-amplificada",
+        element: "normal", // not relevant for amplificada
+        name: "Aura Amplificada",
+        description: "Executa qualquer golpe sem custo de energia. O ataque tem 70% de chance de acertar!",
+        effectKey: "aura-amplificada",
+        cardIndex: -2, // special index for aura-amplificada
+      };
+    } else {
+      return {
+        id: nextCardId(),
+        alignment: "aura-elemental",
+        element: "normal", // wildcard, matches any
+        name: "Aura Elemental",
+        description: "Carta coringa! Conta como 1 carta de energia de qualquer tipo elemental.",
+        effectKey: "aura-elemental",
+        cardIndex: -1, // special index for aura-elemental
+      };
+    }
+  }
+
+  // 70% luck / 30% bad luck (of the remaining 90%)
+  const isLuck = Math.random() < 0.70;
 
   if (isLuck) {
     const defIndex = Math.floor(Math.random() * LUCK_CARDS.length);
@@ -328,20 +357,44 @@ export function rollSuperPunishment(): SuperEffect {
 // ---- Energy System: Count and consume element cards for move costs ----
 
 /**
- * Count how many LUCK cards of a given element are on the field.
- * Only luck cards count as energy (bad-luck cards cannot be used).
+ * Count how many energy cards of a given element are on the field.
+ * Luck cards of the element count + Aura Elemental cards count as wildcard (+1 each).
  */
 export function countFieldCardsByElement(
   fieldCards: (BattleCard | null)[],
   element: string
 ): number {
-  return fieldCards.filter(
-    (c) => c !== null && c.alignment === "luck" && c.element === element
-  ).length;
+  let count = 0;
+  for (const c of fieldCards) {
+    if (!c) continue;
+    // Luck card of matching element
+    if (c.alignment === "luck" && c.element === element) count++;
+    // Aura Elemental counts as 1 of ANY type
+    else if (c.alignment === "aura-elemental") count++;
+  }
+  return count;
 }
 
 /**
- * Remove `count` luck cards of the given element from the field.
+ * Check if an Aura Amplificada card is on the field.
+ */
+export function hasAuraAmplificada(fieldCards: (BattleCard | null)[]): boolean {
+  return fieldCards.some((c) => c !== null && c.alignment === "aura-amplificada");
+}
+
+/**
+ * Remove the first Aura Amplificada card from the field.
+ */
+export function consumeAuraAmplificada(fieldCards: (BattleCard | null)[]): (BattleCard | null)[] {
+  const newField = [...fieldCards];
+  const idx = newField.findIndex((c) => c !== null && c.alignment === "aura-amplificada");
+  if (idx !== -1) newField[idx] = null;
+  return newField;
+}
+
+/**
+ * Remove `count` energy cards of the given element from the field.
+ * Prefers consuming exact-element luck cards first, then aura-elemental wildcards.
  * Returns a new field array with consumed cards set to null.
  */
 export function consumeEnergyCards(
@@ -351,6 +404,8 @@ export function consumeEnergyCards(
 ): (BattleCard | null)[] {
   const newField = [...fieldCards];
   let remaining = count;
+
+  // First pass: consume exact element luck cards
   for (let i = 0; i < newField.length && remaining > 0; i++) {
     const card = newField[i];
     if (card && card.alignment === "luck" && card.element === element) {
@@ -358,5 +413,15 @@ export function consumeEnergyCards(
       remaining--;
     }
   }
+
+  // Second pass: consume aura-elemental wildcards for remaining
+  for (let i = 0; i < newField.length && remaining > 0; i++) {
+    const card = newField[i];
+    if (card && card.alignment === "aura-elemental") {
+      newField[i] = null;
+      remaining--;
+    }
+  }
+
   return newField;
 }
