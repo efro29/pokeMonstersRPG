@@ -4,7 +4,7 @@ import type { PokemonSpecies, BagItemDef, PokemonBaseAttributes, DamageBreakdown
 import { getGameStoreKey } from "./mode-store";
 import { BAG_ITEMS, getMove, getPokemon, canEvolveByLevel, canEvolveByStone, canEvolveByTrade, xpForLevel, computeAttributes, getBaseAttributes, applyFaintPenalty, applyLevelUpBonus, rollDamageAgainstPokemon, calculateHitResult, calculateBattleDamage, getDamageMultiplier } from "./pokemon-data";
 import type { BattleCard, CardAlignment, SuperEffect } from "./card-data";
-import { drawCard, checkLuckTrio, checkBadLuckTrio, checkElementalAffinity, calculateBadLuckPenalty, rollSuperAdvantage, rollSuperPunishment } from "./card-data";
+import { drawCard, checkLuckTrio, checkBadLuckTrio, checkElementalAffinity, calculateBadLuckPenalty, rollSuperAdvantage, rollSuperPunishment, countFieldCardsByElement, consumeEnergyCards } from "./card-data";
 
 export type PokemonAttributeKey = keyof PokemonBaseAttributes;
 
@@ -648,6 +648,23 @@ export const useGameStore = create<GameState>()(
         const activeMove = pokemon.moves.find((m) => m.moveId === moveId);
         if (!activeMove || activeMove.currentPP <= 0) return;
 
+        // Check energy cost
+        const moveDef = getMove(moveId);
+        if (!moveDef) return;
+
+        let updatedCardField = battle.cardField;
+        if (moveDef.energy_cost > 0) {
+          const available = countFieldCardsByElement(battle.cardField, moveDef.energy_type);
+          if (available < moveDef.energy_cost) return; // Not enough energy cards
+          // Consume energy cards from field
+          updatedCardField = consumeEnergyCards(battle.cardField, moveDef.energy_type, moveDef.energy_cost);
+        }
+
+        // Recalculate bad luck penalty after consuming cards
+        const species = getPokemon(pokemon.speciesId);
+        const pokemonTypes = species ? species.types : [];
+        const newPenalty = calculateBadLuckPenalty(updatedCardField, pokemonTypes);
+
         // Deduct 1 PP
         set({
           team: team.map((p) =>
@@ -669,7 +686,9 @@ export const useGameStore = create<GameState>()(
             diceRoll: null,
             hitResult: null,
             damageDealt: null,
-  damageBreakdown: null,
+            damageBreakdown: null,
+            cardField: updatedCardField,
+            badLuckPenalty: newPenalty,
           },
         });
       },

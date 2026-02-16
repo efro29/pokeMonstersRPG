@@ -324,3 +324,39 @@ export function rollSuperAdvantage(): SuperEffect {
 export function rollSuperPunishment(): SuperEffect {
   return SUPER_PUNISHMENTS[Math.floor(Math.random() * SUPER_PUNISHMENTS.length)];
 }
+
+// ---- Energy System: Count and consume element cards for move costs ----
+
+/**
+ * Count how many LUCK cards of a given element are on the field.
+ * Only luck cards count as energy (bad-luck cards cannot be used).
+ */
+export function countFieldCardsByElement(
+  fieldCards: (BattleCard | null)[],
+  element: string
+): number {
+  return fieldCards.filter(
+    (c) => c !== null && c.alignment === "luck" && c.element === element
+  ).length;
+}
+
+/**
+ * Remove `count` luck cards of the given element from the field.
+ * Returns a new field array with consumed cards set to null.
+ */
+export function consumeEnergyCards(
+  fieldCards: (BattleCard | null)[],
+  element: string,
+  count: number
+): (BattleCard | null)[] {
+  const newField = [...fieldCards];
+  let remaining = count;
+  for (let i = 0; i < newField.length && remaining > 0; i++) {
+    const card = newField[i];
+    if (card && card.alignment === "luck" && card.element === element) {
+      newField[i] = null;
+      remaining--;
+    }
+  }
+  return newField;
+}
