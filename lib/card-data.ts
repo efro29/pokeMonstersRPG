@@ -1,22 +1,23 @@
 // Battle Card system - Types, deck generation, and card effects
+// Deck: 132 cards total (108 luck + 18 bad luck + 3 aura + 1 primordial + 2 resurrect)
+// Draw limit: 108 cards per battle
 // Trio rules:
 //   - Super Advantage: 3 LUCK cards with SAME element (e.g. fire+fire+fire)
 //   - Super Punishment: 3 BAD-LUCK cards -> clears all slots
 //   - Bad luck cards: -2 damage penalty each (-4 if pokemon shares the card element type)
 //   - Luck cards: slots remain after trio, only cleared on bad-luck trio
-//   - Deck: 27 luck / 13 bad luck cards
 
 export type CardAlignment = "luck" | "bad-luck" | "aura-elemental" | "aura-amplificada" | "heal" | "resurrect";
 
 export type CardElement =
   | "fire" | "water" | "grass" | "electric" | "ice"
   | "rock" | "psychic" | "ghost" | "dragon" | "normal" | "flying"
-  | "fighting" | "poison" | "ground" | "bug" | "dark" | "steel";
+  | "fighting" | "poison" | "ground" | "bug" | "dark" | "steel" | "fairy";
 
 export const CARD_ELEMENTS: CardElement[] = [
-  "fire", "water", "grass", "electric", "ice",
-  "rock", "psychic", "ghost", "dragon", "normal", "flying",
-  "fighting", "poison", "ground", "bug", "dark", "steel",
+  "normal", "fire", "water", "electric", "grass", "ice",
+  "fighting", "poison", "ground", "flying", "psychic", "bug",
+  "rock", "ghost", "dragon", "dark", "steel", "fairy",
 ];
 
 export const ELEMENT_COLORS: Record<CardElement, string> = {
@@ -37,6 +38,7 @@ export const ELEMENT_COLORS: Record<CardElement, string> = {
   bug: "#A8B820",
   dark: "#705848",
   steel: "#B8B8D0",
+  fairy: "#EE99AC",
 };
 
 export const ELEMENT_NAMES_PT: Record<CardElement, string> = {
@@ -57,6 +59,7 @@ export const ELEMENT_NAMES_PT: Record<CardElement, string> = {
   bug: "Inseto",
   dark: "Sombrio",
   steel: "Aco",
+  fairy: "Fada",
 };
 
 export interface BattleCard {
@@ -214,57 +217,85 @@ export const SUPER_PUNISHMENTS: SuperEffect[] = [
 ];
 
 // -- DECK GENERATION --
+// Finite deck: 132 cards total
+//   108 Luck   (18 types x 6 each)
+//    18 Bad Luck
+//     3 Aura Elemental
+//     1 Aura Primordial (Amplificada)
+//     2 Enfermeira Joy (Resurrect)
+// Max draw limit: 108 cards per battle
+
+export const DECK_SIZE = 132;
+export const MAX_DRAWS = 108;
+
 let cardCounter = 0;
 function nextCardId(): string {
   return `card-${Date.now()}-${++cardCounter}`;
 }
 
-function randomElement(): CardElement {
-  return CARD_ELEMENTS[Math.floor(Math.random() * CARD_ELEMENTS.length)];
+/** Build one luck card for a given element */
+function makeLuckCard(element: CardElement): BattleCard {
+  const defIndex = Math.floor(Math.random() * LUCK_CARDS.length);
+  const def = LUCK_CARDS[defIndex];
+  return {
+    id: nextCardId(),
+    alignment: "luck",
+    element,
+    name: def.name,
+    description: def.description,
+    effectKey: def.effectKey,
+    cardIndex: defIndex,
+  };
+}
+
+/** Build one bad-luck card with a random element */
+function makeBadLuckCard(): BattleCard {
+  const element = CARD_ELEMENTS[Math.floor(Math.random() * CARD_ELEMENTS.length)];
+  const defIndex = Math.floor(Math.random() * BAD_LUCK_CARDS.length);
+  const def = BAD_LUCK_CARDS[defIndex];
+  return {
+    id: nextCardId(),
+    alignment: "bad-luck",
+    element,
+    name: def.name,
+    description: def.description,
+    effectKey: def.effectKey,
+    cardIndex: LUCK_CARDS.length + defIndex,
+  };
+}
+
+/** Fisher-Yates shuffle */
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
 /**
- * Draw a single card with exact probabilities:
- *   Sorte (luck)        = 80%
- *   Azar (bad-luck)     = 15%
- *   Aura Elemental      =  2%
- *   Aura Amplificada    =  1%
- *   Enfermeira Joy      =  2%
- *   Total               = 100%
+ * Build a complete 132-card deck and shuffle it.
+ * 108 luck (6 per each of 18 types) + 18 bad luck + 3 aura elemental + 1 aura primordial + 2 resurrect
  */
-export function drawCard(): BattleCard {
-  const roll = Math.random() * 100; // 0-100
-  const element = randomElement();
+export function buildDeck(): BattleCard[] {
+  const deck: BattleCard[] = [];
 
-  if (roll < 80) {
-    // --- LUCK (80%) ---
-    const defIndex = Math.floor(Math.random() * LUCK_CARDS.length);
-    const def = LUCK_CARDS[defIndex];
-    return {
-      id: nextCardId(),
-      alignment: "luck",
-      element,
-      name: def.name,
-      description: def.description,
-      effectKey: def.effectKey,
-      cardIndex: defIndex,
-    };
-  } else if (roll < 95) {
-    // --- BAD LUCK (15%) ---
-    const defIndex = Math.floor(Math.random() * BAD_LUCK_CARDS.length);
-    const def = BAD_LUCK_CARDS[defIndex];
-    return {
-      id: nextCardId(),
-      alignment: "bad-luck",
-      element,
-      name: def.name,
-      description: def.description,
-      effectKey: def.effectKey,
-      cardIndex: LUCK_CARDS.length + defIndex,
-    };
-  } else if (roll < 97) {
-    // --- AURA ELEMENTAL (2%) ---
-    return {
+  // 108 Luck cards: 6 per element (18 elements)
+  for (const element of CARD_ELEMENTS) {
+    for (let i = 0; i < 6; i++) {
+      deck.push(makeLuckCard(element));
+    }
+  }
+
+  // 18 Bad Luck cards
+  for (let i = 0; i < 18; i++) {
+    deck.push(makeBadLuckCard());
+  }
+
+  // 3 Aura Elemental
+  for (let i = 0; i < 3; i++) {
+    deck.push({
       id: nextCardId(),
       alignment: "aura-elemental",
       element: "normal",
@@ -272,21 +303,23 @@ export function drawCard(): BattleCard {
       description: "Carta coringa! Ative o poder para usar como 1 carta de energia de qualquer tipo.",
       effectKey: "aura-elemental",
       cardIndex: -1,
-    };
-  } else if (roll < 98) {
-    // --- AURA AMPLIFICADA (1%) ---
-    return {
-      id: nextCardId(),
-      alignment: "aura-amplificada",
-      element: "normal",
-      name: "Aura Amplificada",
-      description: "Ative o poder para executar qualquer golpe sem custo. O D20 sera automaticamente 20 - Critico Garantido!",
-      effectKey: "aura-amplificada",
-      cardIndex: -2,
-    };
-  } else {
-    // --- ENFERMEIRA JOY / RESURRECT (2%) ---
-    return {
+    });
+  }
+
+  // 1 Aura Primordial (Amplificada)
+  deck.push({
+    id: nextCardId(),
+    alignment: "aura-amplificada",
+    element: "normal",
+    name: "Aura Primordial",
+    description: "Ative o poder para executar qualquer golpe sem custo. O D20 sera automaticamente 20 - Critico Garantido!",
+    effectKey: "aura-amplificada",
+    cardIndex: -2,
+  });
+
+  // 2 Enfermeira Joy (Resurrect)
+  for (let i = 0; i < 2; i++) {
+    deck.push({
       id: nextCardId(),
       alignment: "resurrect",
       element: "normal",
@@ -294,8 +327,34 @@ export function drawCard(): BattleCard {
       description: "Ressuscita um Pokemon com 0 HP (25% HP). Se nenhum morreu, cura 20%!",
       effectKey: "resurrect-25",
       cardIndex: -4,
-    };
+    });
   }
+
+  return shuffleArray(deck);
+}
+
+/** Shuffle an existing deck (array) in-place and return it */
+export function shuffleDeck(deck: BattleCard[]): BattleCard[] {
+  return shuffleArray(deck);
+}
+
+/**
+ * Legacy: draw a random card (kept for backwards compatibility).
+ * New code should use buildDeck + drawFromDeck pattern instead.
+ */
+export function drawCard(): BattleCard {
+  const element = CARD_ELEMENTS[Math.floor(Math.random() * CARD_ELEMENTS.length)];
+  const defIndex = Math.floor(Math.random() * LUCK_CARDS.length);
+  const def = LUCK_CARDS[defIndex];
+  return {
+    id: nextCardId(),
+    alignment: "luck",
+    element,
+    name: def.name,
+    description: def.description,
+    effectKey: def.effectKey,
+    cardIndex: defIndex,
+  };
 }
 
 /**

@@ -1443,12 +1443,15 @@ export function BattleCards() {
     battle,
     drawBattleCard,
     replaceCardInSlot,
+    shuffleDeckAction,
+    replenishDeck,
   } = useGameStore();
 
   const [viewingCard, setViewingCard] = useState<BattleCard | null>(null);
   const [viewingCardSlotIndex, setViewingCardSlotIndex] = useState<number | undefined>(undefined);
   const [pendingCard, setPendingCard] = useState<BattleCard | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [showDeckMenu, setShowDeckMenu] = useState(false);
 
   const fieldCards = battle.cardField;
   const hasEmptySlot = fieldCards.some((c) => c === null);
@@ -1456,12 +1459,22 @@ export function BattleCards() {
   const badLuckCount = fieldCards.filter((c) => c?.alignment === "bad-luck").length;
   const penalty = battle.badLuckPenalty;
 
+  const deckRemaining = battle.deck?.length ?? 0;
+  const drawsLeft = battle.drawsRemaining ?? 108;
+  const canDraw = deckRemaining > 0 && drawsLeft > 0;
+  const discardCount = battle.discardPile?.length ?? 0;
+
   const handleDraw = useCallback(() => {
-    if (isDrawing) return;
+    if (isDrawing || !canDraw) return;
     setIsDrawing(true);
+    setShowDeckMenu(false);
     playCardDraw();
 
     const card = drawBattleCard();
+    if (!card) {
+      setIsDrawing(false);
+      return;
+    }
 
     // Check if card ended up as lastDrawnCard (all slots full -> need replace)
     const state = useGameStore.getState();
@@ -1480,7 +1493,6 @@ export function BattleCards() {
       }
 
       if (cardNotPlaced) {
-        // Need to replace a luck card
         setPendingCard(card);
       }
 
@@ -1496,7 +1508,17 @@ export function BattleCards() {
 
       setIsDrawing(false);
     }, 350);
-  }, [isDrawing, drawBattleCard]);
+  }, [isDrawing, canDraw, drawBattleCard]);
+
+  const handleShuffle = () => {
+    shuffleDeckAction();
+    setShowDeckMenu(false);
+  };
+
+  const handleReplenish = () => {
+    replenishDeck();
+    setShowDeckMenu(false);
+  };
 
   const handleReplace = (slotIndex: number) => {
     if (!pendingCard) return;
@@ -1522,7 +1544,6 @@ export function BattleCards() {
       elementCounts[card.element] = (elementCounts[card.element] || 0) + 1;
     }
   }
-  // Elements with 2+ cards should glow
   const glowingElements = new Set(
     Object.entries(elementCounts)
       .filter(([, count]) => count >= 2)
@@ -1532,7 +1553,7 @@ export function BattleCards() {
   return (
     <>
       <div className="flex flex-col gap-1.5">
-        {/* 6 card slots + draw button */}
+        {/* 6 card slots + deck button */}
         <div className="flex items-center justify-center gap-1">
           {fieldCards.map((card, i) =>
             card ? (
@@ -1551,19 +1572,102 @@ export function BattleCards() {
               <EmptySlot key={`empty-${i}`} index={i} />
             )
           )}
-          <div
-            onClick={handleDraw}
-            className="relative flex flex-col items-center justify-center rounded-[5px]"
-            style={{
-              cursor: "pointer",
-              width: 44,
-              height: 64,
-              background: "linear-gradient(180deg, rgba(2, 2, 26, 0.6) 0%, rgba(1, 1, 3, 0.8) 100%)",
-              borderColor: "rgb(7, 18, 119)",
-              borderWidth: 1,
-            }}
-          >
-            <span className="text-[9px] font-mono">Compre</span>
+
+          {/* Deck button with remaining count */}
+          <div className="relative">
+            <div
+              onClick={() => setShowDeckMenu(!showDeckMenu)}
+              className="relative flex flex-col items-center justify-center rounded-[5px] select-none"
+              style={{
+                cursor: "pointer",
+                width: 44,
+                height: 64,
+                background: canDraw
+                  ? "linear-gradient(180deg, rgba(2, 2, 26, 0.6) 0%, rgba(1, 1, 3, 0.8) 100%)"
+                  : "linear-gradient(180deg, rgba(40, 10, 10, 0.6) 0%, rgba(20, 5, 5, 0.8) 100%)",
+                borderColor: canDraw ? "rgb(7, 18, 119)" : "rgb(100, 30, 30)",
+                borderWidth: 1,
+              }}
+            >
+              <span className="text-[11px] font-bold font-mono" style={{ color: canDraw ? "#6890F0" : "#EF4444" }}>
+                {deckRemaining}
+              </span>
+              <span className="text-[7px] text-muted-foreground mt-0.5">
+                {canDraw ? "cartas" : "vazio"}
+              </span>
+            </div>
+
+            {/* Deck popup menu */}
+            <AnimatePresence>
+              {showDeckMenu && (
+                <>
+                  {/* Backdrop to close */}
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowDeckMenu(false)}
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: 5, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute bottom-[68px] right-0 z-50 flex flex-col gap-1 p-2 rounded-lg border"
+                    style={{
+                      background: "linear-gradient(180deg, #0a0a2e 0%, #050510 100%)",
+                      borderColor: "#1e3a8a",
+                      minWidth: 160,
+                      boxShadow: "0 8px 30px rgba(0,0,0,0.6)",
+                    }}
+                  >
+                    <p className="text-[9px] text-muted-foreground text-center mb-1">
+                      Baralho: {deckRemaining} restantes | Compras: {drawsLeft}
+                    </p>
+
+                    {/* Option 1: Draw card */}
+                    <button
+                      onClick={handleDraw}
+                      disabled={!canDraw || isDrawing}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{
+                        background: canDraw ? "rgba(104,144,240,0.15)" : "rgba(100,100,100,0.1)",
+                        color: canDraw ? "#93C5FD" : "#666",
+                      }}
+                    >
+                      <span className="text-[10px]">{"\uD83C\uDCCF"}</span>
+                      Comprar carta
+                    </button>
+
+                    {/* Option 2: Shuffle */}
+                    <button
+                      onClick={handleShuffle}
+                      disabled={deckRemaining <= 1}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{
+                        background: "rgba(168,104,255,0.15)",
+                        color: deckRemaining > 1 ? "#C4B5FD" : "#666",
+                      }}
+                    >
+                      <span className="text-[10px]">{"\uD83D\uDD00"}</span>
+                      Embaralhar
+                    </button>
+
+                    {/* Option 3: Replenish */}
+                    <button
+                      onClick={handleReplenish}
+                      disabled={discardCount === 0}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{
+                        background: discardCount > 0 ? "rgba(74,222,128,0.15)" : "rgba(100,100,100,0.1)",
+                        color: discardCount > 0 ? "#86EFAC" : "#666",
+                      }}
+                    >
+                      <span className="text-[10px]">{"\u267B"}</span>
+                      Repor cartas ({discardCount})
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>

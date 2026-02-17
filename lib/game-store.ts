@@ -4,7 +4,7 @@ import type { PokemonSpecies, BagItemDef, PokemonBaseAttributes, DamageBreakdown
 import { getGameStoreKey } from "./mode-store";
 import { BAG_ITEMS, getMove, getPokemon, canEvolveByLevel, canEvolveByStone, canEvolveByTrade, xpForLevel, computeAttributes, getBaseAttributes, applyFaintPenalty, applyLevelUpBonus, rollDamageAgainstPokemon, calculateHitResult, calculateBattleDamage, getDamageMultiplier } from "./pokemon-data";
 import type { BattleCard, CardAlignment, SuperEffect } from "./card-data";
-import { drawCard, checkLuckTrio, checkBadLuckTrio, checkElementalAffinity, calculateBadLuckPenalty, rollSuperAdvantage, rollSuperPunishment, countFieldCardsByElement, consumeEnergyCards, hasAuraAmplificada, consumeAuraAmplificada } from "./card-data";
+import { drawCard, buildDeck, shuffleDeck, MAX_DRAWS, checkLuckTrio, checkBadLuckTrio, checkElementalAffinity, calculateBadLuckPenalty, rollSuperAdvantage, rollSuperPunishment, countFieldCardsByElement, consumeEnergyCards, hasAuraAmplificada, consumeAuraAmplificada } from "./card-data";
 
 export type PokemonAttributeKey = keyof PokemonBaseAttributes;
 
@@ -218,7 +218,10 @@ export interface BattleState {
   selectedAttribute: PokemonAttributeKey | null;
   attributeTestDC: number;
   attributeTestResult: AttributeTestResult | null;
-  // Card system
+  // Card system - finite deck
+  deck: BattleCard[];          // remaining cards to draw
+  discardPile: BattleCard[];   // used/consumed cards (can be replenished)
+  drawsRemaining: number;      // max 108 draws per battle
   cardField: (BattleCard | null)[];
   lastDrawnCard: BattleCard | null;
   cardTrioEvent: CardTrioEvent | null;
@@ -309,8 +312,10 @@ interface GameState {
   triggerEvolution: (evolution: PendingEvolution) => void;
   completeEvolution: () => void;
   // Card system
-  drawBattleCard: () => BattleCard;
+  drawBattleCard: () => BattleCard | null;
   replaceCardInSlot: (slotIndex: number, card: BattleCard) => void;
+  shuffleDeckAction: () => void;
+  replenishDeck: () => void;
   clearCardField: () => void;
   dismissTrioEvent: () => void;
   recalcBadLuckPenalty: () => void;
@@ -364,12 +369,15 @@ export const useGameStore = create<GameState>()(
         selectedAttribute: null,
         attributeTestDC: 10,
         attributeTestResult: null,
-        // Card system
-        cardField: [null, null, null, null, null, null],
-        lastDrawnCard: null,
-        cardTrioEvent: null,
-        cardDrawCount: 0,
-        badLuckPenalty: 0,
+  // Card system - finite deck
+  deck: buildDeck(),
+  discardPile: [],
+  drawsRemaining: MAX_DRAWS,
+  cardField: [null, null, null, null, null, null],
+  lastDrawnCard: null,
+  cardTrioEvent: null,
+  cardDrawCount: 0,
+  badLuckPenalty: 0,
   auraAmplificadaActive: false,
         // Card animation
         pokemonAnimationState: {
@@ -609,12 +617,15 @@ export const useGameStore = create<GameState>()(
             selectedAttribute: null,
             attributeTestDC: 10,
             attributeTestResult: null,
+            deck: buildDeck(),
+            discardPile: [],
+            drawsRemaining: MAX_DRAWS,
             cardField: [null, null, null, null, null, null],
             lastDrawnCard: null,
             cardTrioEvent: null,
             cardDrawCount: 0,
             badLuckPenalty: 0,
-  auraAmplificadaActive: false,
+            auraAmplificadaActive: false,
           },
         });
       },
@@ -633,12 +644,15 @@ export const useGameStore = create<GameState>()(
             selectedAttribute: null,
             attributeTestDC: 10,
             attributeTestResult: null,
+            deck: buildDeck(),
+            discardPile: [],
+            drawsRemaining: MAX_DRAWS,
             cardField: [null, null, null, null, null, null],
             lastDrawnCard: null,
             cardTrioEvent: null,
             cardDrawCount: 0,
             badLuckPenalty: 0,
-  auraAmplificadaActive: false,
+            auraAmplificadaActive: false,
           },
         });
       },
@@ -1313,12 +1327,21 @@ export const useGameStore = create<GameState>()(
         set({ pendingEvolution: null });
       },
 
-      // -- Card system --
+      // -- Card system (finite deck) --
       drawBattleCard: () => {
-        const card = drawCard();
         const { battle, team } = get();
+
+        // Check draw limits
+        if (battle.drawsRemaining <= 0 || battle.deck.length === 0) {
+          return null as unknown as BattleCard; // No cards left
+        }
+
+        // Draw from top of deck
+        const newDeck = [...battle.deck];
+        const card = newDeck.shift()!;
         const newField = [...battle.cardField];
         const newCount = battle.cardDrawCount + 1;
+        const newDrawsRemaining = battle.drawsRemaining - 1;
         const activeMon = team.find((p) => p.uid === battle.activePokemonUid);
         const activeSpecies = activeMon ? getPokemon(activeMon.speciesId) : null;
         const pokemonTypes = activeSpecies ? [activeSpecies.type1, activeSpecies.type2].filter(Boolean) as string[] : [];
@@ -1335,6 +1358,8 @@ export const useGameStore = create<GameState>()(
           set({
             battle: {
               ...battle,
+              deck: newDeck,
+              drawsRemaining: newDrawsRemaining,
               lastDrawnCard: card,
               cardDrawCount: newCount,
             },
@@ -1355,6 +1380,8 @@ export const useGameStore = create<GameState>()(
           set({
             battle: {
               ...battle,
+              deck: newDeck,
+              drawsRemaining: newDrawsRemaining,
               cardField: newField,
               lastDrawnCard: card,
               cardDrawCount: newCount,
@@ -1373,6 +1400,8 @@ export const useGameStore = create<GameState>()(
           set({
             battle: {
               ...battle,
+              deck: newDeck,
+              drawsRemaining: newDrawsRemaining,
               cardField: newField,
               lastDrawnCard: card,
               cardDrawCount: newCount,
@@ -1387,6 +1416,8 @@ export const useGameStore = create<GameState>()(
         set({
           battle: {
             ...battle,
+            deck: newDeck,
+            drawsRemaining: newDrawsRemaining,
             cardField: newField,
             lastDrawnCard: card,
             cardDrawCount: newCount,
@@ -1460,6 +1491,8 @@ export const useGameStore = create<GameState>()(
 
       clearCardField: () => {
         const { battle } = get();
+        // Move all field cards to discard pile
+        const discarded = battle.cardField.filter((c): c is BattleCard => c !== null);
         set({
           battle: {
             ...battle,
@@ -1467,7 +1500,8 @@ export const useGameStore = create<GameState>()(
             lastDrawnCard: null,
             cardTrioEvent: null,
             badLuckPenalty: 0,
-  auraAmplificadaActive: false,
+            auraAmplificadaActive: false,
+            discardPile: [...battle.discardPile, ...discarded],
           },
         });
       },
@@ -1505,6 +1539,8 @@ export const useGameStore = create<GameState>()(
 
           // Re-read battle after addBattleLog
           const currentBattle = get().battle;
+          // Move all field cards to discard pile
+          const discardedCards = currentBattle.cardField.filter((c): c is BattleCard => c !== null);
           // Bad luck trio -> clear ALL slots + damage animation
           set({
             team: updatedTeam,
@@ -1514,7 +1550,8 @@ export const useGameStore = create<GameState>()(
               lastDrawnCard: null,
               cardTrioEvent: null,
               badLuckPenalty: 0,
-  auraAmplificadaActive: false,
+              auraAmplificadaActive: false,
+              discardPile: [...currentBattle.discardPile, ...discardedCards],
               pokemonAnimationState: {
                 isAnimating: true,
                 effectType: "damage",
@@ -1732,19 +1769,22 @@ export const useGameStore = create<GameState>()(
         get().addBattleLog(`[CURA] ${card.name} cura ${actualHeal} HP de ${targetSpecies.name}!`);
         set({ team: updatedTeam });
 
-        // Remove card from field
+        // Remove card from field -> discard pile
         const activeMon2 = team.find((p) => p.uid === battle.activePokemonUid);
         const activeSpecies2 = activeMon2 ? getPokemon(activeMon2.speciesId) : null;
         const pokemonTypes = activeSpecies2 ? [activeSpecies2.type1, activeSpecies2.type2].filter(Boolean) as string[] : [];
-        const newField = [...battle.cardField];
+        const currentBattle = get().battle;
+        const consumedCard = currentBattle.cardField[slotIndex];
+        const newField = [...currentBattle.cardField];
         newField[slotIndex] = null;
         const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
 
         set({
           battle: {
-            ...get().battle,
+            ...currentBattle,
             cardField: newField,
             badLuckPenalty: penalty,
+            discardPile: consumedCard ? [...currentBattle.discardPile, consumedCard] : currentBattle.discardPile,
             pokemonAnimationState: {
               isAnimating: true,
               effectType: "heal",
@@ -1789,19 +1829,22 @@ export const useGameStore = create<GameState>()(
         get().addBattleLog(`[RESSURREICAO] ${targetSpecies.name} foi ressuscitado com ${reviveHp} HP!`);
         set({ team: updatedTeam });
 
-        // Remove card from field
+        // Remove card from field -> discard pile
         const activeMon2 = team.find((p) => p.uid === battle.activePokemonUid);
         const activeSpecies2 = activeMon2 ? getPokemon(activeMon2.speciesId) : null;
         const pokemonTypes = activeSpecies2 ? [activeSpecies2.type1, activeSpecies2.type2].filter(Boolean) as string[] : [];
-        const newField = [...battle.cardField];
+        const currentBattle = get().battle;
+        const consumedCard = currentBattle.cardField[slotIndex];
+        const newField = [...currentBattle.cardField];
         newField[slotIndex] = null;
         const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
 
         set({
           battle: {
-            ...get().battle,
+            ...currentBattle,
             cardField: newField,
             badLuckPenalty: penalty,
+            discardPile: consumedCard ? [...currentBattle.discardPile, consumedCard] : currentBattle.discardPile,
             pokemonAnimationState: {
               isAnimating: true,
               effectType: "buff",
@@ -1826,10 +1869,48 @@ export const useGameStore = create<GameState>()(
         return true;
       },
 
+      // ---- SHUFFLE DECK: shuffle remaining cards in the deck ----
+      shuffleDeckAction: () => {
+        const { battle } = get();
+        const shuffled = shuffleDeck(battle.deck);
+        set({
+          battle: {
+            ...battle,
+            deck: shuffled,
+          },
+        });
+        get().addBattleLog("[BARALHO] Cartas embaralhadas!");
+      },
+
+      // ---- REPLENISH DECK: return discard pile back into the deck and shuffle ----
+      replenishDeck: () => {
+        const { battle } = get();
+        if (battle.discardPile.length === 0) {
+          get().addBattleLog("[BARALHO] Nenhuma carta usada para repor!");
+          return;
+        }
+        // Re-generate IDs for replenished cards to avoid duplicates
+        const replenished = battle.discardPile.map((c) => ({
+          ...c,
+          id: `card-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          activated: undefined,
+          trioUsed: undefined,
+        }));
+        const newDeck = shuffleDeck([...battle.deck, ...replenished]);
+        get().addBattleLog(`[BARALHO] ${replenished.length} cartas repostas e embaralhadas!`);
+        set({
+          battle: {
+            ...battle,
+            deck: newDeck,
+            discardPile: [],
+          },
+        });
+      },
+
     }),
     {
       name: getGameStoreKey(),
-      version: 11,
+      version: 12,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         if (version < 2) {
