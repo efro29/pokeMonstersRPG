@@ -29,6 +29,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
 import { getPokemonAnimationVariants } from "@/lib/card-animations";
+import { countFieldCardsByElement, ELEMENT_COLORS, hasAuraAmplificada } from "@/lib/card-data";
 import {
   Swords,
   ArrowLeft,
@@ -43,6 +44,19 @@ import {
   CheckCircle,
   XCircle,
   Star,
+  Flame,
+  Droplets,
+  Leaf,
+  Snowflake,
+  Mountain,
+  Brain,
+  Ghost,
+  Bug,
+  Skull,
+  Cog,
+  Footprints,
+  Sword,
+  Circle,
 } from "lucide-react";
 import {
   playAttack,
@@ -63,6 +77,27 @@ import { BattleParticles } from "./battle-particles";
 import { kantoPokemonSizes } from "@/lib/kantoPokemonSizes";
 
 
+
+// Element icon map for energy cost display
+const ENERGY_ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
+  fire: Flame,
+  water: Droplets,
+  grass: Leaf,
+  electric: Zap,
+  ice: Snowflake,
+  rock: Mountain,
+  psychic: Brain,
+  ghost: Ghost,
+  dragon: Star,
+  normal: Circle,
+  flying: Wind,
+  fighting: Sword,
+  poison: Skull,
+  ground: Footprints,
+  bug: Bug,
+  dark: Shield,
+  steel: Cog,
+};
 
 type Props = {
   number: number;
@@ -632,39 +667,84 @@ const [arena] = useState(getRandomArena());
                 <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
               </Button>
               <div className="grid grid-cols-2 gap-2">
-                {pokemon.moves.map((m) => {
-                  const moveDef = getMove(m.moveId);
-                  if (!moveDef) return null;
-                  const noPP = m.currentPP <= 0;
-                  return (
-                    <Button
-                      key={m.moveId}
-                      onClick={() => handleAttackSelect(m.moveId)}
-                      disabled={noPP}
-                      className="h-[70px] py-2 px-3 flex flex-col items-start gap-0.5 text-left"
-                      style={{
-                        backgroundColor: noPP
-                          ? undefined
-                          : `${TYPE_COLORS[moveDef.type as PokemonType]}CC`,
-                        color: noPP ? undefined : "#fff",
-                        border: "none",
-                      }}
-                    >
-                      <span className="text-sm font-bold">{moveDef.name}</span>
-                      <div className="flex items-center gap-2 text-[10px] opacity-90 flex-wrap">
-                        {moveDef.damage_dice && <span>{moveDef.damage_dice}</span>}
-                        {moveDef.damage_type !== "status" && <span className="opacity-75">{moveDef.damage_type === "physical" ? "FIS" : "ESP"}</span>}
-                        {moveDef.damage_type === "status" && <span className="opacity-75">STA</span>}
-                        <span>
-                          PP {m.currentPP}/{m.maxPP}
-                        </span>
-                      </div>
-                      <span className="text-[9px] opacity-75 mt-0.5">
-                        {MOVE_RANGE_INFO[moveDef.range as MoveRange]?.labelPt ?? moveDef.range}
-                      </span>
-                    </Button>
-                  );
-                })}
+                {(() => {
+                  const hasAmplificada = hasAuraAmplificada(battle.cardField);
+                  return pokemon.moves.map((m) => {
+                    const moveDef = getMove(m.moveId);
+                    if (!moveDef) return null;
+                    const noPP = m.currentPP <= 0;
+                    // Energy cost check
+                    const energyCost = moveDef.energy_cost;
+                    const energyType = moveDef.energy_type;
+                    const availableEnergy = energyCost > 0
+                      ? countFieldCardsByElement(battle.cardField, energyType)
+                      : 0;
+                    const notEnoughEnergy = energyCost > 0 && availableEnergy < energyCost;
+                    // Aura Amplificada bypasses energy cost
+                    const canUseAmplificada = notEnoughEnergy && hasAmplificada && energyCost > 0;
+                    const isDisabled = noPP || (notEnoughEnergy && !canUseAmplificada);
+                    const EnergyIcon = ENERGY_ICON_MAP[energyType] || Circle;
+                    return (
+                      <Button
+                        key={m.moveId}
+                        onClick={() => handleAttackSelect(m.moveId)}
+                        disabled={isDisabled}
+                        className="h-auto min-h-[70px] py-2 px-3 flex flex-col items-start gap-0.5 text-left relative"
+                        style={{
+                          backgroundColor: isDisabled
+                            ? undefined
+                            : canUseAmplificada
+                            ? "#B8860B"
+                            : `${TYPE_COLORS[moveDef.type as PokemonType]}CC`,
+                          color: isDisabled ? undefined : "#fff",
+                          border: canUseAmplificada ? "1px solid #FFD700" : "none",
+                        }}
+                      >
+                        <span className="text-sm font-bold">{moveDef.name}</span>
+                        <div className="flex items-center gap-2 text-[10px] opacity-90 flex-wrap">
+                          {moveDef.damage_dice && <span>{moveDef.damage_dice}</span>}
+                          {moveDef.damage_type !== "status" && <span className="opacity-75">{moveDef.damage_type === "physical" ? "FIS" : "ESP"}</span>}
+                          {moveDef.damage_type === "status" && <span className="opacity-75">STA</span>}
+                          <span>
+                            PP {m.currentPP}/{m.maxPP}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 w-full justify-between">
+                          <span className="text-[9px] opacity-75">
+                            {MOVE_RANGE_INFO[moveDef.range as MoveRange]?.labelPt ?? moveDef.range}
+                          </span>
+                          {energyCost > 0 ? (
+                            canUseAmplificada ? (
+                              <div
+                                className="flex items-center gap-0.5 text-[9px] font-bold rounded px-1 py-0.5"
+                                style={{
+                                  backgroundColor: "rgba(212,175,55,0.4)",
+                                  color: "#FFD700",
+                                }}
+                              >
+                                <Star className="w-3 h-3" />
+                                <span>D20=20</span>
+                              </div>
+                            ) : (
+                              <div
+                                className="flex items-center gap-0.5 text-[9px] font-bold rounded px-1 py-0.5"
+                                style={{
+                                  backgroundColor: notEnoughEnergy ? "rgba(255,60,60,0.35)" : "rgba(255,255,255,0.2)",
+                                  color: notEnoughEnergy ? "#ff9999" : "#fff",
+                                }}
+                              >
+                                <EnergyIcon className="w-3 h-3" />
+                                <span>{availableEnergy}/{energyCost}</span>
+                              </div>
+                            )
+                          ) : (
+                            <span className="text-[8px] opacity-50">Gratis</span>
+                          )}
+                        </div>
+                      </Button>
+                    );
+                  });
+                })()}
               </div>
             </motion.div>
           )}

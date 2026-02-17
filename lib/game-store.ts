@@ -4,7 +4,7 @@ import type { PokemonSpecies, BagItemDef, PokemonBaseAttributes, DamageBreakdown
 import { getGameStoreKey } from "./mode-store";
 import { BAG_ITEMS, getMove, getPokemon, canEvolveByLevel, canEvolveByStone, canEvolveByTrade, xpForLevel, computeAttributes, getBaseAttributes, applyFaintPenalty, applyLevelUpBonus, rollDamageAgainstPokemon, calculateHitResult, calculateBattleDamage, getDamageMultiplier } from "./pokemon-data";
 import type { BattleCard, CardAlignment, SuperEffect } from "./card-data";
-import { drawCard, checkLuckTrio, checkBadLuckTrio, checkElementalAffinity, calculateBadLuckPenalty, rollSuperAdvantage, rollSuperPunishment } from "./card-data";
+import { drawCard, checkLuckTrio, checkBadLuckTrio, checkElementalAffinity, calculateBadLuckPenalty, rollSuperAdvantage, rollSuperPunishment, countFieldCardsByElement, consumeEnergyCards, hasAuraAmplificada, consumeAuraAmplificada } from "./card-data";
 
 export type PokemonAttributeKey = keyof PokemonBaseAttributes;
 
@@ -224,6 +224,7 @@ export interface BattleState {
   cardTrioEvent: CardTrioEvent | null;
   cardDrawCount: number;
   badLuckPenalty: number; // cumulative -2 per bad card (-4 if same type)
+  auraAmplificadaActive: boolean; // When true, hit uses 70% flat chance
   // Card animation
   pokemonAnimationState: {
     isAnimating: boolean;
@@ -314,6 +315,8 @@ interface GameState {
   dismissTrioEvent: () => void;
   recalcBadLuckPenalty: () => void;
   activateCardEffect: (slotIndex: number) => { isCrit: boolean; alignment: string } | undefined;
+  activateHealCard: (slotIndex: number, targetUid: string) => boolean;
+  activateResurrectCard: (slotIndex: number, targetUid: string) => boolean;
 }
 
 function generateUid(): string {
@@ -362,11 +365,12 @@ export const useGameStore = create<GameState>()(
         attributeTestDC: 10,
         attributeTestResult: null,
         // Card system
-        cardField: [null, null, null, null, null],
+        cardField: [null, null, null, null, null, null],
         lastDrawnCard: null,
         cardTrioEvent: null,
         cardDrawCount: 0,
         badLuckPenalty: 0,
+  auraAmplificadaActive: false,
         // Card animation
         pokemonAnimationState: {
           isAnimating: false,
@@ -605,11 +609,12 @@ export const useGameStore = create<GameState>()(
             selectedAttribute: null,
             attributeTestDC: 10,
             attributeTestResult: null,
-            cardField: [null, null, null, null, null],
+            cardField: [null, null, null, null, null, null],
             lastDrawnCard: null,
             cardTrioEvent: null,
             cardDrawCount: 0,
             badLuckPenalty: 0,
+  auraAmplificadaActive: false,
           },
         });
       },
@@ -628,11 +633,12 @@ export const useGameStore = create<GameState>()(
             selectedAttribute: null,
             attributeTestDC: 10,
             attributeTestResult: null,
-            cardField: [null, null, null, null, null],
+            cardField: [null, null, null, null, null, null],
             lastDrawnCard: null,
             cardTrioEvent: null,
             cardDrawCount: 0,
             badLuckPenalty: 0,
+  auraAmplificadaActive: false,
           },
         });
       },
@@ -647,6 +653,34 @@ export const useGameStore = create<GameState>()(
         if (!pokemon) return;
         const activeMove = pokemon.moves.find((m) => m.moveId === moveId);
         if (!activeMove || activeMove.currentPP <= 0) return;
+
+        // Check energy cost
+        const moveDef = getMove(moveId);
+        if (!moveDef) return;
+
+        let updatedCardField = battle.cardField;
+        let useAuraAmplificada = false;
+
+        if (moveDef.energy_cost > 0) {
+          const available = countFieldCardsByElement(battle.cardField, moveDef.energy_type);
+          const hasAmplificada = hasAuraAmplificada(battle.cardField);
+
+          if (available >= moveDef.energy_cost) {
+            // Enough normal energy - consume it
+            updatedCardField = consumeEnergyCards(updatedCardField, moveDef.energy_type, moveDef.energy_cost);
+          } else if (hasAmplificada) {
+            // Use Aura Amplificada to bypass energy cost
+            updatedCardField = consumeAuraAmplificada(updatedCardField);
+            useAuraAmplificada = true;
+          } else {
+            return; // Not enough energy cards and no aura
+          }
+        }
+
+        // Recalculate bad luck penalty after consuming cards
+        const species = getPokemon(pokemon.speciesId);
+        const pokemonTypes = species ? species.types : [];
+        const newPenalty = calculateBadLuckPenalty(updatedCardField, pokemonTypes);
 
         // Deduct 1 PP
         set({
@@ -669,7 +703,10 @@ export const useGameStore = create<GameState>()(
             diceRoll: null,
             hitResult: null,
             damageDealt: null,
-  damageBreakdown: null,
+            damageBreakdown: null,
+            cardField: updatedCardField,
+            badLuckPenalty: newPenalty,
+            auraAmplificadaActive: useAuraAmplificada,
           },
         });
       },
@@ -688,9 +725,13 @@ export const useGameStore = create<GameState>()(
 
         const effectiveRoll = roll + combateBonus;
 
-        // Determine hit result using effective roll with trainer bonuses
+        // Determine hit result
         let hitResult: HitResult;
-        if (roll === 1) {
+
+        if (battle.auraAmplificadaActive) {
+          // Aura Amplificada: D20 always counts as 20 - guaranteed critical hit!
+          hitResult = "critical-hit";
+        } else if (roll === 1) {
           hitResult = "critical-miss";
         } else if (roll >= critThreshold) {
           hitResult = "critical-hit";
@@ -721,6 +762,7 @@ export const useGameStore = create<GameState>()(
             hitResult,
             damageDealt,
             damageBreakdown: breakdown,
+            auraAmplificadaActive: false,
           },
         });
       },
@@ -1358,8 +1400,8 @@ export const useGameStore = create<GameState>()(
       replaceCardInSlot: (slotIndex, card) => {
         const { battle, team } = get();
         const existing = battle.cardField[slotIndex];
-        // Cannot replace bad luck cards
-        if (existing && existing.alignment === "bad-luck") return;
+        // Cannot replace bad luck or aura cards (heal/resurrect are consumable, so they CAN be replaced)
+        if (existing && (existing.alignment === "bad-luck" || existing.alignment === "aura-elemental" || existing.alignment === "aura-amplificada")) return;
 
         const newField = [...battle.cardField];
         newField[slotIndex] = card;
@@ -1421,10 +1463,11 @@ export const useGameStore = create<GameState>()(
         set({
           battle: {
             ...battle,
-            cardField: [null, null, null, null, null],
+            cardField: [null, null, null, null, null, null],
             lastDrawnCard: null,
             cardTrioEvent: null,
             badLuckPenalty: 0,
+  auraAmplificadaActive: false,
           },
         });
       },
@@ -1467,10 +1510,11 @@ export const useGameStore = create<GameState>()(
             team: updatedTeam,
             battle: {
               ...currentBattle,
-              cardField: [null, null, null, null, null],
+              cardField: [null, null, null, null, null, null],
               lastDrawnCard: null,
               cardTrioEvent: null,
               badLuckPenalty: 0,
+  auraAmplificadaActive: false,
               pokemonAnimationState: {
                 isAnimating: true,
                 effectType: "damage",
@@ -1493,10 +1537,49 @@ export const useGameStore = create<GameState>()(
             }));
           }, 800);
         } else {
-          // Luck trio -> keep slots (don't clear)
+          // Luck trio -> keep slots but mark trio cards as used so they don't re-trigger
+          const currentBattle2 = get().battle;
+          const trioElement = currentBattle2.cardTrioEvent?.effect?.key;
+          // Find the 3 luck cards of the same element that formed the trio and mark them
+          const markedField = [...currentBattle2.cardField];
+          let markedCount = 0;
+          for (let i = 0; i < markedField.length && markedCount < 3; i++) {
+            const c = markedField[i];
+            if (c && c.alignment === "luck" && !c.trioUsed) {
+              // We need to find cards that share the same element
+              // Re-check which element formed the trio
+              markedField[i] = { ...c, trioUsed: true };
+              markedCount++;
+            }
+          }
+          // More precise: find the element with 3+ non-trioUsed luck cards
+          const luckCards = currentBattle2.cardField.filter(
+            (c): c is BattleCard => c !== null && c.alignment === "luck" && !c.trioUsed
+          );
+          const byElement: Record<string, number[]> = {};
+          currentBattle2.cardField.forEach((c, i) => {
+            if (c && c.alignment === "luck" && !c.trioUsed) {
+              if (!byElement[c.element]) byElement[c.element] = [];
+              byElement[c.element].push(i);
+            }
+          });
+          const preciseField = [...currentBattle2.cardField];
+          let found = false;
+          for (const el of Object.keys(byElement)) {
+            if (byElement[el].length >= 3 && !found) {
+              for (let k = 0; k < 3; k++) {
+                const idx = byElement[el][k];
+                const card = preciseField[idx]!;
+                preciseField[idx] = { ...card, trioUsed: true };
+              }
+              found = true;
+            }
+          }
+
           set({
             battle: {
-              ...battle,
+              ...currentBattle2,
+              cardField: found ? preciseField : markedField,
               cardTrioEvent: null,
             },
           });
@@ -1517,16 +1600,60 @@ export const useGameStore = create<GameState>()(
 
         let isCrit = false;
 
+        // Handle AURA card activation - don't remove the card, just set activated = true
+        if (card.alignment === "aura-elemental" || card.alignment === "aura-amplificada") {
+          if (card.activated) return undefined; // Already activated
+          const newField = [...battle.cardField];
+          newField[slotIndex] = { ...card, activated: true };
+
+          const logMsg = card.alignment === "aura-amplificada"
+            ? `[AURA] Aura Amplificada ativada! Proximo golpe tera D20 garantido de 20!`
+            : `[AURA] Aura Elemental ativada! Funciona como energia coringa!`;
+          get().addBattleLog(logMsg);
+
+          const currentBattle = get().battle;
+          set({
+            battle: {
+              ...currentBattle,
+              cardField: newField,
+              pokemonAnimationState: {
+                isAnimating: true,
+                effectType: "buff",
+                duration: 800,
+              },
+            },
+          });
+
+          setTimeout(() => {
+            set((state) => ({
+              battle: {
+                ...state.battle,
+                pokemonAnimationState: {
+                  isAnimating: false,
+                  effectType: "none",
+                  duration: 0,
+                },
+              },
+            }));
+          }, 800);
+
+          return { isCrit: false, alignment: card.alignment };
+        }
+
+        // Heal and Resurrect are handled by dedicated functions (activateHealCard / activateResurrectCard)
+        // They should not be activated via the generic activateCardEffect
+        if (card.alignment === "heal" || card.alignment === "resurrect") {
+          return undefined;
+        }
+
         // Apply damage if bad-luck card
         if (card.alignment === "bad-luck") {
           const isSameType = pokemonTypes.some((t) => t.toLowerCase() === card.element.toLowerCase());
           isCrit = isSameType;
-          const baseDamage = 2; // Base bad luck damage
 
-         const damage = Math.round(activeMon.currentHp * 0.3);
- 
+          const damage = Math.round(activeMon.currentHp * 0.3);
 
-          const damageHit = isSameType ? damage * 2 : damage; // Double if same type
+          const damageHit = isSameType ? damage * 2 : damage;
 
           const newHp = Math.max(0, activeMon.currentHp - damageHit);
           const updatedTeam = team.map((p) =>
@@ -1583,10 +1710,126 @@ export const useGameStore = create<GameState>()(
         return { isCrit, alignment: card.alignment };
       },
 
+      // ---- HEAL CARD: target a specific Pokemon by uid ----
+      activateHealCard: (slotIndex: number, targetUid: string): boolean => {
+        const { battle, team } = get();
+        const card = battle.cardField[slotIndex];
+        if (!card || (card.alignment !== "heal" && card.alignment !== "resurrect")) return false;
+
+        const targetMon = team.find((p) => p.uid === targetUid);
+        if (!targetMon || targetMon.currentHp <= 0) return false; // Can't heal fainted
+
+        const targetSpecies = getPokemon(targetMon.speciesId);
+        const maxHp = targetMon.maxHp;
+        const healAmount = Math.round(maxHp * 0.20); // Always 20%
+        const newHp = Math.min(maxHp, targetMon.currentHp + healAmount);
+        const actualHeal = newHp - targetMon.currentHp;
+
+        const updatedTeam = team.map((p) =>
+          p.uid === targetUid ? { ...p, currentHp: newHp } : p
+        );
+
+        get().addBattleLog(`[CURA] ${card.name} cura ${actualHeal} HP de ${targetSpecies.name}!`);
+        set({ team: updatedTeam });
+
+        // Remove card from field
+        const activeMon2 = team.find((p) => p.uid === battle.activePokemonUid);
+        const activeSpecies2 = activeMon2 ? getPokemon(activeMon2.speciesId) : null;
+        const pokemonTypes = activeSpecies2 ? [activeSpecies2.type1, activeSpecies2.type2].filter(Boolean) as string[] : [];
+        const newField = [...battle.cardField];
+        newField[slotIndex] = null;
+        const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
+
+        set({
+          battle: {
+            ...get().battle,
+            cardField: newField,
+            badLuckPenalty: penalty,
+            pokemonAnimationState: {
+              isAnimating: true,
+              effectType: "heal",
+              duration: 1200,
+            },
+          },
+        });
+
+        setTimeout(() => {
+          set((state) => ({
+            battle: {
+              ...state.battle,
+              pokemonAnimationState: {
+                isAnimating: false,
+                effectType: "none",
+                duration: 0,
+              },
+            },
+          }));
+        }, 1200);
+
+        return true;
+      },
+
+      // ---- RESURRECT CARD: target a fainted Pokemon by uid ----
+      activateResurrectCard: (slotIndex: number, targetUid: string): boolean => {
+        const { battle, team } = get();
+        const card = battle.cardField[slotIndex];
+        if (!card || card.alignment !== "resurrect") return false;
+
+        const targetMon = team.find((p) => p.uid === targetUid);
+        if (!targetMon || targetMon.currentHp > 0) return false; // Must be fainted
+
+        const targetSpecies = getPokemon(targetMon.speciesId);
+        const maxHp = targetMon.maxHp;
+        const reviveHp = Math.round(maxHp * 0.25); // 25% HP
+
+        const updatedTeam = team.map((p) =>
+          p.uid === targetUid ? { ...p, currentHp: reviveHp } : p
+        );
+
+        get().addBattleLog(`[RESSURREICAO] ${targetSpecies.name} foi ressuscitado com ${reviveHp} HP!`);
+        set({ team: updatedTeam });
+
+        // Remove card from field
+        const activeMon2 = team.find((p) => p.uid === battle.activePokemonUid);
+        const activeSpecies2 = activeMon2 ? getPokemon(activeMon2.speciesId) : null;
+        const pokemonTypes = activeSpecies2 ? [activeSpecies2.type1, activeSpecies2.type2].filter(Boolean) as string[] : [];
+        const newField = [...battle.cardField];
+        newField[slotIndex] = null;
+        const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
+
+        set({
+          battle: {
+            ...get().battle,
+            cardField: newField,
+            badLuckPenalty: penalty,
+            pokemonAnimationState: {
+              isAnimating: true,
+              effectType: "buff",
+              duration: 1200,
+            },
+          },
+        });
+
+        setTimeout(() => {
+          set((state) => ({
+            battle: {
+              ...state.battle,
+              pokemonAnimationState: {
+                isAnimating: false,
+                effectType: "none",
+                duration: 0,
+              },
+            },
+          }));
+        }, 1200);
+
+        return true;
+      },
+
     }),
     {
       name: getGameStoreKey(),
-      version: 10,
+      version: 11,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         if (version < 2) {
@@ -1630,7 +1873,7 @@ export const useGameStore = create<GameState>()(
         }
         if (version < 8) {
           const battle = (state.battle as Record<string, unknown>) || {};
-          battle.cardField = battle.cardField ?? [null, null, null, null, null];
+          battle.cardField = battle.cardField ?? [null, null, null, null, null, null];
           battle.lastDrawnCard = battle.lastDrawnCard ?? null;
           battle.cardTrioEvent = battle.cardTrioEvent ?? null;
           battle.cardDrawCount = battle.cardDrawCount ?? 0;
@@ -1648,6 +1891,17 @@ export const useGameStore = create<GameState>()(
             effectType: "none",
             duration: 0,
           };
+          state.battle = battle;
+        }
+        if (version < 11) {
+          const battle = (state.battle as Record<string, unknown>) || {};
+          battle.auraAmplificadaActive = battle.auraAmplificadaActive ?? false;
+          // Extend card field from 5 to 6 slots if needed
+          const field = battle.cardField as (unknown | null)[];
+          if (field && field.length < 6) {
+            while (field.length < 6) field.push(null);
+            battle.cardField = field;
+          }
           state.battle = battle;
         }
         return state as unknown as GameState;

@@ -6,7 +6,7 @@
 //   - Luck cards: slots remain after trio, only cleared on bad-luck trio
 //   - Deck: 27 luck / 13 bad luck cards
 
-export type CardAlignment = "luck" | "bad-luck";
+export type CardAlignment = "luck" | "bad-luck" | "aura-elemental" | "aura-amplificada" | "heal" | "resurrect";
 
 export type CardElement =
   | "fire" | "water" | "grass" | "electric" | "ice"
@@ -68,6 +68,10 @@ export interface BattleCard {
   effectKey: string;
   /** Index used for the card image: /images/cards/card{cardIndex}.png */
   cardIndex: number;
+  /** Whether the aura card's power has been activated (only for aura cards) */
+  activated?: boolean;
+  /** Whether this card was already part of a triggered trio (prevents re-triggering) */
+  trioUsed?: boolean;
 }
 
 // -- LUCK CARD DEFINITIONS --
@@ -219,12 +223,21 @@ function randomElement(): CardElement {
   return CARD_ELEMENTS[Math.floor(Math.random() * CARD_ELEMENTS.length)];
 }
 
-/** Draw a single card (weighted: 27 luck / 13 bad luck = 67.5% luck, 32.5% bad luck) */
+/**
+ * Draw a single card with exact probabilities:
+ *   Sorte (luck)        = 80%
+ *   Azar (bad-luck)     = 15%
+ *   Aura Elemental      =  2%
+ *   Aura Amplificada    =  1%
+ *   Enfermeira Joy      =  2%
+ *   Total               = 100%
+ */
 export function drawCard(): BattleCard {
-  const isLuck = Math.random() < 0.750;
+  const roll = Math.random() * 100; // 0-100
   const element = randomElement();
 
-  if (isLuck) {
+  if (roll < 80) {
+    // --- LUCK (80%) ---
     const defIndex = Math.floor(Math.random() * LUCK_CARDS.length);
     const def = LUCK_CARDS[defIndex];
     return {
@@ -234,9 +247,10 @@ export function drawCard(): BattleCard {
       name: def.name,
       description: def.description,
       effectKey: def.effectKey,
-      cardIndex: defIndex, // 0-7 for luck cards
+      cardIndex: defIndex,
     };
-  } else {
+  } else if (roll < 95) {
+    // --- BAD LUCK (15%) ---
     const defIndex = Math.floor(Math.random() * BAD_LUCK_CARDS.length);
     const def = BAD_LUCK_CARDS[defIndex];
     return {
@@ -246,7 +260,40 @@ export function drawCard(): BattleCard {
       name: def.name,
       description: def.description,
       effectKey: def.effectKey,
-      cardIndex: LUCK_CARDS.length + defIndex, // 8-20 for bad luck cards
+      cardIndex: LUCK_CARDS.length + defIndex,
+    };
+  } else if (roll < 97) {
+    // --- AURA ELEMENTAL (2%) ---
+    return {
+      id: nextCardId(),
+      alignment: "aura-elemental",
+      element: "normal",
+      name: "Aura Elemental",
+      description: "Carta coringa! Ative o poder para usar como 1 carta de energia de qualquer tipo.",
+      effectKey: "aura-elemental",
+      cardIndex: -1,
+    };
+  } else if (roll < 98) {
+    // --- AURA AMPLIFICADA (1%) ---
+    return {
+      id: nextCardId(),
+      alignment: "aura-amplificada",
+      element: "normal",
+      name: "Aura Amplificada",
+      description: "Ative o poder para executar qualquer golpe sem custo. O D20 sera automaticamente 20 - Critico Garantido!",
+      effectKey: "aura-amplificada",
+      cardIndex: -2,
+    };
+  } else {
+    // --- ENFERMEIRA JOY / RESURRECT (2%) ---
+    return {
+      id: nextCardId(),
+      alignment: "resurrect",
+      element: "normal",
+      name: "Enfermeira Joy",
+      description: "Ressuscita um Pokemon com 0 HP (25% HP). Se nenhum morreu, cura 20%!",
+      effectKey: "resurrect-25",
+      cardIndex: -4,
     };
   }
 }
@@ -258,7 +305,7 @@ export function drawCard(): BattleCard {
  * Returns the matching trio cards if found, null otherwise
  */
 export function checkLuckTrio(fieldCards: (BattleCard | null)[]): BattleCard[] | null {
-  const luckCards = fieldCards.filter((c): c is BattleCard => c !== null && c.alignment === "luck");
+  const luckCards = fieldCards.filter((c): c is BattleCard => c !== null && c.alignment === "luck" && !c.trioUsed);
   if (luckCards.length < 3) return null;
 
   // Group luck cards by element
@@ -282,7 +329,7 @@ export function checkLuckTrio(fieldCards: (BattleCard | null)[]): BattleCard[] |
  * Check if 3 bad-luck cards are in the field -> triggers punishment + clears field
  */
 export function checkBadLuckTrio(fieldCards: (BattleCard | null)[]): boolean {
-  const badLuckCount = fieldCards.filter((c) => c !== null && c.alignment === "bad-luck").length;
+  const badLuckCount = fieldCards.filter((c) => c !== null && c.alignment === "bad-luck" && !c.trioUsed).length;
   return badLuckCount >= 3;
 }
 
@@ -323,4 +370,76 @@ export function rollSuperAdvantage(): SuperEffect {
 /** Pick a random super punishment effect */
 export function rollSuperPunishment(): SuperEffect {
   return SUPER_PUNISHMENTS[Math.floor(Math.random() * SUPER_PUNISHMENTS.length)];
+}
+
+// ---- Energy System: Count and consume element cards for move costs ----
+
+/**
+ * Count how many energy cards of a given element are on the field.
+ * Luck cards of the element count + Aura Elemental cards count as wildcard (+1 each).
+ */
+export function countFieldCardsByElement(
+  fieldCards: (BattleCard | null)[],
+  element: string
+): number {
+  let count = 0;
+  for (const c of fieldCards) {
+    if (!c) continue;
+    // Luck card of matching element
+    if (c.alignment === "luck" && c.element === element) count++;
+    // Aura Elemental counts as 1 of ANY type (only if activated)
+    else if (c.alignment === "aura-elemental" && c.activated) count++;
+  }
+  return count;
+}
+
+/**
+ * Check if an Aura Amplificada card is on the field.
+ */
+export function hasAuraAmplificada(fieldCards: (BattleCard | null)[]): boolean {
+  return fieldCards.some((c) => c !== null && c.alignment === "aura-amplificada" && c.activated);
+}
+
+/**
+ * Remove the first Aura Amplificada card from the field.
+ */
+export function consumeAuraAmplificada(fieldCards: (BattleCard | null)[]): (BattleCard | null)[] {
+  const newField = [...fieldCards];
+  const idx = newField.findIndex((c) => c !== null && c.alignment === "aura-amplificada");
+  if (idx !== -1) newField[idx] = null;
+  return newField;
+}
+
+/**
+ * Remove `count` energy cards of the given element from the field.
+ * Prefers consuming exact-element luck cards first, then aura-elemental wildcards.
+ * Returns a new field array with consumed cards set to null.
+ */
+export function consumeEnergyCards(
+  fieldCards: (BattleCard | null)[],
+  element: string,
+  count: number
+): (BattleCard | null)[] {
+  const newField = [...fieldCards];
+  let remaining = count;
+
+  // First pass: consume exact element luck cards
+  for (let i = 0; i < newField.length && remaining > 0; i++) {
+    const card = newField[i];
+    if (card && card.alignment === "luck" && card.element === element) {
+      newField[i] = null;
+      remaining--;
+    }
+  }
+
+  // Second pass: consume activated aura-elemental wildcards for remaining
+  for (let i = 0; i < newField.length && remaining > 0; i++) {
+    const card = newField[i];
+    if (card && card.alignment === "aura-elemental" && card.activated) {
+      newField[i] = null;
+      remaining--;
+    }
+  }
+
+  return newField;
 }

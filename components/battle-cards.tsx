@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/lib/game-store";
 import type { BattleCard } from "@/lib/card-data";
 import { ELEMENT_COLORS, ELEMENT_NAMES_PT } from "@/lib/card-data";
+import { getSpriteUrl, getPokemon } from "@/lib/pokemon-data";
 import {
   playCardDraw,
   playCardLuck,
@@ -16,6 +17,10 @@ import {
   playCardActivateDamage,
   playCardActivateCritDamage,
   playTrioPunishment,
+  playCardRareAppear,
+  playCardResurrectAppear,
+  playHealActivate,
+  playResurrectActivate,
 } from "@/lib/sounds";
 import {
   Dialog,
@@ -44,6 +49,8 @@ import {
   Cog,
   Footprints,
   Sparkles,
+  Heart,
+  RotateCcw,
 } from "lucide-react";
 
 // Element icon map
@@ -72,6 +79,18 @@ function ElementIcon({ element, className }: { element: string; className?: stri
   return <Icon className={className} />;
 }
 
+function handleImgError(e: React.SyntheticEvent<HTMLImageElement>, fallbackText: string) {
+  const target = e.currentTarget;
+  target.style.display = "none";
+  const parent = target.parentElement;
+  if (parent) {
+    const span = document.createElement("span");
+    span.className = "text-[18px] leading-none drop-shadow-sm";
+    span.textContent = fallbackText;
+    parent.appendChild(span);
+  }
+}
+
 // ============================================================
 // YU-GI-OH STYLE CARD
 // ============================================================
@@ -80,55 +99,247 @@ function YuGiOhCard({
   size = "small",
   onClick,
   slotIndex,
+  glowing = false,
 }: {
   card: BattleCard;
   size?: "small" | "large";
   onClick?: () => void;
   slotIndex?: number;
+  glowing?: boolean;
 }) {
   const isLuck = card.alignment === "luck";
-  const elColor = ELEMENT_COLORS[card.element] || "#888";
+  const isAuraElemental = card.alignment === "aura-elemental";
+  const isAuraAmplificada = card.alignment === "aura-amplificada";
+  const isResurrect = card.alignment === "resurrect";
+  const isAura = isAuraElemental || isAuraAmplificada;
+  const isSpecial = isResurrect;
+  const elColor = isResurrect ? "#EC4899" : isAura ? (isAuraAmplificada ? "#D4AF37" : "#C0C0C0") : (ELEMENT_COLORS[card.element] || "#888");
   const elName = ELEMENT_NAMES_PT[card.element] || card.element;
 
-  // Color scheme
-  const borderColor = isLuck ? "#e0dcce" : "#24065c";
-  const outerBg = isLuck
+  // Color scheme based on card type
+  const borderColor = isResurrect
+    ? "#EC4899"
+    : isAuraAmplificada
+    ? "#D4AF37"
+    : isAuraElemental
+    ? "#C0C0C0"
+    : isLuck
+    ? "#e0dcce"
+    : "#24065c";
+
+  const outerBg = isResurrect
+    ? "linear-gradient(180deg, #fce7f3 0%, #f472b6 30%, #ec4899 70%, #fbcfe8 100%)"
+    : isAuraAmplificada
+    ? "linear-gradient(180deg, #D4AF37 0%, #B8860B 30%, #8B6914 70%, #D4AF37 100%)"
+    : isAuraElemental
+    ? "linear-gradient(180deg, #E8E8E8 0%, #C0C0C0 30%, #A8A8A8 70%, #D0D0D0 100%)"
+    : isLuck
     ? "linear-gradient(180deg, #e9e4d0 0%, #c5bfac 8%, #e7e2cf 92%, #ecebe5 100%)"
     : "linear-gradient(180deg, #502d5a 0%, #4a1547 8%, #2b0a3a 92%, #1A0505 100%)";
-  const innerBg = isLuck
+
+  const innerBg = isResurrect
+    ? "linear-gradient(180deg, #fdf2f8 0%, #fce7f3 100%)"
+    : isAura
+    ? (isAuraAmplificada ? "linear-gradient(180deg, #3a2a00 0%, #1a1200 100%)" : "linear-gradient(180deg, #f0f0f0 0%, #d8d8d8 100%)")
+    : isLuck
     ? "linear-gradient(180deg, #FFFDE0 0%, #e9e8e4 100%)"
     : "linear-gradient(180deg, #2D1515 0%, #1A0A0A 100%)";
-  const textColor = isLuck ? "#3E2723" : "#E8C8C8";
   const subTextColor = isLuck ? "#5D4037" : "#B0888A";
-  const nameBg = isLuck
-    ? "linear-gradient(90deg, #F9F0D0 0%, #FFF8DC 50%, #F9F0D0 100%)"
-    : "linear-gradient(90deg, #1d102a 0%, #33183a 50%, #21102a 100%)";
+
+  // Glow animation for matching cards
+  const glowShadow = glowing
+    ? `0 0 8px 2px ${elColor}, 0 0 16px 4px ${elColor}88`
+    : "";
 
   if (size === "small") {
+    // -- AURA cards small rendering --
+    if (isAura) {
+      const isActivated = !!card.activated;
+      return (
+        <motion.button
+          onClick={onClick}
+          initial={{ rotateY: 180, opacity: 0 }}
+          animate={{
+            rotateY: 0,
+            opacity: 1,
+            boxShadow: isActivated
+              ? (isAuraAmplificada
+                ? [
+                    "0 0 10px 3px rgba(212,175,55,0.8), 0 0 25px 8px rgba(212,175,55,0.5)",
+                    "0 0 16px 6px rgba(212,175,55,1), 0 0 40px 14px rgba(212,175,55,0.6)",
+                    "0 0 10px 3px rgba(212,175,55,0.8), 0 0 25px 8px rgba(212,175,55,0.5)",
+                  ]
+                : [
+                    "0 0 8px 2px rgba(192,192,192,0.7), 0 0 22px 6px rgba(192,192,192,0.35)",
+                    "0 0 14px 4px rgba(192,192,192,0.9), 0 0 30px 10px rgba(192,192,192,0.5)",
+                    "0 0 8px 2px rgba(192,192,192,0.7), 0 0 22px 6px rgba(192,192,192,0.35)",
+                  ])
+              : (isAuraAmplificada
+                ? [
+                    "0 0 4px 1px rgba(212,175,55,0.3), 0 0 10px 3px rgba(212,175,55,0.15)",
+                    "0 0 6px 2px rgba(212,175,55,0.5), 0 0 14px 4px rgba(212,175,55,0.25)",
+                    "0 0 4px 1px rgba(212,175,55,0.3), 0 0 10px 3px rgba(212,175,55,0.15)",
+                  ]
+                : [
+                    "0 0 4px 1px rgba(192,192,192,0.25), 0 0 10px 3px rgba(192,192,192,0.12)",
+                    "0 0 6px 2px rgba(192,192,192,0.4), 0 0 14px 4px rgba(192,192,192,0.2)",
+                    "0 0 4px 1px rgba(192,192,192,0.25), 0 0 10px 3px rgba(192,192,192,0.12)",
+                  ]),
+          }}
+          transition={{
+            duration: 0.5,
+            boxShadow: { duration: isActivated ? 1.2 : 2, repeat: Infinity, ease: "easeInOut" },
+          }}
+          whileHover={{ scale: 1.06, y: -3 }}
+          whileTap={{ scale: 0.97 }}
+          className="relative flex flex-col rounded-[2px] overflow-hidden cursor-pointer"
+          style={{
+            width: 44,
+            height: 64,
+            background: outerBg,
+            border: `1.5px solid ${isActivated ? (isAuraAmplificada ? "#FFD700" : "#E0E0E0") : borderColor}`,
+          }}
+        >
+          <div
+            className="flex items-center justify-center py-[1px]"
+            style={{ background: isAuraAmplificada ? "rgba(0,0,0,0.3)" : "rgba(255,255,255,0.3)" }}
+          >
+            <span
+              className="text-[3px] font-bold uppercase"
+              style={{ color: isAuraAmplificada ? "#FFD700" : "#333" }}
+            >
+              {isActivated ? "ATIVO" : card.name}
+            </span>
+          </div>
+          <div
+            className="relative flex items-center justify-center overflow-hidden"
+            style={{ height: 42 }}
+          >
+            <img
+              src={isAuraAmplificada ? "/images/cards/aura-amplificada.jpg" : "/images/cards/aura-elemental.jpg"}
+              alt={card.name}
+              className="w-full h-full object-cover"
+              loading="eager"
+              decoding="sync"
+              style={{ opacity: isActivated ? 1 : 0.7 }}
+            />
+          </div>
+          <div
+            className="flex items-center justify-center py-[1px]"
+            style={{ background: isAuraAmplificada ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.4)" }}
+          >
+            <Sparkles className="w-2 h-2" style={{ color: isActivated ? (isAuraAmplificada ? "#FFD700" : "#fff") : (isAuraAmplificada ? "#997700" : "#666") }} />
+          </div>
+        </motion.button>
+      );
+    }
+
+    // -- RESURRECT card small rendering --
+    if (isSpecial) {
+      const specialColor = "#EC4899";
+      const specialBg = "linear-gradient(180deg, #fce7f3 0%, #f472b6 30%, #ec4899 70%, #fbcfe8 100%)";
+
+      return (
+        <motion.button
+          onClick={onClick}
+          initial={{ rotateY: 180, opacity: 0 }}
+          animate={{
+            rotateY: 0,
+            opacity: 1,
+            boxShadow: [
+              `0 0 6px 2px ${specialColor}55`,
+              `0 0 12px 4px ${specialColor}88`,
+              `0 0 6px 2px ${specialColor}55`,
+            ],
+          }}
+          transition={{
+            duration: 0.5,
+            boxShadow: { duration: 1.8, repeat: Infinity, ease: "easeInOut" },
+          }}
+          whileHover={{ scale: 1.06, y: -3 }}
+          whileTap={{ scale: 0.97 }}
+          className="relative flex flex-col rounded-[2px] overflow-hidden cursor-pointer"
+          style={{
+            width: 44,
+            height: 64,
+            background: specialBg,
+            border: `1.5px solid ${specialColor}`,
+          }}
+        >
+          <div
+            className="flex items-center justify-center py-[1px]"
+            style={{ background: "rgba(255,255,255,0.4)" }}
+          >
+            <span
+              className="text-[3px] font-bold uppercase"
+              style={{ color: "#831843" }}
+            >
+              {card.name}
+            </span>
+          </div>
+          <div
+            className="relative flex items-center justify-center overflow-hidden"
+            style={{ height: 42 }}
+          >
+            <img
+              src="/images/cards/card-resurrect.jpg"
+              alt={card.name}
+              className="w-full h-full object-cover"
+              loading="eager"
+              decoding="sync"
+              onError={(e) => handleImgError(e, "\u2625")}
+            />
+          </div>
+          <div
+            className="flex items-center justify-center py-[1px]"
+            style={{ background: "rgba(255,255,255,0.5)" }}
+          >
+            <span className="text-[6px] font-bold" style={{ color: "#831843" }}>ENF. JOY</span>
+          </div>
+        </motion.button>
+      );
+    }
+
+    // -- Normal luck/bad-luck small rendering --
     return (
       <motion.button
         onClick={onClick}
         initial={{ rotateY: 180, opacity: 0 }}
-        animate={{ rotateY: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
+        animate={{
+          rotateY: 0,
+          opacity: 1,
+          ...(glowing && {
+            boxShadow: [
+              `0 2px 8px ${elColor}66`,
+              `0 0 12px 4px ${elColor}AA, 0 0 20px 6px ${elColor}55`,
+              `0 2px 8px ${elColor}66`,
+            ],
+          }),
+        }}
+        transition={{
+          duration: 0.5,
+          ...(glowing && { boxShadow: { duration: 1.5, repeat: Infinity, ease: "easeInOut" } }),
+        }}
         whileHover={{ scale: 1.06, y: -3 }}
         whileTap={{ scale: 0.97 }}
         className="relative flex flex-col rounded-[2px] overflow-hidden cursor-pointer"
         style={{
-          width: 52,
-          height: 76,
+          width: 44,
+          height: 64,
           background: outerBg,
-          border: `1.5px solid ${borderColor}`,
-          boxShadow: isLuck
-            ? "0 2px 8px rgba(197,160,38,0.4), inset 0 1px 0 rgba(255,255,255,0.2)"
-            : "0 2px 8px rgba(17, 1, 22, 0.6), inset 0 1px 0 rgba(42, 14, 54, 0.05)",
+          border: `1.5px solid ${glowing ? elColor : borderColor}`,
+          boxShadow: !glowing
+            ? (isLuck
+              ? "0 2px 8px rgba(197,160,38,0.4), inset 0 1px 0 rgba(255,255,255,0.2)"
+              : "0 2px 8px rgba(17, 1, 22, 0.6), inset 0 1px 0 rgba(42, 14, 54, 0.05)")
+            : undefined,
         }}
       >
 
         {isLuck?
       <>
         <div
-          className="flex items-center justify-center gap-0.5 py-[2px]"
+          className="flex items-center justify-center gap-0.5 py-[1px]"
           style={{ background: `${elColor}33` }}
         > <span className="text-[3px] font-bold uppercase " style={{ color: 'black'}}>
             {card.name}
@@ -138,7 +349,7 @@ function YuGiOhCard({
         <div
           className=" mflex items-center justify-center  overflow-hidden"
           style={{
-            height: 28,
+            height: 22,
             background: innerBg,backgroundColor:'white'
           }}
         >
@@ -148,83 +359,82 @@ function YuGiOhCard({
             className="w-full h-full object-cover"
             loading="eager"
             decoding="sync"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-              (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
-            }}
+            onError={(e) => handleImgError(e, isLuck ? "\u2618" : "\u2620")}
           />
         </div>
    
 
           <div
-            className="mx-[3px] mt-[1px] mb-[2px] flex-1 px-1 py-[1px] rounded-[1px] flex justify-center items-center bg-white-200"
+            className="mx-[2px] mt-[1px] mb-[1px] flex-1 px-1 py-[1px] rounded-[1px] flex justify-center items-center bg-white-200"
             style={{
               background: 'white',
               border: `0.5px solid ${borderColor}33`,
-              minHeight: '30px' // Opcional: Garanta uma altura mínima se o container estiver "esmagado"
+              minHeight: '24px'
             }}
           >
             <img
-              style={{ width: 20, borderRadius:4 }}
+              style={{ width: 16, borderRadius:3 }}
               src={`/images/cardsTypes/${card.element}.jpg`}
               alt={card.name}
               className="object-cover"
               loading="eager"
               decoding="sync"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
-                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
-              }}
+              onError={(e) => handleImgError(e, isLuck ? "\u2618" : "\u2620")}
             />
           </div>
           </div>
 </>
         : 
-        
-        
-        
-        
            <div
             className=" flex justify-center items-center bg-white-200"
-            style={{ minHeight: '30px' }}>
+            style={{ minHeight: '24px' }}>
             <img
-          
-              src={`/images/cardsTypes/genga.jpg`}
+              src="/images/cardsTypes/genga.jpg"
               alt={card.name}
               className="object-cover"
               loading="eager"
               decoding="sync"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
-                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
-              }}
+              onError={(e) => handleImgError(e, "\u2620")}
             />
           </div>
-        
         }
       </motion.button>
     );
   }
 
   // LARGE card (dialog view)
+  const largeCardImage = isResurrect
+    ? "/images/cards/card-resurrect.jpg"
+    : isAuraAmplificada
+    ? "/images/cards/aura-amplificada.jpg"
+    : isAuraElemental
+    ? "/images/cards/aura-elemental.jpg"
+    : `/images/cards/card${card.cardIndex}.png`;
+
+  const largeShadow = isResurrect
+    ? "0 8px 40px rgba(236,72,153,0.6), 0 0 50px rgba(236,72,153,0.25), inset 0 2px 0 rgba(255,255,255,0.15)"
+    : isAuraAmplificada
+    ? "0 8px 40px rgba(212,175,55,0.7), 0 0 60px rgba(212,175,55,0.3), inset 0 2px 0 rgba(255,255,255,0.15)"
+    : isAuraElemental
+    ? "0 8px 40px rgba(192,192,192,0.6), 0 0 50px rgba(192,192,192,0.25), inset 0 2px 0 rgba(255,255,255,0.15)"
+    : isLuck
+    ? "0 8px 32px rgba(236, 183, 6, 0.5), inset 0 2px 0 rgba(255,255,255,0.15)"
+    : "0 8px 32px rgba(30, 2, 41, 0.7), inset 0 2px 0 rgba(255,255,255,0.05)";
+
+  const nameColor = isResurrect ? "#831843" : isAuraAmplificada ? "#FFD700" : isAuraElemental ? "#555" : isLuck ? "green" : "pink";
+
   return (
     <motion.div
       initial={{ scale: 0.6, rotateY: 180 }}
       animate={{ scale: 1, rotateY: 0 }}
       transition={{ type: "spring", damping: 14 }}
-      className="relative flex flex-col r overflow-hidden mx-auto"
+      className="relative flex flex-col overflow-hidden mx-auto"
       style={{
-        height:350,
+        height: 350,
         width: 250,
         background: outerBg,
         border: `3px solid ${borderColor}`,
-        boxShadow: isLuck
-          ? "0 8px 32px rgba(236, 183, 6, 0.5), inset 0 2px 0 rgba(255,255,255,0.15)"
-          : "0 8px 32px rgba(30, 2, 41, 0.7), inset 0 2px 0 rgba(255,255,255,0.05)",
+        boxShadow: largeShadow,
       }}
     >
       {/* Element type strip */}
@@ -233,56 +443,44 @@ function YuGiOhCard({
         style={{ background: `${elColor}22` }}
       >
         <div className="flex items-center gap-1.5">
-       
-          
-          {isLuck?
-               <div className=" rounded-full flex items-center justify-center"
-            style={{ backgroundColor: `${elColor}33`, border: `1px solid ${elColor}66` }}
-                 > 
+          {isResurrect ? (
+            <RotateCcw className="w-5 h-5" style={{ color: "#EC4899" }} />
+          ) : isAura ? (
+            <Sparkles className="w-5 h-5" style={{ color: isAuraAmplificada ? "#FFD700" : "#999" }} />
+          ) : isLuck ? (
+            <div
+              className="rounded-full flex items-center justify-center"
+              style={{ backgroundColor: `${elColor}33`, border: `1px solid ${elColor}66` }}
+            >
+              <img
+                style={{ width: 20 }}
+                src={`/images/cardsTypes/${card.element}.jpg`}
+                alt={card.name}
+                className="object-cover rounded-full"
+                loading="eager"
+                decoding="sync"
+              />
+            </div>
+          ) : (
             <img
               style={{ width: 20 }}
-              src={`/images/cardsTypes/${card.element}.jpg`}
+              src="/images/cardsTypes/genga.gif"
               alt={card.name}
               className="object-cover rounded-full"
               loading="eager"
               decoding="sync"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
-                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
-              }}
             />
-                </div>
-            :
-               <img
-              style={{ width: 20 }}
-              src={`/images/cardsTypes/genga.gif`}
-              alt={card.name}
-              className="object-cover rounded-full"
-              loading="eager"
-              decoding="sync"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
-                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
-              }}
-            />
+          )}
 
-          }
-             
-      
-          <span className="text-sm font-bold  tracking-wider" style={{ color: isLuck?'green':'pink' }}>
-                 {card.name} 
+          <span className="text-sm font-bold tracking-wider" style={{ color: nameColor }}>
+            {card.name}
           </span>
         </div>
-       
       </div>
 
       {/* Image area */}
       <div
-        className=" mt-2 flex items-center justify-center rounded overflow-hidden"
+        className="mt-2 flex items-center justify-center rounded overflow-hidden"
         style={{
           height: 200,
           background: innerBg,
@@ -290,42 +488,31 @@ function YuGiOhCard({
         }}
       >
         <motion.img
-          src={`/images/cards/card${card.cardIndex}.png`}
+          src={largeCardImage}
           alt={card.name}
           className="w-full h-full object-cover"
           loading="eager"
           decoding="sync"
-          animate={{
-            scale: [1, 1.04, 1],
-          }}
+          animate={{ scale: [1, 1.04, 1] }}
           transition={{ duration: 1.5, repeat: Infinity }}
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = "none";
-            const fallback = document.createElement("span");
-            fallback.className = "text-6xl drop-shadow-lg";
-            fallback.textContent = isLuck ? "\u2618" : "\u2620";
-            (e.target as HTMLImageElement).parentElement!.appendChild(fallback);
-          }}
         />
       </div>
 
-
       {/* Description box */}
       <div
-        className="  rounded flex items-center justify-center min-h-[90px]"
+        className="rounded flex items-center justify-center min-h-[90px] px-3"
         style={{
           background: innerBg,
-          border: `1px solid ${borderColor}455`,
+          border: `1px solid ${borderColor}45`,
         }}
       >
         <p
           className="text-[10px] leading-relaxed text-center"
-          style={{ color: subTextColor }}
+          style={{ color: isAuraAmplificada ? "#FFD700" : isAuraElemental ? "#666" : subTextColor }}
         >
           {card.description}
         </p>
       </div>
-
     </motion.div>
   );
 }
@@ -338,8 +525,8 @@ function EmptySlot({ index }: { index: number }) {
     <div
       className="relative flex flex-col items-center justify-center rounded-[5px]"
       style={{
-        width: 52,
-        height: 76,
+        width: 44,
+        height: 64,
         background: "linear-gradient(180deg, rgba(30,30,30,0.6) 0%, rgba(20,20,20,0.8) 100%)",
         border: "1.5px dashed rgba(255,255,255,0.1)",
       }}
@@ -349,13 +536,12 @@ function EmptySlot({ index }: { index: number }) {
                     width="20"
                     height="20"
                     viewBox="0 0 100 100"
-                    className=""
                   >
                     <circle cx="50" cy="50" r="48" fill="#2b2424" stroke="#1E293B" strokeWidth="4" />
                     <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
                     <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#606264" />
                     <circle cx="50" cy="50" r="14" fill="#3c3d3d" stroke="#1E293B" strokeWidth="3" />
-                    <circle cx="50" cy="50" r="6" fill={  "#1E293B"} />
+                    <circle cx="50" cy="50" r="6" fill="#1E293B" />
                   </svg>
       
       </span>
@@ -366,6 +552,347 @@ function EmptySlot({ index }: { index: number }) {
 // ============================================================
 // CARD VIEWER DIALOG
 // ============================================================
+function AuraActivationOverlay({
+  card,
+  onComplete,
+}: {
+  card: BattleCard;
+  onComplete: () => void;
+}) {
+  const isAmplificada = card.alignment === "aura-amplificada";
+  const primaryColor = isAmplificada ? "#FFD700" : "#C0C0C0";
+  const secondaryColor = isAmplificada ? "#B8860B" : "#888";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-center justify-center"
+      style={{
+        background: isAmplificada
+          ? "radial-gradient(ellipse at center, rgba(212,175,55,0.4) 0%, rgba(0,0,0,0.95) 70%)"
+          : "radial-gradient(ellipse at center, rgba(192,192,192,0.35) 0%, rgba(0,0,0,0.95) 70%)",
+      }}
+    >
+      {/* Particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(40)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              width: 2 + Math.random() * 4,
+              height: 2 + Math.random() * 4,
+              backgroundColor: isAmplificada
+                ? `hsl(${42 + Math.random() * 20}, 100%, ${55 + Math.random() * 35}%)`
+                : `hsl(0, 0%, ${60 + Math.random() * 35}%)`,
+            }}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{
+              opacity: [0, 1, 0],
+              scale: [0, 2, 0],
+              y: [0, (Math.random() - 0.5) * 300],
+              x: [0, (Math.random() - 0.5) * 300],
+            }}
+            transition={{
+              duration: 1.5 + Math.random() * 1.5,
+              repeat: Infinity,
+              delay: Math.random() * 0.5,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Energy rings */}
+      {[0, 1, 2].map((ring) => (
+        <motion.div
+          key={ring}
+          className="absolute rounded-full"
+          style={{
+            width: 120 + ring * 80,
+            height: 120 + ring * 80,
+            border: `2px solid ${primaryColor}${ring === 0 ? "88" : ring === 1 ? "44" : "22"}`,
+          }}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{
+            scale: [0.8, 1.2, 0.8],
+            opacity: [0.3, 0.7, 0.3],
+            rotate: [0, ring % 2 === 0 ? 360 : -360],
+          }}
+          transition={{
+            duration: 3 + ring,
+            repeat: Infinity,
+            ease: "linear",
+            delay: ring * 0.3,
+          }}
+        />
+      ))}
+
+      <motion.div
+        initial={{ scale: 0, rotate: -20 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: "spring", damping: 8, delay: 0.2 }}
+        className="flex flex-col items-center gap-4 z-10"
+      >
+        {/* Card image */}
+        <motion.div
+          animate={{
+            boxShadow: [
+              `0 0 20px 5px ${primaryColor}66`,
+              `0 0 40px 15px ${primaryColor}AA`,
+              `0 0 20px 5px ${primaryColor}66`,
+            ],
+          }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          className="rounded-lg overflow-hidden"
+          style={{ border: `3px solid ${primaryColor}` }}
+        >
+          <img
+            src={isAmplificada ? "/images/cards/aura-amplificada.jpg" : "/images/cards/aura-elemental.jpg"}
+            alt={card.name}
+            className="w-40 h-40 object-cover"
+          />
+        </motion.div>
+
+        {/* Title */}
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="text-2xl font-black tracking-wider text-center"
+          style={{
+            color: primaryColor,
+            textShadow: `0 0 30px ${primaryColor}88, 0 0 60px ${primaryColor}44`,
+          }}
+        >
+          {isAmplificada ? "AURA AMPLIFICADA!" : "AURA ELEMENTAL!"}
+        </motion.h2>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7 }}
+          className="text-sm text-center max-w-xs"
+          style={{ color: `${primaryColor}CC` }}
+        >
+          {isAmplificada
+            ? "Poder ativado! D20 garantido em 20 no proximo golpe!"
+            : "Poder ativado! Coringa de energia liberado!"}
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2 }}
+        >
+          <Button
+            onClick={onComplete}
+            className="px-8 py-2 font-bold"
+            style={{
+              backgroundColor: secondaryColor,
+              color: "#fff",
+              border: `1px solid ${primaryColor}`,
+            }}
+          >
+            Continuar
+          </Button>
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function NurseJoyActivationOverlay({
+  isHeal,
+  pokemonName,
+  amount,
+  onComplete,
+}: {
+  isHeal: boolean;
+  pokemonName: string;
+  amount: number;
+  onComplete: () => void;
+}) {
+  const primaryColor = "#EC4899";
+  const bgGlow = "radial-gradient(ellipse at center, rgba(236,72,153,0.35) 0%, rgba(0,0,0,0.95) 70%)";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-center justify-center"
+      style={{ background: bgGlow }}
+    >
+      {/* Heart particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(30)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              width: 6 + Math.random() * 8,
+              height: 6 + Math.random() * 8,
+              backgroundColor: isHeal
+                ? `hsl(${340 + Math.random() * 30}, 80%, ${60 + Math.random() * 30}%)`
+                : `hsl(${340 + Math.random() * 30}, 90%, ${55 + Math.random() * 30}%)`,
+              borderRadius: "50%",
+              boxShadow: `0 0 6px ${primaryColor}88`,
+            }}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{
+              opacity: [0, 1, 0],
+              scale: [0, 1.5, 0],
+              y: [0, -80 - Math.random() * 120],
+              x: [0, (Math.random() - 0.5) * 80],
+            }}
+            transition={{
+              duration: 1.2 + Math.random() * 1,
+              repeat: Infinity,
+              delay: Math.random() * 0.8,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Cross / Plus symbol for healing */}
+      {isHeal && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          {[0, 1].map((ring) => (
+            <motion.div
+              key={ring}
+              className="absolute rounded-full"
+              style={{
+                width: 140 + ring * 70,
+                height: 140 + ring * 70,
+                border: `2px solid ${primaryColor}${ring === 0 ? "66" : "33"}`,
+              }}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{
+                scale: [0.9, 1.15, 0.9],
+                opacity: [0.2, 0.6, 0.2],
+              }}
+              transition={{
+                duration: 2 + ring,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: ring * 0.4,
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Resurrect: rising flame effect */}
+      {!isHeal && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          {[...Array(12)].map((_, i) => (
+            <motion.div
+              key={`flame-${i}`}
+              className="absolute"
+              style={{
+                bottom: "30%",
+                left: `${35 + Math.random() * 30}%`,
+                width: 3 + Math.random() * 5,
+                height: 20 + Math.random() * 30,
+                background: "linear-gradient(to top, #EC4899, #F472B6, transparent)",
+                borderRadius: "50% 50% 0 0",
+              }}
+              initial={{ opacity: 0, scaleY: 0 }}
+              animate={{
+                opacity: [0, 0.8, 0],
+                scaleY: [0, 1.5, 0],
+                y: [0, -60 - Math.random() * 80],
+              }}
+              transition={{
+                duration: 1 + Math.random() * 0.8,
+                repeat: Infinity,
+                delay: i * 0.12,
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      <motion.div
+        initial={{ scale: 0, rotate: -10 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: "spring", damping: 10, delay: 0.15 }}
+        className="flex flex-col items-center gap-4 z-10"
+      >
+        {/* Card image */}
+        <motion.div
+          animate={{
+            boxShadow: [
+              `0 0 20px 5px ${primaryColor}66`,
+              `0 0 40px 15px ${primaryColor}AA`,
+              `0 0 20px 5px ${primaryColor}66`,
+            ],
+          }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          className="rounded-lg overflow-hidden"
+          style={{ border: `3px solid ${primaryColor}` }}
+        >
+          <img
+            src="/images/cards/card-resurrect.jpg"
+            alt="Enfermeira Joy"
+            className="w-40 h-40 object-cover"
+          />
+        </motion.div>
+
+        {/* Title */}
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="text-2xl font-black tracking-wider text-center"
+          style={{
+            color: primaryColor,
+            textShadow: `0 0 30px ${primaryColor}88, 0 0 60px ${primaryColor}44`,
+          }}
+        >
+          {isHeal ? "CURA!" : "RESSURREICAO!"}
+        </motion.h2>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="text-sm text-center max-w-xs"
+          style={{ color: `${primaryColor}CC` }}
+        >
+          {isHeal
+            ? `${pokemonName} recuperou ${amount} HP!`
+            : `${pokemonName} foi ressuscitado com ${amount} HP!`}
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+        >
+          <Button
+            onClick={onComplete}
+            className="px-8 py-2 font-bold"
+            style={{
+              backgroundColor: "#9d174d",
+              color: "#fff",
+              border: `1px solid ${primaryColor}`,
+            }}
+          >
+            Continuar
+          </Button>
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function CardViewer({
   card,
   open,
@@ -377,62 +904,287 @@ function CardViewer({
   onClose: () => void;
   slotIndex?: number;
 }) {
-  const { activateCardEffect } = useGameStore();
+  const { activateCardEffect, activateHealCard, activateResurrectCard, team } = useGameStore();
+  const [showAuraAnimation, setShowAuraAnimation] = useState(false);
+  const [animatingCard, setAnimatingCard] = useState<BattleCard | null>(null);
+  const [showPokemonSelect, setShowPokemonSelect] = useState(false);
+  const [nurseJoyAnim, setNurseJoyAnim] = useState<{
+    isHeal: boolean;
+    pokemonName: string;
+    amount: number;
+  } | null>(null);
   
-  if (!card) return null;
+  if (!card && !showAuraAnimation && !nurseJoyAnim) return null;
+
+  const isAura = card?.alignment === "aura-elemental" || card?.alignment === "aura-amplificada";
+  const isResurrectCard = card?.alignment === "resurrect";
+  const isAlreadyActivated = isAura && card?.activated;
+
+  // For resurrect: show fainted Pokemon first; if none fainted, show alive Pokemon that need healing
+  const hasFaintedPokemon = isResurrectCard && team.some((p) => p.currentHp <= 0);
+  const eligiblePokemon = isResurrectCard
+    ? (hasFaintedPokemon
+        ? team.filter((p) => p.currentHp <= 0)
+        : team.filter((p) => p.currentHp > 0 && p.currentHp < p.maxHp))
+    : [];
 
   const handleActivatePower = () => {
-    if (slotIndex !== undefined) {
-      const result = activateCardEffect(slotIndex);
-      // Play the correct sound based on card type and crit
-      if (result) {
-        if (result.alignment === "bad-luck") {
-          if (result.isCrit) {
-            playCardActivateCritDamage();
-          } else {
-            playCardActivateDamage();
-          }
-        } else {
-          playCardActivateLuck();
+    if (slotIndex !== undefined && card) {
+      // Resurrect -> show Pokemon selection
+      if (isResurrectCard) {
+        if (eligiblePokemon.length === 0) {
+          alert("Todos os Pokemon estao com HP cheio!");
+          return;
         }
+        setShowPokemonSelect(true);
+        return;
       }
-      onClose();
+
+      if (isAura && !isAlreadyActivated) {
+        setAnimatingCard(card);
+        setShowAuraAnimation(true);
+        onClose();
+        const result = activateCardEffect(slotIndex);
+        if (result) playCardActivateLuck();
+      } else {
+        const result = activateCardEffect(slotIndex);
+        if (result) {
+          if (result.alignment === "bad-luck") {
+            if (result.isCrit) {
+              playCardActivateCritDamage();
+            } else {
+              playCardActivateDamage();
+            }
+          } else {
+            playCardActivateLuck();
+          }
+        }
+        onClose();
+      }
     }
   };
 
+  const handleSelectPokemon = (uid: string) => {
+    if (slotIndex === undefined) return;
+    const targetMon = team.find((p) => p.uid === uid);
+    if (!targetMon) return;
+    const targetSpecies = getPokemon(targetMon.speciesId);
+    let success = false;
+    if (hasFaintedPokemon) {
+      success = activateResurrectCard(slotIndex, uid);
+      if (success) {
+        playResurrectActivate();
+        const reviveHp = Math.round(targetMon.maxHp * 0.25);
+        setNurseJoyAnim({ isHeal: false, pokemonName: targetSpecies.name, amount: reviveHp });
+      }
+    } else {
+      const healAmount = Math.round(targetMon.maxHp * 0.20);
+      const actualHeal = Math.min(healAmount, targetMon.maxHp - targetMon.currentHp);
+      success = activateHealCard(slotIndex, uid);
+      if (success) {
+        playHealActivate();
+        setNurseJoyAnim({ isHeal: true, pokemonName: targetSpecies.name, amount: actualHeal });
+      }
+    }
+    setShowPokemonSelect(false);
+    onClose();
+  };
+
+  const handleAuraAnimationComplete = () => {
+    setShowAuraAnimation(false);
+    setAnimatingCard(null);
+  };
+
+  const getButtonText = () => {
+    if (isAlreadyActivated) return "Poder Ja Ativado";
+    if (isAura) return "ATIVAR PODER";
+    if (isResurrectCard) return "Usar Enfermeira Joy";
+    if (card?.alignment === "bad-luck") return "Ativar Maldicao";
+    return "Ativar Poder";
+  };
+
+  const getButtonStyle = () => {
+    if (isAlreadyActivated) return "bg-gray-500 text-white cursor-not-allowed";
+    if (card?.alignment === "aura-amplificada") return "text-white";
+    if (card?.alignment === "aura-elemental") return "text-white";
+    if (isResurrectCard) return "text-white";
+    if (card?.alignment === "bad-luck") return "bg-red-600 hover:bg-red-700 text-white";
+    return "bg-green-600 hover:bg-green-700 text-white";
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-[260px] mx-auto p-4 overflow-visible border-none bg-transparent">
-        <DialogHeader className="sr-only">
-          <DialogTitle>{card.name}</DialogTitle>
-          <DialogDescription>Detalhes da carta de batalha</DialogDescription>
-        </DialogHeader>
-        
-        <div className="flex flex-col gap-3">
-          <YuGiOhCard card={card} size="large" />
+    <>
+      <AnimatePresence>
+        {showAuraAnimation && animatingCard && (
+          <AuraActivationOverlay card={animatingCard} onComplete={handleAuraAnimationComplete} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {nurseJoyAnim && (
+          <NurseJoyActivationOverlay
+            isHeal={nurseJoyAnim.isHeal}
+            pokemonName={nurseJoyAnim.pokemonName}
+            amount={nurseJoyAnim.amount}
+            onComplete={() => setNurseJoyAnim(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Pokemon Selection Dialog for Heal/Resurrect */}
+      <Dialog open={showPokemonSelect} onOpenChange={() => setShowPokemonSelect(false)}>
+        <DialogContent className="max-w-[300px] mx-auto p-4 border-border" style={{
+          background: "linear-gradient(180deg, #500724 0%, #0a0a0a 100%)",
+          borderColor: "#EC4899",
+        }}>
+          <DialogHeader>
+            <DialogTitle className="text-center text-sm font-bold" style={{ color: "#EC4899" }}>
+              {hasFaintedPokemon
+                ? "Escolha um Pokemon para reviver"
+                : "Escolha um Pokemon para curar"}
+            </DialogTitle>
+            <DialogDescription className="text-center text-xs text-muted-foreground">
+              {hasFaintedPokemon
+                ? "Restaura 25% do HP maximo"
+                : "Cura 20% do HP maximo"}
+            </DialogDescription>
+          </DialogHeader>
           
-          {slotIndex !== undefined && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Button
-                onClick={handleActivatePower}
-                className={`w-full font-bold text-sm transition-all ${
-                  card.alignment === "bad-luck"
-                    ? "bg-red-600 hover:bg-red-700 text-white"
-                    : "bg-green-600 hover:bg-green-700 text-white"
-                }`}
+          <div className="flex flex-col gap-2 mt-2 max-h-[300px] overflow-y-auto">
+            {eligiblePokemon.map((poke) => {
+              const species = getPokemon(poke.speciesId);
+              const hpPercent = Math.round((poke.currentHp / poke.maxHp) * 100);
+              const isFainted = poke.currentHp <= 0;
+              
+              return (
+                <motion.button
+                  key={poke.uid}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleSelectPokemon(poke.uid)}
+                  className="flex items-center gap-3 p-2 rounded-lg border transition-colors cursor-pointer"
+                  style={{
+                    borderColor: "#EC489944",
+                    background: "rgba(0,0,0,0.3)",
+                  }}
+                >
+                  <div className="relative w-10 h-10 flex-shrink-0">
+                    <img
+                      src={getSpriteUrl(poke.speciesId)}
+                      alt={species.name}
+                      className="w-10 h-10 object-contain"
+                      style={{ filter: isFainted ? "grayscale(1) brightness(0.5)" : "none" }}
+                    />
+                  </div>
+                  <div className="flex flex-col items-start flex-1 min-w-0">
+                    <span className="text-xs font-bold text-foreground truncate w-full text-left">
+                      {poke.name} <span className="text-muted-foreground font-normal">Lv.{poke.level}</span>
+                    </span>
+                    <div className="w-full flex items-center gap-2">
+                      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{
+                            width: `${Math.max(0, hpPercent)}%`,
+                            background: isFainted ? "#666" : hpPercent > 50 ? "#4ADE80" : hpPercent > 25 ? "#FBBF24" : "#EF4444",
+                          }}
+                        />
+                      </div>
+                      <span className="text-[9px] text-muted-foreground whitespace-nowrap">
+                        {poke.currentHp}/{poke.maxHp}
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    className="flex items-center justify-center w-6 h-6 rounded-full flex-shrink-0"
+                    style={{ background: "#EC489933" }}
+                  >
+                    {hasFaintedPokemon ? (
+                      <RotateCcw className="w-3 h-3" style={{ color: "#EC4899" }} />
+                    ) : (
+                      <Heart className="w-3 h-3" style={{ color: "#EC4899" }} />
+                    )}
+                  </div>
+                </motion.button>
+              );
+            })}
+
+            {eligiblePokemon.length === 0 && (
+              <p className="text-center text-xs text-muted-foreground py-4">
+                Todos os Pokemon estao com HP cheio.
+              </p>
+            )}
+          </div>
+
+          <Button
+            variant="outline"
+            onClick={() => setShowPokemonSelect(false)}
+            className="w-full mt-2 text-xs"
+          >
+            Cancelar
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Main Card Viewer Dialog */}
+      <Dialog open={open && !showPokemonSelect} onOpenChange={onClose}>
+        <DialogContent className="max-w-[260px] mx-auto p-4 overflow-visible border-none bg-transparent">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{card?.name ?? "Carta"}</DialogTitle>
+            <DialogDescription>Detalhes da carta de batalha</DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col gap-3">
+            {card && <YuGiOhCard card={card} size="large" />}
+            
+            {slotIndex !== undefined && card && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
               >
-                <Sparkles className="w-4 h-4 mr-2" />
-                {card.alignment === "bad-luck" ? "Ativar Maldicao" : "Ativar Poder"}
-              </Button>
-            </motion.div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+                <Button
+                  onClick={handleActivatePower}
+                  disabled={!!isAlreadyActivated}
+                  className={`w-full font-bold text-sm transition-all ${getButtonStyle()}`}
+                  style={
+                    card.alignment === "aura-amplificada" && !isAlreadyActivated
+                      ? {
+                          background: "linear-gradient(90deg, #B8860B, #D4AF37, #FFD700, #D4AF37, #B8860B)",
+                          backgroundSize: "200% 100%",
+                          animation: "shimmer 2s linear infinite",
+                          border: "1px solid #FFD700",
+                        }
+                      : card.alignment === "aura-elemental" && !isAlreadyActivated
+                      ? {
+                          background: "linear-gradient(90deg, #888, #C0C0C0, #E8E8E8, #C0C0C0, #888)",
+                          backgroundSize: "200% 100%",
+                          animation: "shimmer 2s linear infinite",
+                          border: "1px solid #C0C0C0",
+                        }
+                      : isResurrectCard
+                      ? {
+                          background: "linear-gradient(90deg, #9d174d, #ec4899, #f472b6, #ec4899, #9d174d)",
+                          backgroundSize: "200% 100%",
+                          animation: "shimmer 2s linear infinite",
+                          border: "1px solid #EC4899",
+                        }
+                      : undefined
+                  }
+                >
+                  {isResurrectCard ? (
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                  ) : (
+                    <Sparkles className="w-4 h-4 mr-2" />
+                  )}
+                  {getButtonText()}
+                </Button>
+              </motion.div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -472,12 +1224,8 @@ function ReplaceCardModal({
         {/* Field cards to choose from */}
         <div className="flex gap-2 justify-center flex-wrap">
           {fieldCards.map((fieldCard, i) => {
-            
-            
             if (!fieldCard) return null;
-            if (i == 4) return null;
-            
-            const isLocked = fieldCard.alignment === "bad-luck";
+            const isLocked = fieldCard.alignment === "bad-luck" || fieldCard.alignment === "aura-elemental" || fieldCard.alignment === "aura-amplificada";
             return (
               <div key={i} className="relative">
                 <div
@@ -579,59 +1327,34 @@ function TrioEventOverlay() {
             transition={{ duration: 1.5, repeat: Infinity }}
           >
             {isLuck ? "\u2618\u2618\u2618" : 
-            
-            
             <>
             <div style={{display:'flex',justifyContent:'center'}}>
-
-      
             <img
               style={{ width: 50 }}
-              src={`/images/cardsTypes/genga.gif`}
+              src="/images/cardsTypes/genga.gif"
               className="object-cover rounded-full"
               loading="eager"
               decoding="sync"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
-                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
-              }}
+              onError={(e) => handleImgError(e, "\u2620")}
             />
              <img
               style={{ width: 50 }}
-              src={`/images/cardsTypes/genga.gif`}
+              src="/images/cardsTypes/genga.gif"
               className="object-cover rounded-full"
               loading="eager"
               decoding="sync"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
-                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
-              }}
+              onError={(e) => handleImgError(e, "\u2620")}
             />
              <img
               style={{ width: 50 }}
-              src={`/images/cardsTypes/genga.gif`}
+              src="/images/cardsTypes/genga.gif"
               className="object-cover rounded-full"
               loading="eager"
               decoding="sync"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
-                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
-              }}
+              onError={(e) => handleImgError(e, "\u2620")}
             />
                   </div>
             </>
-            
-            
-            
-            
-            
-            
             }
           </motion.span>
           <h2
@@ -746,7 +1469,11 @@ export function BattleCards() {
       state.battle.cardField.every((c) => c !== null);
 
     setTimeout(() => {
-      if (card.alignment === "luck") {
+      if (card.alignment === "aura-elemental" || card.alignment === "aura-amplificada") {
+        playCardRareAppear();
+      } else if (card.alignment === "resurrect") {
+        playCardResurrectAppear();
+      } else if (card.alignment === "luck") {
         playCardLuck();
       } else {
         playCardBadLuck();
@@ -788,12 +1515,26 @@ export function BattleCards() {
     }, 100);
   };
 
+  // Compute which elements have duplicates on the field for glow effect
+  const elementCounts: Record<string, number> = {};
+  for (const card of fieldCards) {
+    if (card && card.alignment === "luck") {
+      elementCounts[card.element] = (elementCounts[card.element] || 0) + 1;
+    }
+  }
+  // Elements with 2+ cards should glow
+  const glowingElements = new Set(
+    Object.entries(elementCounts)
+      .filter(([, count]) => count >= 2)
+      .map(([el]) => el)
+  );
+
   return (
     <>
       <div className="flex flex-col gap-1.5">
-        {/* 5 card slots */}
-        <div className="flex items-center justify-center gap-1.5">
-          {fieldCards.map((card, i) => i == 4 ?'':
+        {/* 6 card slots + draw button */}
+        <div className="flex items-center justify-center gap-1">
+          {fieldCards.map((card, i) =>
             card ? (
               <YuGiOhCard 
                 key={`${card.id}-${i}`} 
@@ -804,49 +1545,26 @@ export function BattleCards() {
                   setViewingCardSlotIndex(i);
                 }} 
                 slotIndex={i}
+                glowing={card.alignment === "luck" && glowingElements.has(card.element)}
               />
             ) : (
               <EmptySlot key={`empty-${i}`} index={i} />
             )
           )}
-           <div
-             onClick={handleDraw}
-      className="relative flex flex-col items-center justify-center rounded-[5px] "
-      style={{
-        cursor:'pointer',
-        width: 52,
-        height: 76,
-        background: "linear-gradient(180deg, rgba(2, 2, 26, 0.6) 0%, rgba(1, 1, 3, 0.8) 100%)",
-        borderColor: "rgb(7, 18, 119)",borderWidth:1
-      }}
-    >
-      <span    className="text-[9px]  font-mono">
-                 
-      Compre
-      </span>
-    </div>
-          
-        </div>
-
-        {/* Info strip + draw button */}
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2 text-[9px]">
-           
-          </div>
-          {/* <Button
-            size="sm"
+          <div
             onClick={handleDraw}
-            disabled={isDrawing || !!battle.cardTrioEvent}
-            className="h-6 text-[10px] px-3 rounded"
+            className="relative flex flex-col items-center justify-center rounded-[5px]"
             style={{
-              background: "linear-gradient(180deg, #D4AF37 0%, #B8860B 100%)",
-              color: "#1a1a1a",
-              fontWeight: 700,
-              border: "1px solid #C5A026",
+              cursor: "pointer",
+              width: 44,
+              height: 64,
+              background: "linear-gradient(180deg, rgba(2, 2, 26, 0.6) 0%, rgba(1, 1, 3, 0.8) 100%)",
+              borderColor: "rgb(7, 18, 119)",
+              borderWidth: 1,
             }}
           >
-            {isDrawing ? "..." : "Comprar Carta"}
-          </Button> */}
+            <span className="text-[9px] font-mono">Compre</span>
+          </div>
         </div>
       </div>
 

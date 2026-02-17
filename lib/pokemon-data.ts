@@ -88,6 +88,9 @@ export interface Move {
   damage_type: DamageType;
   scaling_attribute: ScalingAttribute;
   uses_contact: boolean;
+  // Energy cost: number of element cards needed on field to use this move
+  energy_cost: number;
+  energy_type: PokemonType; // The element type of cards needed (same as move type)
 }
 
 /** Parse dice string like "2d8" into { count, sides } */
@@ -113,8 +116,21 @@ export interface PokemonSpecies {
   learnableMoves: string[];
 }
 
+/** Calculate energy cost based on move type and power */
+function deriveEnergyCost(type: PokemonType, power: number): number {
+  // Normal-type moves are always free (player always has usable moves)
+  if (type === "normal") return 0;
+  // Status moves (power 0) are always free
+  if (power === 0) return 0;
+  // Elemental moves cost cards based on power tier
+  if (power <= 60) return 1;
+  if (power <= 100) return 2;
+  if (power <= 150) return 3;
+  return 4; // 150+ (Fissure etc)
+}
+
 /** Auto-enrich a raw move definition with dice damage fields */
-function m(raw: Omit<Move, "damage_dice" | "power_category" | "damage_type" | "scaling_attribute" | "uses_contact">): Move {
+function m(raw: Omit<Move, "damage_dice" | "power_category" | "damage_type" | "scaling_attribute" | "uses_contact" | "energy_cost" | "energy_type">): Move {
   const dice = deriveDiceFromPower(raw.power);
   const classification = classifyMove(raw);
   return {
@@ -124,6 +140,8 @@ function m(raw: Omit<Move, "damage_dice" | "power_category" | "damage_type" | "s
     damage_type: classification.damage_type,
     scaling_attribute: classification.scaling_attribute,
     uses_contact: classification.uses_contact,
+    energy_cost: deriveEnergyCost(raw.type, raw.power),
+    energy_type: raw.type,
   };
 }
 

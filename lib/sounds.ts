@@ -328,6 +328,77 @@ export function playCardActivateCritDamage() {
   setTimeout(() => playTone(60, 0.4, "sawtooth", 0.12, { freq: 30, time: 0.35 }), 280);
 }
 
+export function playCardRareAppear() {
+  // Epic ascending fanfare for rare card appearance
+  const notes = [392, 494, 587, 698, 784, 880, 988, 1047];
+  notes.forEach((freq, i) => {
+    setTimeout(() => playTone(freq, 0.2, "sine", 0.09), i * 90);
+  });
+  // Shimmer overlay
+  setTimeout(() => {
+    playTone(1319, 0.4, "sine", 0.1);
+    playTone(1568, 0.4, "sine", 0.07);
+    playTone(1047, 0.4, "sine", 0.06);
+  }, 800);
+  // Final chord
+  setTimeout(() => {
+    playTone(1568, 0.6, "sine", 0.1);
+    playTone(2093, 0.6, "sine", 0.06);
+  }, 1200);
+}
+
+export function playCardHealAppear() {
+  // Gentle healing chime
+  playTone(659, 0.15, "sine", 0.08);
+  setTimeout(() => playTone(784, 0.15, "sine", 0.08), 100);
+  setTimeout(() => playTone(988, 0.15, "sine", 0.09), 200);
+  setTimeout(() => playTone(1175, 0.2, "sine", 0.1), 300);
+}
+
+export function playCardResurrectAppear() {
+  // Dramatic phoenix-like rising sound
+  playTone(200, 0.3, "sine", 0.06, { freq: 600, time: 0.25 });
+  setTimeout(() => playTone(400, 0.25, "sine", 0.08, { freq: 900, time: 0.2 }), 200);
+  setTimeout(() => {
+    playTone(784, 0.2, "sine", 0.1);
+    playTone(988, 0.2, "sine", 0.08);
+    playTone(1175, 0.3, "sine", 0.07);
+  }, 450);
+  setTimeout(() => {
+    playTone(1319, 0.4, "sine", 0.1);
+    playTone(1568, 0.4, "sine", 0.06);
+  }, 700);
+}
+
+export function playHealActivate() {
+  // Sparkle heal with ascending tones
+  playTone(784, 0.12, "sine", 0.08);
+  setTimeout(() => playTone(988, 0.12, "sine", 0.08), 100);
+  setTimeout(() => playTone(1175, 0.12, "sine", 0.09), 200);
+  setTimeout(() => playTone(1319, 0.15, "sine", 0.1), 300);
+  setTimeout(() => {
+    playTone(1568, 0.3, "sine", 0.1);
+    playTone(1175, 0.3, "sine", 0.06);
+  }, 400);
+}
+
+export function playResurrectActivate() {
+  // Epic phoenix resurrection
+  playTone(262, 0.3, "sine", 0.06, { freq: 523, time: 0.25 });
+  setTimeout(() => playTone(330, 0.25, "sine", 0.07, { freq: 659, time: 0.2 }), 200);
+  setTimeout(() => playTone(392, 0.25, "sine", 0.08, { freq: 784, time: 0.2 }), 400);
+  setTimeout(() => {
+    playTone(523, 0.2, "sine", 0.1);
+    playTone(659, 0.2, "sine", 0.08);
+    playTone(784, 0.2, "sine", 0.07);
+  }, 600);
+  setTimeout(() => {
+    playTone(1047, 0.5, "sine", 0.12);
+    playTone(1319, 0.5, "sine", 0.08);
+    playTone(1568, 0.5, "sine", 0.06);
+  }, 800);
+}
+
 export function playTrioPunishment() {
   // Massive damage - earthquake rumble + explosion
   playTone(50, 0.5, "sawtooth", 0.18, { freq: 30, time: 0.4 });
