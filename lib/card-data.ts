@@ -223,20 +223,20 @@ function randomElement(): CardElement {
 
 /**
  * Draw a single card with exact probabilities:
- *   Sorte (luck)      = 62%
- *   Azar (bad-luck)    =  7%
- *   Aura Elemental     = 10%
- *   Aura Amplificada   =  5%
- *   Cura (heal)        = 11%
- *   Ressurreicao       =  5%
- *   Total              = 100%
+ *   Sorte (luck)        = 80%
+ *   Azar (bad-luck)     = 15%
+ *   Aura Elemental      =  2%
+ *   Aura Amplificada    =  1%
+ *   Cura (heal)         =  1%
+ *   Ressurreicao        =  1%
+ *   Total               = 100%
  */
 export function drawCard(): BattleCard {
   const roll = Math.random() * 100; // 0-100
   const element = randomElement();
 
-  if (roll < 62) {
-    // --- LUCK (62%) ---
+  if (roll < 80) {
+    // --- LUCK (80%) ---
     const defIndex = Math.floor(Math.random() * LUCK_CARDS.length);
     const def = LUCK_CARDS[defIndex];
     return {
@@ -248,8 +248,8 @@ export function drawCard(): BattleCard {
       effectKey: def.effectKey,
       cardIndex: defIndex,
     };
-  } else if (roll < 69) {
-    // --- BAD LUCK (7%) ---
+  } else if (roll < 95) {
+    // --- BAD LUCK (15%) ---
     const defIndex = Math.floor(Math.random() * BAD_LUCK_CARDS.length);
     const def = BAD_LUCK_CARDS[defIndex];
     return {
@@ -261,8 +261,8 @@ export function drawCard(): BattleCard {
       effectKey: def.effectKey,
       cardIndex: LUCK_CARDS.length + defIndex,
     };
-  } else if (roll < 79) {
-    // --- AURA ELEMENTAL (10%) ---
+  } else if (roll < 97) {
+    // --- AURA ELEMENTAL (2%) ---
     return {
       id: nextCardId(),
       alignment: "aura-elemental",
@@ -272,8 +272,8 @@ export function drawCard(): BattleCard {
       effectKey: "aura-elemental",
       cardIndex: -1,
     };
-  } else if (roll < 84) {
-    // --- AURA AMPLIFICADA (5%) ---
+  } else if (roll < 98) {
+    // --- AURA AMPLIFICADA (1%) ---
     return {
       id: nextCardId(),
       alignment: "aura-amplificada",
@@ -283,20 +283,19 @@ export function drawCard(): BattleCard {
       effectKey: "aura-amplificada",
       cardIndex: -2,
     };
-  } else if (roll < 95) {
-    // --- HEAL (11%) ---
-    const healAmount = [15, 20, 25, 30][Math.floor(Math.random() * 4)];
+  } else if (roll < 99) {
+    // --- HEAL (1%) ---
     return {
       id: nextCardId(),
       alignment: "heal",
       element: "normal",
       name: "Pocao Vital",
-      description: `Cura ${healAmount}% do HP maximo do Pokemon ativo.`,
-      effectKey: `heal-${healAmount}`,
+      description: "Escolha um Pokemon para curar 20% do HP maximo!",
+      effectKey: "heal-20",
       cardIndex: -3,
     };
   } else {
-    // --- RESURRECT (5%) ---
+    // --- RESURRECT (1%) ---
     return {
       id: nextCardId(),
       alignment: "resurrect",

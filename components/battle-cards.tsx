@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/lib/game-store";
 import type { BattleCard } from "@/lib/card-data";
 import { ELEMENT_COLORS, ELEMENT_NAMES_PT } from "@/lib/card-data";
+import { getSpriteUrl, getPokemon } from "@/lib/pokemon-data";
 import {
   playCardDraw,
   playCardLuck,
@@ -739,19 +740,42 @@ function CardViewer({
   onClose: () => void;
   slotIndex?: number;
 }) {
-  const { activateCardEffect } = useGameStore();
+  const { activateCardEffect, activateHealCard, activateResurrectCard, team } = useGameStore();
   const [showAuraAnimation, setShowAuraAnimation] = useState(false);
   const [animatingCard, setAnimatingCard] = useState<BattleCard | null>(null);
+  const [showPokemonSelect, setShowPokemonSelect] = useState(false);
   
   if (!card && !showAuraAnimation) return null;
 
   const isAura = card?.alignment === "aura-elemental" || card?.alignment === "aura-amplificada";
+  const isHealCard = card?.alignment === "heal";
+  const isResurrectCard = card?.alignment === "resurrect";
   const isAlreadyActivated = isAura && card?.activated;
+
+  // For heal: show all alive Pokemon; for resurrect: show only fainted (hp <= 0)
+  const eligiblePokemon = isHealCard
+    ? team.filter((p) => p.currentHp > 0 && p.currentHp < p.maxHp)
+    : isResurrectCard
+    ? team.filter((p) => p.currentHp <= 0)
+    : [];
 
   const handleActivatePower = () => {
     if (slotIndex !== undefined && card) {
+      // Heal/Resurrect -> show Pokemon selection
+      if (isHealCard || isResurrectCard) {
+        if (eligiblePokemon.length === 0) {
+          // No eligible Pokemon
+          const msg = isHealCard
+            ? "Nenhum Pokemon precisa de cura!"
+            : "Nenhum Pokemon esta com 0 HP!";
+          alert(msg);
+          return;
+        }
+        setShowPokemonSelect(true);
+        return;
+      }
+
       if (isAura && !isAlreadyActivated) {
-        // Show epic animation first, then activate
         setAnimatingCard(card);
         setShowAuraAnimation(true);
         onClose();
@@ -760,11 +784,7 @@ function CardViewer({
       } else {
         const result = activateCardEffect(slotIndex);
         if (result) {
-          if (result.alignment === "heal") {
-            playHealActivate();
-          } else if (result.alignment === "resurrect") {
-            playResurrectActivate();
-          } else if (result.alignment === "bad-luck") {
+          if (result.alignment === "bad-luck") {
             if (result.isCrit) {
               playCardActivateCritDamage();
             } else {
@@ -779,17 +799,30 @@ function CardViewer({
     }
   };
 
+  const handleSelectPokemon = (uid: string) => {
+    if (slotIndex === undefined) return;
+    let success = false;
+    if (isHealCard) {
+      success = activateHealCard(slotIndex, uid);
+      if (success) playHealActivate();
+    } else if (isResurrectCard) {
+      success = activateResurrectCard(slotIndex, uid);
+      if (success) playResurrectActivate();
+    }
+    setShowPokemonSelect(false);
+    onClose();
+  };
+
   const handleAuraAnimationComplete = () => {
     setShowAuraAnimation(false);
     setAnimatingCard(null);
   };
 
-  // Show button text based on card type
   const getButtonText = () => {
     if (isAlreadyActivated) return "Poder Ja Ativado";
     if (isAura) return "ATIVAR PODER";
-    if (card?.alignment === "heal") return "Usar Cura";
-    if (card?.alignment === "resurrect") return "Ressuscitar Pokemon";
+    if (isHealCard) return "Escolher Pokemon para Curar";
+    if (isResurrectCard) return "Escolher Pokemon para Reviver";
     if (card?.alignment === "bad-luck") return "Ativar Maldicao";
     return "Ativar Poder";
   };
@@ -798,8 +831,8 @@ function CardViewer({
     if (isAlreadyActivated) return "bg-gray-500 text-white cursor-not-allowed";
     if (card?.alignment === "aura-amplificada") return "text-white";
     if (card?.alignment === "aura-elemental") return "text-white";
-    if (card?.alignment === "heal") return "text-white";
-    if (card?.alignment === "resurrect") return "text-white";
+    if (isHealCard) return "text-white";
+    if (isResurrectCard) return "text-white";
     if (card?.alignment === "bad-luck") return "bg-red-600 hover:bg-red-700 text-white";
     return "bg-green-600 hover:bg-green-700 text-white";
   };
@@ -812,7 +845,101 @@ function CardViewer({
         )}
       </AnimatePresence>
 
-      <Dialog open={open} onOpenChange={onClose}>
+      {/* Pokemon Selection Dialog for Heal/Resurrect */}
+      <Dialog open={showPokemonSelect} onOpenChange={() => setShowPokemonSelect(false)}>
+        <DialogContent className="max-w-[300px] mx-auto p-4 border-border" style={{
+          background: isHealCard
+            ? "linear-gradient(180deg, #052e16 0%, #0a0a0a 100%)"
+            : "linear-gradient(180deg, #451a03 0%, #0a0a0a 100%)",
+          borderColor: isHealCard ? "#4ADE80" : "#F59E0B",
+        }}>
+          <DialogHeader>
+            <DialogTitle className="text-center text-sm font-bold" style={{ color: isHealCard ? "#4ADE80" : "#F59E0B" }}>
+              {isHealCard ? "Escolha um Pokemon para curar" : "Escolha um Pokemon para reviver"}
+            </DialogTitle>
+            <DialogDescription className="text-center text-xs text-muted-foreground">
+              {isHealCard ? "Cura 20% do HP maximo" : "Restaura 25% do HP maximo"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex flex-col gap-2 mt-2 max-h-[300px] overflow-y-auto">
+            {eligiblePokemon.map((poke) => {
+              const species = getPokemon(poke.speciesId);
+              const hpPercent = Math.round((poke.currentHp / poke.maxHp) * 100);
+              const isFainted = poke.currentHp <= 0;
+              
+              return (
+                <motion.button
+                  key={poke.uid}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleSelectPokemon(poke.uid)}
+                  className="flex items-center gap-3 p-2 rounded-lg border transition-colors cursor-pointer"
+                  style={{
+                    borderColor: isHealCard ? "#4ADE8044" : "#F59E0B44",
+                    background: "rgba(0,0,0,0.3)",
+                  }}
+                >
+                  <div className="relative w-10 h-10 flex-shrink-0">
+                    <img
+                      src={getSpriteUrl(poke.speciesId)}
+                      alt={species.name}
+                      className="w-10 h-10 object-contain"
+                      style={{ filter: isFainted ? "grayscale(1) brightness(0.5)" : "none" }}
+                    />
+                  </div>
+                  <div className="flex flex-col items-start flex-1 min-w-0">
+                    <span className="text-xs font-bold text-foreground truncate w-full text-left">
+                      {poke.name} <span className="text-muted-foreground font-normal">Lv.{poke.level}</span>
+                    </span>
+                    <div className="w-full flex items-center gap-2">
+                      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{
+                            width: `${Math.max(0, hpPercent)}%`,
+                            background: isFainted ? "#666" : hpPercent > 50 ? "#4ADE80" : hpPercent > 25 ? "#FBBF24" : "#EF4444",
+                          }}
+                        />
+                      </div>
+                      <span className="text-[9px] text-muted-foreground whitespace-nowrap">
+                        {poke.currentHp}/{poke.maxHp}
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    className="flex items-center justify-center w-6 h-6 rounded-full flex-shrink-0"
+                    style={{ background: isHealCard ? "#4ADE8033" : "#F59E0B33" }}
+                  >
+                    {isHealCard ? (
+                      <Heart className="w-3 h-3" style={{ color: "#4ADE80" }} />
+                    ) : (
+                      <RotateCcw className="w-3 h-3" style={{ color: "#F59E0B" }} />
+                    )}
+                  </div>
+                </motion.button>
+              );
+            })}
+
+            {eligiblePokemon.length === 0 && (
+              <p className="text-center text-xs text-muted-foreground py-4">
+                {isHealCard ? "Nenhum Pokemon precisa de cura." : "Nenhum Pokemon esta com 0 HP."}
+              </p>
+            )}
+          </div>
+
+          <Button
+            variant="outline"
+            onClick={() => setShowPokemonSelect(false)}
+            className="w-full mt-2 text-xs"
+          >
+            Cancelar
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Main Card Viewer Dialog */}
+      <Dialog open={open && !showPokemonSelect} onOpenChange={onClose}>
         <DialogContent className="max-w-[260px] mx-auto p-4 overflow-visible border-none bg-transparent">
           <DialogHeader className="sr-only">
             <DialogTitle>{card?.name ?? "Carta"}</DialogTitle>
@@ -847,14 +974,14 @@ function CardViewer({
                           animation: "shimmer 2s linear infinite",
                           border: "1px solid #C0C0C0",
                         }
-                      : card.alignment === "heal"
+                      : isHealCard
                       ? {
                           background: "linear-gradient(90deg, #16a34a, #4ade80, #86efac, #4ade80, #16a34a)",
                           backgroundSize: "200% 100%",
                           animation: "shimmer 2s linear infinite",
                           border: "1px solid #4ADE80",
                         }
-                      : card.alignment === "resurrect"
+                      : isResurrectCard
                       ? {
                           background: "linear-gradient(90deg, #b45309, #f59e0b, #fbbf24, #f59e0b, #b45309)",
                           backgroundSize: "200% 100%",
@@ -864,7 +991,13 @@ function CardViewer({
                       : undefined
                   }
                 >
-                  <Sparkles className="w-4 h-4 mr-2" />
+                  {isHealCard ? (
+                    <Heart className="w-4 h-4 mr-2" />
+                  ) : isResurrectCard ? (
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                  ) : (
+                    <Sparkles className="w-4 h-4 mr-2" />
+                  )}
                   {getButtonText()}
                 </Button>
               </motion.div>

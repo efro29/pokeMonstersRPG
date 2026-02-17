@@ -315,6 +315,8 @@ interface GameState {
   dismissTrioEvent: () => void;
   recalcBadLuckPenalty: () => void;
   activateCardEffect: (slotIndex: number) => { isCrit: boolean; alignment: string } | undefined;
+  activateHealCard: (slotIndex: number, targetUid: string) => boolean;
+  activateResurrectCard: (slotIndex: number, targetUid: string) => boolean;
 }
 
 function generateUid(): string {
@@ -1599,108 +1601,10 @@ export const useGameStore = create<GameState>()(
           return { isCrit: false, alignment: card.alignment };
         }
 
-        // Handle HEAL card - cures active Pokemon
-        if (card.alignment === "heal") {
-          const healPercent = parseInt(card.effectKey.split("-")[1]) || 20;
-          const maxHp = activeMon.stats.hp;
-          const healAmount = Math.round(maxHp * (healPercent / 100));
-          const newHp = Math.min(maxHp, activeMon.currentHp + healAmount);
-          const actualHeal = newHp - activeMon.currentHp;
-
-          const updatedTeam = team.map((p) =>
-            p.uid === activeMon.uid ? { ...p, currentHp: newHp } : p
-          );
-
-          get().addBattleLog(`[CURA] ${card.name} cura ${actualHeal} HP do ${activeSpecies.name}!`);
-          set({ team: updatedTeam });
-
-          // Remove card from field
-          const newField = [...battle.cardField];
-          newField[slotIndex] = null;
-          const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
-
-          const currentBattle = get().battle;
-          set({
-            battle: {
-              ...currentBattle,
-              cardField: newField,
-              badLuckPenalty: penalty,
-              pokemonAnimationState: {
-                isAnimating: true,
-                effectType: "heal",
-                duration: 600,
-              },
-            },
-          });
-
-          setTimeout(() => {
-            set((state) => ({
-              battle: {
-                ...state.battle,
-                pokemonAnimationState: {
-                  isAnimating: false,
-                  effectType: "none",
-                  duration: 0,
-                },
-              },
-            }));
-          }, 600);
-
-          return { isCrit: false, alignment: card.alignment };
-        }
-
-        // Handle RESURRECT card - revives a fainted Pokemon
-        if (card.alignment === "resurrect") {
-          const faintedPokemon = team.find((p) => p.uid !== activeMon.uid && p.currentHp <= 0);
-          if (!faintedPokemon) {
-            get().addBattleLog(`[CARTA] Nenhum Pokemon para ressuscitar!`);
-            return undefined; // No fainted Pokemon available
-          }
-
-          const faintedSpecies = getPokemon(faintedPokemon.speciesId);
-          const maxHp = faintedPokemon.stats.hp;
-          const reviveHp = Math.round(maxHp * 0.25);
-
-          const updatedTeam = team.map((p) =>
-            p.uid === faintedPokemon.uid ? { ...p, currentHp: reviveHp } : p
-          );
-
-          get().addBattleLog(`[RESSURREICAO] ${faintedSpecies.name} foi ressuscitado com ${reviveHp} HP!`);
-          set({ team: updatedTeam });
-
-          // Remove card from field
-          const newField = [...battle.cardField];
-          newField[slotIndex] = null;
-          const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
-
-          const currentBattle = get().battle;
-          set({
-            battle: {
-              ...currentBattle,
-              cardField: newField,
-              badLuckPenalty: penalty,
-              pokemonAnimationState: {
-                isAnimating: true,
-                effectType: "buff",
-                duration: 800,
-              },
-            },
-          });
-
-          setTimeout(() => {
-            set((state) => ({
-              battle: {
-                ...state.battle,
-                pokemonAnimationState: {
-                  isAnimating: false,
-                  effectType: "none",
-                  duration: 0,
-                },
-              },
-            }));
-          }, 800);
-
-          return { isCrit: false, alignment: card.alignment };
+        // Heal and Resurrect are handled by dedicated functions (activateHealCard / activateResurrectCard)
+        // They should not be activated via the generic activateCardEffect
+        if (card.alignment === "heal" || card.alignment === "resurrect") {
+          return undefined;
         }
 
         // Apply damage if bad-luck card
@@ -1765,6 +1669,124 @@ export const useGameStore = create<GameState>()(
         }, animationType === "damage" ? 500 : 600);
 
         return { isCrit, alignment: card.alignment };
+      },
+
+      // ---- HEAL CARD: target a specific Pokemon by uid ----
+      activateHealCard: (slotIndex: number, targetUid: string): boolean => {
+        const { battle, team } = get();
+        const card = battle.cardField[slotIndex];
+        if (!card || card.alignment !== "heal") return false;
+
+        const targetMon = team.find((p) => p.uid === targetUid);
+        if (!targetMon || targetMon.currentHp <= 0) return false; // Can't heal fainted
+
+        const targetSpecies = getPokemon(targetMon.speciesId);
+        const maxHp = targetMon.maxHp;
+        const healAmount = Math.round(maxHp * 0.20); // Always 20%
+        const newHp = Math.min(maxHp, targetMon.currentHp + healAmount);
+        const actualHeal = newHp - targetMon.currentHp;
+
+        const updatedTeam = team.map((p) =>
+          p.uid === targetUid ? { ...p, currentHp: newHp } : p
+        );
+
+        get().addBattleLog(`[CURA] ${card.name} cura ${actualHeal} HP de ${targetSpecies.name}!`);
+        set({ team: updatedTeam });
+
+        // Remove card from field
+        const activeIdx = battle.activePokemonIndex;
+        const activeMon = team[activeIdx];
+        const activeSpecies = getPokemon(activeMon.speciesId);
+        const pokemonTypes = [activeSpecies.type1, activeSpecies.type2].filter(Boolean) as string[];
+        const newField = [...battle.cardField];
+        newField[slotIndex] = null;
+        const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
+
+        set({
+          battle: {
+            ...get().battle,
+            cardField: newField,
+            badLuckPenalty: penalty,
+            pokemonAnimationState: {
+              isAnimating: true,
+              effectType: "heal",
+              duration: 600,
+            },
+          },
+        });
+
+        setTimeout(() => {
+          set((state) => ({
+            battle: {
+              ...state.battle,
+              pokemonAnimationState: {
+                isAnimating: false,
+                effectType: "none",
+                duration: 0,
+              },
+            },
+          }));
+        }, 600);
+
+        return true;
+      },
+
+      // ---- RESURRECT CARD: target a fainted Pokemon by uid ----
+      activateResurrectCard: (slotIndex: number, targetUid: string): boolean => {
+        const { battle, team } = get();
+        const card = battle.cardField[slotIndex];
+        if (!card || card.alignment !== "resurrect") return false;
+
+        const targetMon = team.find((p) => p.uid === targetUid);
+        if (!targetMon || targetMon.currentHp > 0) return false; // Must be fainted
+
+        const targetSpecies = getPokemon(targetMon.speciesId);
+        const maxHp = targetMon.maxHp;
+        const reviveHp = Math.round(maxHp * 0.25); // 25% HP
+
+        const updatedTeam = team.map((p) =>
+          p.uid === targetUid ? { ...p, currentHp: reviveHp } : p
+        );
+
+        get().addBattleLog(`[RESSURREICAO] ${targetSpecies.name} foi ressuscitado com ${reviveHp} HP!`);
+        set({ team: updatedTeam });
+
+        // Remove card from field
+        const activeIdx = battle.activePokemonIndex;
+        const activeMon = team[activeIdx];
+        const activeSpecies = getPokemon(activeMon.speciesId);
+        const pokemonTypes = [activeSpecies.type1, activeSpecies.type2].filter(Boolean) as string[];
+        const newField = [...battle.cardField];
+        newField[slotIndex] = null;
+        const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
+
+        set({
+          battle: {
+            ...get().battle,
+            cardField: newField,
+            badLuckPenalty: penalty,
+            pokemonAnimationState: {
+              isAnimating: true,
+              effectType: "buff",
+              duration: 800,
+            },
+          },
+        });
+
+        setTimeout(() => {
+          set((state) => ({
+            battle: {
+              ...state.battle,
+              pokemonAnimationState: {
+                isAnimating: false,
+                effectType: "none",
+                duration: 0,
+              },
+            },
+          }));
+        }, 800);
+
+        return true;
       },
 
     }),
