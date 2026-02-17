@@ -1,5 +1,5 @@
 "use client";
-// battle-cards v3
+
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/lib/game-store";
@@ -77,6 +77,18 @@ const ELEMENT_ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
 function ElementIcon({ element, className }: { element: string; className?: string }) {
   const Icon = ELEMENT_ICON_MAP[element] || Circle;
   return <Icon className={className} />;
+}
+
+function handleImgError(e: React.SyntheticEvent<HTMLImageElement>, fallbackText: string) {
+  const target = e.currentTarget;
+  target.style.display = "none";
+  const parent = target.parentElement;
+  if (parent) {
+    const span = document.createElement("span");
+    span.className = "text-[18px] leading-none drop-shadow-sm";
+    span.textContent = fallbackText;
+    parent.appendChild(span);
+  }
 }
 
 // ============================================================
@@ -222,7 +234,7 @@ function YuGiOhCard({
       );
     }
 
-    // -- HEAL / RESURRECT cards small rendering --
+    // -- RESURRECT card small rendering --
     if (isSpecial) {
       const specialColor = "#EC4899";
       const specialBg = "linear-gradient(180deg, #fce7f3 0%, #f472b6 30%, #ec4899 70%, #fbcfe8 100%)";
@@ -275,13 +287,7 @@ function YuGiOhCard({
               className="w-full h-full object-cover"
               loading="eager"
               decoding="sync"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                if (target.parentElement) {
-                  target.parentElement.innerHTML = '<span class="text-[22px] leading-none">\u2625</span>';
-                }
-              }}
+              onError={(e) => handleImgError(e, "\u2625")}
             />
           </div>
           <div
@@ -353,10 +359,7 @@ function YuGiOhCard({
             className="w-full h-full object-cover"
             loading="eager"
             decoding="sync"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-              const p = (e.target as HTMLImageElement).parentElement; if (p) p.innerHTML = '<span class="text-[18px] leading-none drop-shadow-sm">' + (isLuck ? "\u2618" : "\u2620") + '</span>';
-            }}
+            onError={(e) => handleImgError(e, isLuck ? "\u2618" : "\u2620")}
           />
         </div>
    
@@ -376,11 +379,7 @@ function YuGiOhCard({
               className="object-cover"
               loading="eager"
               decoding="sync"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                if (target.parentElement) target.parentElement.innerHTML = '<span class="text-[18px] leading-none drop-shadow-sm">' + (isLuck ? "\u2618" : "\u2620") + '</span>';
-              }}
+              onError={(e) => handleImgError(e, isLuck ? "\u2618" : "\u2620")}
             />
           </div>
           </div>
@@ -390,16 +389,12 @@ function YuGiOhCard({
             className=" flex justify-center items-center bg-white-200"
             style={{ minHeight: '24px' }}>
             <img
-              src={`/images/cardsTypes/genga.jpg`}
+              src="/images/cardsTypes/genga.jpg"
               alt={card.name}
               className="object-cover"
               loading="eager"
               decoding="sync"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                if (target.parentElement) target.parentElement.innerHTML = '<span class="text-[18px] leading-none drop-shadow-sm">' + (isLuck ? "\u2618" : "\u2620") + '</span>';
-              }}
+              onError={(e) => handleImgError(e, "\u2620")}
             />
           </div>
         }
@@ -541,13 +536,12 @@ function EmptySlot({ index }: { index: number }) {
                     width="20"
                     height="20"
                     viewBox="0 0 100 100"
-                    className=""
                   >
                     <circle cx="50" cy="50" r="48" fill="#2b2424" stroke="#1E293B" strokeWidth="4" />
                     <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
                     <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#606264" />
                     <circle cx="50" cy="50" r="14" fill="#3c3d3d" stroke="#1E293B" strokeWidth="3" />
-                    <circle cx="50" cy="50" r="6" fill={  "#1E293B"} />
+                    <circle cx="50" cy="50" r="6" fill="#1E293B" />
                   </svg>
       
       </span>
@@ -806,7 +800,7 @@ function NurseJoyActivationOverlay({
                 left: `${35 + Math.random() * 30}%`,
                 width: 3 + Math.random() * 5,
                 height: 20 + Math.random() * 30,
-                background: `linear-gradient(to top, #EC4899, #F472B6, transparent)`,
+                background: "linear-gradient(to top, #EC4899, #F472B6, transparent)",
                 borderRadius: "50% 50% 0 0",
               }}
               initial={{ opacity: 0, scaleY: 0 }}
@@ -1333,59 +1327,34 @@ function TrioEventOverlay() {
             transition={{ duration: 1.5, repeat: Infinity }}
           >
             {isLuck ? "\u2618\u2618\u2618" : 
-            
-            
             <>
             <div style={{display:'flex',justifyContent:'center'}}>
-
-      
             <img
               style={{ width: 50 }}
-              src={`/images/cardsTypes/genga.gif`}
+              src="/images/cardsTypes/genga.gif"
               className="object-cover rounded-full"
               loading="eager"
               decoding="sync"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
-                if (target.parentElement) target.parentElement.innerHTML = '<span class="text-[18px] leading-none drop-shadow-sm">' + (isLuck ? "\u2618" : "\u2620") + '</span>';
-              }}
+              onError={(e) => handleImgError(e, "\u2620")}
             />
              <img
               style={{ width: 50 }}
-              src={`/images/cardsTypes/genga.gif`}
+              src="/images/cardsTypes/genga.gif"
               className="object-cover rounded-full"
               loading="eager"
               decoding="sync"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
-                if (target.parentElement) target.parentElement.innerHTML = '<span class="text-[18px] leading-none drop-shadow-sm">' + (isLuck ? "\u2618" : "\u2620") + '</span>';
-              }}
+              onError={(e) => handleImgError(e, "\u2620")}
             />
              <img
               style={{ width: 50 }}
-              src={`/images/cardsTypes/genga.gif`}
+              src="/images/cardsTypes/genga.gif"
               className="object-cover rounded-full"
               loading="eager"
               decoding="sync"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.style.display = "none";
-                // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
-                if (target.parentElement) target.parentElement.innerHTML = '<span class="text-[18px] leading-none drop-shadow-sm">' + (isLuck ? "\u2618" : "\u2620") + '</span>';
-              }}
+              onError={(e) => handleImgError(e, "\u2620")}
             />
                   </div>
             </>
-            
-            
-            
-            
-            
-            
             }
           </motion.span>
           <h2
