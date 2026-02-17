@@ -727,16 +727,8 @@ export const useGameStore = create<GameState>()(
         let hitResult: HitResult;
 
         if (battle.auraAmplificadaActive) {
-          // Aura Amplificada: 70% flat hit chance (D20 roll 1-14 = hit, 15-20 = miss, 20 = crit)
-          if (roll === 1) {
-            hitResult = "critical-miss";
-          } else if (roll >= critThreshold) {
-            hitResult = "critical-hit";
-          } else if (roll <= 14) {
-            hitResult = "hit";
-          } else {
-            hitResult = "miss";
-          }
+          // Aura Amplificada: D20 always counts as 20 - guaranteed critical hit!
+          hitResult = "critical-hit";
         } else if (roll === 1) {
           hitResult = "critical-miss";
         } else if (roll >= critThreshold) {
@@ -1567,16 +1559,54 @@ export const useGameStore = create<GameState>()(
 
         let isCrit = false;
 
+        // Handle AURA card activation - don't remove the card, just set activated = true
+        if (card.alignment === "aura-elemental" || card.alignment === "aura-amplificada") {
+          if (card.activated) return undefined; // Already activated
+          const newField = [...battle.cardField];
+          newField[slotIndex] = { ...card, activated: true };
+
+          const logMsg = card.alignment === "aura-amplificada"
+            ? `[AURA] Aura Amplificada ativada! Proximo golpe tera D20 garantido de 20!`
+            : `[AURA] Aura Elemental ativada! Funciona como energia coringa!`;
+          get().addBattleLog(logMsg);
+
+          const currentBattle = get().battle;
+          set({
+            battle: {
+              ...currentBattle,
+              cardField: newField,
+              pokemonAnimationState: {
+                isAnimating: true,
+                effectType: "buff",
+                duration: 800,
+              },
+            },
+          });
+
+          setTimeout(() => {
+            set((state) => ({
+              battle: {
+                ...state.battle,
+                pokemonAnimationState: {
+                  isAnimating: false,
+                  effectType: "none",
+                  duration: 0,
+                },
+              },
+            }));
+          }, 800);
+
+          return { isCrit: false, alignment: card.alignment };
+        }
+
         // Apply damage if bad-luck card
         if (card.alignment === "bad-luck") {
           const isSameType = pokemonTypes.some((t) => t.toLowerCase() === card.element.toLowerCase());
           isCrit = isSameType;
-          const baseDamage = 2; // Base bad luck damage
 
-         const damage = Math.round(activeMon.currentHp * 0.3);
- 
+          const damage = Math.round(activeMon.currentHp * 0.3);
 
-          const damageHit = isSameType ? damage * 2 : damage; // Double if same type
+          const damageHit = isSameType ? damage * 2 : damage;
 
           const newHp = Math.max(0, activeMon.currentHp - damageHit);
           const updatedTeam = team.map((p) =>

@@ -127,6 +127,7 @@ function YuGiOhCard({
   if (size === "small") {
     // -- AURA cards small rendering --
     if (isAura) {
+      const isActivated = !!card.activated;
       return (
         <motion.button
           onClick={onClick}
@@ -134,46 +135,58 @@ function YuGiOhCard({
           animate={{
             rotateY: 0,
             opacity: 1,
-            boxShadow: isAuraAmplificada
-              ? [
-                  "0 0 6px 2px rgba(212,175,55,0.6), 0 0 20px 6px rgba(212,175,55,0.3)",
-                  "0 0 12px 4px rgba(212,175,55,0.9), 0 0 30px 10px rgba(212,175,55,0.5)",
-                  "0 0 6px 2px rgba(212,175,55,0.6), 0 0 20px 6px rgba(212,175,55,0.3)",
-                ]
-              : [
-                  "0 0 6px 2px rgba(192,192,192,0.5), 0 0 18px 5px rgba(192,192,192,0.25)",
-                  "0 0 10px 3px rgba(192,192,192,0.8), 0 0 25px 8px rgba(192,192,192,0.4)",
-                  "0 0 6px 2px rgba(192,192,192,0.5), 0 0 18px 5px rgba(192,192,192,0.25)",
-                ],
+            boxShadow: isActivated
+              ? (isAuraAmplificada
+                ? [
+                    "0 0 10px 3px rgba(212,175,55,0.8), 0 0 25px 8px rgba(212,175,55,0.5)",
+                    "0 0 16px 6px rgba(212,175,55,1), 0 0 40px 14px rgba(212,175,55,0.6)",
+                    "0 0 10px 3px rgba(212,175,55,0.8), 0 0 25px 8px rgba(212,175,55,0.5)",
+                  ]
+                : [
+                    "0 0 8px 2px rgba(192,192,192,0.7), 0 0 22px 6px rgba(192,192,192,0.35)",
+                    "0 0 14px 4px rgba(192,192,192,0.9), 0 0 30px 10px rgba(192,192,192,0.5)",
+                    "0 0 8px 2px rgba(192,192,192,0.7), 0 0 22px 6px rgba(192,192,192,0.35)",
+                  ])
+              : (isAuraAmplificada
+                ? [
+                    "0 0 4px 1px rgba(212,175,55,0.3), 0 0 10px 3px rgba(212,175,55,0.15)",
+                    "0 0 6px 2px rgba(212,175,55,0.5), 0 0 14px 4px rgba(212,175,55,0.25)",
+                    "0 0 4px 1px rgba(212,175,55,0.3), 0 0 10px 3px rgba(212,175,55,0.15)",
+                  ]
+                : [
+                    "0 0 4px 1px rgba(192,192,192,0.25), 0 0 10px 3px rgba(192,192,192,0.12)",
+                    "0 0 6px 2px rgba(192,192,192,0.4), 0 0 14px 4px rgba(192,192,192,0.2)",
+                    "0 0 4px 1px rgba(192,192,192,0.25), 0 0 10px 3px rgba(192,192,192,0.12)",
+                  ]),
           }}
           transition={{
             duration: 0.5,
-            boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+            boxShadow: { duration: isActivated ? 1.2 : 2, repeat: Infinity, ease: "easeInOut" },
           }}
           whileHover={{ scale: 1.06, y: -3 }}
           whileTap={{ scale: 0.97 }}
           className="relative flex flex-col rounded-[2px] overflow-hidden cursor-pointer"
           style={{
-            width: 52,
-            height: 76,
+            width: 44,
+            height: 64,
             background: outerBg,
-            border: `1.5px solid ${borderColor}`,
+            border: `1.5px solid ${isActivated ? (isAuraAmplificada ? "#FFD700" : "#E0E0E0") : borderColor}`,
           }}
         >
           <div
-            className="flex items-center justify-center py-[2px]"
+            className="flex items-center justify-center py-[1px]"
             style={{ background: isAuraAmplificada ? "rgba(0,0,0,0.3)" : "rgba(255,255,255,0.3)" }}
           >
             <span
               className="text-[3px] font-bold uppercase"
               style={{ color: isAuraAmplificada ? "#FFD700" : "#333" }}
             >
-              {card.name}
+              {isActivated ? "ATIVO" : card.name}
             </span>
           </div>
           <div
-            className="flex items-center justify-center overflow-hidden"
-            style={{ height: 50 }}
+            className="relative flex items-center justify-center overflow-hidden"
+            style={{ height: 42 }}
           >
             <img
               src={isAuraAmplificada ? "/images/cards/aura-amplificada.jpg" : "/images/cards/aura-elemental.jpg"}
@@ -181,13 +194,19 @@ function YuGiOhCard({
               className="w-full h-full object-cover"
               loading="eager"
               decoding="sync"
+              style={{ opacity: isActivated ? 1 : 0.7 }}
             />
+            {!isActivated && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                <span className="text-[6px] font-bold text-white/80">ATIVAR</span>
+              </div>
+            )}
           </div>
           <div
-            className="flex items-center justify-center py-[2px]"
+            className="flex items-center justify-center py-[1px]"
             style={{ background: isAuraAmplificada ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.4)" }}
           >
-            <Sparkles className="w-2 h-2" style={{ color: isAuraAmplificada ? "#FFD700" : "#888" }} />
+            <Sparkles className="w-2 h-2" style={{ color: isActivated ? (isAuraAmplificada ? "#FFD700" : "#fff") : (isAuraAmplificada ? "#997700" : "#666") }} />
           </div>
         </motion.button>
       );
@@ -217,8 +236,8 @@ function YuGiOhCard({
         whileTap={{ scale: 0.97 }}
         className="relative flex flex-col rounded-[2px] overflow-hidden cursor-pointer"
         style={{
-          width: 52,
-          height: 76,
+          width: 44,
+          height: 64,
           background: outerBg,
           border: `1.5px solid ${glowing ? elColor : borderColor}`,
           boxShadow: !glowing
@@ -232,7 +251,7 @@ function YuGiOhCard({
         {isLuck?
       <>
         <div
-          className="flex items-center justify-center gap-0.5 py-[2px]"
+          className="flex items-center justify-center gap-0.5 py-[1px]"
           style={{ background: `${elColor}33` }}
         > <span className="text-[3px] font-bold uppercase " style={{ color: 'black'}}>
             {card.name}
@@ -242,7 +261,7 @@ function YuGiOhCard({
         <div
           className=" mflex items-center justify-center  overflow-hidden"
           style={{
-            height: 28,
+            height: 22,
             background: innerBg,backgroundColor:'white'
           }}
         >
@@ -261,15 +280,15 @@ function YuGiOhCard({
    
 
           <div
-            className="mx-[3px] mt-[1px] mb-[2px] flex-1 px-1 py-[1px] rounded-[1px] flex justify-center items-center bg-white-200"
+            className="mx-[2px] mt-[1px] mb-[1px] flex-1 px-1 py-[1px] rounded-[1px] flex justify-center items-center bg-white-200"
             style={{
               background: 'white',
               border: `0.5px solid ${borderColor}33`,
-              minHeight: '30px'
+              minHeight: '24px'
             }}
           >
             <img
-              style={{ width: 20, borderRadius:4 }}
+              style={{ width: 16, borderRadius:3 }}
               src={`/images/cardsTypes/${card.element}.jpg`}
               alt={card.name}
               className="object-cover"
@@ -287,7 +306,7 @@ function YuGiOhCard({
         : 
            <div
             className=" flex justify-center items-center bg-white-200"
-            style={{ minHeight: '30px' }}>
+            style={{ minHeight: '24px' }}>
             <img
               src={`/images/cardsTypes/genga.jpg`}
               alt={card.name}
@@ -423,8 +442,8 @@ function EmptySlot({ index }: { index: number }) {
     <div
       className="relative flex flex-col items-center justify-center rounded-[5px]"
       style={{
-        width: 52,
-        height: 76,
+        width: 44,
+        height: 64,
         background: "linear-gradient(180deg, rgba(30,30,30,0.6) 0%, rgba(20,20,20,0.8) 100%)",
         border: "1.5px dashed rgba(255,255,255,0.1)",
       }}
@@ -451,6 +470,159 @@ function EmptySlot({ index }: { index: number }) {
 // ============================================================
 // CARD VIEWER DIALOG
 // ============================================================
+function AuraActivationOverlay({
+  card,
+  onComplete,
+}: {
+  card: BattleCard;
+  onComplete: () => void;
+}) {
+  const isAmplificada = card.alignment === "aura-amplificada";
+  const primaryColor = isAmplificada ? "#FFD700" : "#C0C0C0";
+  const secondaryColor = isAmplificada ? "#B8860B" : "#888";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-center justify-center"
+      style={{
+        background: isAmplificada
+          ? "radial-gradient(ellipse at center, rgba(212,175,55,0.4) 0%, rgba(0,0,0,0.95) 70%)"
+          : "radial-gradient(ellipse at center, rgba(192,192,192,0.35) 0%, rgba(0,0,0,0.95) 70%)",
+      }}
+    >
+      {/* Particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(40)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              width: 2 + Math.random() * 4,
+              height: 2 + Math.random() * 4,
+              backgroundColor: isAmplificada
+                ? `hsl(${42 + Math.random() * 20}, 100%, ${55 + Math.random() * 35}%)`
+                : `hsl(0, 0%, ${60 + Math.random() * 35}%)`,
+            }}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{
+              opacity: [0, 1, 0],
+              scale: [0, 2, 0],
+              y: [0, (Math.random() - 0.5) * 300],
+              x: [0, (Math.random() - 0.5) * 300],
+            }}
+            transition={{
+              duration: 1.5 + Math.random() * 1.5,
+              repeat: Infinity,
+              delay: Math.random() * 0.5,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Energy rings */}
+      {[0, 1, 2].map((ring) => (
+        <motion.div
+          key={ring}
+          className="absolute rounded-full"
+          style={{
+            width: 120 + ring * 80,
+            height: 120 + ring * 80,
+            border: `2px solid ${primaryColor}${ring === 0 ? "88" : ring === 1 ? "44" : "22"}`,
+          }}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{
+            scale: [0.8, 1.2, 0.8],
+            opacity: [0.3, 0.7, 0.3],
+            rotate: [0, ring % 2 === 0 ? 360 : -360],
+          }}
+          transition={{
+            duration: 3 + ring,
+            repeat: Infinity,
+            ease: "linear",
+            delay: ring * 0.3,
+          }}
+        />
+      ))}
+
+      <motion.div
+        initial={{ scale: 0, rotate: -20 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: "spring", damping: 8, delay: 0.2 }}
+        className="flex flex-col items-center gap-4 z-10"
+      >
+        {/* Card image */}
+        <motion.div
+          animate={{
+            boxShadow: [
+              `0 0 20px 5px ${primaryColor}66`,
+              `0 0 40px 15px ${primaryColor}AA`,
+              `0 0 20px 5px ${primaryColor}66`,
+            ],
+          }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          className="rounded-lg overflow-hidden"
+          style={{ border: `3px solid ${primaryColor}` }}
+        >
+          <img
+            src={isAmplificada ? "/images/cards/aura-amplificada.jpg" : "/images/cards/aura-elemental.jpg"}
+            alt={card.name}
+            className="w-40 h-40 object-cover"
+          />
+        </motion.div>
+
+        {/* Title */}
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="text-2xl font-black tracking-wider text-center"
+          style={{
+            color: primaryColor,
+            textShadow: `0 0 30px ${primaryColor}88, 0 0 60px ${primaryColor}44`,
+          }}
+        >
+          {isAmplificada ? "AURA AMPLIFICADA!" : "AURA ELEMENTAL!"}
+        </motion.h2>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7 }}
+          className="text-sm text-center max-w-xs"
+          style={{ color: `${primaryColor}CC` }}
+        >
+          {isAmplificada
+            ? "Poder ativado! D20 garantido em 20 no proximo golpe!"
+            : "Poder ativado! Coringa de energia liberado!"}
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2 }}
+        >
+          <Button
+            onClick={onComplete}
+            className="px-8 py-2 font-bold"
+            style={{
+              backgroundColor: secondaryColor,
+              color: "#fff",
+              border: `1px solid ${primaryColor}`,
+            }}
+          >
+            Continuar
+          </Button>
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function CardViewer({
   card,
   open,
@@ -463,61 +635,117 @@ function CardViewer({
   slotIndex?: number;
 }) {
   const { activateCardEffect } = useGameStore();
+  const [showAuraAnimation, setShowAuraAnimation] = useState(false);
+  const [animatingCard, setAnimatingCard] = useState<BattleCard | null>(null);
   
-  if (!card) return null;
+  if (!card && !showAuraAnimation) return null;
+
+  const isAura = card?.alignment === "aura-elemental" || card?.alignment === "aura-amplificada";
+  const isAlreadyActivated = isAura && card?.activated;
 
   const handleActivatePower = () => {
-    if (slotIndex !== undefined) {
-      const result = activateCardEffect(slotIndex);
-      // Play the correct sound based on card type and crit
-      if (result) {
-        if (result.alignment === "bad-luck") {
-          if (result.isCrit) {
-            playCardActivateCritDamage();
+    if (slotIndex !== undefined && card) {
+      if (isAura && !isAlreadyActivated) {
+        // Show epic animation first, then activate
+        setAnimatingCard(card);
+        setShowAuraAnimation(true);
+        onClose();
+        const result = activateCardEffect(slotIndex);
+        if (result) playCardActivateLuck();
+      } else {
+        const result = activateCardEffect(slotIndex);
+        if (result) {
+          if (result.alignment === "bad-luck") {
+            if (result.isCrit) {
+              playCardActivateCritDamage();
+            } else {
+              playCardActivateDamage();
+            }
           } else {
-            playCardActivateDamage();
+            playCardActivateLuck();
           }
-        } else {
-          playCardActivateLuck();
         }
+        onClose();
       }
-      onClose();
     }
   };
 
+  const handleAuraAnimationComplete = () => {
+    setShowAuraAnimation(false);
+    setAnimatingCard(null);
+  };
+
+  // Show button text based on card type
+  const getButtonText = () => {
+    if (isAlreadyActivated) return "Poder Ja Ativado";
+    if (isAura) return "ATIVAR PODER";
+    if (card?.alignment === "bad-luck") return "Ativar Maldicao";
+    return "Ativar Poder";
+  };
+
+  const getButtonStyle = () => {
+    if (isAlreadyActivated) return "bg-gray-500 text-white cursor-not-allowed";
+    if (card?.alignment === "aura-amplificada") return "text-white";
+    if (card?.alignment === "aura-elemental") return "text-white";
+    if (card?.alignment === "bad-luck") return "bg-red-600 hover:bg-red-700 text-white";
+    return "bg-green-600 hover:bg-green-700 text-white";
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-[260px] mx-auto p-4 overflow-visible border-none bg-transparent">
-        <DialogHeader className="sr-only">
-          <DialogTitle>{card.name}</DialogTitle>
-          <DialogDescription>Detalhes da carta de batalha</DialogDescription>
-        </DialogHeader>
-        
-        <div className="flex flex-col gap-3">
-          <YuGiOhCard card={card} size="large" />
+    <>
+      <AnimatePresence>
+        {showAuraAnimation && animatingCard && (
+          <AuraActivationOverlay card={animatingCard} onComplete={handleAuraAnimationComplete} />
+        )}
+      </AnimatePresence>
+
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="max-w-[260px] mx-auto p-4 overflow-visible border-none bg-transparent">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{card?.name ?? "Carta"}</DialogTitle>
+            <DialogDescription>Detalhes da carta de batalha</DialogDescription>
+          </DialogHeader>
           
-          {slotIndex !== undefined && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Button
-                onClick={handleActivatePower}
-                className={`w-full font-bold text-sm transition-all ${
-                  card.alignment === "bad-luck"
-                    ? "bg-red-600 hover:bg-red-700 text-white"
-                    : "bg-green-600 hover:bg-green-700 text-white"
-                }`}
+          <div className="flex flex-col gap-3">
+            {card && <YuGiOhCard card={card} size="large" />}
+            
+            {slotIndex !== undefined && card && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
               >
-                <Sparkles className="w-4 h-4 mr-2" />
-                {card.alignment === "bad-luck" ? "Ativar Maldicao" : "Ativar Poder"}
-              </Button>
-            </motion.div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+                <Button
+                  onClick={handleActivatePower}
+                  disabled={!!isAlreadyActivated}
+                  className={`w-full font-bold text-sm transition-all ${getButtonStyle()}`}
+                  style={
+                    card.alignment === "aura-amplificada" && !isAlreadyActivated
+                      ? {
+                          background: "linear-gradient(90deg, #B8860B, #D4AF37, #FFD700, #D4AF37, #B8860B)",
+                          backgroundSize: "200% 100%",
+                          animation: "shimmer 2s linear infinite",
+                          border: "1px solid #FFD700",
+                        }
+                      : card.alignment === "aura-elemental" && !isAlreadyActivated
+                      ? {
+                          background: "linear-gradient(90deg, #888, #C0C0C0, #E8E8E8, #C0C0C0, #888)",
+                          backgroundSize: "200% 100%",
+                          animation: "shimmer 2s linear infinite",
+                          border: "1px solid #C0C0C0",
+                        }
+                      : undefined
+                  }
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  {getButtonText()}
+                </Button>
+              </motion.div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -910,8 +1138,8 @@ export function BattleCards() {
             className="relative flex flex-col items-center justify-center rounded-[5px]"
             style={{
               cursor: "pointer",
-              width: 52,
-              height: 76,
+              width: 44,
+              height: 64,
               background: "linear-gradient(180deg, rgba(2, 2, 26, 0.6) 0%, rgba(1, 1, 3, 0.8) 100%)",
               borderColor: "rgb(7, 18, 119)",
               borderWidth: 1,

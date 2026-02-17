@@ -68,6 +68,8 @@ export interface BattleCard {
   effectKey: string;
   /** Index used for the card image: /images/cards/card{cardIndex}.png */
   cardIndex: number;
+  /** Whether the aura card's power has been activated (only for aura cards) */
+  activated?: boolean;
 }
 
 // -- LUCK CARD DEFINITIONS --
@@ -219,13 +221,13 @@ function randomElement(): CardElement {
   return CARD_ELEMENTS[Math.floor(Math.random() * CARD_ELEMENTS.length)];
 }
 
-/** Draw a single card (weighted: 10% aura, then 70% luck / 30% bad luck of remaining) */
+/** Draw a single card (weighted: 6% aura, then 70% luck / 30% bad luck of remaining) */
 export function drawCard(): BattleCard {
   const roll = Math.random();
   const element = randomElement();
 
-  // 10% chance for Aura cards (5% elemental, 5% amplificada)
-  if (roll < 0.10) {
+  // 6% chance for Aura cards (3% elemental, 3% amplificada)
+  if (roll < 0.06) {
     const isAmplificada = Math.random() < 0.5;
     if (isAmplificada) {
       return {
@@ -233,7 +235,7 @@ export function drawCard(): BattleCard {
         alignment: "aura-amplificada",
         element: "normal", // not relevant for amplificada
         name: "Aura Amplificada",
-        description: "Executa qualquer golpe sem custo de energia. O ataque tem 70% de chance de acertar!",
+        description: "Ative o poder para executar qualquer golpe sem custo. O D20 sera automaticamente 20 - Critico Garantido!",
         effectKey: "aura-amplificada",
         cardIndex: -2, // special index for aura-amplificada
       };
@@ -369,8 +371,8 @@ export function countFieldCardsByElement(
     if (!c) continue;
     // Luck card of matching element
     if (c.alignment === "luck" && c.element === element) count++;
-    // Aura Elemental counts as 1 of ANY type
-    else if (c.alignment === "aura-elemental") count++;
+    // Aura Elemental counts as 1 of ANY type (only if activated)
+    else if (c.alignment === "aura-elemental" && c.activated) count++;
   }
   return count;
 }
@@ -379,7 +381,7 @@ export function countFieldCardsByElement(
  * Check if an Aura Amplificada card is on the field.
  */
 export function hasAuraAmplificada(fieldCards: (BattleCard | null)[]): boolean {
-  return fieldCards.some((c) => c !== null && c.alignment === "aura-amplificada");
+  return fieldCards.some((c) => c !== null && c.alignment === "aura-amplificada" && c.activated);
 }
 
 /**
@@ -414,10 +416,10 @@ export function consumeEnergyCards(
     }
   }
 
-  // Second pass: consume aura-elemental wildcards for remaining
+  // Second pass: consume activated aura-elemental wildcards for remaining
   for (let i = 0; i < newField.length && remaining > 0; i++) {
     const card = newField[i];
-    if (card && card.alignment === "aura-elemental") {
+    if (card && card.alignment === "aura-elemental" && card.activated) {
       newField[i] = null;
       remaining--;
     }

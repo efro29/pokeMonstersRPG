@@ -723,7 +723,7 @@ const [arena] = useState(getRandomArena());
                                 }}
                               >
                                 <Star className="w-3 h-3" />
-                                <span>AURA</span>
+                                <span>D20=20</span>
                               </div>
                             ) : (
                               <div
