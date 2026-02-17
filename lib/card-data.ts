@@ -6,7 +6,7 @@
 //   - Luck cards: slots remain after trio, only cleared on bad-luck trio
 //   - Deck: 27 luck / 13 bad luck cards
 
-export type CardAlignment = "luck" | "bad-luck" | "aura-elemental" | "aura-amplificada";
+export type CardAlignment = "luck" | "bad-luck" | "aura-elemental" | "aura-amplificada" | "heal" | "resurrect";
 
 export type CardElement =
   | "fire" | "water" | "grass" | "electric" | "ice"
@@ -221,41 +221,22 @@ function randomElement(): CardElement {
   return CARD_ELEMENTS[Math.floor(Math.random() * CARD_ELEMENTS.length)];
 }
 
-/** Draw a single card (weighted: 6% aura, then 70% luck / 30% bad luck of remaining) */
+/**
+ * Draw a single card with exact probabilities:
+ *   Sorte (luck)      = 62%
+ *   Azar (bad-luck)    =  7%
+ *   Aura Elemental     = 10%
+ *   Aura Amplificada   =  5%
+ *   Cura (heal)        = 11%
+ *   Ressurreicao       =  5%
+ *   Total              = 100%
+ */
 export function drawCard(): BattleCard {
-  const roll = Math.random();
+  const roll = Math.random() * 100; // 0-100
   const element = randomElement();
 
-  // 6% chance for Aura cards (3% elemental, 3% amplificada)
-  if (roll < 0.06) {
-    const isAmplificada = Math.random() < 0.5;
-    if (isAmplificada) {
-      return {
-        id: nextCardId(),
-        alignment: "aura-amplificada",
-        element: "normal", // not relevant for amplificada
-        name: "Aura Amplificada",
-        description: "Ative o poder para executar qualquer golpe sem custo. O D20 sera automaticamente 20 - Critico Garantido!",
-        effectKey: "aura-amplificada",
-        cardIndex: -2, // special index for aura-amplificada
-      };
-    } else {
-      return {
-        id: nextCardId(),
-        alignment: "aura-elemental",
-        element: "normal", // wildcard, matches any
-        name: "Aura Elemental",
-        description: "Carta coringa! Conta como 1 carta de energia de qualquer tipo elemental.",
-        effectKey: "aura-elemental",
-        cardIndex: -1, // special index for aura-elemental
-      };
-    }
-  }
-
-  // 70% luck / 30% bad luck (of the remaining 90%)
-  const isLuck = Math.random() < 0.70;
-
-  if (isLuck) {
+  if (roll < 62) {
+    // --- LUCK (62%) ---
     const defIndex = Math.floor(Math.random() * LUCK_CARDS.length);
     const def = LUCK_CARDS[defIndex];
     return {
@@ -265,9 +246,10 @@ export function drawCard(): BattleCard {
       name: def.name,
       description: def.description,
       effectKey: def.effectKey,
-      cardIndex: defIndex, // 0-7 for luck cards
+      cardIndex: defIndex,
     };
-  } else {
+  } else if (roll < 69) {
+    // --- BAD LUCK (7%) ---
     const defIndex = Math.floor(Math.random() * BAD_LUCK_CARDS.length);
     const def = BAD_LUCK_CARDS[defIndex];
     return {
@@ -277,7 +259,52 @@ export function drawCard(): BattleCard {
       name: def.name,
       description: def.description,
       effectKey: def.effectKey,
-      cardIndex: LUCK_CARDS.length + defIndex, // 8-20 for bad luck cards
+      cardIndex: LUCK_CARDS.length + defIndex,
+    };
+  } else if (roll < 79) {
+    // --- AURA ELEMENTAL (10%) ---
+    return {
+      id: nextCardId(),
+      alignment: "aura-elemental",
+      element: "normal",
+      name: "Aura Elemental",
+      description: "Carta coringa! Ative o poder para usar como 1 carta de energia de qualquer tipo.",
+      effectKey: "aura-elemental",
+      cardIndex: -1,
+    };
+  } else if (roll < 84) {
+    // --- AURA AMPLIFICADA (5%) ---
+    return {
+      id: nextCardId(),
+      alignment: "aura-amplificada",
+      element: "normal",
+      name: "Aura Amplificada",
+      description: "Ative o poder para executar qualquer golpe sem custo. O D20 sera automaticamente 20 - Critico Garantido!",
+      effectKey: "aura-amplificada",
+      cardIndex: -2,
+    };
+  } else if (roll < 95) {
+    // --- HEAL (11%) ---
+    const healAmount = [15, 20, 25, 30][Math.floor(Math.random() * 4)];
+    return {
+      id: nextCardId(),
+      alignment: "heal",
+      element: "normal",
+      name: "Pocao Vital",
+      description: `Cura ${healAmount}% do HP maximo do Pokemon ativo.`,
+      effectKey: `heal-${healAmount}`,
+      cardIndex: -3,
+    };
+  } else {
+    // --- RESURRECT (5%) ---
+    return {
+      id: nextCardId(),
+      alignment: "resurrect",
+      element: "normal",
+      name: "Chama da Fenix",
+      description: "Ressuscita um Pokemon com 0 HP, restaurando 25% do HP maximo!",
+      effectKey: "resurrect-25",
+      cardIndex: -4,
     };
   }
 }
