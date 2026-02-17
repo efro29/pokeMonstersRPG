@@ -1225,7 +1225,7 @@ function ReplaceCardModal({
         <div className="flex gap-2 justify-center flex-wrap">
           {fieldCards.map((fieldCard, i) => {
             if (!fieldCard) return null;
-            const isLocked = fieldCard.alignment === "bad-luck" || fieldCard.alignment === "aura-elemental" || fieldCard.alignment === "aura-amplificada";
+            const isLocked = fieldCard.alignment === "bad-luck";
             return (
               <div key={i} className="relative">
                 <div

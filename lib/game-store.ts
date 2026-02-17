@@ -1352,13 +1352,12 @@ export const useGameStore = create<GameState>()(
           // Place in empty slot
           newField[emptyIndex] = card;
         } else {
-          // 6th card: must replace a luck card (UI will handle choosing which)
+          // All slots full: must replace a luck card (UI will handle choosing which)
           // Set as lastDrawnCard for the replace modal
           set({
             battle: {
               ...battle,
               deck: newDeck,
-
               lastDrawnCard: card,
               cardDrawCount: newCount,
             },
@@ -1429,8 +1428,8 @@ export const useGameStore = create<GameState>()(
       replaceCardInSlot: (slotIndex, card) => {
         const { battle, team } = get();
         const existing = battle.cardField[slotIndex];
-        // Cannot replace bad luck or aura cards (heal/resurrect are consumable, so they CAN be replaced)
-        if (existing && (existing.alignment === "bad-luck" || existing.alignment === "aura-elemental" || existing.alignment === "aura-amplificada")) return;
+        // Cannot replace bad luck cards (aura cards no longer occupy slots; heal/resurrect CAN be replaced)
+        if (existing && existing.alignment === "bad-luck") return;
 
         const newField = [...battle.cardField];
         newField[slotIndex] = card;
@@ -1731,7 +1730,7 @@ export const useGameStore = create<GameState>()(
           newField[slotIndex] = { ...card, activated: true };
 
           const logMsg = card.alignment === "aura-amplificada"
-            ? `[AURA] Aura Amplificada ativada! Proximo golpe tera D20 garantido de 20!`
+            ? `[AURA] Aura Primordial ativada! Proximo golpe tera D20 garantido de 20!`
             : `[AURA] Aura Elemental ativada! Funciona como energia coringa!`;
           get().addBattleLog(logMsg);
 

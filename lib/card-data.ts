@@ -1,5 +1,5 @@
 // Battle Card system - Types, deck generation, and card effects
-// Deck: 132 cards total (108 luck + 18 bad luck + 3 aura + 1 primordial + 2 resurrect)
+// Deck: 121 cards total (108 luck + 6 bad luck + 4 aura elemental + 2 aura primordial + 1 resurrect)
 // No draw limit -- stops when deck is empty; replenish returns discarded cards
 // Trio rules:
 //   - Luck Trio (3 same element): choose to trade for any type, remove bad luck, or skip
@@ -217,15 +217,15 @@ export const SUPER_PUNISHMENTS: SuperEffect[] = [
 ];
 
 // -- DECK GENERATION --
-// Finite deck: 132 cards total
+// Finite deck: 121 cards total
 //   108 Luck   (18 types x 6 each)
-//    18 Bad Luck
-//     3 Aura Elemental
-//     1 Aura Primordial (Amplificada)
-//     2 Enfermeira Joy (Resurrect)
+//     6 Bad Luck (Azar)
+//     4 Aura Elemental (does NOT occupy a slot)
+//     2 Aura Primordial (does NOT occupy a slot)
+//     1 Enfermeira Joy (Resurrect)
 // No draw limit -- stops only when deck is empty
 
-export const DECK_SIZE = 132;
+export const DECK_SIZE = 121;
 
 let cardCounter = 0;
 function nextCardId(): string {
@@ -274,8 +274,8 @@ function shuffleArray<T>(arr: T[]): T[] {
 }
 
 /**
- * Build a complete 132-card deck and shuffle it.
- * 108 luck (6 per each of 18 types) + 18 bad luck + 3 aura elemental + 1 aura primordial + 2 resurrect
+ * Build a complete 121-card deck and shuffle it.
+ * 108 luck (6 per each of 18 types) + 6 bad luck + 4 aura elemental + 2 aura primordial + 1 resurrect
  */
 export function buildDeck(): BattleCard[] {
   const deck: BattleCard[] = [];
@@ -287,13 +287,13 @@ export function buildDeck(): BattleCard[] {
     }
   }
 
-  // 18 Bad Luck cards
-  for (let i = 0; i < 18; i++) {
+  // 6 Bad Luck cards
+  for (let i = 0; i < 6; i++) {
     deck.push(makeBadLuckCard());
   }
 
-  // 3 Aura Elemental
-  for (let i = 0; i < 3; i++) {
+  // 4 Aura Elemental (does NOT block a slot)
+  for (let i = 0; i < 4; i++) {
     deck.push({
       id: nextCardId(),
       alignment: "aura-elemental",
@@ -305,29 +305,29 @@ export function buildDeck(): BattleCard[] {
     });
   }
 
-  // 1 Aura Primordial (Amplificada)
-  deck.push({
-    id: nextCardId(),
-    alignment: "aura-amplificada",
-    element: "normal",
-    name: "Aura Primordial",
-    description: "Ative o poder para executar qualquer golpe sem custo. O D20 sera automaticamente 20 - Critico Garantido!",
-    effectKey: "aura-amplificada",
-    cardIndex: -2,
-  });
-
-  // 2 Enfermeira Joy (Resurrect)
+  // 2 Aura Primordial (does NOT block a slot)
   for (let i = 0; i < 2; i++) {
     deck.push({
       id: nextCardId(),
-      alignment: "resurrect",
+      alignment: "aura-amplificada",
       element: "normal",
-      name: "Enfermeira Joy",
-      description: "Ressuscita um Pokemon com 0 HP (25% HP). Se nenhum morreu, cura 20%!",
-      effectKey: "resurrect-25",
-      cardIndex: -4,
+      name: "Aura Primordial",
+      description: "Ative o poder para executar qualquer golpe sem custo. O D20 sera automaticamente 20 - Critico Garantido!",
+      effectKey: "aura-amplificada",
+      cardIndex: -2,
     });
   }
+
+  // 1 Enfermeira Joy (Resurrect)
+  deck.push({
+    id: nextCardId(),
+    alignment: "resurrect",
+    element: "normal",
+    name: "Enfermeira Joy",
+    description: "Ressuscita um Pokemon com 0 HP (25% HP). Se nenhum morreu, cura 20%!",
+    effectKey: "resurrect-25",
+    cardIndex: -4,
+  });
 
   return shuffleArray(deck);
 }
