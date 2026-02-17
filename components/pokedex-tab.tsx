@@ -47,7 +47,7 @@ export function PokedexTab({ onStartBattleWithPokemon }: PokedexTabProps = {}) {
   const handleDiscover = () => {
     const num = parseInt(discoverInput);
     if (isNaN(num) || num < 1 || num > 275) {
-      setDiscoverMessage({ text: "Numero invalido! Digite entre 1 e 251.", type: "error" });
+      setDiscoverMessage({ text: "Numero invalido! Digite entre 1 e 275.", type: "error" });
       setTimeout(() => setDiscoverMessage(null), 3000);
       return;
     }
@@ -130,7 +130,7 @@ export function PokedexTab({ onStartBattleWithPokemon }: PokedexTabProps = {}) {
         </div>
         <p className="text-xs text-muted-foreground">
           {isTrainerMode
-            ? `${discovered.length}/251 Descobertos - Equipe: ${team.length}/6`
+            ? `${discovered.length}/275 Descobertos - Equipe: ${team.length}/6`
             : `${POKEMON.length} Pokemon - Equipe: ${team.length}/6`}
         </p>
       </div>
@@ -160,8 +160,8 @@ export function PokedexTab({ onStartBattleWithPokemon }: PokedexTabProps = {}) {
                   key={pokemon.id}
                   onClick={() => setSelectedId(pokemon.id)}
                   className={`relative flex flex-col items-center p-2 rounded-lg border transition-all ${inTeam
-                      ? "border-primary/50 bg-primary/10"
-                      : "border-border bg-card hover:border-muted-foreground/50"
+                    ? "border-primary/50 bg-primary/10"
+                    : "border-border bg-card hover:border-muted-foreground/50"
                     }`}
                 >
                   {inTeam && (
