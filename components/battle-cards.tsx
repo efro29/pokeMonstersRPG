@@ -279,7 +279,7 @@ function YuGiOhCard({
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
                 target.parentElement!.innerHTML = `<span class="text-[22px] leading-none">&#9765;</span>`;
-              }
+              }}
             />
           </div>
           <div
