@@ -278,7 +278,9 @@ function YuGiOhCard({
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
-                target.parentElement!.innerHTML = `<span class="text-[22px] leading-none">&#9765;</span>`;
+                if (target.parentElement) {
+                  target.parentElement.innerHTML = '<span class="text-[22px] leading-none">\u2625</span>';
+                }
               }}
             />
           </div>
