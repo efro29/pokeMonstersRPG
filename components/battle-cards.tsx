@@ -904,7 +904,7 @@ function CardViewer({
   onClose: () => void;
   slotIndex?: number;
 }) {
-  const { activateCardEffect, activateHealCard, activateResurrectCard, team } = useGameStore();
+  const { activateCardEffect, activateAuraFromHand, activateHealCard, activateResurrectCard, team } = useGameStore();
   const [showAuraAnimation, setShowAuraAnimation] = useState(false);
   const [animatingCard, setAnimatingCard] = useState<BattleCard | null>(null);
   const [showPokemonSelect, setShowPokemonSelect] = useState(false);
@@ -929,9 +929,9 @@ function CardViewer({
     : [];
 
   const handleActivatePower = () => {
-    if (slotIndex !== undefined && card) {
-      // Resurrect -> show Pokemon selection
-      if (isResurrectCard) {
+    if (card) {
+      // Resurrect -> show Pokemon selection (requires slot)
+      if (isResurrectCard && slotIndex !== undefined) {
         if (eligiblePokemon.length === 0) {
           alert("Todos os Pokemon estao com HP cheio!");
           return;
@@ -940,13 +940,24 @@ function CardViewer({
         return;
       }
 
-      if (isAura && !isAlreadyActivated) {
+      // Aura cards from hand (no slotIndex) -> use activateAuraFromHand
+      if (isAura && !isAlreadyActivated && slotIndex === undefined) {
+        setAnimatingCard(card);
+        setShowAuraAnimation(true);
+        onClose();
+        const result = activateAuraFromHand(card);
+        if (result) playCardActivateLuck();
+        return;
+      }
+
+      // Aura cards from field (legacy, shouldn't happen with new logic)
+      if (isAura && !isAlreadyActivated && slotIndex !== undefined) {
         setAnimatingCard(card);
         setShowAuraAnimation(true);
         onClose();
         const result = activateCardEffect(slotIndex);
         if (result) playCardActivateLuck();
-      } else {
+      } else if (slotIndex !== undefined) {
         const result = activateCardEffect(slotIndex);
         if (result) {
           if (result.alignment === "bad-luck") {
@@ -1137,7 +1148,7 @@ function CardViewer({
           <div className="flex flex-col gap-3">
             {card && <YuGiOhCard card={card} size="large" />}
             
-            {slotIndex !== undefined && card && (
+            {(slotIndex !== undefined || (card && isAura && !isAlreadyActivated)) && card && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1225,7 +1236,7 @@ function ReplaceCardModal({
         <div className="flex gap-2 justify-center flex-wrap">
           {fieldCards.map((fieldCard, i) => {
             if (!fieldCard) return null;
-            const isLocked = fieldCard.alignment === "bad-luck" || fieldCard.alignment === "aura-elemental" || fieldCard.alignment === "aura-amplificada";
+            const isLocked = fieldCard.alignment === "bad-luck";
             return (
               <div key={i} className="relative">
                 <div
@@ -1599,14 +1610,20 @@ export function BattleCards() {
       return;
     }
 
+    // Aura cards don't occupy slots - show them directly in the card viewer
+    const isAuraCard = card.alignment === "aura-elemental" || card.alignment === "aura-amplificada";
+
     // Check if card ended up as lastDrawnCard (all slots full -> need replace)
     const state = useGameStore.getState();
-    const cardNotPlaced = state.battle.lastDrawnCard?.id === card.id &&
+    const cardNotPlaced = !isAuraCard && state.battle.lastDrawnCard?.id === card.id &&
       state.battle.cardField.every((c) => c !== null);
 
     setTimeout(() => {
-      if (card.alignment === "aura-elemental" || card.alignment === "aura-amplificada") {
+      if (isAuraCard) {
         playCardRareAppear();
+        // Show aura card in viewer (no slot index since it's not on the field)
+        setViewingCard(card);
+        setViewingCardSlotIndex(undefined);
       } else if (card.alignment === "resurrect") {
         playCardResurrectAppear();
       } else if (card.alignment === "luck") {

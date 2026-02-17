@@ -323,6 +323,7 @@ interface GameState {
   dismissTrioEvent: () => void;
   recalcBadLuckPenalty: () => void;
   activateCardEffect: (slotIndex: number) => { isCrit: boolean; alignment: string } | undefined;
+  activateAuraFromHand: (card: BattleCard) => boolean;
   activateHealCard: (slotIndex: number, targetUid: string) => boolean;
   activateResurrectCard: (slotIndex: number, targetUid: string) => boolean;
 }
@@ -1345,6 +1346,20 @@ export const useGameStore = create<GameState>()(
         const activeSpecies = activeMon ? getPokemon(activeMon.speciesId) : null;
         const pokemonTypes = activeSpecies ? [activeSpecies.type1, activeSpecies.type2].filter(Boolean) as string[] : [];
 
+        // Aura Elemental and Aura Primordial do NOT occupy a slot.
+        // They are drawn and shown to the player but kept as lastDrawnCard only.
+        if (card.alignment === "aura-elemental" || card.alignment === "aura-amplificada") {
+          set({
+            battle: {
+              ...battle,
+              deck: newDeck,
+              lastDrawnCard: card,
+              cardDrawCount: newCount,
+            },
+          });
+          return card;
+        }
+
         // Find first empty slot
         const emptyIndex = newField.findIndex((c) => c === null);
 
@@ -1352,13 +1367,12 @@ export const useGameStore = create<GameState>()(
           // Place in empty slot
           newField[emptyIndex] = card;
         } else {
-          // 6th card: must replace a luck card (UI will handle choosing which)
+          // All slots full: must replace a luck card (UI will handle choosing which)
           // Set as lastDrawnCard for the replace modal
           set({
             battle: {
               ...battle,
               deck: newDeck,
-
               lastDrawnCard: card,
               cardDrawCount: newCount,
             },
@@ -1429,8 +1443,8 @@ export const useGameStore = create<GameState>()(
       replaceCardInSlot: (slotIndex, card) => {
         const { battle, team } = get();
         const existing = battle.cardField[slotIndex];
-        // Cannot replace bad luck or aura cards (heal/resurrect are consumable, so they CAN be replaced)
-        if (existing && (existing.alignment === "bad-luck" || existing.alignment === "aura-elemental" || existing.alignment === "aura-amplificada")) return;
+        // Cannot replace bad luck cards (aura cards no longer occupy slots; heal/resurrect CAN be replaced)
+        if (existing && existing.alignment === "bad-luck") return;
 
         const newField = [...battle.cardField];
         newField[slotIndex] = card;
@@ -1724,44 +1738,9 @@ export const useGameStore = create<GameState>()(
 
         let isCrit = false;
 
-        // Handle AURA card activation - don't remove the card, just set activated = true
+        // Aura cards no longer occupy field slots -- skip if somehow found here
         if (card.alignment === "aura-elemental" || card.alignment === "aura-amplificada") {
-          if (card.activated) return undefined; // Already activated
-          const newField = [...battle.cardField];
-          newField[slotIndex] = { ...card, activated: true };
-
-          const logMsg = card.alignment === "aura-amplificada"
-            ? `[AURA] Aura Amplificada ativada! Proximo golpe tera D20 garantido de 20!`
-            : `[AURA] Aura Elemental ativada! Funciona como energia coringa!`;
-          get().addBattleLog(logMsg);
-
-          const currentBattle = get().battle;
-          set({
-            battle: {
-              ...currentBattle,
-              cardField: newField,
-              pokemonAnimationState: {
-                isAnimating: true,
-                effectType: "buff",
-                duration: 800,
-              },
-            },
-          });
-
-          setTimeout(() => {
-            set((state) => ({
-              battle: {
-                ...state.battle,
-                pokemonAnimationState: {
-                  isAnimating: false,
-                  effectType: "none",
-                  duration: 0,
-                },
-              },
-            }));
-          }, 800);
-
-          return { isCrit: false, alignment: card.alignment };
+          return undefined;
         }
 
         // Heal and Resurrect are handled by dedicated functions (activateHealCard / activateResurrectCard)
@@ -1832,6 +1811,57 @@ export const useGameStore = create<GameState>()(
         }, animationType === "damage" ? 500 : 600);
 
         return { isCrit, alignment: card.alignment };
+      },
+
+      // ---- ACTIVATE AURA FROM HAND (aura cards don't occupy field slots) ----
+      activateAuraFromHand: (card: BattleCard): boolean => {
+        const { battle } = get();
+        if (card.alignment !== "aura-elemental" && card.alignment !== "aura-amplificada") return false;
+
+        // Find an empty slot to place the activated aura card
+        const newField = [...battle.cardField];
+        const emptyIdx = newField.findIndex((c) => c === null);
+        if (emptyIdx === -1) {
+          get().addBattleLog("[AURA] Nao ha slot vazio para colocar a carta de Aura!");
+          return false;
+        }
+
+        // Place the activated aura card on the field
+        newField[emptyIdx] = { ...card, activated: true };
+
+        const logMsg = card.alignment === "aura-amplificada"
+          ? "[AURA] Aura Primordial ativada! Proximo golpe tera D20 garantido de 20!"
+          : "[AURA] Aura Elemental ativada! Funciona como energia coringa!";
+        get().addBattleLog(logMsg);
+
+        const currentBattle = get().battle;
+        set({
+          battle: {
+            ...currentBattle,
+            cardField: newField,
+            lastDrawnCard: null,
+            pokemonAnimationState: {
+              isAnimating: true,
+              effectType: "buff",
+              duration: 800,
+            },
+          },
+        });
+
+        setTimeout(() => {
+          set((state) => ({
+            battle: {
+              ...state.battle,
+              pokemonAnimationState: {
+                isAnimating: false,
+                effectType: "none",
+                duration: 0,
+              },
+            },
+          }));
+        }, 800);
+
+        return true;
       },
 
       // ---- HEAL CARD: target a specific Pokemon by uid ----
