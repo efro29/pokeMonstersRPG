@@ -46,7 +46,7 @@ export function PokedexTab({ onStartBattleWithPokemon }: PokedexTabProps = {}) {
 
   const handleDiscover = () => {
     const num = parseInt(discoverInput);
-    if (isNaN(num) || num < 1 || num > 251) {
+    if (isNaN(num) || num < 1 || num > 275) {
       setDiscoverMessage({ text: "Numero invalido! Digite entre 1 e 251.", type: "error" });
       setTimeout(() => setDiscoverMessage(null), 3000);
       return;
@@ -159,11 +159,10 @@ export function PokedexTab({ onStartBattleWithPokemon }: PokedexTabProps = {}) {
                 <button
                   key={pokemon.id}
                   onClick={() => setSelectedId(pokemon.id)}
-                  className={`relative flex flex-col items-center p-2 rounded-lg border transition-all ${
-                    inTeam
+                  className={`relative flex flex-col items-center p-2 rounded-lg border transition-all ${inTeam
                       ? "border-primary/50 bg-primary/10"
                       : "border-border bg-card hover:border-muted-foreground/50"
-                  }`}
+                    }`}
                 >
                   {inTeam && (
                     <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
@@ -218,8 +217,8 @@ export function PokedexTab({ onStartBattleWithPokemon }: PokedexTabProps = {}) {
 
             <div className="flex flex-col items-center gap-3">
               <img
-                
-                            src={getBattleSpriteUrl(selectedPokemon.id)}
+
+                src={getBattleSpriteUrl(selectedPokemon.id)}
                 alt={selectedPokemon.name}
                 width={96}
                 height={96}
