@@ -1,9 +1,9 @@
 // Battle Card system - Types, deck generation, and card effects
 // Deck: 132 cards total (108 luck + 18 bad luck + 3 aura + 1 primordial + 2 resurrect)
-// Draw limit: 108 cards per battle
+// No draw limit -- stops when deck is empty; replenish returns discarded cards
 // Trio rules:
-//   - Super Advantage: 3 LUCK cards with SAME element (e.g. fire+fire+fire)
-//   - Super Punishment: 3 BAD-LUCK cards -> clears all slots
+//   - Luck Trio (3 same element): choose to trade for any type, remove bad luck, or skip
+//   - Bad Luck Trio (3 bad luck): clears all slots + punishment
 //   - Bad luck cards: -2 damage penalty each (-4 if pokemon shares the card element type)
 //   - Luck cards: slots remain after trio, only cleared on bad-luck trio
 
@@ -223,10 +223,9 @@ export const SUPER_PUNISHMENTS: SuperEffect[] = [
 //     3 Aura Elemental
 //     1 Aura Primordial (Amplificada)
 //     2 Enfermeira Joy (Resurrect)
-// Max draw limit: 108 cards per battle
+// No draw limit -- stops only when deck is empty
 
 export const DECK_SIZE = 132;
-export const MAX_DRAWS = 108;
 
 let cardCounter = 0;
 function nextCardId(): string {
@@ -336,6 +335,21 @@ export function buildDeck(): BattleCard[] {
 /** Shuffle an existing deck (array) in-place and return it */
 export function shuffleDeck(deck: BattleCard[]): BattleCard[] {
   return shuffleArray(deck);
+}
+
+/** Create a new luck card of a specific chosen element (used for trio trade) */
+export function createLuckCardOfElement(element: CardElement): BattleCard {
+  const defIndex = Math.floor(Math.random() * LUCK_CARDS.length);
+  const def = LUCK_CARDS[defIndex];
+  return {
+    id: nextCardId(),
+    alignment: "luck",
+    element,
+    name: def.name,
+    description: def.description,
+    effectKey: def.effectKey,
+    cardIndex: defIndex,
+  };
 }
 
 /**

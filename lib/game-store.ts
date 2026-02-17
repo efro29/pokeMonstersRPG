@@ -3,8 +3,8 @@ import { persist } from "zustand/middleware";
 import type { PokemonSpecies, BagItemDef, PokemonBaseAttributes, DamageBreakdown, HitResult } from "./pokemon-data";
 import { getGameStoreKey } from "./mode-store";
 import { BAG_ITEMS, getMove, getPokemon, canEvolveByLevel, canEvolveByStone, canEvolveByTrade, xpForLevel, computeAttributes, getBaseAttributes, applyFaintPenalty, applyLevelUpBonus, rollDamageAgainstPokemon, calculateHitResult, calculateBattleDamage, getDamageMultiplier } from "./pokemon-data";
-import type { BattleCard, CardAlignment, SuperEffect } from "./card-data";
-import { drawCard, buildDeck, shuffleDeck, MAX_DRAWS, checkLuckTrio, checkBadLuckTrio, checkElementalAffinity, calculateBadLuckPenalty, rollSuperAdvantage, rollSuperPunishment, countFieldCardsByElement, consumeEnergyCards, hasAuraAmplificada, consumeAuraAmplificada } from "./card-data";
+import type { BattleCard, CardAlignment, CardElement, SuperEffect } from "./card-data";
+import { drawCard, buildDeck, shuffleDeck, createLuckCardOfElement, checkLuckTrio, checkBadLuckTrio, checkElementalAffinity, calculateBadLuckPenalty, rollSuperAdvantage, rollSuperPunishment, countFieldCardsByElement, consumeEnergyCards, hasAuraAmplificada, consumeAuraAmplificada } from "./card-data";
 
 export type PokemonAttributeKey = keyof PokemonBaseAttributes;
 
@@ -221,7 +221,6 @@ export interface BattleState {
   // Card system - finite deck
   deck: BattleCard[];          // remaining cards to draw
   discardPile: BattleCard[];   // used/consumed cards (can be replenished)
-  drawsRemaining: number;      // max 108 draws per battle
   cardField: (BattleCard | null)[];
   lastDrawnCard: BattleCard | null;
   cardTrioEvent: CardTrioEvent | null;
@@ -316,6 +315,10 @@ interface GameState {
   replaceCardInSlot: (slotIndex: number, card: BattleCard) => void;
   shuffleDeckAction: () => void;
   replenishDeck: () => void;
+  // Luck trio choice actions
+  trioChoiceTradeForElement: (element: CardElement) => void;
+  trioChoiceRemoveBadLuck: (slotIndex: number) => void;
+  trioChoiceDoNothing: () => void;
   clearCardField: () => void;
   dismissTrioEvent: () => void;
   recalcBadLuckPenalty: () => void;
@@ -372,7 +375,6 @@ export const useGameStore = create<GameState>()(
   // Card system - finite deck
   deck: buildDeck(),
   discardPile: [],
-  drawsRemaining: MAX_DRAWS,
   cardField: [null, null, null, null, null, null],
   lastDrawnCard: null,
   cardTrioEvent: null,
@@ -619,7 +621,6 @@ export const useGameStore = create<GameState>()(
             attributeTestResult: null,
             deck: buildDeck(),
             discardPile: [],
-            drawsRemaining: MAX_DRAWS,
             cardField: [null, null, null, null, null, null],
             lastDrawnCard: null,
             cardTrioEvent: null,
@@ -646,7 +647,6 @@ export const useGameStore = create<GameState>()(
             attributeTestResult: null,
             deck: buildDeck(),
             discardPile: [],
-            drawsRemaining: MAX_DRAWS,
             cardField: [null, null, null, null, null, null],
             lastDrawnCard: null,
             cardTrioEvent: null,
@@ -1331,8 +1331,8 @@ export const useGameStore = create<GameState>()(
       drawBattleCard: () => {
         const { battle, team } = get();
 
-        // Check draw limits
-        if (battle.drawsRemaining <= 0 || battle.deck.length === 0) {
+        // Check if deck is empty
+        if (battle.deck.length === 0) {
           return null as unknown as BattleCard; // No cards left
         }
 
@@ -1341,7 +1341,6 @@ export const useGameStore = create<GameState>()(
         const card = newDeck.shift()!;
         const newField = [...battle.cardField];
         const newCount = battle.cardDrawCount + 1;
-        const newDrawsRemaining = battle.drawsRemaining - 1;
         const activeMon = team.find((p) => p.uid === battle.activePokemonUid);
         const activeSpecies = activeMon ? getPokemon(activeMon.speciesId) : null;
         const pokemonTypes = activeSpecies ? [activeSpecies.type1, activeSpecies.type2].filter(Boolean) as string[] : [];
@@ -1359,7 +1358,7 @@ export const useGameStore = create<GameState>()(
             battle: {
               ...battle,
               deck: newDeck,
-              drawsRemaining: newDrawsRemaining,
+
               lastDrawnCard: card,
               cardDrawCount: newCount,
             },
@@ -1381,7 +1380,7 @@ export const useGameStore = create<GameState>()(
             battle: {
               ...battle,
               deck: newDeck,
-              drawsRemaining: newDrawsRemaining,
+
               cardField: newField,
               lastDrawnCard: card,
               cardDrawCount: newCount,
@@ -1401,7 +1400,7 @@ export const useGameStore = create<GameState>()(
             battle: {
               ...battle,
               deck: newDeck,
-              drawsRemaining: newDrawsRemaining,
+
               cardField: newField,
               lastDrawnCard: card,
               cardDrawCount: newCount,
@@ -1417,7 +1416,6 @@ export const useGameStore = create<GameState>()(
           battle: {
             ...battle,
             deck: newDeck,
-            drawsRemaining: newDrawsRemaining,
             cardField: newField,
             lastDrawnCard: card,
             cardDrawCount: newCount,
@@ -1519,12 +1517,11 @@ export const useGameStore = create<GameState>()(
         const { battle, team } = get();
         const event = battle.cardTrioEvent;
         if (!event) return;
-        const desc = event.hasAffinity ? event.effect.affinityDescription : event.effect.description;
-        get().addBattleLog(`[CARTA] ${event.type === "luck" ? "Super Vantagem" : "Super Punicao"}: ${event.effect.name} - ${desc}`);
 
         if (event.type === "bad-luck") {
-          // Apply 20 damage to active Pokemon from trio punishment
-          // const trioDamage = 20;
+          const desc = event.hasAffinity ? event.effect.affinityDescription : event.effect.description;
+          get().addBattleLog(`[CARTA] Super Punicao: ${event.effect.name} - ${desc}`);
+
           const activeMon = team.find((p) => p.uid === battle.activePokemonUid);
           let updatedTeam = team;
 
@@ -1537,11 +1534,8 @@ export const useGameStore = create<GameState>()(
             get().addBattleLog(`[CARTA] Super Punicao causa ${trioDamage} de dano em ${activeMon.name}!`);
           }
 
-          // Re-read battle after addBattleLog
           const currentBattle = get().battle;
-          // Move all field cards to discard pile
           const discardedCards = currentBattle.cardField.filter((c): c is BattleCard => c !== null);
-          // Bad luck trio -> clear ALL slots + damage animation
           set({
             team: updatedTeam,
             battle: {
@@ -1560,7 +1554,6 @@ export const useGameStore = create<GameState>()(
             },
           });
 
-          // Reset animation after duration
           setTimeout(() => {
             set((state) => ({
               battle: {
@@ -1573,54 +1566,148 @@ export const useGameStore = create<GameState>()(
               },
             }));
           }, 800);
-        } else {
-          // Luck trio -> keep slots but mark trio cards as used so they don't re-trigger
-          const currentBattle2 = get().battle;
-          const trioElement = currentBattle2.cardTrioEvent?.effect?.key;
-          // Find the 3 luck cards of the same element that formed the trio and mark them
-          const markedField = [...currentBattle2.cardField];
-          let markedCount = 0;
-          for (let i = 0; i < markedField.length && markedCount < 3; i++) {
-            const c = markedField[i];
-            if (c && c.alignment === "luck" && !c.trioUsed) {
-              // We need to find cards that share the same element
-              // Re-check which element formed the trio
-              markedField[i] = { ...c, trioUsed: true };
-              markedCount++;
-            }
-          }
-          // More precise: find the element with 3+ non-trioUsed luck cards
-          const luckCards = currentBattle2.cardField.filter(
-            (c): c is BattleCard => c !== null && c.alignment === "luck" && !c.trioUsed
-          );
-          const byElement: Record<string, number[]> = {};
-          currentBattle2.cardField.forEach((c, i) => {
-            if (c && c.alignment === "luck" && !c.trioUsed) {
-              if (!byElement[c.element]) byElement[c.element] = [];
-              byElement[c.element].push(i);
-            }
-          });
-          const preciseField = [...currentBattle2.cardField];
-          let found = false;
-          for (const el of Object.keys(byElement)) {
-            if (byElement[el].length >= 3 && !found) {
-              for (let k = 0; k < 3; k++) {
-                const idx = byElement[el][k];
-                const card = preciseField[idx]!;
-                preciseField[idx] = { ...card, trioUsed: true };
-              }
-              found = true;
-            }
-          }
-
-          set({
-            battle: {
-              ...currentBattle2,
-              cardField: found ? preciseField : markedField,
-              cardTrioEvent: null,
-            },
-          });
         }
+        // Luck trio is NOT dismissed here -- it is handled by trioChoice* actions
+      },
+
+      // ---- LUCK TRIO CHOICES ----
+
+      // Choice 1: Trade 3 trio cards for a luck card of chosen element
+      trioChoiceTradeForElement: (element: CardElement) => {
+        const { battle, team } = get();
+        if (!battle.cardTrioEvent || battle.cardTrioEvent.type !== "luck") return;
+
+        // Find which element formed the trio
+        const byElement: Record<string, number[]> = {};
+        battle.cardField.forEach((c, i) => {
+          if (c && c.alignment === "luck" && !c.trioUsed) {
+            if (!byElement[c.element]) byElement[c.element] = [];
+            byElement[c.element].push(i);
+          }
+        });
+
+        const newField = [...battle.cardField];
+        const discarded: BattleCard[] = [];
+        let trioFound = false;
+        for (const el of Object.keys(byElement)) {
+          if (byElement[el].length >= 3 && !trioFound) {
+            // Remove the 3 trio cards -> discard
+            for (let k = 0; k < 3; k++) {
+              const idx = byElement[el][k];
+              discarded.push(newField[idx]!);
+              newField[idx] = null;
+            }
+            trioFound = true;
+          }
+        }
+
+        // Place the new card in the first empty slot
+        const newCard = createLuckCardOfElement(element);
+        const emptyIdx = newField.findIndex((c) => c === null);
+        if (emptyIdx !== -1) {
+          newField[emptyIdx] = newCard;
+        }
+
+        const activeMon = team.find((p) => p.uid === battle.activePokemonUid);
+        const activeSpecies = activeMon ? getPokemon(activeMon.speciesId) : null;
+        const pokemonTypes = activeSpecies ? [activeSpecies.type1, activeSpecies.type2].filter(Boolean) as string[] : [];
+        const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
+
+        get().addBattleLog(`[TRIO] Trocou 3 cartas por 1 carta de ${element}!`);
+
+        set({
+          battle: {
+            ...get().battle,
+            cardField: newField,
+            cardTrioEvent: null,
+            badLuckPenalty: penalty,
+            discardPile: [...battle.discardPile, ...discarded],
+          },
+        });
+      },
+
+      // Choice 2: Remove a bad luck card from the field
+      trioChoiceRemoveBadLuck: (slotIndex: number) => {
+        const { battle, team } = get();
+        if (!battle.cardTrioEvent || battle.cardTrioEvent.type !== "luck") return;
+
+        const card = battle.cardField[slotIndex];
+        if (!card || card.alignment !== "bad-luck") return;
+
+        // Mark the trio cards as used
+        const markedField: (BattleCard | null)[] = [...battle.cardField];
+        const byElement: Record<string, number[]> = {};
+        markedField.forEach((c, i) => {
+          if (c && c.alignment === "luck" && !c.trioUsed) {
+            if (!byElement[c.element]) byElement[c.element] = [];
+            byElement[c.element].push(i);
+          }
+        });
+        for (const el of Object.keys(byElement)) {
+          if (byElement[el].length >= 3) {
+            for (let k = 0; k < 3; k++) {
+              const idx = byElement[el][k];
+              markedField[idx] = { ...markedField[idx]!, trioUsed: true };
+            }
+            break;
+          }
+        }
+
+        // Remove the bad luck card
+        const removedCard = markedField[slotIndex]!;
+        markedField[slotIndex] = null;
+
+        const activeMon = team.find((p) => p.uid === battle.activePokemonUid);
+        const activeSpecies = activeMon ? getPokemon(activeMon.speciesId) : null;
+        const pokemonTypes = activeSpecies ? [activeSpecies.type1, activeSpecies.type2].filter(Boolean) as string[] : [];
+        const penalty = calculateBadLuckPenalty(markedField, pokemonTypes);
+
+        get().addBattleLog(`[TRIO] Removeu carta de azar: ${removedCard.name}!`);
+
+        set({
+          battle: {
+            ...get().battle,
+            cardField: markedField,
+            cardTrioEvent: null,
+            badLuckPenalty: penalty,
+            discardPile: [...battle.discardPile, removedCard],
+          },
+        });
+      },
+
+      // Choice 3: Do nothing
+      trioChoiceDoNothing: () => {
+        const { battle } = get();
+        if (!battle.cardTrioEvent || battle.cardTrioEvent.type !== "luck") return;
+
+        // Just mark the trio cards as used and clear the event
+        const byElement: Record<string, number[]> = {};
+        battle.cardField.forEach((c, i) => {
+          if (c && c.alignment === "luck" && !c.trioUsed) {
+            if (!byElement[c.element]) byElement[c.element] = [];
+            byElement[c.element].push(i);
+          }
+        });
+        const newField = [...battle.cardField];
+        for (const el of Object.keys(byElement)) {
+          if (byElement[el].length >= 3) {
+            for (let k = 0; k < 3; k++) {
+              const idx = byElement[el][k];
+              newField[idx] = { ...newField[idx]!, trioUsed: true };
+            }
+            break;
+          }
+        }
+
+        get().addBattleLog("[TRIO] Nao fez nada com o trio de sorte.");
+
+        set({
+          battle: {
+            ...get().battle,
+            cardField: newField,
+            cardTrioEvent: null,
+          },
+        });
       },
 
       activateCardEffect: (slotIndex: number) => {
