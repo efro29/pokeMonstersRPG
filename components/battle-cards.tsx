@@ -3,8 +3,8 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/lib/game-store";
-import type { BattleCard } from "@/lib/card-data";
-import { ELEMENT_COLORS, ELEMENT_NAMES_PT } from "@/lib/card-data";
+import type { BattleCard, CardElement } from "@/lib/card-data";
+import { ELEMENT_COLORS, ELEMENT_NAMES_PT, CARD_ELEMENTS, DECK_SIZE } from "@/lib/card-data";
 import { getSpriteUrl, getPokemon } from "@/lib/pokemon-data";
 import {
   playCardDraw,
@@ -1256,13 +1256,76 @@ function ReplaceCardModal({
 // TRIO EVENT OVERLAY
 // ============================================================
 function TrioEventOverlay() {
-  const { battle, dismissTrioEvent } = useGameStore();
+  const { battle, dismissTrioEvent, trioChoiceTradeForElement, trioChoiceRemoveBadLuck, trioChoiceDoNothing } = useGameStore();
   const event = battle.cardTrioEvent;
+  const [showElementPicker, setShowElementPicker] = useState(false);
   if (!event) return null;
 
   const isLuck = event.type === "luck";
-  const effectName = event.hasAffinity ? event.effect.affinityName : event.effect.name;
-  const effectDesc = event.hasAffinity ? event.effect.affinityDescription : event.effect.description;
+
+  // For luck trio: find bad luck cards on the field (for option 2)
+  const badLuckSlots = isLuck
+    ? battle.cardField
+        .map((c, i) => (c && c.alignment === "bad-luck" ? i : -1))
+        .filter((i) => i !== -1)
+    : [];
+  const hasBadLuck = badLuckSlots.length > 0;
+
+  // Element picker for trade option
+  if (isLuck && showElementPicker) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center"
+        style={{ background: "radial-gradient(ellipse at center, rgba(197,160,38,0.3) 0%, rgba(0,0,0,0.95) 70%)" }}
+      >
+        <motion.div
+          initial={{ scale: 0.9, y: 20 }}
+          animate={{ scale: 1, y: 0 }}
+          className="flex flex-col items-center gap-4 px-4 max-w-sm w-full"
+        >
+          <h2
+            className="text-lg font-black tracking-wider text-center"
+            style={{ color: "#D4AF37", textShadow: "0 0 20px rgba(212,175,55,0.5)" }}
+          >
+            Escolha o tipo da nova carta
+          </h2>
+          <div className="grid grid-cols-3 gap-2 w-full max-h-[50vh] overflow-y-auto p-1">
+            {CARD_ELEMENTS.map((el) => (
+              <button
+                key={el}
+                onClick={() => {
+                  playButtonClick();
+                  trioChoiceTradeForElement(el);
+                  setShowElementPicker(false);
+                }}
+                className="flex items-center gap-1.5 px-2 py-2 rounded-lg text-xs font-bold transition-all hover:scale-105 active:scale-95"
+                style={{
+                  background: `${ELEMENT_COLORS[el]}22`,
+                  border: `1px solid ${ELEMENT_COLORS[el]}66`,
+                  color: ELEMENT_COLORS[el],
+                }}
+              >
+                <span
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{ background: ELEMENT_COLORS[el] }}
+                />
+                {ELEMENT_NAMES_PT[el]}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setShowElementPicker(false)}
+            className="text-xs text-muted-foreground underline mt-1"
+          >
+            Voltar
+          </button>
+        </motion.div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -1366,70 +1429,130 @@ function TrioEventOverlay() {
                 : "0 0 30px rgba(142, 68, 239, 0.5)",
             }}
           >
-            {isLuck ? "SUPER VANTAGEM!" : "SUPER PUNICAO!"}
+            {isLuck ? "TRIO DE SORTE!" : "SUPER PUNICAO!"}
           </h2>
-       
         </motion.div>
 
-        {/* Affinity notice */}
-        {event.hasAffinity && (
+        {isLuck ? (
+          /* LUCK TRIO: 3 choice buttons */
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="px-4 py-1.5 rounded-full text-xs font-bold"
-            style={{
-              background: isLuck ? "rgba(212,175,55,0.2)" : "rgba(128, 68, 239, 0.2)",
-              color: isLuck ? "#FCD34D" : "#FCA5A5",
-              border: `1px solid ${isLuck ? "rgba(212,175,55,0.4)" : "rgba(156, 68, 239, 0.4)"}`,
-            }}
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="flex flex-col gap-3 w-full max-w-xs"
           >
-            Afinidade Elemental - Efeito DOBRADO!
-          </motion.div>
-        )}
+            <p className="text-sm text-center text-foreground/70 mb-1">
+              3 cartas do mesmo tipo! Escolha:
+            </p>
 
-        {/* Effect card */}
-        <motion.div
-          initial={{ y: 40, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="w-full max-w-xs rounded-xl p-5 text-center"
-          style={{
-            background: isLuck
-              ? "linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.05) 100%)"
-              : "linear-gradient(135deg, rgba(0, 0, 0, 0.15) 0%, rgba(15, 2, 36, 0.05) 100%)",
-            border: `1px solid ${isLuck ? "rgba(212,175,55,0.3)" : "rgba(239,68,68,0.3)"}`,
-          }}
-        >
-          <h3
-            className="text-lg font-bold mb-1.5"
-            style={{ color: isLuck ? "#FCD34D" : "#e8a5fc" }}
-          >
-            {effectName}
-          </h3>
-          <p className="text-sm text-foreground/80">{effectDesc}</p>
-        </motion.div>
-
-        {/* Dismiss */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
-          <Button
-            onClick={() => {
-              if (!isLuck) {
-                playTrioPunishment();
-              } else {
+            {/* Choice 1: Trade for any type */}
+            <button
+              onClick={() => {
                 playButtonClick();
-              }
-              dismissTrioEvent();
-            }}
-            className="px-8 py-2"
-            style={{
-              backgroundColor: isLuck ? "#B8860B" : "#7b26dc",
-              color: "#fff",
-            }}
-          >
-            {isLuck ? "Continuar" : "Receber Punicao (-20 HP)"}
-          </Button>
-        </motion.div>
+                setShowElementPicker(true);
+              }}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-bold transition-all hover:scale-[1.02] active:scale-95"
+              style={{
+                background: "linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.05) 100%)",
+                border: "1px solid rgba(212,175,55,0.4)",
+                color: "#FCD34D",
+              }}
+            >
+              <span className="text-lg">{"1."}</span>
+              Trocar por 1 carta do tipo que quiser
+            </button>
+
+            {/* Choice 2: Remove a bad luck card */}
+            <button
+              onClick={() => {
+                if (hasBadLuck) {
+                  playButtonClick();
+                  // Remove the first bad luck card found
+                  trioChoiceRemoveBadLuck(badLuckSlots[0]);
+                }
+              }}
+              disabled={!hasBadLuck}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-bold transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+              style={{
+                background: hasBadLuck ? "linear-gradient(135deg, rgba(239,68,68,0.15) 0%, rgba(239,68,68,0.05) 100%)" : "rgba(50,50,50,0.2)",
+                border: `1px solid ${hasBadLuck ? "rgba(239,68,68,0.4)" : "rgba(80,80,80,0.3)"}`,
+                color: hasBadLuck ? "#FCA5A5" : "#555",
+              }}
+            >
+              <span className="text-lg">{"2."}</span>
+              {hasBadLuck
+                ? `Eliminar 1 carta de azar (${badLuckSlots.length} no campo)`
+                : "Eliminar carta de azar (nenhuma no campo)"}
+            </button>
+
+            {/* Choice 3: Do nothing */}
+            <button
+              onClick={() => {
+                playButtonClick();
+                trioChoiceDoNothing();
+              }}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-bold transition-all hover:scale-[1.02] active:scale-95"
+              style={{
+                background: "rgba(100,100,100,0.1)",
+                border: "1px solid rgba(100,100,100,0.3)",
+                color: "#999",
+              }}
+            >
+              <span className="text-lg">{"3."}</span>
+              Nao fazer nada
+            </button>
+          </motion.div>
+        ) : (
+          /* BAD LUCK TRIO: punishment */
+          <>
+            {event.hasAffinity && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="px-4 py-1.5 rounded-full text-xs font-bold"
+                style={{
+                  background: "rgba(128, 68, 239, 0.2)",
+                  color: "#FCA5A5",
+                  border: "1px solid rgba(156, 68, 239, 0.4)",
+                }}
+              >
+                Afinidade Elemental - Efeito DOBRADO!
+              </motion.div>
+            )}
+
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="w-full max-w-xs rounded-xl p-5 text-center"
+              style={{
+                background: "linear-gradient(135deg, rgba(0, 0, 0, 0.15) 0%, rgba(15, 2, 36, 0.05) 100%)",
+                border: "1px solid rgba(239,68,68,0.3)",
+              }}
+            >
+              <h3 className="text-lg font-bold mb-1.5" style={{ color: "#e8a5fc" }}>
+                {event.hasAffinity ? event.effect.affinityName : event.effect.name}
+              </h3>
+              <p className="text-sm text-foreground/80">
+                {event.hasAffinity ? event.effect.affinityDescription : event.effect.description}
+              </p>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}>
+              <Button
+                onClick={() => {
+                  playTrioPunishment();
+                  dismissTrioEvent();
+                }}
+                className="px-8 py-2"
+                style={{ backgroundColor: "#7b26dc", color: "#fff" }}
+              >
+                Receber Punicao
+              </Button>
+            </motion.div>
+          </>
+        )}
       </motion.div>
     </motion.div>
   );
@@ -1443,12 +1566,15 @@ export function BattleCards() {
     battle,
     drawBattleCard,
     replaceCardInSlot,
+    shuffleDeckAction,
+    replenishDeck,
   } = useGameStore();
 
   const [viewingCard, setViewingCard] = useState<BattleCard | null>(null);
   const [viewingCardSlotIndex, setViewingCardSlotIndex] = useState<number | undefined>(undefined);
   const [pendingCard, setPendingCard] = useState<BattleCard | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [showDeckMenu, setShowDeckMenu] = useState(false);
 
   const fieldCards = battle.cardField;
   const hasEmptySlot = fieldCards.some((c) => c === null);
@@ -1456,12 +1582,22 @@ export function BattleCards() {
   const badLuckCount = fieldCards.filter((c) => c?.alignment === "bad-luck").length;
   const penalty = battle.badLuckPenalty;
 
+  const deckRemaining = battle.deck?.length ?? 0;
+  const canDraw = deckRemaining > 0;
+  const totalDrawn = DECK_SIZE - deckRemaining;
+  const discardCount = battle.discardPile?.length ?? 0;
+
   const handleDraw = useCallback(() => {
-    if (isDrawing) return;
+    if (isDrawing || !canDraw) return;
     setIsDrawing(true);
+    setShowDeckMenu(false);
     playCardDraw();
 
     const card = drawBattleCard();
+    if (!card) {
+      setIsDrawing(false);
+      return;
+    }
 
     // Check if card ended up as lastDrawnCard (all slots full -> need replace)
     const state = useGameStore.getState();
@@ -1480,7 +1616,6 @@ export function BattleCards() {
       }
 
       if (cardNotPlaced) {
-        // Need to replace a luck card
         setPendingCard(card);
       }
 
@@ -1496,7 +1631,17 @@ export function BattleCards() {
 
       setIsDrawing(false);
     }, 350);
-  }, [isDrawing, drawBattleCard]);
+  }, [isDrawing, canDraw, drawBattleCard]);
+
+  const handleShuffle = () => {
+    shuffleDeckAction();
+    setShowDeckMenu(false);
+  };
+
+  const handleReplenish = () => {
+    replenishDeck();
+    setShowDeckMenu(false);
+  };
 
   const handleReplace = (slotIndex: number) => {
     if (!pendingCard) return;
@@ -1522,7 +1667,6 @@ export function BattleCards() {
       elementCounts[card.element] = (elementCounts[card.element] || 0) + 1;
     }
   }
-  // Elements with 2+ cards should glow
   const glowingElements = new Set(
     Object.entries(elementCounts)
       .filter(([, count]) => count >= 2)
@@ -1532,7 +1676,7 @@ export function BattleCards() {
   return (
     <>
       <div className="flex flex-col gap-1.5">
-        {/* 6 card slots + draw button */}
+        {/* 6 card slots + deck button */}
         <div className="flex items-center justify-center gap-1">
           {fieldCards.map((card, i) =>
             card ? (
@@ -1551,19 +1695,102 @@ export function BattleCards() {
               <EmptySlot key={`empty-${i}`} index={i} />
             )
           )}
-          <div
-            onClick={handleDraw}
-            className="relative flex flex-col items-center justify-center rounded-[5px]"
-            style={{
-              cursor: "pointer",
-              width: 44,
-              height: 64,
-              background: "linear-gradient(180deg, rgba(2, 2, 26, 0.6) 0%, rgba(1, 1, 3, 0.8) 100%)",
-              borderColor: "rgb(7, 18, 119)",
-              borderWidth: 1,
-            }}
-          >
-            <span className="text-[9px] font-mono">Compre</span>
+
+          {/* Deck button with remaining count */}
+          <div className="relative">
+            <div
+              onClick={() => setShowDeckMenu(!showDeckMenu)}
+              className="relative flex flex-col items-center justify-center rounded-[5px] select-none"
+              style={{
+                cursor: "pointer",
+                width: 44,
+                height: 64,
+                background: canDraw
+                  ? "linear-gradient(180deg, rgba(2, 2, 26, 0.6) 0%, rgba(1, 1, 3, 0.8) 100%)"
+                  : "linear-gradient(180deg, rgba(40, 10, 10, 0.6) 0%, rgba(20, 5, 5, 0.8) 100%)",
+                borderColor: canDraw ? "rgb(7, 18, 119)" : "rgb(100, 30, 30)",
+                borderWidth: 1,
+              }}
+            >
+              <span className="text-[11px] font-bold font-mono" style={{ color: canDraw ? "#6890F0" : "#EF4444" }}>
+                {deckRemaining}
+              </span>
+              <span className="text-[7px] text-muted-foreground mt-0.5">
+                {canDraw ? "cartas" : "vazio"}
+              </span>
+            </div>
+
+            {/* Deck popup menu */}
+            <AnimatePresence>
+              {showDeckMenu && (
+                <>
+                  {/* Backdrop to close */}
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowDeckMenu(false)}
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: 5, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute bottom-[68px] right-0 z-50 flex flex-col gap-1 p-2 rounded-lg border"
+                    style={{
+                      background: "linear-gradient(180deg, #0a0a2e 0%, #050510 100%)",
+                      borderColor: "#1e3a8a",
+                      minWidth: 160,
+                      boxShadow: "0 8px 30px rgba(0,0,0,0.6)",
+                    }}
+                  >
+                    <p className="text-[9px] text-muted-foreground text-center mb-1">
+                      Baralho: {deckRemaining} restantes | Retiradas: {totalDrawn}
+                    </p>
+
+                    {/* Option 1: Draw card */}
+                    <button
+                      onClick={handleDraw}
+                      disabled={!canDraw || isDrawing}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{
+                        background: canDraw ? "rgba(104,144,240,0.15)" : "rgba(100,100,100,0.1)",
+                        color: canDraw ? "#93C5FD" : "#666",
+                      }}
+                    >
+                      <span className="text-[10px]">{"\uD83C\uDCCF"}</span>
+                      Comprar carta
+                    </button>
+
+                    {/* Option 2: Shuffle */}
+                    <button
+                      onClick={handleShuffle}
+                      disabled={deckRemaining <= 1}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{
+                        background: "rgba(168,104,255,0.15)",
+                        color: deckRemaining > 1 ? "#C4B5FD" : "#666",
+                      }}
+                    >
+                      <span className="text-[10px]">{"\uD83D\uDD00"}</span>
+                      Embaralhar
+                    </button>
+
+                    {/* Option 3: Replenish */}
+                    <button
+                      onClick={handleReplenish}
+                      disabled={discardCount === 0}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{
+                        background: discardCount > 0 ? "rgba(74,222,128,0.15)" : "rgba(100,100,100,0.1)",
+                        color: discardCount > 0 ? "#86EFAC" : "#666",
+                      }}
+                    >
+                      <span className="text-[10px]">{"\u267B"}</span>
+                      Repor cartas ({totalDrawn})
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>
