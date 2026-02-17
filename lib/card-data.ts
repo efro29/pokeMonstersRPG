@@ -70,6 +70,8 @@ export interface BattleCard {
   cardIndex: number;
   /** Whether the aura card's power has been activated (only for aura cards) */
   activated?: boolean;
+  /** Whether this card was already part of a triggered trio (prevents re-triggering) */
+  trioUsed?: boolean;
 }
 
 // -- LUCK CARD DEFINITIONS --
@@ -227,8 +229,7 @@ function randomElement(): CardElement {
  *   Azar (bad-luck)     = 15%
  *   Aura Elemental      =  2%
  *   Aura Amplificada    =  1%
- *   Cura (heal)         =  1%
- *   Ressurreicao        =  1%
+ *   Enfermeira Joy      =  2%
  *   Total               = 100%
  */
 export function drawCard(): BattleCard {
@@ -283,19 +284,8 @@ export function drawCard(): BattleCard {
       effectKey: "aura-amplificada",
       cardIndex: -2,
     };
-  } else if (roll < 99) {
-    // --- HEAL (1%) ---
-    return {
-      id: nextCardId(),
-      alignment: "heal",
-      element: "normal",
-      name: "Pocao Vital",
-      description: "Escolha um Pokemon para curar 20% do HP maximo!",
-      effectKey: "heal-20",
-      cardIndex: -3,
-    };
   } else {
-    // --- RESURRECT (1%) ---
+    // --- ENFERMEIRA JOY / RESURRECT (2%) ---
     return {
       id: nextCardId(),
       alignment: "resurrect",
@@ -315,7 +305,7 @@ export function drawCard(): BattleCard {
  * Returns the matching trio cards if found, null otherwise
  */
 export function checkLuckTrio(fieldCards: (BattleCard | null)[]): BattleCard[] | null {
-  const luckCards = fieldCards.filter((c): c is BattleCard => c !== null && c.alignment === "luck");
+  const luckCards = fieldCards.filter((c): c is BattleCard => c !== null && c.alignment === "luck" && !c.trioUsed);
   if (luckCards.length < 3) return null;
 
   // Group luck cards by element
@@ -339,7 +329,7 @@ export function checkLuckTrio(fieldCards: (BattleCard | null)[]): BattleCard[] |
  * Check if 3 bad-luck cards are in the field -> triggers punishment + clears field
  */
 export function checkBadLuckTrio(fieldCards: (BattleCard | null)[]): boolean {
-  const badLuckCount = fieldCards.filter((c) => c !== null && c.alignment === "bad-luck").length;
+  const badLuckCount = fieldCards.filter((c) => c !== null && c.alignment === "bad-luck" && !c.trioUsed).length;
   return badLuckCount >= 3;
 }
 

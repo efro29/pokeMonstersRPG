@@ -1537,10 +1537,49 @@ export const useGameStore = create<GameState>()(
             }));
           }, 800);
         } else {
-          // Luck trio -> keep slots (don't clear)
+          // Luck trio -> keep slots but mark trio cards as used so they don't re-trigger
+          const currentBattle2 = get().battle;
+          const trioElement = currentBattle2.cardTrioEvent?.effect?.key;
+          // Find the 3 luck cards of the same element that formed the trio and mark them
+          const markedField = [...currentBattle2.cardField];
+          let markedCount = 0;
+          for (let i = 0; i < markedField.length && markedCount < 3; i++) {
+            const c = markedField[i];
+            if (c && c.alignment === "luck" && !c.trioUsed) {
+              // We need to find cards that share the same element
+              // Re-check which element formed the trio
+              markedField[i] = { ...c, trioUsed: true };
+              markedCount++;
+            }
+          }
+          // More precise: find the element with 3+ non-trioUsed luck cards
+          const luckCards = currentBattle2.cardField.filter(
+            (c): c is BattleCard => c !== null && c.alignment === "luck" && !c.trioUsed
+          );
+          const byElement: Record<string, number[]> = {};
+          currentBattle2.cardField.forEach((c, i) => {
+            if (c && c.alignment === "luck" && !c.trioUsed) {
+              if (!byElement[c.element]) byElement[c.element] = [];
+              byElement[c.element].push(i);
+            }
+          });
+          const preciseField = [...currentBattle2.cardField];
+          let found = false;
+          for (const el of Object.keys(byElement)) {
+            if (byElement[el].length >= 3 && !found) {
+              for (let k = 0; k < 3; k++) {
+                const idx = byElement[el][k];
+                const card = preciseField[idx]!;
+                preciseField[idx] = { ...card, trioUsed: true };
+              }
+              found = true;
+            }
+          }
+
           set({
             battle: {
-              ...battle,
+              ...currentBattle2,
+              cardField: found ? preciseField : markedField,
               cardTrioEvent: null,
             },
           });
@@ -1694,10 +1733,9 @@ export const useGameStore = create<GameState>()(
         set({ team: updatedTeam });
 
         // Remove card from field
-        const activeIdx = battle.activePokemonIndex;
-        const activeMon = team[activeIdx];
-        const activeSpecies = getPokemon(activeMon.speciesId);
-        const pokemonTypes = [activeSpecies.type1, activeSpecies.type2].filter(Boolean) as string[];
+        const activeMon2 = team.find((p) => p.uid === battle.activePokemonUid);
+        const activeSpecies2 = activeMon2 ? getPokemon(activeMon2.speciesId) : null;
+        const pokemonTypes = activeSpecies2 ? [activeSpecies2.type1, activeSpecies2.type2].filter(Boolean) as string[] : [];
         const newField = [...battle.cardField];
         newField[slotIndex] = null;
         const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
@@ -1710,7 +1748,7 @@ export const useGameStore = create<GameState>()(
             pokemonAnimationState: {
               isAnimating: true,
               effectType: "heal",
-              duration: 600,
+              duration: 1200,
             },
           },
         });
@@ -1726,7 +1764,7 @@ export const useGameStore = create<GameState>()(
               },
             },
           }));
-        }, 600);
+        }, 1200);
 
         return true;
       },
@@ -1752,10 +1790,9 @@ export const useGameStore = create<GameState>()(
         set({ team: updatedTeam });
 
         // Remove card from field
-        const activeIdx = battle.activePokemonIndex;
-        const activeMon = team[activeIdx];
-        const activeSpecies = getPokemon(activeMon.speciesId);
-        const pokemonTypes = [activeSpecies.type1, activeSpecies.type2].filter(Boolean) as string[];
+        const activeMon2 = team.find((p) => p.uid === battle.activePokemonUid);
+        const activeSpecies2 = activeMon2 ? getPokemon(activeMon2.speciesId) : null;
+        const pokemonTypes = activeSpecies2 ? [activeSpecies2.type1, activeSpecies2.type2].filter(Boolean) as string[] : [];
         const newField = [...battle.cardField];
         newField[slotIndex] = null;
         const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
@@ -1768,7 +1805,7 @@ export const useGameStore = create<GameState>()(
             pokemonAnimationState: {
               isAnimating: true,
               effectType: "buff",
-              duration: 800,
+              duration: 1200,
             },
           },
         });
@@ -1784,7 +1821,7 @@ export const useGameStore = create<GameState>()(
               },
             },
           }));
-        }, 800);
+        }, 1200);
 
         return true;
       },
