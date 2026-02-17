@@ -1,5 +1,5 @@
 "use client";
-
+// battle-cards v3
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/lib/game-store";
@@ -355,7 +355,7 @@ function YuGiOhCard({
             decoding="sync"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = "none";
-              (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
+              const p = (e.target as HTMLImageElement).parentElement; if (p) p.innerHTML = '<span class="text-[18px] leading-none drop-shadow-sm">' + (isLuck ? "\u2618" : "\u2620") + '</span>';
             }}
           />
         </div>
@@ -379,7 +379,7 @@ function YuGiOhCard({
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
-                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
+                if (target.parentElement) target.parentElement.innerHTML = '<span class="text-[18px] leading-none drop-shadow-sm">' + (isLuck ? "\u2618" : "\u2620") + '</span>';
               }}
             />
           </div>
@@ -398,7 +398,7 @@ function YuGiOhCard({
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
-                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
+                if (target.parentElement) target.parentElement.innerHTML = '<span class="text-[18px] leading-none drop-shadow-sm">' + (isLuck ? "\u2618" : "\u2620") + '</span>';
               }}
             />
           </div>
@@ -1349,7 +1349,7 @@ function TrioEventOverlay() {
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
                 // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
-                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
+                if (target.parentElement) target.parentElement.innerHTML = '<span class="text-[18px] leading-none drop-shadow-sm">' + (isLuck ? "\u2618" : "\u2620") + '</span>';
               }}
             />
              <img
@@ -1362,7 +1362,7 @@ function TrioEventOverlay() {
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
                 // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
-                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
+                if (target.parentElement) target.parentElement.innerHTML = '<span class="text-[18px] leading-none drop-shadow-sm">' + (isLuck ? "\u2618" : "\u2620") + '</span>';
               }}
             />
              <img
@@ -1375,7 +1375,7 @@ function TrioEventOverlay() {
                 const target = e.target as HTMLImageElement;
                 target.style.display = "none";
                 // Ao injetar o HTML do span, ele também herdará o alinhamento flex da div pai
-                target.parentElement!.innerHTML = `<span class="text-[18px] leading-none drop-shadow-sm">${isLuck ? "\u2618" : "\u2620"}</span>`;
+                if (target.parentElement) target.parentElement.innerHTML = '<span class="text-[18px] leading-none drop-shadow-sm">' + (isLuck ? "\u2618" : "\u2620") + '</span>';
               }}
             />
                   </div>
