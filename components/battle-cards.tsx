@@ -103,14 +103,14 @@ function YuGiOhCard({
   const isResurrect = card.alignment === "resurrect";
   const isAura = isAuraElemental || isAuraAmplificada;
   const isSpecial = isHeal || isResurrect;
-  const elColor = isHeal ? "#4ADE80" : isResurrect ? "#F59E0B" : isAura ? (isAuraAmplificada ? "#D4AF37" : "#C0C0C0") : (ELEMENT_COLORS[card.element] || "#888");
+  const elColor = isHeal ? "#4ADE80" : isResurrect ? "#EC4899" : isAura ? (isAuraAmplificada ? "#D4AF37" : "#C0C0C0") : (ELEMENT_COLORS[card.element] || "#888");
   const elName = ELEMENT_NAMES_PT[card.element] || card.element;
 
   // Color scheme based on card type
   const borderColor = isHeal
     ? "#4ADE80"
     : isResurrect
-    ? "#F59E0B"
+    ? "#EC4899"
     : isAuraAmplificada
     ? "#D4AF37"
     : isAuraElemental
@@ -122,7 +122,7 @@ function YuGiOhCard({
   const outerBg = isHeal
     ? "linear-gradient(180deg, #d4fce0 0%, #86efac 30%, #4ade80 70%, #a7f3d0 100%)"
     : isResurrect
-    ? "linear-gradient(180deg, #fef3c7 0%, #fbbf24 30%, #f59e0b 70%, #fde68a 100%)"
+    ? "linear-gradient(180deg, #fce7f3 0%, #f472b6 30%, #ec4899 70%, #fbcfe8 100%)"
     : isAuraAmplificada
     ? "linear-gradient(180deg, #D4AF37 0%, #B8860B 30%, #8B6914 70%, #D4AF37 100%)"
     : isAuraElemental
@@ -134,7 +134,7 @@ function YuGiOhCard({
   const innerBg = isHeal
     ? "linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%)"
     : isResurrect
-    ? "linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%)"
+    ? "linear-gradient(180deg, #fdf2f8 0%, #fce7f3 100%)"
     : isAura
     ? (isAuraAmplificada ? "linear-gradient(180deg, #3a2a00 0%, #1a1200 100%)" : "linear-gradient(180deg, #f0f0f0 0%, #d8d8d8 100%)")
     : isLuck
@@ -232,10 +232,10 @@ function YuGiOhCard({
 
     // -- HEAL / RESURRECT cards small rendering --
     if (isSpecial) {
-      const specialColor = isHeal ? "#4ADE80" : "#F59E0B";
+      const specialColor = isHeal ? "#4ADE80" : "#EC4899";
       const specialBg = isHeal
         ? "linear-gradient(180deg, #d4fce0 0%, #86efac 30%, #4ade80 70%, #a7f3d0 100%)"
-        : "linear-gradient(180deg, #fef3c7 0%, #fbbf24 30%, #f59e0b 70%, #fde68a 100%)";
+        : "linear-gradient(180deg, #fce7f3 0%, #f472b6 30%, #ec4899 70%, #fbcfe8 100%)";
 
       return (
         <motion.button
@@ -270,7 +270,7 @@ function YuGiOhCard({
           >
             <span
               className="text-[3px] font-bold uppercase"
-              style={{ color: isHeal ? "#166534" : "#78350f" }}
+              style={{ color: isHeal ? "#166534" : "#831843" }}
             >
               {card.name}
             </span>
@@ -299,7 +299,7 @@ function YuGiOhCard({
             {isHeal ? (
               <span className="text-[6px] font-bold" style={{ color: "#166534" }}>CURA</span>
             ) : (
-              <span className="text-[6px] font-bold" style={{ color: "#78350f" }}>REVIVER</span>
+              <span className="text-[6px] font-bold" style={{ color: "#831843" }}>REVIVER</span>
             )}
           </div>
         </motion.button>
@@ -433,7 +433,7 @@ function YuGiOhCard({
   const largeShadow = isHeal
     ? "0 8px 40px rgba(74,222,128,0.6), 0 0 50px rgba(74,222,128,0.25), inset 0 2px 0 rgba(255,255,255,0.15)"
     : isResurrect
-    ? "0 8px 40px rgba(245,158,11,0.6), 0 0 50px rgba(245,158,11,0.25), inset 0 2px 0 rgba(255,255,255,0.15)"
+    ? "0 8px 40px rgba(236,72,153,0.6), 0 0 50px rgba(236,72,153,0.25), inset 0 2px 0 rgba(255,255,255,0.15)"
     : isAuraAmplificada
     ? "0 8px 40px rgba(212,175,55,0.7), 0 0 60px rgba(212,175,55,0.3), inset 0 2px 0 rgba(255,255,255,0.15)"
     : isAuraElemental
@@ -442,7 +442,7 @@ function YuGiOhCard({
     ? "0 8px 32px rgba(236, 183, 6, 0.5), inset 0 2px 0 rgba(255,255,255,0.15)"
     : "0 8px 32px rgba(30, 2, 41, 0.7), inset 0 2px 0 rgba(255,255,255,0.05)";
 
-  const nameColor = isHeal ? "#166534" : isResurrect ? "#78350f" : isAuraAmplificada ? "#FFD700" : isAuraElemental ? "#555" : isLuck ? "green" : "pink";
+  const nameColor = isHeal ? "#166534" : isResurrect ? "#831843" : isAuraAmplificada ? "#FFD700" : isAuraElemental ? "#555" : isLuck ? "green" : "pink";
 
   return (
     <motion.div
@@ -467,7 +467,7 @@ function YuGiOhCard({
           {isHeal ? (
             <Heart className="w-5 h-5" style={{ color: "#4ADE80" }} />
           ) : isResurrect ? (
-            <RotateCcw className="w-5 h-5" style={{ color: "#F59E0B" }} />
+            <RotateCcw className="w-5 h-5" style={{ color: "#EC4899" }} />
           ) : isAura ? (
             <Sparkles className="w-5 h-5" style={{ color: isAuraAmplificada ? "#FFD700" : "#999" }} />
           ) : isLuck ? (
@@ -752,11 +752,14 @@ function CardViewer({
   const isResurrectCard = card?.alignment === "resurrect";
   const isAlreadyActivated = isAura && card?.activated;
 
-  // For heal: show all alive Pokemon; for resurrect: show only fainted (hp <= 0)
+  // For heal: alive Pokemon that need healing; for resurrect: fainted first, else alive to heal 20%
+  const hasFaintedPokemon = isResurrectCard && team.some((p) => p.currentHp <= 0);
   const eligiblePokemon = isHealCard
     ? team.filter((p) => p.currentHp > 0 && p.currentHp < p.maxHp)
     : isResurrectCard
-    ? team.filter((p) => p.currentHp <= 0)
+    ? (hasFaintedPokemon
+        ? team.filter((p) => p.currentHp <= 0)
+        : team.filter((p) => p.currentHp > 0 && p.currentHp < p.maxHp))
     : [];
 
   const handleActivatePower = () => {
@@ -764,11 +767,7 @@ function CardViewer({
       // Heal/Resurrect -> show Pokemon selection
       if (isHealCard || isResurrectCard) {
         if (eligiblePokemon.length === 0) {
-          // No eligible Pokemon
-          const msg = isHealCard
-            ? "Nenhum Pokemon precisa de cura!"
-            : "Nenhum Pokemon esta com 0 HP!";
-          alert(msg);
+          alert("Todos os Pokemon estao com HP cheio!");
           return;
         }
         setShowPokemonSelect(true);
@@ -806,8 +805,15 @@ function CardViewer({
       success = activateHealCard(slotIndex, uid);
       if (success) playHealActivate();
     } else if (isResurrectCard) {
-      success = activateResurrectCard(slotIndex, uid);
-      if (success) playResurrectActivate();
+      if (hasFaintedPokemon) {
+        // Revive the fainted Pokemon
+        success = activateResurrectCard(slotIndex, uid);
+        if (success) playResurrectActivate();
+      } else {
+        // No fainted Pokemon -> use as heal 20%
+        success = activateHealCard(slotIndex, uid);
+        if (success) playHealActivate();
+      }
     }
     setShowPokemonSelect(false);
     onClose();
@@ -850,15 +856,23 @@ function CardViewer({
         <DialogContent className="max-w-[300px] mx-auto p-4 border-border" style={{
           background: isHealCard
             ? "linear-gradient(180deg, #052e16 0%, #0a0a0a 100%)"
-            : "linear-gradient(180deg, #451a03 0%, #0a0a0a 100%)",
-          borderColor: isHealCard ? "#4ADE80" : "#F59E0B",
+            : "linear-gradient(180deg, #500724 0%, #0a0a0a 100%)",
+          borderColor: isHealCard ? "#4ADE80" : "#EC4899",
         }}>
           <DialogHeader>
-            <DialogTitle className="text-center text-sm font-bold" style={{ color: isHealCard ? "#4ADE80" : "#F59E0B" }}>
-              {isHealCard ? "Escolha um Pokemon para curar" : "Escolha um Pokemon para reviver"}
+            <DialogTitle className="text-center text-sm font-bold" style={{ color: isHealCard ? "#4ADE80" : "#EC4899" }}>
+              {isHealCard
+                ? "Escolha um Pokemon para curar"
+                : hasFaintedPokemon
+                ? "Escolha um Pokemon para reviver"
+                : "Nenhum Pokemon morto - Escolha para curar"}
             </DialogTitle>
             <DialogDescription className="text-center text-xs text-muted-foreground">
-              {isHealCard ? "Cura 20% do HP maximo" : "Restaura 25% do HP maximo"}
+              {isHealCard
+                ? "Cura 20% do HP maximo"
+                : hasFaintedPokemon
+                ? "Restaura 25% do HP maximo"
+                : "Cura 20% do HP maximo"}
             </DialogDescription>
           </DialogHeader>
           
@@ -876,7 +890,7 @@ function CardViewer({
                   onClick={() => handleSelectPokemon(poke.uid)}
                   className="flex items-center gap-3 p-2 rounded-lg border transition-colors cursor-pointer"
                   style={{
-                    borderColor: isHealCard ? "#4ADE8044" : "#F59E0B44",
+                    borderColor: isHealCard ? "#4ADE8044" : "#EC489944",
                     background: "rgba(0,0,0,0.3)",
                   }}
                 >
@@ -909,12 +923,12 @@ function CardViewer({
                   </div>
                   <div
                     className="flex items-center justify-center w-6 h-6 rounded-full flex-shrink-0"
-                    style={{ background: isHealCard ? "#4ADE8033" : "#F59E0B33" }}
+                    style={{ background: isHealCard ? "#4ADE8033" : "#EC489933" }}
                   >
                     {isHealCard ? (
                       <Heart className="w-3 h-3" style={{ color: "#4ADE80" }} />
                     ) : (
-                      <RotateCcw className="w-3 h-3" style={{ color: "#F59E0B" }} />
+                      <RotateCcw className="w-3 h-3" style={{ color: "#EC4899" }} />
                     )}
                   </div>
                 </motion.button>
@@ -923,7 +937,7 @@ function CardViewer({
 
             {eligiblePokemon.length === 0 && (
               <p className="text-center text-xs text-muted-foreground py-4">
-                {isHealCard ? "Nenhum Pokemon precisa de cura." : "Nenhum Pokemon esta com 0 HP."}
+                Todos os Pokemon estao com HP cheio.
               </p>
             )}
           </div>
@@ -983,10 +997,10 @@ function CardViewer({
                         }
                       : isResurrectCard
                       ? {
-                          background: "linear-gradient(90deg, #b45309, #f59e0b, #fbbf24, #f59e0b, #b45309)",
+                          background: "linear-gradient(90deg, #9d174d, #ec4899, #f472b6, #ec4899, #9d174d)",
                           backgroundSize: "200% 100%",
                           animation: "shimmer 2s linear infinite",
-                          border: "1px solid #F59E0B",
+                          border: "1px solid #EC4899",
                         }
                       : undefined
                   }
@@ -1046,7 +1060,7 @@ function ReplaceCardModal({
         <div className="flex gap-2 justify-center flex-wrap">
           {fieldCards.map((fieldCard, i) => {
             if (!fieldCard) return null;
-            const isLocked = fieldCard.alignment === "bad-luck" || fieldCard.alignment === "aura-elemental" || fieldCard.alignment === "aura-amplificada" || fieldCard.alignment === "heal" || fieldCard.alignment === "resurrect";
+            const isLocked = fieldCard.alignment === "bad-luck" || fieldCard.alignment === "aura-elemental" || fieldCard.alignment === "aura-amplificada";
             return (
               <div key={i} className="relative">
                 <div

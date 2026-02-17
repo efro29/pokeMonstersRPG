@@ -1400,8 +1400,8 @@ export const useGameStore = create<GameState>()(
       replaceCardInSlot: (slotIndex, card) => {
         const { battle, team } = get();
         const existing = battle.cardField[slotIndex];
-        // Cannot replace bad luck, aura, heal, or resurrect cards
-        if (existing && (existing.alignment === "bad-luck" || existing.alignment === "aura-elemental" || existing.alignment === "aura-amplificada" || existing.alignment === "heal" || existing.alignment === "resurrect")) return;
+        // Cannot replace bad luck or aura cards (heal/resurrect are consumable, so they CAN be replaced)
+        if (existing && (existing.alignment === "bad-luck" || existing.alignment === "aura-elemental" || existing.alignment === "aura-amplificada")) return;
 
         const newField = [...battle.cardField];
         newField[slotIndex] = card;
@@ -1675,7 +1675,7 @@ export const useGameStore = create<GameState>()(
       activateHealCard: (slotIndex: number, targetUid: string): boolean => {
         const { battle, team } = get();
         const card = battle.cardField[slotIndex];
-        if (!card || card.alignment !== "heal") return false;
+        if (!card || (card.alignment !== "heal" && card.alignment !== "resurrect")) return false;
 
         const targetMon = team.find((p) => p.uid === targetUid);
         if (!targetMon || targetMon.currentHp <= 0) return false; // Can't heal fainted

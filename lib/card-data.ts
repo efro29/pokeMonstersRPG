@@ -300,8 +300,8 @@ export function drawCard(): BattleCard {
       id: nextCardId(),
       alignment: "resurrect",
       element: "normal",
-      name: "Chama da Fenix",
-      description: "Ressuscita um Pokemon com 0 HP, restaurando 25% do HP maximo!",
+      name: "Enfermeira Joy",
+      description: "Ressuscita um Pokemon com 0 HP (25% HP). Se nenhum morreu, cura 20%!",
       effectKey: "resurrect-25",
       cardIndex: -4,
     };
