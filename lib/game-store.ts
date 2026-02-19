@@ -674,6 +674,7 @@ export const useGameStore = create<GameState>()(
 
         let updatedCardField = battle.cardField;
         let useAuraAmplificada = false;
+        let consumedCards: import("./card-data").BattleCard[] = [];
 
         if (moveDef.energy_cost > 0) {
           const available = countFieldCardsByElement(battle.cardField, moveDef.energy_type);
@@ -681,10 +682,14 @@ export const useGameStore = create<GameState>()(
 
           if (available >= moveDef.energy_cost) {
             // Enough normal energy - consume it
-            updatedCardField = consumeEnergyCards(updatedCardField, moveDef.energy_type, moveDef.energy_cost);
+            const result = consumeEnergyCards(updatedCardField, moveDef.energy_type, moveDef.energy_cost);
+            updatedCardField = result.field;
+            consumedCards = result.consumed;
           } else if (hasAmplificada) {
             // Use Aura Amplificada to bypass energy cost
-            updatedCardField = consumeAuraAmplificada(updatedCardField);
+            const result = consumeAuraAmplificada(updatedCardField);
+            updatedCardField = result.field;
+            consumedCards = result.consumed;
             useAuraAmplificada = true;
           } else {
             return; // Not enough energy cards and no aura
@@ -721,6 +726,7 @@ export const useGameStore = create<GameState>()(
             cardField: updatedCardField,
             badLuckPenalty: newPenalty,
             auraAmplificadaActive: useAuraAmplificada,
+            discardPile: [...battle.discardPile, ...consumedCards],
           },
         });
       },
@@ -1428,11 +1434,16 @@ export const useGameStore = create<GameState>()(
       replaceCardInSlot: (slotIndex, card) => {
         const { battle, team } = get();
         const existing = battle.cardField[slotIndex];
-        // Cannot replace bad luck cards (aura cards no longer occupy slots; heal/resurrect CAN be replaced)
+        // Cannot replace bad luck cards
         if (existing && existing.alignment === "bad-luck") return;
 
         const newField = [...battle.cardField];
         newField[slotIndex] = card;
+
+        // Add replaced card to discard pile
+        const newDiscard = existing
+          ? [...battle.discardPile, existing]
+          : battle.discardPile;
 
         const activeMon = team.find((p) => p.uid === battle.activePokemonUid);
         const activeSpecies = activeMon ? getPokemon(activeMon.speciesId) : null;
@@ -1452,6 +1463,7 @@ export const useGameStore = create<GameState>()(
               cardField: newField,
               lastDrawnCard: null,
               badLuckPenalty: penalty,
+              discardPile: newDiscard,
               cardTrioEvent: { type: "bad-luck", effect, hasAffinity },
             },
           });
@@ -1469,6 +1481,7 @@ export const useGameStore = create<GameState>()(
               cardField: newField,
               lastDrawnCard: null,
               badLuckPenalty: penalty,
+              discardPile: newDiscard,
               cardTrioEvent: { type: "luck", effect, hasAffinity },
             },
           });
@@ -1481,6 +1494,7 @@ export const useGameStore = create<GameState>()(
             cardField: newField,
             lastDrawnCard: null,
             badLuckPenalty: penalty,
+            discardPile: newDiscard,
             cardTrioEvent: null,
           },
         });
@@ -1625,7 +1639,7 @@ export const useGameStore = create<GameState>()(
         });
       },
 
-      // Choice 2: Remove a bad luck card from the field
+      // Choice 2: Remove a bad luck card from the field (also removes the 3 trio luck cards)
       trioChoiceRemoveBadLuck: (slotIndex: number) => {
         const { battle, team } = get();
         if (!battle.cardTrioEvent || battle.cardTrioEvent.type !== "luck") return;
@@ -1633,10 +1647,11 @@ export const useGameStore = create<GameState>()(
         const card = battle.cardField[slotIndex];
         if (!card || card.alignment !== "bad-luck") return;
 
-        // Mark the trio cards as used
-        const markedField: (BattleCard | null)[] = [...battle.cardField];
+        // Find and remove the 3 trio luck cards from the field
+        const newField: (BattleCard | null)[] = [...battle.cardField];
+        const discarded: BattleCard[] = [];
         const byElement: Record<string, number[]> = {};
-        markedField.forEach((c, i) => {
+        newField.forEach((c, i) => {
           if (c && c.alignment === "luck" && !c.trioUsed) {
             if (!byElement[c.element]) byElement[c.element] = [];
             byElement[c.element].push(i);
@@ -1646,30 +1661,32 @@ export const useGameStore = create<GameState>()(
           if (byElement[el].length >= 3) {
             for (let k = 0; k < 3; k++) {
               const idx = byElement[el][k];
-              markedField[idx] = { ...markedField[idx]!, trioUsed: true };
+              discarded.push(newField[idx]!);
+              newField[idx] = null;
             }
             break;
           }
         }
 
         // Remove the bad luck card
-        const removedCard = markedField[slotIndex]!;
-        markedField[slotIndex] = null;
+        const removedCard = newField[slotIndex]!;
+        discarded.push(removedCard);
+        newField[slotIndex] = null;
 
         const activeMon = team.find((p) => p.uid === battle.activePokemonUid);
         const activeSpecies = activeMon ? getPokemon(activeMon.speciesId) : null;
         const pokemonTypes = activeSpecies ? [activeSpecies.type1, activeSpecies.type2].filter(Boolean) as string[] : [];
-        const penalty = calculateBadLuckPenalty(markedField, pokemonTypes);
+        const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
 
         get().addBattleLog(`[TRIO] Removeu carta de azar: ${removedCard.name}!`);
 
         set({
           battle: {
             ...get().battle,
-            cardField: markedField,
+            cardField: newField,
             cardTrioEvent: null,
             badLuckPenalty: penalty,
-            discardPile: [...battle.discardPile, removedCard],
+            discardPile: [...battle.discardPile, ...discarded],
           },
         });
       },
@@ -1791,7 +1808,7 @@ export const useGameStore = create<GameState>()(
           set({ team: updatedTeam });
         }
 
-        // Clear the slot after activation
+        // Clear the slot after activation and add card to discard pile
         const newField = [...battle.cardField];
         newField[slotIndex] = null;
 
@@ -1808,6 +1825,7 @@ export const useGameStore = create<GameState>()(
             ...currentBattle,
             cardField: newField,
             badLuckPenalty: penalty,
+            discardPile: [...currentBattle.discardPile, card],
             pokemonAnimationState: {
               isAnimating: true,
               effectType: animationType,

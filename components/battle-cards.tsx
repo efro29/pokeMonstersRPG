@@ -1599,10 +1599,10 @@ export function BattleCards() {
       return;
     }
 
-    // Check if card ended up as lastDrawnCard (all slots full -> need replace)
+    // Check if card was NOT placed in any slot (all slots were full -> need replace)
     const state = useGameStore.getState();
-    const cardNotPlaced = state.battle.lastDrawnCard?.id === card.id &&
-      state.battle.cardField.every((c) => c !== null);
+    const cardIsInField = state.battle.cardField.some((c) => c !== null && c.id === card.id);
+    const cardNotPlaced = !cardIsInField && state.battle.lastDrawnCard?.id === card.id;
 
     setTimeout(() => {
       if (card.alignment === "aura-elemental" || card.alignment === "aura-amplificada") {
