@@ -476,11 +476,15 @@ export function hasAuraAmplificada(fieldCards: (BattleCard | null)[]): boolean {
 /**
  * Remove the first Aura Amplificada card from the field.
  */
-export function consumeAuraAmplificada(fieldCards: (BattleCard | null)[]): (BattleCard | null)[] {
+export function consumeAuraAmplificada(fieldCards: (BattleCard | null)[]): { field: (BattleCard | null)[]; consumed: BattleCard[] } {
   const newField = [...fieldCards];
+  const consumed: BattleCard[] = [];
   const idx = newField.findIndex((c) => c !== null && c.alignment === "aura-amplificada");
-  if (idx !== -1) newField[idx] = null;
-  return newField;
+  if (idx !== -1) {
+    consumed.push(newField[idx]!);
+    newField[idx] = null;
+  }
+  return { field: newField, consumed };
 }
 
 /**
@@ -492,14 +496,16 @@ export function consumeEnergyCards(
   fieldCards: (BattleCard | null)[],
   element: string,
   count: number
-): (BattleCard | null)[] {
+): { field: (BattleCard | null)[]; consumed: BattleCard[] } {
   const newField = [...fieldCards];
+  const consumed: BattleCard[] = [];
   let remaining = count;
 
   // First pass: consume exact element luck cards
   for (let i = 0; i < newField.length && remaining > 0; i++) {
     const card = newField[i];
     if (card && card.alignment === "luck" && card.element === element) {
+      consumed.push(card);
       newField[i] = null;
       remaining--;
     }
@@ -509,10 +515,11 @@ export function consumeEnergyCards(
   for (let i = 0; i < newField.length && remaining > 0; i++) {
     const card = newField[i];
     if (card && card.alignment === "aura-elemental" && card.activated) {
+      consumed.push(card);
       newField[i] = null;
       remaining--;
     }
   }
 
-  return newField;
+  return { field: newField, consumed };
 }
