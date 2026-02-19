@@ -1603,9 +1603,9 @@ export const useGameStore = create<GameState>()(
         const discarded: BattleCard[] = [];
         let trioFound = false;
         for (const el of Object.keys(byElement)) {
-          if (byElement[el].length >= 3 && !trioFound) {
+          if (byElement[el].length >= 2 && !trioFound) {
             // Remove the 3 trio cards -> discard
-            for (let k = 0; k < 3; k++) {
+            for (let k = 0; k < 2; k++) {
               const idx = byElement[el][k];
               discarded.push(newField[idx]!);
               newField[idx] = null;
@@ -1626,7 +1626,7 @@ export const useGameStore = create<GameState>()(
         const pokemonTypes = activeSpecies ? [activeSpecies.type1, activeSpecies.type2].filter(Boolean) as string[] : [];
         const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
 
-        get().addBattleLog(`[TRIO] Trocou 3 cartas por 1 carta de ${element}!`);
+        get().addBattleLog(`[DUO] Trocou 2 cartas por 1 carta de ${element}!`);
 
         set({
           battle: {
@@ -1658,8 +1658,8 @@ export const useGameStore = create<GameState>()(
           }
         });
         for (const el of Object.keys(byElement)) {
-          if (byElement[el].length >= 3) {
-            for (let k = 0; k < 3; k++) {
+          if (byElement[el].length >= 2) {
+            for (let k = 0; k < 2; k++) {
               const idx = byElement[el][k];
               discarded.push(newField[idx]!);
               newField[idx] = null;
@@ -1678,7 +1678,7 @@ export const useGameStore = create<GameState>()(
         const pokemonTypes = activeSpecies ? [activeSpecies.type1, activeSpecies.type2].filter(Boolean) as string[] : [];
         const penalty = calculateBadLuckPenalty(newField, pokemonTypes);
 
-        get().addBattleLog(`[TRIO] Removeu carta de azar: ${removedCard.name}!`);
+        get().addBattleLog(` Removeu carta de azar: ${removedCard.name}!`);
 
         set({
           battle: {
@@ -1706,8 +1706,8 @@ export const useGameStore = create<GameState>()(
         });
         const newField = [...battle.cardField];
         for (const el of Object.keys(byElement)) {
-          if (byElement[el].length >= 3) {
-            for (let k = 0; k < 3; k++) {
+          if (byElement[el].length >= 2) {
+            for (let k = 0; k < 2; k++) {
               const idx = byElement[el][k];
               newField[idx] = { ...newField[idx]!, trioUsed: true };
             }
@@ -1715,7 +1715,7 @@ export const useGameStore = create<GameState>()(
           }
         }
 
-        get().addBattleLog("[TRIO] Nao fez nada com o trio de sorte.");
+        get().addBattleLog(" Nao fez nada com o trio de sorte.");
 
         set({
           battle: {

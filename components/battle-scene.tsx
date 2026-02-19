@@ -427,8 +427,9 @@ const [arena] = useState(getRandomArena());
         
                battle.phase === "rolling"
                ? '': <>
-                        <div className="flex items-center gap-3 mb-1 w-full px-10">
-            <div className="h-[px] flex-1 bg-gradient-to-r from-transparent to-white/50"></div>
+          <div className="flex items-center gap-3 mb-1 w-full px-10">
+            
+            <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/50"></div>
             <span style={{color:'silver'}} className=" text-[10px] font-bold uppercase tracking-widest drop-shadow-md">
                Equipe
             </span>

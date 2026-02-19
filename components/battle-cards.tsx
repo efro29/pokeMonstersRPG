@@ -134,7 +134,7 @@ function YuGiOhCard({
     : isAuraElemental
     ? "linear-gradient(180deg, #E8E8E8 0%, #C0C0C0 30%, #A8A8A8 70%, #D0D0D0 100%)"
     : isLuck
-    ? "linear-gradient(180deg, #e9e4d0 0%, #c5bfac 8%, #e7e2cf 92%, #ecebe5 100%)"
+    ? "linear-gradient(180deg, #ffffff 0%, #ffffff 8%, #ffffff 92%, #ffffff 100%)"
     : "linear-gradient(180deg, #502d5a 0%, #4a1547 8%, #2b0a3a 92%, #1A0505 100%)";
 
   const innerBg = isResurrect
@@ -330,7 +330,7 @@ function YuGiOhCard({
           border: `1.5px solid ${glowing ? elColor : borderColor}`,
           boxShadow: !glowing
             ? (isLuck
-              ? "0 2px 8px rgba(197,160,38,0.4), inset 0 1px 0 rgba(255,255,255,0.2)"
+              ? "0 2px 8px rgba(200, 164, 43, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)"
               : "0 2px 8px rgba(17, 1, 22, 0.6), inset 0 1px 0 rgba(42, 14, 54, 0.05)")
             : undefined,
         }}
@@ -338,51 +338,57 @@ function YuGiOhCard({
 
         {isLuck?
       <>
-        <div
-          className="flex items-center justify-center gap-0.5 py-[1px]"
-          style={{ background: `${elColor}33` }}
-        > <span className="text-[3px] font-bold uppercase " style={{ color: 'black'}}>
-            {card.name}
-          </span>
-        </div>
-        <div style={{backgroundColor:'white'}}>
-        <div
-          className=" mflex items-center justify-center  overflow-hidden"
-          style={{
-            height: 22,
-            background: innerBg,backgroundColor:'white'
-          }}
-        >
-          <img
-            src={`/images/cards/card${card.cardIndex}.png`}
-            alt={card.name}
-            className="w-full h-full object-cover"
-            loading="eager"
-            decoding="sync"
-            onError={(e) => handleImgError(e, isLuck ? "\u2618" : "\u2620")}
-          />
-        </div>
-   
+       <div className="flex flex-col h-full w-full rounded-[2px] overflow-hidden">
 
-          <div
-            className="mx-[2px] mt-[1px] mb-[1px] flex-1 px-1 py-[1px] rounded-[1px] flex justify-center items-center bg-white-200"
-            style={{
-              background: 'white',
-              border: `0.5px solid ${borderColor}33`,
-              minHeight: '24px'
-            }}
-          >
-            <img
-              style={{ width: 16, borderRadius:3 }}
-              src={`/images/cardsTypes/${card.element}.jpg`}
-              alt={card.name}
-              className="object-cover"
-              loading="eager"
-              decoding="sync"
-              onError={(e) => handleImgError(e, isLuck ? "\u2618" : "\u2620")}
-            />
-          </div>
-          </div>
+                {/* ===== TÍTULO ===== */}
+                <div
+                  className="flex items-center justify-center gap-0.5 py-[1px]"
+                  style={{ background: `${elColor}33` }}
+                >
+                  <span
+                    className="text-[3px] font-bold uppercase leading-none"
+                    style={{ color: 'black' }}
+                  >
+                    {card.name}
+                  </span>
+                </div>
+
+                {/* ===== ÁREA BRANCA DO CARD ===== */}
+                <div className="flex-1 bg-white flex">
+                  {/* SLOT DA IMAGEM */}
+                  <div
+                    className="flex-1 grid place-items-center mx-[2px] my-[1px] rounded-[1px]"
+                    style={{
+                      background: "white"
+             
+                    }}
+                  >
+                    <img
+                      src={`/images/cardsTypes/${card.element}.jpg`}
+                      alt={card.name}
+                      className="block max-w-full max-h-full object-contain"
+                      style={{
+                        width:30,
+                        borderRadius: 3
+                      }}
+                      loading="eager"
+                      decoding="sync"
+                      onError={(e) =>
+                        handleImgError(e, isLuck ? "\u2618" : "\u2620")
+                      }
+                    />
+                  </div>
+
+                </div>
+                     <span
+                    className="text-[1px] p-1 font-bold uppercase leading-none"
+ 
+                  >
+                   
+                  </span>
+
+              </div>
+
 </>
         : 
            <div
@@ -449,14 +455,14 @@ function YuGiOhCard({
             <Sparkles className="w-5 h-5" style={{ color: isAuraAmplificada ? "#FFD700" : "#999" }} />
           ) : isLuck ? (
             <div
-              className="rounded-full flex items-center justify-center"
-              style={{ backgroundColor: `${elColor}33`, border: `1px solid ${elColor}66` }}
+              className=" flex items-center justify-center"
+            
             >
               <img
                 style={{ width: 20 }}
                 src={`/images/cardsTypes/${card.element}.jpg`}
                 alt={card.name}
-                className="object-cover rounded-full"
+                className="object-cover "
                 loading="eager"
                 decoding="sync"
               />
@@ -1244,9 +1250,9 @@ function ReplaceCardModal({
           })}
         </div>
 
-        <Button variant="outline" size="sm" onClick={onCancel} className="mt-2 border-border text-foreground w-full">
+        {/* <Button variant="outline" size="sm" onClick={onCancel} className="mt-2 border-border text-foreground w-full">
           Cancelar
-        </Button>
+        </Button> */}
       </DialogContent>
     </Dialog>
   );
@@ -1389,7 +1395,7 @@ function TrioEventOverlay() {
             animate={{ scale: [1, 1.2, 1], rotate: [0, 5, -5, 0] }}
             transition={{ duration: 1.5, repeat: Infinity }}
           >
-            {isLuck ? "\u2618\u2618\u2618" : 
+            {isLuck ? "\u2618\u2618" : 
             <>
             <div style={{display:'flex',justifyContent:'center'}}>
             <img
@@ -1429,7 +1435,7 @@ function TrioEventOverlay() {
                 : "0 0 30px rgba(142, 68, 239, 0.5)",
             }}
           >
-            {isLuck ? "TRIO DE SORTE!" : "SUPER PUNICAO!"}
+            {isLuck ? "DUPLEX!" : "SUPER PUNICAO!"}
           </h2>
         </motion.div>
 
@@ -1743,7 +1749,7 @@ export function BattleCards() {
                     }}
                   >
                     <p className="text-[9px] text-muted-foreground text-center mb-1">
-                      Baralho: {deckRemaining} restantes | Retiradas: {totalDrawn}
+                      Baralho: {deckRemaining} restantes 
                     </p>
 
                     {/* Option 1: Draw card */}

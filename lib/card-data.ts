@@ -379,7 +379,7 @@ export function drawCard(): BattleCard {
  */
 export function checkLuckTrio(fieldCards: (BattleCard | null)[]): BattleCard[] | null {
   const luckCards = fieldCards.filter((c): c is BattleCard => c !== null && c.alignment === "luck" && !c.trioUsed);
-  if (luckCards.length < 3) return null;
+  if (luckCards.length < 2) return null;
 
   // Group luck cards by element
   const byElement: Record<string, BattleCard[]> = {};
@@ -390,7 +390,7 @@ export function checkLuckTrio(fieldCards: (BattleCard | null)[]): BattleCard[] |
 
   // Find any element with 3+ cards
   for (const element of Object.keys(byElement)) {
-    if (byElement[element].length >= 3) {
+    if (byElement[element].length >= 2) {
       return byElement[element].slice(0, 3);
     }
   }
