@@ -388,29 +388,30 @@ const [arena] = useState(getRandomArena());
             </div>
           )}
         </motion.div>
-              {/* Card field - always visible below pokemon */}
-               {battle.phase === "attribute-test-select" && pokemonAttrs || 
-               battle.phase === "attribute-test-rolling" && battle.selectedAttribute && pokemonAttrs ||
-               battle.phase === "attribute-test-result" && battle.attributeTestResult ||
-               battle.phase === "result" ||
-               battle.phase === "attack-select" ||
-               battle.phase === "rolling"
-               ? '' : (
-      <>
-        {showBattleCards && (
-          <div style={{position:'absolute',top:350,}} className="top-100 px-3 py-2  bg-blue/30">
-              <div className="flex items-center gap-3 mb-1 w-full ">
-                <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/50"></div>
-                <span style={{color:'silver'}} className=" text-[10px] font-bold uppercase tracking-widest drop-shadow-md">
-                  Cartas
-                </span>
-                <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/50"></div>
+        
+        {/* Card field - always visible below pokemon */}
+        {battle.phase === "attribute-test-select" && pokemonAttrs || 
+         battle.phase === "attribute-test-rolling" && battle.selectedAttribute && pokemonAttrs ||
+         battle.phase === "attribute-test-result" && battle.attributeTestResult ||
+         battle.phase === "result" ||
+         battle.phase === "attack-select" ||
+         battle.phase === "rolling"
+         ? '' : (
+          <>
+            {showBattleCards && (
+              <div style={{position:'absolute',top:350,}} className="top-100 px-3 py-2  bg-blue/30">
+                  <div className="flex items-center gap-3 mb-1 w-full ">
+                    <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/50"></div>
+                    <span style={{color:'silver'}} className=" text-[10px] font-bold uppercase tracking-widest drop-shadow-md">
+                      Cartas
+                    </span>
+                    <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/50"></div>
+                  </div>
+                  <BattleCards />
               </div>
-              <BattleCards />
-          </div>
-        )}
-        {/* Container Principal: Absolute no topo, largura total e Flex Coluna */}
-        <div 
+            )}
+            {/* Container Principal: Absolute no topo, largura total e Flex Coluna */}
+            <div 
   style={{ position: 'absolute', top: 280 }} 
   className="w-full flex flex-col items-center z-20"
 >
