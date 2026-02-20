@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/lib/game-store";
 import type { BattleCard, CardElement } from "@/lib/card-data";
-import { ELEMENT_COLORS, ELEMENT_NAMES_PT, CARD_ELEMENTS, DECK_SIZE, ELEMENT_EFFECTS, ELEMENTCOLORS } from "@/lib/card-data";
+import { ELEMENT_COLORS, ELEMENT_NAMES_PT, CARD_ELEMENTS, DECK_SIZE } from "@/lib/card-data";
 import { getSpriteUrl, getPokemon } from "@/lib/pokemon-data";
 import {
   playCardDraw,
@@ -52,7 +52,6 @@ import {
   Heart,
   RotateCcw,
 } from "lucide-react";
-
 
 // Element icon map
 const ELEMENT_ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
@@ -116,10 +115,7 @@ function YuGiOhCard({
   const isSpecial = isResurrect;
   const elColor = isResurrect ? "#EC4899" : isAura ? (isAuraAmplificada ? "#D4AF37" : "#C0C0C0") : (ELEMENT_COLORS[card.element] || "#888");
   const elName = ELEMENT_NAMES_PT[card.element] || card.element;
-  const elementColor = (ELEMENTCOLORS[card.element] || "#ba0000")
 
-
-  
   // Color scheme based on card type
   const borderColor = isResurrect
     ? "#EC4899"
@@ -330,7 +326,7 @@ function YuGiOhCard({
         style={{
           width: 44,
           height: 64,
-          backgroundColor: elColor,
+          background: outerBg,
           border: `1.5px solid ${glowing ? elColor : borderColor}`,
           boxShadow: !glowing
             ? (isLuck
@@ -342,83 +338,56 @@ function YuGiOhCard({
 
         {isLuck?
       <>
+       <div className="flex flex-col h-full w-full rounded-[2px] overflow-hidden">
 
+                {/* ===== TÍTULO ===== */}
+                <div
+                  className="flex items-center justify-center gap-0.5 py-[1px]"
+                  style={{ background: `${elColor}33` }}
+                >
+                  <span
+                    className="text-[3px] font-bold uppercase leading-none"
+                    style={{ color: 'black' }}
+                  >
+                    {card.name}
+                  </span>
+                </div>
 
-  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                {/* ===== ÁREA BRANCA DO CARD ===== */}
+                <div className="flex-1 bg-white flex">
+                  {/* SLOT DA IMAGEM */}
+                  <div
+                    className="flex-1 grid place-items-center mx-[2px] my-[1px] rounded-[1px]"
+                    style={{
+                      background: "white"
+             
+                    }}
+                  >
+                    <img
+                      src={`/images/cardsTypes/${card.element}.jpg`}
+                      alt={card.name}
+                      className="block max-w-full max-h-full object-contain"
+                      style={{
+                        width:30,
+                        borderRadius: 3
+                      }}
+                      loading="eager"
+                      decoding="sync"
+                      onError={(e) =>
+                        handleImgError(e, isLuck ? "\u2618" : "\u2620")
+                      }
+                    />
+                  </div>
 
-    {/* SCALE CONTAINER */}
-    <div className="origin-center scale-[0.125]">
+                </div>
+                     <span
+                    className="text-[1px] p-1 font-bold uppercase leading-none"
+ 
+                  >
+                   
+                  </span>
 
-      <div
-        className="
-        w-[360px] h-[500px] p-[12px] rounded-[26px]
-        flex flex-col
-        shadow-[0_10px_25px_rgba(0,0,0,0.35),inset_0_0_6px_rgba(255,255,255,0.9),inset_0_0_15px_rgba(0,0,0,0.25)]
-        bg-[linear-gradient(180deg,#f2f2f2_0%,#d6d6d6_20%,#bdbdbd_40%,#eeeeee_60%,#bdbdbd_80%,#f7f7f7_100%)]
-        font-sans
-        "
-      >
-
-        {/* HEADER */}
-        <div className="relative
-          h-[48px] rounded-[18px] px-4
-          flex items-center justify-between
-          font-bold text-[#5a5a5a] text-sm
-          shadow-[inset_0_2px_3px_rgba(255,255,255,0.9),inset_0_-2px_4px_rgba(0,0,0,0.25)]
-          bg-[linear-gradient(180deg,#ffffff,#cfcfcf_40%,#a9a9a9_50%,#dedede_80%)]
-        ">
-          <span className="italic opacity-90">Basic Energy</span>
-          <span className="tracking-widest">ENERGY</span>
-        </div>
-
-        {/* TITLE */}
-      
-
-        {/* ART */}
-        <div className="relative inset-0 z-0" />
-        <div
-        className={`absolute inset-0 pointer-events-none z-10 `}
-        />
-
-        <div style={{background:elColor}} className={`
-          flex-1 mx-[6px] rounded-[14px] overflow-hidden
-         
-          shadow-[inset_0_0_18px_rgba(255,255,255,0.35)]
-          flex items-center justify-center
-        `}>
-      
-          <img
-                src={`/images/cardsTypes/${card.element}.png`}
-                  alt={card.name}
-             className="  relative z-20 block max-w-full max-h-full object-contain shadow-[inset_0_0_18px_rgba(0,0,0,0.35)] rounded-full"
-                style={{
-                width:200
-     
-                }}
-                loading="eager"
-                decoding="sync"
-                onError={(e) =>
-                handleImgError(e, isLuck ? "\u2618" : "\u2620")
-                }
-          />
-                    <span className="font-bold" style={{color:'white',position:'absolute',zIndex:100,top:360,fontSize:40}}>{card.element.toUpperCase()}</span>
-        </div>
-
-        {/* FOOTER */}
-        <div className="
-          h-[44px] mt-2 px-3 rounded-[12px]
-          flex items-center justify-between text-[11px]
-          text-black/80
-          bg-[linear-gradient(180deg,#fdfdfd,#d0d0d0_40%,#b5b5b5_60%,#efefef)]
-          shadow-[inset_0_2px_3px_rgba(255,255,255,0.9),inset_0_-2px_4px_rgba(0,0,0,0.25)]
-        ">
-          <span className="font-bold">SVE EN 003</span>
-          <span>©2023 Pokémon</span>
-        </div>
-
-      </div>
-    </div>
-  </div>
+              </div>
 
 </>
         : 
@@ -461,126 +430,7 @@ function YuGiOhCard({
   const nameColor = isResurrect ? "#831843" : isAuraAmplificada ? "#FFD700" : isAuraElemental ? "#555" : isLuck ? "green" : "pink";
 
   return (
-    isLuck?
-    
-        <>  
-        <motion.div
-        initial={{ scale: 0.6, rotateY: 180 }}
-        animate={{ scale: 1, rotateY: 0 }}
-        transition={{ type: "spring", damping: 14 }}
-        className="relative overflow-hidden mx-auto flex items-center justify-center rounded-[9px]"
-        style={{
-        height: 350,
-        width: 250,
-        background: outerBg,
-        border: `3px solid ${borderColor}`,
-        boxShadow: largeShadow,
-        perspective: "1000px",
-        }}
-        >
-
-        {/* centralizador */}
-        <div className="absolute inset-0 flex items-center justify-center">
-
-        {/* escala da carta */}
-        <div className="origin-center scale-[0.7]">
-
-        {/* CARTA REAL */}
-        <div className="
-        w-[360px] h-[500px] p-[12px] rounded-[26px]
-        flex flex-col
-        shadow-[0_10px_25px_rgba(0,0,0,0.35),inset_0_0_6px_rgba(255,255,255,0.9),inset_0_0_15px_rgba(0,0,0,0.25)]
-        bg-[linear-gradient(180deg,#f2f2f2_0%,#d6d6d6_20%,#bdbdbd_40%,#eeeeee_60%,#bdbdbd_80%,#f7f7f7_100%)]
-        font-sans
-        ">
-
-        {/* HEADER */}
-        <div className="
-        h-[48px] rounded-[9px] px-4
-        flex items-center justify-between
-        font-bold text-[#5a5a5a] text-sm
-        shadow-[inset_0_2px_3px_rgba(255,255,255,0.9),inset_0_-2px_4px_rgba(0,0,0,0.25)]
-        bg-[linear-gradient(180deg,#ffffff,#cfcfcf_40%,#a9a9a9_50%,#dedede_80%)]
-        ">
-        <span className="italic opacity-80">Basic Energy</span> 
-        <span className="tracking-widest">ENERGY</span>
-        </div>
-
-        {/* TITLE */}
-        <div className="h-[42px] flex text-gray-500 gap-2 px-3 text-[23px] justify-between font-semibold text-black">
-        <span>Basic Energy</span>
-
-        <img
-        src={`/images/cardsTypes/${card.element}.png`}
-        alt={card.name}
-        className="  relative z-20 block max-w-full max-h-full object-contain rounded-full"
-
-        loading="eager"
-        decoding="sync"
-        onError={(e) =>
-        handleImgError(e, isLuck ? "\u2618" : "\u2620")
-        }
-        />
-        </div>
-
-        {/* ART AREA */}
-        <div
-        style={{ background: elColor }}
-        className="
-        relative
-        flex-1 mx-[6px] rounded-[14px] overflow-hidden
-        shadow-[inset_0_0_18px_rgba(255,255,255,0.35)]
-        flex items-center justify-center
-        "
-        >
-        <div className="absolute inset-0 z-0" />
-        <div
-        className={`absolute inset-0 pointer-events-none z-10 ${ELEMENT_EFFECTS[card.element]}`}
-        />
-
-        <img
-        src={`/images/cardsTypes/${card.element}.png`}
-        alt={card.name}
-        className="  relative z-20 block max-w-full max-h-full object-contain shadow-[inset_0_0_18px_rgba(0,0,0,0.35)] rounded-full"
-        style={{
-        width:200
-
-        }}
-        loading="eager"
-        decoding="sync"
-        onError={(e) =>
-        handleImgError(e, isLuck ? "\u2618" : "\u2620")
-        }
-        />
-        <span className="font-bold" style={{color:'white',position:'absolute',zIndex:100,top:270,fontSize:23}}>{card.element.toUpperCase()}</span>
-
-
-
-
-
-        </div>
-
-        {/* FOOTER */}
-        <div className="
-        h-[44px] mt-2 px-3 rounded-[12px]
-        flex items-center justify-center text-[11px]
-        text-black/80
-        bg-[linear-gradient(180deg,#fdfdfd,#d0d0d0_40%,#b5b5b5_60%,#efefef)]
-        shadow-[inset_0_2px_3px_rgba(255,255,255,0.9),inset_0_-2px_4px_rgba(0,0,0,0.25)]
-        ">
-        <span className="font-bold">{card.description.toUpperCase()}</span>
-
-        </div>
-
-        </div>
-        </div>
-        </div>
-        </motion.div>
-        </>
-
-:
-
-<>    <motion.div
+    <motion.div
       initial={{ scale: 0.6, rotateY: 180 }}
       animate={{ scale: 1, rotateY: 0 }}
       transition={{ type: "spring", damping: 14 }}
@@ -669,17 +519,8 @@ function YuGiOhCard({
           {card.description}
         </p>
       </div>
-    </motion.div></>
-
-
-
-
-
-
+    </motion.div>
   );
-
-
-  
 }
 
 // ============================================================

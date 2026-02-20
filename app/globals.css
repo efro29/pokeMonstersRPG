@@ -12,6 +12,8 @@ body {
   }
 }
 
+
+
 @layer base {
   :root {
     --background: 222 47% 11%;
@@ -70,4 +72,186 @@ body {
   100% { background-position: -200% 0; }
 }
 
+.fire-particles::before{
+content:"";
+position:absolute; inset:0;
+background:
+radial-gradient(circle,rgba(255,220,150,.9) 2px,transparent 3px) 20% 80%/40px 40px,
+radial-gradient(circle,rgba(255,160,60,.8) 2px,transparent 3px) 70% 60%/50px 50px,
+radial-gradient(circle,rgba(255,120,40,.7) 2px,transparent 3px) 40% 90%/60px 60px;
+animation:fireRise 3s linear infinite;
+}
+@keyframes fireRise{
+from{transform:translateY(20px);opacity:.6}
+to{transform:translateY(-40px);opacity:0}
+}
+.water-particles::before{
+content:""; position:absolute; inset:0;
+background:
+radial-gradient(circle,rgba(255,255,255,.8) 3px,transparent 4px) 30% 80%/60px 60px,
+radial-gradient(circle,rgba(255,255,255,.6) 2px,transparent 3px) 70% 70%/70px 70px,
+radial-gradient(circle,rgba(255,255,255,.7) 3px,transparent 4px) 50% 90%/80px 80px;
+animation:bubbles 4s linear infinite;
+}
+@keyframes bubbles{
+from{transform:translateY(20px);opacity:.6}
+to{transform:translateY(-50px);opacity:0}
+}
+.grass-particles::before{
+content:""; position:absolute; inset:0;
+background:
+radial-gradient(circle,rgba(220,255,180,.9) 2px,transparent 3px) 10% 40%/70px 70px,
+radial-gradient(circle,rgba(200,255,140,.7) 2px,transparent 3px) 80% 60%/80px 80px;
+animation:pollen 5s linear infinite;
+}
+@keyframes pollen{
+0%{transform:translateY(0);opacity:.7}
+50%{opacity:1}
+100%{transform:translateY(-30px);opacity:0}
+}
+.electric-particles::before{
+content:""; position:absolute; inset:0;
+background:
+linear-gradient(120deg,transparent 45%,rgba(255,255,200,.9) 50%,transparent 55%),
+linear-gradient(300deg,transparent 45%,rgba(255,255,150,.8) 50%,transparent 55%);
+mix-blend-mode:screen;
+animation:electricFlash .8s infinite alternate;
+}
+@keyframes electricFlash{
+from{opacity:.2}
+to{opacity:.9}
+}
+.ice-particles::before{
+content:""; position:absolute; inset:0;
+background:
+radial-gradient(circle,rgba(255,255,255,.9) 2px,transparent 3px) 30% 30%/50px 50px,
+radial-gradient(circle,rgba(200,240,255,.9) 2px,transparent 3px) 70% 60%/60px 60px;
+animation:snow 6s linear infinite;
+}
+@keyframes snow{
+from{transform:translateY(-20px)}
+to{transform:translateY(40px)}
+}
+.rock-particles::before{
+content:""; position:absolute; inset:0;
+background:
+radial-gradient(circle,rgba(200,180,120,.7) 2px,transparent 3px) 20% 80%/60px 60px,
+radial-gradient(circle,rgba(180,160,100,.6) 2px,transparent 3px) 70% 70%/70px 70px;
+animation:dust 4s linear infinite;
+}
+@keyframes dust{
+0%{opacity:.3}
+50%{opacity:.7}
+100%{opacity:.3}
+}
+.psychic-particles::before{
+content:""; position:absolute; inset:0;
+background:radial-gradient(circle at center,rgba(255,120,200,.45),transparent 70%);
+animation:psychicPulse 2.5s ease-in-out infinite;
+}
+@keyframes psychicPulse{
+0%{transform:scale(.9);opacity:.5}
+50%{transform:scale(1.15);opacity:.9}
+100%{transform:scale(.9);opacity:.5}
+}
+.ghost-particles::before{
+content:""; position:absolute; inset:0;
+background:radial-gradient(circle at 50% 70%,rgba(220,220,255,.35),transparent 60%);
+animation:ghostFog 6s ease-in-out infinite alternate;
+}
+@keyframes ghostFog{
+from{transform:scale(1);opacity:.3}
+to{transform:scale(1.2);opacity:.7}
+}
+.dragon-particles::before{
+content:""; position:absolute; inset:0;
+background:
+linear-gradient(90deg,transparent,rgba(170,120,255,.5),transparent);
+animation:dragonWave 2s linear infinite;
+}
+@keyframes dragonWave{
+from{background-position:-100px 0}
+to{background-position:100px 0}
+}
 
+.normal-particles::before{
+content:""; position:absolute; inset:0;
+background:radial-gradient(circle,rgba(255,255,255,.25),transparent 70%);
+animation:normalGlow 4s ease-in-out infinite;
+}
+@keyframes normalGlow{
+0%{opacity:.2}
+50%{opacity:.5}
+100%{opacity:.2}
+}
+.flying-particles::before{
+content:""; position:absolute; inset:0;
+background:
+linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+animation:wind 1.5s linear infinite;
+}
+@keyframes wind{
+from{transform:translateX(-40px)}
+to{transform:translateX(40px)}
+}
+.fighting-particles::before{
+content:""; position:absolute; inset:0;
+background:radial-gradient(circle at center,rgba(255,200,200,.5),transparent 60%);
+animation:punch 1s ease-in-out infinite;
+}
+@keyframes punch{
+0%{transform:scale(.9)}
+50%{transform:scale(1.1)}
+100%{transform:scale(.9)}
+}
+.poison-particles::before{
+content:""; position:absolute; inset:0;
+background:
+radial-gradient(circle,rgba(220,120,220,.8) 3px,transparent 4px) 30% 80%/60px 60px,
+radial-gradient(circle,rgba(200,80,200,.7) 3px,transparent 4px) 70% 60%/70px 70px;
+animation:poisonBubble 5s linear infinite;
+}
+@keyframes poisonBubble{
+from{transform:translateY(20px)}
+to{transform:translateY(-40px)}
+}
+.ground-particles::before{
+content:""; position:absolute; inset:0;
+background:
+radial-gradient(circle,rgba(255,220,150,.7) 2px,transparent 3px) 20% 80%/40px 40px,
+radial-gradient(circle,rgba(230,200,120,.7) 2px,transparent 3px) 70% 70%/50px 50px;
+animation:sand 3s linear infinite;
+}
+@keyframes sand{
+from{transform:translateY(10px)}
+to{transform:translateY(-20px)}
+}
+.bug-particles::before{
+content:""; position:absolute; inset:0;
+background:
+radial-gradient(circle,rgba(200,255,100,.9) 2px,transparent 3px) 10% 40%/50px 50px;
+animation:bugMove 1s linear infinite;
+}
+@keyframes bugMove{
+from{transform:translateX(-20px)}
+to{transform:translateX(20px)}
+}
+.dark-particles::before{
+content:""; position:absolute; inset:0;
+background:radial-gradient(circle,rgba(0,0,0,.6),transparent 70%);
+animation:darkPulse 3s ease-in-out infinite;
+}
+@keyframes darkPulse{
+0%{opacity:.5}
+50%{opacity:.8}
+100%{opacity:.5}
+}
+.steel-particles::before{
+content:""; position:absolute; inset:0;
+background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.7) 50%,transparent 80%);
+animation:steelShine 2s linear infinite;
+}
+@keyframes steelShine{
+from{transform:translateX(-100%)}
+to{transform:translateX(100%)}
+}

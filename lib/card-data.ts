@@ -20,25 +20,64 @@ export const CARD_ELEMENTS: CardElement[] = [
   "rock", "ghost", "dragon", "dark", "steel", "fairy",
 ];
 
+export const ELEMENTCOLORS: Record<CardElement, string> = { fire: "#F08030", water: "#6890F0", grass: "#78C850", electric: "#F8D030", ice: "#98D8D8", rock: "#B8A038", psychic: "#F85888", ghost: "#705898", dragon: "#7038F8", normal: "#A8A878", flying: "#A890F0", fighting: "#C03028", poison: "#A040A0", ground: "#E0C068", bug: "#A8B820", dark: "#705848", steel: "#B8B8D0", fairy: "#EE99AC", };
+
+export const ELEMENT_EFFECTS: Record<CardElement, string> = {
+  fire: "fire-particles",
+  water: "water-particles",
+  grass: "grass-particles",
+  electric: "electric-particles",
+  ice: "ice-particles",
+  rock: "rock-particles",
+  psychic: "psychic-particles",
+  ghost: "ghost-particles",
+  dragon: "dragon-particles",
+  normal: "normal-particles",
+  flying: "flying-particles",
+  fighting: "fighting-particles",
+  poison: "poison-particles",
+  ground: "ground-particles",
+  bug: "bug-particles",
+  dark: "dark-particles",
+  steel: "steel-particles",
+  fairy: "fairy-particles",
+};
 export const ELEMENT_COLORS: Record<CardElement, string> = {
-  fire: "#F08030",
-  water: "#6890F0",
-  grass: "#78C850",
-  electric: "#F8D030",
-  ice: "#98D8D8",
-  rock: "#B8A038",
-  psychic: "#F85888",
-  ghost: "#705898",
-  dragon: "#7038F8",
-  normal: "#A8A878",
-  flying: "#A890F0",
-  fighting: "#C03028",
-  poison: "#A040A0",
-  ground: "#E0C068",
-  bug: "#A8B820",
-  dark: "#705848",
-  steel: "#B8B8D0",
-  fairy: "#EE99AC",
+ fire: "radial-gradient(circle at 50% 40%, #ffd2a6 0%, #F08030 40%, #b84a00 75%, #7a2e00 100%)",
+
+  water: "radial-gradient(circle at 50% 40%, #cfe6ff 0%, #6890F0 40%, #2f5ec7 75%, #1d3f91 100%)",
+
+  grass: "radial-gradient(circle at 50% 40%, #d8f7c8 0%, #78C850 40%, #3f9e2d 75%, #27661c 100%)",
+
+  electric: "radial-gradient(circle at 50% 40%, #fff6b3 0%, #F8D030 40%, #c7a600 75%, #8a7200 100%)",
+
+  ice: "radial-gradient(circle at 50% 40%, #ffffff 0%, #98D8D8 40%, #5bb5c6 75%, #2f7c8f 100%)",
+
+  rock: "radial-gradient(circle at 50% 40%, #f3e7b5 0%, #B8A038 40%, #8a7420 75%, #5a4c14 100%)",
+
+  psychic: "radial-gradient(circle at 50% 40%, #ffc2d8 0%, #F85888 40%, #c32659 75%, #7f1539 100%)",
+
+  ghost: "radial-gradient(circle at 50% 40%, #d1c7f0 0%, #705898 40%, #4a3570 75%, #2b1d42 100%)",
+
+  dragon: "radial-gradient(circle at 50% 40%, #d7ccff 0%, #7038F8 40%, #4b1fb8 75%, #2a0f6f 100%)",
+
+  normal: "radial-gradient(circle at 50% 40%, #f0f0d8 0%, #A8A878 40%, #7c7c52 75%, #4e4e32 100%)",
+
+  flying: "radial-gradient(circle at 50% 40%, #e8e0ff 0%, #A890F0 40%, #7760c9 75%, #4d3a8f 100%)",
+
+  fighting: "radial-gradient(circle at 50% 40%, #ffb7b3 0%, #C03028 40%, #8a1b15 75%, #5a100d 100%)",
+
+  poison: "radial-gradient(circle at 50% 40%, #f2c6f2 0%, #A040A0 40%, #742874 75%, #4a154a 100%)",
+
+  ground: "radial-gradient(circle at 50% 40%, #fff1c9 0%, #E0C068 40%, #b89a3d 75%, #7c6826 100%)",
+
+  bug: "radial-gradient(circle at 50% 40%, #f0f8c8 0%, #A8B820 40%, #7a8814 75%, #4f5a0d 100%)",
+
+  dark: "radial-gradient(circle at 50% 40%, #d8d0cc 0%, #705848 40%, #4a372d 75%, #2b1f19 100%)",
+
+  steel: "radial-gradient(circle at 50% 40%, #ffffff 0%, #B8B8D0 40%, #8d8da8 75%, #5e5e74 100%)",
+
+  fairy: "radial-gradient(circle at 50% 40%, #ffd6e5 0%, #EE99AC 40%, #c76883 75%, #8f3c52 100%)",
 };
 
 export const ELEMENT_NAMES_PT: Record<CardElement, string> = {
