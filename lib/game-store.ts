@@ -249,8 +249,10 @@ interface GameState {
   battle: BattleState;
   npcs: NpcEnemy[];
   pendingEvolution: PendingEvolution | null;
+  showBattleCards: boolean; // Toggle to show/hide battle cards
   // Trainer management
   updateTrainer: (data: Partial<TrainerProfile>) => void;
+  toggleBattleCards: () => void;
   addMoney: (amount: number) => void;
   spendMoney: (amount: number) => boolean;
   toggleBadge: (badgeId: string) => void;
@@ -360,6 +362,7 @@ export const useGameStore = create<GameState>()(
       ],
       npcs: [],
       pendingEvolution: null,
+      showBattleCards: true,
       battle: {
         phase: "idle",
         activePokemonUid: null,
@@ -391,6 +394,10 @@ export const useGameStore = create<GameState>()(
 
       updateTrainer: (data) => {
         set({ trainer: { ...get().trainer, ...data } });
+      },
+
+      toggleBattleCards: () => {
+        set({ showBattleCards: !get().showBattleCards });
       },
 
       addMoney: (amount) => {
