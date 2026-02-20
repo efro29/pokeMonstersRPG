@@ -57,8 +57,6 @@ import {
   Footprints,
   Sword,
   Circle,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import {
   playAttack,
@@ -123,7 +121,6 @@ export function BattleScene() {
     resolveAttributeTest,
     switchBattlePokemon,
     showBattleCards,
-    toggleBattleCards,
   } = useGameStore();
 
   const attrs = trainer.attributes || { combate: 0, afinidade: 0, sorte: 0, furtividade: 0, percepcao: 0, carisma: 0 };
@@ -401,23 +398,18 @@ const [arena] = useState(getRandomArena());
                ? '':
 
                
-    <div style={{position:'absolute',top:350,}} className="top-100 px-3 py-2  bg-blue/30">
+    {showBattleCards && (
+      <div style={{position:'absolute',top:350,}} className="top-100 px-3 py-2  bg-blue/30">
           <div className="flex items-center gap-3 mb-1 w-full ">
             <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/50"></div>
             <span style={{color:'silver'}} className=" text-[10px] font-bold uppercase tracking-widest drop-shadow-md">
                Cartas
             </span>
-            <button
-              onClick={() => toggleBattleCards()}
-              className="ml-auto hover:text-white transition-colors text-silver"
-              title={showBattleCards ? "Ocultar Cartas (Contar PPs)" : "Mostrar Cartas"}
-            >
-              {showBattleCards ? <Eye size={16} /> : <EyeOff size={16} />}
-            </button>
             <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/50"></div>
           </div>
-          {showBattleCards && <BattleCards />}
+          <BattleCards />
       </div>
+    )}
       
 
                }
@@ -685,13 +677,13 @@ const [arena] = useState(getRandomArena());
                     const moveDef = getMove(m.moveId);
                     if (!moveDef) return null;
                     const noPP = m.currentPP <= 0;
-                    // Energy cost check
+                    // Energy cost check (only if cards are enabled)
                     const energyCost = moveDef.energy_cost;
                     const energyType = moveDef.energy_type;
                     const availableEnergy = energyCost > 0
                       ? countFieldCardsByElement(battle.cardField, energyType)
                       : 0;
-                    const notEnoughEnergy = energyCost > 0 && availableEnergy < energyCost;
+                    const notEnoughEnergy = showBattleCards && energyCost > 0 && availableEnergy < energyCost;
                     // Aura Amplificada bypasses energy cost
                     const canUseAmplificada = notEnoughEnergy && hasAmplificada && energyCost > 0;
                     const isDisabled = noPP || (notEnoughEnergy && !canUseAmplificada);
