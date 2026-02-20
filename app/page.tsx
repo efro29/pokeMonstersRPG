@@ -14,13 +14,14 @@ import { ProfileTab } from "@/components/profile-tab";
 import { ShopTab } from "@/components/shop-tab";
 import { NpcTab } from "@/components/npc-tab";
 import { MovesDictionaryTab } from "@/components/moves-dictionary-tab";
+import { SettingsTab } from "@/components/settings-tab";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 import { getPokemon } from "@/lib/pokemon-data";
-import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords, Crosshair } from "lucide-react";
+import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords, Crosshair, Settings } from "lucide-react";
 import { playTabSwitch, playButtonClick } from "@/lib/sounds";
 import { useImagePreloader } from "@/hooks/use-image-preloader";
 
-type Tab = "team" | "bag" | "pokedex" | "profile" | "shop" | "npcs" | "moves";
+type Tab = "team" | "bag" | "pokedex" | "profile" | "shop" | "npcs" | "moves" | "settings";
 type Screen = "loading" | "mode-select" | "profile-select" | "start" | "game";
 
 export default function Page() {
@@ -256,6 +257,7 @@ export default function Page() {
         {activeTab === "bag" && <BagTab />}
         {activeTab === "shop" && <ShopTab />}
         {activeTab === "moves" && <MovesDictionaryTab />}
+        {activeTab === "settings" && <SettingsTab />}
         {activeTab === "pokedex" && (
           <PokedexTab
             onStartBattleWithPokemon={mode === "master" ? handleStartBattleWithPokemon : undefined}
@@ -276,6 +278,7 @@ export default function Page() {
           { id: "shop" as Tab, label: "Loja", icon: ShoppingCart },
           { id: "moves" as Tab, label: "Golpes", icon: Crosshair },
           { id: "pokedex" as Tab, label: "Pokedex", icon: BookOpen },
+          { id: "settings" as Tab, label: "Config", icon: Settings },
         ]).map(({ id, label, icon: Icon }) => {
           const isActive = activeTab === id;
           return (

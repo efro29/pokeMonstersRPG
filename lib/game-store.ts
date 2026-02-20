@@ -249,8 +249,10 @@ interface GameState {
   battle: BattleState;
   npcs: NpcEnemy[];
   pendingEvolution: PendingEvolution | null;
+  showBattleCards: boolean; // Toggle to show/hide battle cards
   // Trainer management
   updateTrainer: (data: Partial<TrainerProfile>) => void;
+  toggleBattleCards: () => void;
   addMoney: (amount: number) => void;
   spendMoney: (amount: number) => boolean;
   toggleBadge: (badgeId: string) => void;
@@ -360,6 +362,7 @@ export const useGameStore = create<GameState>()(
       ],
       npcs: [],
       pendingEvolution: null,
+      showBattleCards: true,
       battle: {
         phase: "idle",
         activePokemonUid: null,
@@ -391,6 +394,10 @@ export const useGameStore = create<GameState>()(
 
       updateTrainer: (data) => {
         set({ trainer: { ...get().trainer, ...data } });
+      },
+
+      toggleBattleCards: () => {
+        set({ showBattleCards: !get().showBattleCards });
       },
 
       addMoney: (amount) => {
@@ -662,7 +669,7 @@ export const useGameStore = create<GameState>()(
       },
 
       selectMove: (moveId) => {
-        const { battle, team } = get();
+        const { battle, team, showBattleCards } = get();
         const pokemon = team.find((p) => p.uid === battle.activePokemonUid);
         if (!pokemon) return;
         const activeMove = pokemon.moves.find((m) => m.moveId === moveId);
@@ -676,7 +683,8 @@ export const useGameStore = create<GameState>()(
         let useAuraAmplificada = false;
         let consumedCards: import("./card-data").BattleCard[] = [];
 
-        if (moveDef.energy_cost > 0) {
+        // Only check energy cost if battle cards are enabled
+        if (showBattleCards && moveDef.energy_cost > 0) {
           const available = countFieldCardsByElement(battle.cardField, moveDef.energy_type);
           const hasAmplificada = hasAuraAmplificada(battle.cardField);
 
