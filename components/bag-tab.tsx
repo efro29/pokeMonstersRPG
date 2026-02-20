@@ -41,19 +41,8 @@ export function BagTab() {
   } | null>(null);
   const [addItemDialog, setAddItemDialog] = useState(false);
   const [addQty, setAddQty] = useState(1);
-  const uid = ""; // Declare uid variable here
-  const p = { uid: "" }; // Declare p variable here
 
   const categories = ["potion", "pokeball", "status", "other"] as const;
-
-  const handleUseItem = (itemId: string, uid: string) => {
-    playHeal();
-    setUseTarget(null);
-  };
-
-  const useBagItemHook = (itemId: string, uid: string) => {
-    useBagItem(itemId, uid);
-  };
 
   return (
     <div className="flex flex-col h-full">
@@ -112,8 +101,7 @@ export function BagTab() {
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                useBagItem(item.itemId, p.uid);
-                                handleUseItem(item.itemId, p.uid);
+                                setUseTarget({ itemId: item.itemId, itemName: def.name });
                               }}
                               className="text-xs border-border text-foreground bg-transparent hover:bg-secondary"
                             >
@@ -148,36 +136,77 @@ export function BagTab() {
               </DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground mb-2">
-              Escolha um Pokemon:
+              {useTarget.itemId === "revive" ? "Escolha um Pokemon desmaiado:" : "Escolha um Pokemon:"}
             </p>
             <div className="flex flex-col gap-2">
-              {team.map((p) => (
-                <Button
-                  key={p.uid}
-                  variant="outline"
-                  onClick={() => {
-                    useBagItem(useTarget.itemId, p.uid);
-                    handleUseItem(useTarget.itemId, p.uid);
-                  }}
-                  className="flex items-center justify-start gap-3 h-auto py-2 border-border text-foreground bg-transparent hover:bg-secondary"
-                >
-                  <img
-                    src={getSpriteUrl(p.speciesId) || "/placeholder.svg"}
-                    alt={p.name}
-                    width={40}
-                    height={40}
-                    className="pixelated"
-                    crossOrigin="anonymous"
-                  />
-                  <div className="text-left">
-                    <span className="text-sm font-medium">{p.name}</span>
-                    <span className="text-[10px] block text-muted-foreground">
-                      HP: {p.currentHp}/{p.maxHp}
-                    </span>
-                  </div>
-                </Button>
-              ))}
-              {team.length === 0 && (
+              {useTarget.itemId === "revive" ? (
+                // Filter for fainted Pokemon only for revive
+                team.filter((p) => p.currentHp <= 0).length > 0 ? (
+                  team
+                    .filter((p) => p.currentHp <= 0)
+                    .map((p) => (
+                      <Button
+                        key={p.uid}
+                        variant="outline"
+                        onClick={() => {
+                          useBagItem(useTarget.itemId, p.uid);
+                          setUseTarget(null);
+                          playHeal();
+                        }}
+                        className="flex items-center justify-start gap-3 h-auto py-2 border-border text-foreground bg-transparent hover:bg-secondary"
+                      >
+                        <img
+                          src={getSpriteUrl(p.speciesId) || "/placeholder.svg"}
+                          alt={p.name}
+                          width={40}
+                          height={40}
+                          className="pixelated opacity-50"
+                          crossOrigin="anonymous"
+                        />
+                        <div className="text-left">
+                          <span className="text-sm font-medium">{p.name}</span>
+                          <span className="text-[10px] block text-muted-foreground">
+                            HP: {p.currentHp}/{p.maxHp} (DESMAIADO)
+                          </span>
+                        </div>
+                      </Button>
+                    ))
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhum Pokemon desmaiado na equipe.
+                  </p>
+                )
+              ) : (
+                // Show all Pokemon for other items
+                team.map((p) => (
+                  <Button
+                    key={p.uid}
+                    variant="outline"
+                    onClick={() => {
+                      useBagItem(useTarget.itemId, p.uid);
+                      setUseTarget(null);
+                      playHeal();
+                    }}
+                    className="flex items-center justify-start gap-3 h-auto py-2 border-border text-foreground bg-transparent hover:bg-secondary"
+                  >
+                    <img
+                      src={getSpriteUrl(p.speciesId) || "/placeholder.svg"}
+                      alt={p.name}
+                      width={40}
+                      height={40}
+                      className="pixelated"
+                      crossOrigin="anonymous"
+                    />
+                    <div className="text-left">
+                      <span className="text-sm font-medium">{p.name}</span>
+                      <span className="text-[10px] block text-muted-foreground">
+                        HP: {p.currentHp}/{p.maxHp}
+                      </span>
+                    </div>
+                  </Button>
+                ))
+              )}
+              {team.length === 0 && useTarget.itemId !== "revive" && (
                 <p className="text-sm text-muted-foreground text-center py-4">
                   Nenhum Pokemon na equipe.
                 </p>
