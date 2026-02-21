@@ -60,7 +60,6 @@ import {
   Circle,
   SkipForward,
   MapPin,
-  CreditCard,
   RefreshCw,
 } from "lucide-react";
 import {
@@ -129,7 +128,6 @@ export function BattleScene() {
     spendPA,
     endTurn,
     moveBoardSquares,
-    drawBattleCard,
   } = useGameStore();
 
   const attrs = trainer.attributes || { combate: 0, afinidade: 0, sorte: 0, furtividade: 0, percepcao: 0, carisma: 0 };
@@ -196,7 +194,12 @@ export function BattleScene() {
   );
 
   const handleAttackSelect = (moveId: string) => {
-    if (!spendPA("attack")) return;
+    // Moves that consume energy cards are free (no PA cost)
+    const moveDef = getMove(moveId);
+    const usesCards = moveDef && showBattleCards && moveDef.energy_cost > 0;
+    if (!usesCards) {
+      if (!spendPA("attack")) return;
+    }
     selectMove(moveId);
     setIsRolling(true);
     playAttack();
@@ -259,12 +262,6 @@ export function BattleScene() {
     }
     setShowBagDialog(false);
     setBattlePhase("menu");
-  };
-
-  const handleDrawCard = () => {
-    if (!spendPA("drawCard")) return;
-    drawBattleCard();
-    playButtonClick();
   };
 
   const handleMoveSquares = () => {
@@ -340,7 +337,7 @@ export function BattleScene() {
                 display: 'block',
                 imageRendering: "pixelated",
                 width: '100%',
-                height: '270px',   // 👈 define a altura
+                height: '230px',   // 👈 define a altura
                 objectFit: 'fill', // 👈 força esticar
                 maxWidth: 'none',
                 minHeight: 80,
@@ -427,7 +424,7 @@ export function BattleScene() {
           ? '' :
 
 
-          <div style={{ position: 'absolute', top: 350, }} className="top-100 px-3 py-2  bg-blue/30">
+          <div style={{ position: 'absolute', top: 310, }} className="top-100 px-3 py-2  bg-blue/30">
             <div className="flex items-center gap-3 mb-1 w-full ">
               <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/50"></div>
               <span style={{ color: 'silver' }} className=" text-[10px] font-bold uppercase tracking-widest drop-shadow-md">
@@ -442,7 +439,7 @@ export function BattleScene() {
         }
         {/* Container Principal: Absolute no topo, largura total e Flex Coluna */}
         <div
-          style={{ position: 'absolute', top: 280 }}
+          style={{ position: 'absolute', top: 240 }}
           className="w-full flex flex-col items-center z-20"
         >
 
@@ -761,24 +758,13 @@ export function BattleScene() {
                 )}
               </div>
 
-              {/* Row 2: Board/Card actions */}
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  onClick={handleDrawCard}
-                  disabled={battle.pa < PA_CONFIG.costs.drawCard}
-                  variant="outline"
-                  className="h-12 flex flex-row items-center justify-center gap-2 border-border text-white bg-purple-600 hover:bg-purple-700 relative"
-                >
-                  <CreditCard className="w-4 h-4" />
-                  <span className="text-[9px] font-bold">Comprar Carta</span>
-                  <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-purple-200">{PA_CONFIG.costs.drawCard}PA</span>
-                </Button>
-
+              {/* Row 2: Board action */}
+              <div className="grid grid-cols-1 gap-2">
                 <Button
                   onClick={handleMoveSquares}
                   disabled={battle.pa < PA_CONFIG.costs.moveSquares}
                   variant="outline"
-                  className="h-12 flex flex-row items-center justify-center gap-2 border-border text-white bg-cyan-600 hover:bg-cyan-700 relative"
+                  className="h-10 flex flex-row items-center justify-center gap-2 border-border text-white bg-cyan-600 hover:bg-cyan-700 relative"
                 >
                   <MapPin className="w-4 h-4" />
                   <span className="text-[9px] font-bold">Mover Casas</span>

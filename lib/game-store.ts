@@ -2094,6 +2094,8 @@ export const useGameStore = create<GameState>()(
             phase: "menu",
           },
         });
+        // Auto-draw 1 card at the start of the new turn
+        get().drawBattleCard();
       },
 
       moveBoardSquares: (): boolean => {
