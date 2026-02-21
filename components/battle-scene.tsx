@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useGameStore } from "@/lib/game-store";
+import { useGameStore, PA_CONFIG } from "@/lib/game-store";
+import type { PAActionType } from "@/lib/game-store";
 import {
   getSpriteUrl,
   getBattleSpriteUrl,
@@ -57,6 +58,10 @@ import {
   Footprints,
   Sword,
   Circle,
+  SkipForward,
+  MapPin,
+  CreditCard,
+  RefreshCw,
 } from "lucide-react";
 import {
   playAttack,
@@ -121,6 +126,10 @@ export function BattleScene() {
     resolveAttributeTest,
     switchBattlePokemon,
     showBattleCards,
+    spendPA,
+    endTurn,
+    moveBoardSquares,
+    drawBattleCard,
   } = useGameStore();
 
   const attrs = trainer.attributes || { combate: 0, afinidade: 0, sorte: 0, furtividade: 0, percepcao: 0, carisma: 0 };
@@ -154,6 +163,7 @@ export function BattleScene() {
     if (uid === battle.activePokemonUid) return;
     const targetPokemon = team.find((p) => p.uid === uid);
     if (!targetPokemon || targetPokemon.currentHp <= 0) return;
+    if (!spendPA("switchPokemon")) return;
     setShowParticlesPok(true);
     setTimeout(() => setShowParticlesPok(false), 1000);
     // playHeal();
@@ -186,6 +196,7 @@ export function BattleScene() {
   );
 
   const handleAttackSelect = (moveId: string) => {
+    if (!spendPA("attack")) return;
     selectMove(moveId);
     setIsRolling(true);
     playAttack();
@@ -236,6 +247,10 @@ export function BattleScene() {
 
 
   const handleUseBagItem = (bagItemId: string) => {
+    if (!spendPA("item")) {
+      setShowBagDialog(false);
+      return;
+    }
     const def = BAG_ITEMS.find((d) => d.id === bagItemId);
     if (def && pokemon) {
       useBagItem(bagItemId, pokemon.uid);
@@ -245,12 +260,24 @@ export function BattleScene() {
     setShowBagDialog(false);
     setBattlePhase("menu");
   };
+
+  const handleDrawCard = () => {
+    if (!spendPA("drawCard")) return;
+    drawBattleCard();
+    playButtonClick();
+  };
+
+  const handleMoveSquares = () => {
+    if (!moveBoardSquares()) return;
+    playButtonClick();
+  };
   const [arena] = useState(getRandomArena());
   const handleSelectAttribute = (attr: PokemonAttributeKey) => {
-    const dc = parseInt(testDC) || 10;
-    selectAttributeTest(attr, dc);
-    setIsTestRolling(true);
-    playDiceRoll();
+  if (!spendPA("attributeTest")) return;
+  const dc = parseInt(testDC) || 10;
+  selectAttributeTest(attr, dc);
+  setIsTestRolling(true);
+  playDiceRoll();
   };
 
   const handleTestDiceResult = useCallback(
@@ -609,6 +636,66 @@ export function BattleScene() {
 
 
 
+      {/* PA Bar */}
+      {battle.phase !== "idle" && (
+        <div className="px-4 py-2">
+          <div className="flex items-center justify-between gap-3 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 border border-border/50">
+            {/* Turn counter */}
+            <div className="flex items-center gap-1.5">
+              <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
+              <span className="text-[10px] font-bold text-muted-foreground">
+                Turno {battle.turnNumber}
+              </span>
+            </div>
+
+            {/* PA orbs */}
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] font-bold text-amber-400 mr-1">PA</span>
+              {Array.from({ length: battle.maxPa }).map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={false}
+                  animate={{
+                    scale: i < battle.pa ? 1 : 0.7,
+                    opacity: i < battle.pa ? 1 : 0.25,
+                  }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                  className={`w-4 h-4 rounded-full border-2 ${
+                    i < battle.pa
+                      ? "bg-amber-400 border-amber-300 shadow-[0_0_6px_rgba(251,191,36,0.5)]"
+                      : "bg-transparent border-gray-600"
+                  }`}
+                />
+              ))}
+              <span className="text-xs font-mono font-bold text-amber-400 ml-1">
+                {battle.pa}/{battle.maxPa}
+              </span>
+            </div>
+
+            {/* Board position */}
+            <div className="flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-[10px] font-bold text-cyan-400">
+                Casa {battle.boardPosition}
+              </span>
+            </div>
+
+            {/* End turn button */}
+            <Button
+              size="sm"
+              onClick={() => {
+                playButtonClick();
+                endTurn();
+              }}
+              className="h-7 px-2 text-[10px] font-bold bg-amber-500/90 hover:bg-amber-500 text-black gap-1"
+            >
+              <SkipForward className="w-3 h-3" />
+              Passar
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Battle content area */}
       <div className="flex-1 px-4 pb-8 flex flex-col">
 
@@ -621,49 +708,93 @@ export function BattleScene() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="grid grid-cols-4 gap-3 mt-auto"
+              className="flex flex-col gap-2 mt-auto"
             >
-              <Button
-                onClick={() => setBattlePhase("attack-select")}
-                disabled={isFainted}
-                className="h-16 flex flex-col gap-1 bg-orange-500 text-primary-foreground hover:bg-primary/90"
-              >
-                <Swords className="w-30 h-10" />
-                <span className="text-[7px] font-bold">Atacar</span>
-              </Button>
-
-              <Button
-                onClick={() => setShowBagDialog(true)}
-                variant="outline"
-                className="h-16 flex flex-col gap-1 border-border text-foreground bg-green-500 hover:bg-secondary"
-              >
-                <Backpack className="w-6 h-6" />
-                <span className="text-[7px] font-bold">Bolsa</span>
-              </Button>
-
-              <Button
-                onClick={() => {
-                  playButtonClick();
-                  setBattlePhase("attribute-test-select");
-                }}
-                disabled={isFainted}
-                variant="outline"
-                className="h-16 flex flex-col gap-1 border-border text-foreground bg-blue-500 hover:bg-secondary"
-              >
-                <Dices className="w-6 h-6" />
-                <span className="text-[7px] font-bold">Teste</span>
-              </Button>
-
-              {/* Receive damage from opponent */}
-              {battle.phase === "menu" && !showDamageInput && !isFainted && (
+              {/* Row 1: Main combat actions */}
+              <div className="grid grid-cols-4 gap-2">
                 <Button
-                  onClick={() => setShowDamageInput(true)}
-                  variant="outline"
-                  className="h-16 flex flex-col gap-1 border-border text-foreground bg-red-500 hover:bg-secondary"
+                  onClick={() => setBattlePhase("attack-select")}
+                  disabled={isFainted || battle.pa < PA_CONFIG.costs.attack}
+                  className="h-16 flex flex-col gap-0.5 bg-orange-500 text-white hover:bg-orange-600 relative"
                 >
-                  <Shield className="w-7 h-6" />
-                  <span className="text-[7px] font-bold">Dano</span>
+                  <Swords className="w-6 h-6" />
+                  <span className="text-[7px] font-bold">Atacar</span>
+                  <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-orange-200">{PA_CONFIG.costs.attack}PA</span>
                 </Button>
+
+                <Button
+                  onClick={() => setShowBagDialog(true)}
+                  disabled={battle.pa < PA_CONFIG.costs.item}
+                  variant="outline"
+                  className="h-16 flex flex-col gap-0.5 border-border text-white bg-green-600 hover:bg-green-700 relative"
+                >
+                  <Backpack className="w-5 h-5" />
+                  <span className="text-[7px] font-bold">Bolsa</span>
+                  <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-green-200">{PA_CONFIG.costs.item}PA</span>
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    playButtonClick();
+                    setBattlePhase("attribute-test-select");
+                  }}
+                  disabled={isFainted || battle.pa < PA_CONFIG.costs.attributeTest}
+                  variant="outline"
+                  className="h-16 flex flex-col gap-0.5 border-border text-white bg-blue-600 hover:bg-blue-700 relative"
+                >
+                  <Dices className="w-5 h-5" />
+                  <span className="text-[7px] font-bold">Teste</span>
+                  <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-blue-200">{PA_CONFIG.costs.attributeTest}PA</span>
+                </Button>
+
+                {/* Receive damage from opponent - free action */}
+                {!showDamageInput && !isFainted && (
+                  <Button
+                    onClick={() => setShowDamageInput(true)}
+                    variant="outline"
+                    className="h-16 flex flex-col gap-0.5 border-border text-white bg-red-600 hover:bg-red-700 relative"
+                  >
+                    <Shield className="w-5 h-5" />
+                    <span className="text-[7px] font-bold">Dano</span>
+                    <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-red-200">0PA</span>
+                  </Button>
+                )}
+              </div>
+
+              {/* Row 2: Board/Card actions */}
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  onClick={handleDrawCard}
+                  disabled={battle.pa < PA_CONFIG.costs.drawCard}
+                  variant="outline"
+                  className="h-12 flex flex-row items-center justify-center gap-2 border-border text-white bg-purple-600 hover:bg-purple-700 relative"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  <span className="text-[9px] font-bold">Comprar Carta</span>
+                  <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-purple-200">{PA_CONFIG.costs.drawCard}PA</span>
+                </Button>
+
+                <Button
+                  onClick={handleMoveSquares}
+                  disabled={battle.pa < PA_CONFIG.costs.moveSquares}
+                  variant="outline"
+                  className="h-12 flex flex-row items-center justify-center gap-2 border-border text-white bg-cyan-600 hover:bg-cyan-700 relative"
+                >
+                  <MapPin className="w-4 h-4" />
+                  <span className="text-[9px] font-bold">Mover Casas</span>
+                  <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-cyan-200">{PA_CONFIG.costs.moveSquares}PA</span>
+                </Button>
+              </div>
+
+              {/* PA spend log this turn */}
+              {battle.paLog.length > 0 && (
+                <div className="bg-black/30 rounded px-2 py-1 flex flex-wrap gap-1">
+                  {battle.paLog.map((entry, i) => (
+                    <span key={i} className="text-[8px] text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded">
+                      {entry}
+                    </span>
+                  ))}
+                </div>
               )}
             </motion.div>
           )}
