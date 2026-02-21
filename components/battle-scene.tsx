@@ -211,6 +211,17 @@ export function BattleScene() {
     playDiceRoll();
   };
 
+  const handlePokemonTap = () => {
+    // Mostra animação de sangue + som ANTES de abrir o popup
+    setShowParticles(true);
+    playDamageReceived();
+
+    setTimeout(() => {
+      setShowParticles(false);
+      setShowDamageInput(true);
+    }, 600);
+  };
+
   const handleApplyDamage = () => {
     const dmg = parseInt(damageInput);
     if (Number.isNaN(dmg) || dmg <= 0) return;
@@ -470,7 +481,7 @@ export function BattleScene() {
                   {showParticlePok && (<BattleParticles effectType={'changed'} isAnimating={true} />)}
                   <BattleParticles effectType={effectType} isAnimating={true} />
                   <motion.img
-                    onClick={() => setShowDamageInput(true)}
+                    onClick={handlePokemonTap}
                     src={getBattleSpriteUrl(pokemon.speciesId)}
                     alt={pokemon.name}
                     width={size.width}
