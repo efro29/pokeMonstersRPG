@@ -471,7 +471,6 @@ export function BattleScene() {
                   <BattleParticles effectType={effectType} isAnimating={true} />
                   <motion.img
                     onClick={() => setShowDamageInput(true)}
-                    style={{ pointerEvents: "auto", cursor: "pointer" }}
                     src={getBattleSpriteUrl(pokemon.speciesId)}
                     alt={pokemon.name}
                     width={size.width}
@@ -480,6 +479,8 @@ export function BattleScene() {
                       imageRendering: "auto",
                       minHeight: 80,
                       minWidth: 80,
+                      pointerEvents: "auto",
+                      cursor: "pointer",
                     }}
                     crossOrigin="anonymous"
                     onError={(e) => {
