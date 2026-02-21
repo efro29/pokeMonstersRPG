@@ -8,6 +8,7 @@ const SMALL = { width: 70, height: 80, top: 150, left: 100 };
 const MEDIUM = { width: 120, height: 80, top: 80, left: 100 };
 const BIG = { width: 150, height: 80, top: 10, left: 100 };
 const MEGA = { width: 200, height: 80, top: 10, left: 100 };
+const GIGA = { width: 300, height: 80, top: 10, left: 100 };
 
 export const kantoPokemonSizes: Record<number, PokemonSize> = {
   1: SMALL, 2: MEDIUM, 3: BIG, 4: SMALL, 5: MEDIUM, 6: MEGA,
@@ -27,7 +28,7 @@ export const kantoPokemonSizes: Record<number, PokemonSize> = {
   85: MEDIUM, 86: SMALL, 87: BIG, 88: SMALL, 89: BIG, 90: SMALL,
   91: BIG, 92: SMALL, 93: MEDIUM, 94: BIG, 95: BIG, 96: SMALL,
   97: MEDIUM, 98: SMALL, 99: MEDIUM, 100: SMALL, 101: MEDIUM, 102: SMALL,
-  103: MEGA, 104: SMALL, 105: MEDIUM, 106: MEDIUM, 107: MEDIUM, 108: SMALL,
+  103: GIGA, 104: SMALL, 105: MEDIUM, 106: MEDIUM, 107: MEDIUM, 108: SMALL,
   109: SMALL, 110: MEDIUM, 111: MEDIUM, 112: BIG, 113: SMALL, 114: MEDIUM,
   115: BIG, 116: SMALL, 117: MEDIUM, 118: SMALL, 119: MEDIUM, 120: SMALL,
   121: BIG, 122: MEDIUM, 123: BIG, 124: MEDIUM, 125: MEDIUM, 126: MEDIUM,
