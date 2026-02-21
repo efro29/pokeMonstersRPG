@@ -298,7 +298,7 @@ export function BattleScene() {
   const habildade_especial = getBaseAttributes(pokemon?.speciesId).especial
   // Compute pokemon attributes for display (using customAttributes if modified by faint/level)
   const pokemonAttrs = pokemon ? computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes) : null;
-  const pokemonTypes = pokemon?.type
+  const pokemonTypes = getPokemon(pokemon.speciesId)?.types
   const size = kantoPokemonSizes[pokemon?.speciesId] ?? { width: 80, height: 80 };
   if (!pokemon) return null;
 
@@ -649,7 +649,7 @@ export function BattleScene() {
         {/* Name + HP overlay on the arena */}
         <div className="absolute  left-0 p-2  w-full">
 
-          <div style={{ backgroundColor: 'rgb(0,0,0,0.7)' }} className="backdrop-blur-sm rounded-xl bg-black-100 p-3">
+          <div style={{ backgroundColor: 'rgb(0,0,0,0.6)' }} className=" rounded-xl  p-3">
             <div                        onClick={() => setShowDamageInput(true)} className="flex items-center justify-between mb-1.5">
               <h3 className="text-base font-bold text-foreground"><span className="text-blue-400">#{pokemon.speciesId}</span> {pokemon.name} </h3>
 
@@ -657,6 +657,8 @@ export function BattleScene() {
 
               <div className="flex items-center ">
                 {pokemonTypes?.map((d) =>
+
+                <>
                   <img key={d}
                     style={{ width: 30 }}
                     src={`/images/cardsTypes/${d}.png`}
@@ -664,7 +666,11 @@ export function BattleScene() {
                     className=" rounded-full"
                     loading="eager"
                     decoding="sync"
-                  />)}
+                  />
+
+                  </>)}
+
+                  {}
               </div>
               <div className="flex items-center gap-2">
                 {pokemonAttrs && (
@@ -813,7 +819,7 @@ export function BattleScene() {
 
 
               {/* PA spend log this turn */}
-              {battle.paLog.length > 0 && (
+              {/* {battle.paLog.length > 0 && (
                 <div className="bg-black/30 rounded px-2 py-1 flex flex-wrap gap-1">
                   {battle.paLog.map((entry, i) => (
                     <span key={i} className="text-[8px] text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded">
@@ -821,7 +827,7 @@ export function BattleScene() {
                     </span>
                   ))}
                 </div>
-              )}
+              )} */}
             </motion.div>
           )}
 
