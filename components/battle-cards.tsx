@@ -1786,11 +1786,12 @@ function TrioEventOverlay() {
 // ============================================================
 export function BattleCards() {
   const {
-    battle,
-    drawBattleCard,
-    replaceCardInSlot,
-    shuffleDeckAction,
-    replenishDeck,
+  battle,
+  drawBattleCard,
+  replaceCardInSlot,
+  shuffleDeckAction,
+  replenishDeck,
+  spendPA,
   } = useGameStore();
 
   const [viewingCard, setViewingCard] = useState<BattleCard | null>(null);
@@ -1811,10 +1812,11 @@ export function BattleCards() {
   const discardCount = battle.discardPile?.length ?? 0;
 
   const handleDraw = useCallback(() => {
-    if (isDrawing || !canDraw) return;
-    setIsDrawing(true);
-    setShowDeckMenu(false);
-    playCardDraw();
+  if (isDrawing || !canDraw) return;
+  if (!spendPA("drawCard")) return;
+  setIsDrawing(true);
+  setShowDeckMenu(false);
+  playCardDraw();
 
     const card = drawBattleCard();
     if (!card) {
@@ -1854,7 +1856,7 @@ export function BattleCards() {
 
       setIsDrawing(false);
     }, 350);
-  }, [isDrawing, canDraw, drawBattleCard]);
+  }, [isDrawing, canDraw, drawBattleCard, spendPA]);
 
   const handleShuffle = () => {
     shuffleDeckAction();
@@ -1969,18 +1971,19 @@ export function BattleCards() {
                       Baralho: {deckRemaining} restantes 
                     </p>
 
-                    {/* Option 1: Draw card */}
+                    {/* Option 1: Draw card (costs 1 PA) */}
                     <button
                       onClick={handleDraw}
-                      disabled={!canDraw || isDrawing}
+                      disabled={!canDraw || isDrawing || battle.pa < 1}
                       className="flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       style={{
-                        background: canDraw ? "rgba(104,144,240,0.15)" : "rgba(100,100,100,0.1)",
-                        color: canDraw ? "#93C5FD" : "#666",
+                        background: canDraw && battle.pa >= 1 ? "rgba(104,144,240,0.15)" : "rgba(100,100,100,0.1)",
+                        color: canDraw && battle.pa >= 1 ? "#93C5FD" : "#666",
                       }}
                     >
                       <span className="text-[10px]">{"\uD83C\uDCCF"}</span>
                       Comprar carta
+                      <span className="text-[8px] font-mono text-amber-400 ml-auto">1PA</span>
                     </button>
 
                     {/* Option 2: Shuffle */}

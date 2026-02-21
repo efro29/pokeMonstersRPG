@@ -264,9 +264,13 @@ export function BattleScene() {
     setBattlePhase("menu");
   };
 
+  const [isWalking, setIsWalking] = useState(false);
+
   const handleMoveSquares = () => {
     if (!moveBoardSquares()) return;
     playButtonClick();
+    setIsWalking(true);
+    setTimeout(() => setIsWalking(false), 1000);
   };
   const [arena] = useState(getRandomArena());
   const handleSelectAttribute = (attr: PokemonAttributeKey) => {
@@ -396,9 +400,17 @@ export function BattleScene() {
                       (e.target as HTMLImageElement).src = getSpriteUrl(pokemon.speciesId);
                     }}
                     initial={animProps.initial}
-                    animate={animProps.animate}
-                    transition={animProps.transition}
-                    key={effectType === "none" ? "idle" : `anim-${Date.now()}`}
+                    animate={
+                      isWalking
+                        ? { x: [-0, -60, -60, 0], scaleX: [-1, -1, 1, 1] }
+                        : animProps.animate
+                    }
+                    transition={
+                      isWalking
+                        ? { duration: 1, times: [0, 0.35, 0.65, 1], ease: "easeInOut" }
+                        : animProps.transition
+                    }
+                    key={isWalking ? `walk-${Date.now()}` : (effectType === "none" ? "idle" : `anim-${Date.now()}`)}
                   />
                 </div>
               );
