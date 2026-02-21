@@ -2092,7 +2092,7 @@ export const useGameStore = create<GameState>()(
         set({
           battle: {
             ...battle,
-            pa: battle.maxPa,
+            pa: PA_CONFIG.startingPA,
             turnNumber: newTurn,
             paLog: [],
             phase: "menu",

@@ -125,6 +125,29 @@ export function playBadgeObtained() {
   setTimeout(() => playTone(1047, 0.5, "sine", 0.12), 480);
 }
 
+export function playVictoryFanfare() {
+  // Pokemon-style victory fanfare - ascending triumphant melody
+  const melody = [
+    { freq: 523, delay: 0 },     // C5
+    { freq: 587, delay: 100 },   // D5
+    { freq: 659, delay: 200 },   // E5
+    { freq: 784, delay: 350 },   // G5
+    { freq: 880, delay: 500 },   // A5
+    { freq: 1047, delay: 650 },  // C6
+    { freq: 1175, delay: 800 },  // D6
+    { freq: 1319, delay: 950 },  // E6
+  ];
+  melody.forEach(({ freq, delay }) => {
+    setTimeout(() => playTone(freq, 0.22, "square", 0.09), delay);
+  });
+  // Final triumphant chord - hold
+  setTimeout(() => {
+    playTone(1047, 0.6, "sine", 0.08);  // C6
+    playTone(1319, 0.6, "sine", 0.06);  // E6
+    playTone(1568, 0.6, "sine", 0.05);  // G6
+  }, 1100);
+}
+
 export function playBadgeRemoved() {
   playTone(400, 0.1, "sine", 0.06, { freq: 250, time: 0.08 });
 }

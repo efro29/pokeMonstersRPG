@@ -78,6 +78,7 @@ import {
   playFlee,
   playHeal,
   playSendPokemon,
+  playVictoryFanfare,
 } from "@/lib/sounds";
 import { BattleCards } from "./battle-cards";
 import { BattleParticles } from "./battle-particles";
@@ -270,7 +271,7 @@ export function BattleScene() {
 
   const [isWalking, setIsWalking] = useState(false);
   const [showVictoryDialog, setShowVictoryDialog] = useState(false);
-  const [xpInputs, setXpInputs] = useState<Record<string, string>>({});
+  const [victoryXp, setVictoryXp] = useState("");
 
   const handleMoveSquares = () => {
     if (!moveBoardSquares()) return;
@@ -396,9 +397,9 @@ export function BattleScene() {
           <Button
             size="sm"
             onClick={() => {
-              playButtonClick();
+              playVictoryFanfare();
               setShowVictoryDialog(true);
-              setXpInputs({});
+              setVictoryXp("");
             }}
             className="h-7 px-2 text-[9px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white gap-0.5"
           >
@@ -1544,65 +1545,118 @@ export function BattleScene() {
 
       {/* Victory dialog */}
       <Dialog open={showVictoryDialog} onOpenChange={setShowVictoryDialog}>
-        <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
+        <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto overflow-hidden">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-foreground">
-              <Trophy className="w-5 h-5 text-amber-400" />
+            <DialogTitle className="flex items-center justify-center gap-2 text-foreground text-lg">
+              <Trophy className="w-6 h-6 text-amber-400" />
               Vitoria!
             </DialogTitle>
           </DialogHeader>
-          <p className="text-xs text-muted-foreground">
-            Insira o XP ganho para cada Pokemon da batalha:
-          </p>
-          <ScrollArea className="max-h-72">
-            <div className="flex flex-col gap-2">
-              {team.map((p) => {
-                const species = getPokemon(p.speciesId);
-                return (
-                  <div
-                    key={p.uid}
-                    className="flex items-center gap-2 bg-secondary/40 rounded-lg p-2"
-                  >
-                    <img
-                      src={getSpriteUrl(p.speciesId)}
-                      alt={p.name}
-                      width={36}
-                      height={36}
-                      crossOrigin="anonymous"
-                      className="shrink-0 image-rendering-pixelated"
-                    />
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <span className="text-xs font-bold text-foreground truncate">{p.name}</span>
-                      <span className="text-[9px] text-muted-foreground">
-                        Lv.{p.level} {species?.name ?? ""}
-                      </span>
-                    </div>
-                    <Input
-                      type="number"
-                      placeholder="XP"
-                      value={xpInputs[p.uid] || ""}
-                      onChange={(e) =>
-                        setXpInputs((prev) => ({ ...prev, [p.uid]: e.target.value }))
-                      }
-                      className="w-20 h-8 text-xs font-mono text-center bg-secondary border-border text-foreground"
-                    />
-                  </div>
-                );
-              })}
+
+          {/* Particle animation area */}
+          <div className="relative h-40 flex items-center justify-center overflow-hidden rounded-lg bg-gradient-to-b from-amber-500/10 to-transparent">
+            {/* Floating particles */}
+            {showVictoryDialog && Array.from({ length: 20 }).map((_, i) => (
+              <motion.div
+                key={`particle-${i}`}
+                className="absolute w-1.5 h-1.5 rounded-full"
+                style={{
+                  background: ["#fbbf24", "#f59e0b", "#fcd34d", "#fff7ed", "#d97706"][i % 5],
+                  left: `${10 + Math.random() * 80}%`,
+                  bottom: 0,
+                }}
+                animate={{
+                  y: [0, -(80 + Math.random() * 80)],
+                  x: [0, (Math.random() - 0.5) * 40],
+                  opacity: [0, 1, 1, 0],
+                  scale: [0.5, 1.2, 0.8, 0],
+                }}
+                transition={{
+                  duration: 2 + Math.random() * 1.5,
+                  repeat: Infinity,
+                  delay: Math.random() * 2,
+                  ease: "easeOut",
+                }}
+              />
+            ))}
+
+            {/* Glowing ring behind pokemon */}
+            {showVictoryDialog && (
+              <motion.div
+                className="absolute w-32 h-32 rounded-full border-2 border-amber-400/30"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.3, 0.6, 0.3],
+                }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              />
+            )}
+
+            {/* Pokemon sprites side by side */}
+            <div className="relative z-10 flex items-end justify-center gap-1">
+              {team.map((p, idx) => (
+                <motion.div
+                  key={p.uid}
+                  className="flex flex-col items-center"
+                  initial={{ y: 40, opacity: 0, scale: 0.5 }}
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 18,
+                    delay: 0.15 * idx,
+                  }}
+                >
+                  <motion.img
+                    src={getSpriteUrl(p.speciesId)}
+                    alt={p.name}
+                    width={48}
+                    height={48}
+                    crossOrigin="anonymous"
+                    style={{ imageRendering: "pixelated" }}
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      delay: 0.2 * idx,
+                      ease: "easeInOut",
+                    }}
+                  />
+                  <span className="text-[8px] font-bold text-foreground mt-0.5 truncate max-w-[50px] text-center">
+                    {p.name}
+                  </span>
+                  <span className="text-[7px] text-muted-foreground">Lv.{p.level}</span>
+                </motion.div>
+              ))}
             </div>
-          </ScrollArea>
+          </div>
+
+          {/* Single XP input */}
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-xs text-muted-foreground text-center">
+              XP ganho (igual para todos):
+            </p>
+            <Input
+              type="number"
+              placeholder="0"
+              value={victoryXp}
+              onChange={(e) => setVictoryXp(e.target.value)}
+              className="w-28 h-10 text-center text-lg font-mono font-bold bg-secondary border-amber-500/50 text-foreground"
+              autoFocus
+            />
+          </div>
+
           <div className="flex gap-2 mt-1">
             <Button
               onClick={() => {
-                // Apply XP to each pokemon
-                for (const p of team) {
-                  const val = parseInt(xpInputs[p.uid] || "0");
-                  if (val > 0) {
+                const val = parseInt(victoryXp || "0");
+                if (val > 0) {
+                  for (const p of team) {
                     addXp(p.uid, val);
                   }
                 }
                 setShowVictoryDialog(false);
-                setXpInputs({});
+                setVictoryXp("");
                 endBattle();
               }}
               className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
@@ -1613,7 +1667,7 @@ export function BattleScene() {
               variant="outline"
               onClick={() => {
                 setShowVictoryDialog(false);
-                setXpInputs({});
+                setVictoryXp("");
               }}
               className="border-border text-foreground bg-transparent hover:bg-secondary"
             >
