@@ -318,16 +318,17 @@ export function BattleScene() {
           </Button>
           <div className="flex items-center gap-1 bg-secondary/50 rounded px-1.5 py-0.5">
             <RefreshCw className="w-3 h-3 text-muted-foreground" />
-            <span className="text-[10px] font-bold text-muted-foreground">T{battle.turnNumber}</span>
+            <span className="text-[10px] font-bold text-muted-foreground">Turno: {battle.turnNumber}</span>
           </div>
         </div>
 
         {/* Center: PA orbs (clickable) */}
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-0.5 bg-blue-500/10 rounded-sm">
+    
           <Button
             variant="ghost"
             size="sm"
-            className="h-5 w-5 p-0 min-w-0"
+            className="h-5 w-4 p-0 min-w-0"
             onClick={() => {
               const { battle: b } = useGameStore.getState();
               if (b.pa > 0) {
@@ -335,10 +336,13 @@ export function BattleScene() {
               }
             }}
           >
-            <Minus className="w-3 h-3 text-muted-foreground" />
+            {/* <Minus className="w-3 h-3 text-muted-foreground" /> */}
           </Button>
           {Array.from({ length: battle.maxPa }).map((_, i) => (
-            <motion.div
+              
+
+            <motion.img
+                src={`/images/PA.png`}
               key={i}
               initial={false}
               animate={{
@@ -346,9 +350,9 @@ export function BattleScene() {
                 opacity: i < battle.pa ? 1 : 0.2,
               }}
               transition={{ type: "spring", stiffness: 400, damping: 20 }}
-              className={`w-3.5 h-3.5 rounded-full border-[1.5px] cursor-pointer ${
+              className={`w-6 h-6 rounded-full border-[1.5px] cursor-pointer ${
                 i < battle.pa
-                  ? "bg-amber-400 border-amber-300 shadow-[0_0_4px_rgba(251,191,36,0.5)]"
+                  ? "bg-amber-400/30  shadow-[0_0_4px_rgba(251,191,36,0.5)]"
                   : "bg-transparent border-gray-600"
               }`}
               onClick={() => {
@@ -361,24 +365,10 @@ export function BattleScene() {
                   useGameStore.setState({ battle: { ...b, pa: Math.min(i + 1, b.maxPa) } });
                 }
               }}
-            />
+            /> 
           ))}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-5 w-5 p-0 min-w-0"
-            onClick={() => {
-              const { battle: b } = useGameStore.getState();
-              if (b.pa < b.maxPa) {
-                useGameStore.setState({ battle: { ...b, pa: b.pa + 1 } });
-              }
-            }}
-          >
-            <Plus className="w-3 h-3 text-muted-foreground" />
-          </Button>
-          <span className="text-[9px] font-mono font-bold text-amber-400 ml-0.5">
-            {battle.pa}
-          </span>
+    
+        
         </div>
 
         {/* Right: Pass Turn + Victory */}
@@ -392,7 +382,7 @@ export function BattleScene() {
             className="h-7 px-2 text-[9px] font-bold bg-amber-500/90 hover:bg-amber-500 text-black gap-0.5"
           >
             <SkipForward className="w-3 h-3" />
-            Passar
+     
           </Button>
           <Button
             size="sm"
@@ -404,7 +394,7 @@ export function BattleScene() {
             className="h-7 px-2 text-[9px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white gap-0.5"
           >
             <Trophy className="w-3 h-3" />
-            Vitoria
+
           </Button>
         </div>
       </nav>
@@ -481,6 +471,7 @@ export function BattleScene() {
                   {showParticlePok && (<BattleParticles effectType={'changed'} isAnimating={true} />)}
                   <BattleParticles effectType={effectType} isAnimating={true} />
                   <motion.img
+
                     src={getBattleSpriteUrl(pokemon.speciesId)}
                     alt={pokemon.name}
                     width={size.width}
@@ -659,7 +650,7 @@ export function BattleScene() {
         <div className="absolute  left-0 p-2  w-full">
 
           <div style={{ backgroundColor: 'rgb(0,0,0,0.7)' }} className="backdrop-blur-sm rounded-xl bg-black-100 p-3">
-            <div className="flex items-center justify-between mb-1.5">
+            <div                        onClick={() => setShowDamageInput(true)} className="flex items-center justify-between mb-1.5">
               <h3 className="text-base font-bold text-foreground"><span className="text-blue-400">#{pokemon.speciesId}</span> {pokemon.name} </h3>
 
 
@@ -757,7 +748,8 @@ export function BattleScene() {
               className="flex flex-col gap-2 mt-auto"
             >
               {/* Row 1: Main combat actions */}
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-1">
+
                 <Button
                   onClick={() => setBattlePhase("attack-select")}
                   disabled={isFainted || battle.pa < PA_CONFIG.costs.attack}
@@ -793,8 +785,19 @@ export function BattleScene() {
                   <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-blue-200">{PA_CONFIG.costs.attributeTest}PA</span>
                 </Button>
 
+                 <Button
+                  onClick={handleMoveSquares}
+                  disabled={battle.pa < PA_CONFIG.costs.moveSquares}
+                  variant="outline"
+                    className="h-16 flex flex-col gap-0.5 border-border text-white bg-purple-600 hover:bg-blue-700 relative"
+                >
+                  <MapPin className="w-4 h-4" />
+                  <span className="text-[9px] font-bold">Mover</span>
+                  <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-cyan-200">{PA_CONFIG.costs.moveSquares}PA</span>
+                </Button>
+
                 {/* Receive damage from opponent - free action */}
-                {!showDamageInput && !isFainted && (
+                {/* {!showDamageInput && !isFainted && (
                   <Button
                     onClick={() => setShowDamageInput(true)}
                     variant="outline"
@@ -804,22 +807,10 @@ export function BattleScene() {
                     <span className="text-[7px] font-bold">Dano</span>
                     <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-red-200">0PA</span>
                   </Button>
-                )}
+                )} */}
               </div>
 
-              {/* Row 2: Board action */}
-              <div className="grid grid-cols-1 gap-2">
-                <Button
-                  onClick={handleMoveSquares}
-                  disabled={battle.pa < PA_CONFIG.costs.moveSquares}
-                  variant="outline"
-                  className="h-10 flex flex-row items-center justify-center gap-2 border-border text-white bg-cyan-600 hover:bg-cyan-700 relative"
-                >
-                  <MapPin className="w-4 h-4" />
-                  <span className="text-[9px] font-bold">Mover Casas</span>
-                  <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-cyan-200">{PA_CONFIG.costs.moveSquares}PA</span>
-                </Button>
-              </div>
+
 
               {/* PA spend log this turn */}
               {battle.paLog.length > 0 && (
