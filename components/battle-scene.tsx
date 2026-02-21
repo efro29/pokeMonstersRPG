@@ -15,7 +15,7 @@ import {
   POKEMON_ATTRIBUTE_INFO,
   MOVE_RANGE_INFO,
 } from "@/lib/pokemon-data";
-import { PokemonType, HitResult, PokemonBaseAttributes, MoveRange, DamageBreakdown, getBaseAttributes } from "@/lib/pokemon-data";
+import { PokemonType, HitResult, PokemonBaseAttributes, MoveRange, DamageBreakdown, getBaseAttributes, getPokemon } from "@/lib/pokemon-data";
 import type { PokemonAttributeKey } from "@/lib/game-store";
 import { D20Dice } from "./d20-dice";
 import { Button } from "@/components/ui/button";
@@ -61,6 +61,9 @@ import {
   SkipForward,
   MapPin,
   RefreshCw,
+  Trophy,
+  Plus,
+  Minus,
 } from "lucide-react";
 import {
   playAttack,
@@ -128,6 +131,7 @@ export function BattleScene() {
     spendPA,
     endTurn,
     moveBoardSquares,
+    addXp,
   } = useGameStore();
 
   const attrs = trainer.attributes || { combate: 0, afinidade: 0, sorte: 0, furtividade: 0, percepcao: 0, carisma: 0 };
@@ -265,6 +269,8 @@ export function BattleScene() {
   };
 
   const [isWalking, setIsWalking] = useState(false);
+  const [showVictoryDialog, setShowVictoryDialog] = useState(false);
+  const [xpInputs, setXpInputs] = useState<Record<string, string>>({});
 
   const handleMoveSquares = () => {
     if (!moveBoardSquares()) return;
@@ -297,23 +303,111 @@ export function BattleScene() {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Battle header */}
-      <div className="flex flex-center  border-border bg-card ">
-        <Button
-          onClick={endBattle}
-          variant="ghost"
-          className="self-start  hover:text-foreground"
-        >   <ChevronLeft className="w-5 h-5" />
-          <Swords className="w-5 h-5 text-primary" />
+      {/* Battle top nav bar */}
+      <nav className="flex items-center justify-between px-2 py-1.5 bg-card border-b border-border gap-1">
+        {/* Left: Back + Turn */}
+        <div className="flex items-center gap-1.5">
+          <Button
+            onClick={endBattle}
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <div className="flex items-center gap-1 bg-secondary/50 rounded px-1.5 py-0.5">
+            <RefreshCw className="w-3 h-3 text-muted-foreground" />
+            <span className="text-[10px] font-bold text-muted-foreground">T{battle.turnNumber}</span>
+          </div>
+        </div>
 
-          <span className="font-semibold text-foreground">Batalha</span>
-        </Button>
+        {/* Center: PA orbs (clickable) */}
+        <div className="flex items-center gap-0.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-5 w-5 p-0 min-w-0"
+            onClick={() => {
+              const { battle: b } = useGameStore.getState();
+              if (b.pa > 0) {
+                useGameStore.setState({ battle: { ...b, pa: b.pa - 1 } });
+              }
+            }}
+          >
+            <Minus className="w-3 h-3 text-muted-foreground" />
+          </Button>
+          {Array.from({ length: battle.maxPa }).map((_, i) => (
+            <motion.div
+              key={i}
+              initial={false}
+              animate={{
+                scale: i < battle.pa ? 1 : 0.65,
+                opacity: i < battle.pa ? 1 : 0.2,
+              }}
+              transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              className={`w-3.5 h-3.5 rounded-full border-[1.5px] cursor-pointer ${
+                i < battle.pa
+                  ? "bg-amber-400 border-amber-300 shadow-[0_0_4px_rgba(251,191,36,0.5)]"
+                  : "bg-transparent border-gray-600"
+              }`}
+              onClick={() => {
+                const { battle: b } = useGameStore.getState();
+                if (i < b.pa) {
+                  // clicking a filled orb removes PA down to that level
+                  useGameStore.setState({ battle: { ...b, pa: i } });
+                } else {
+                  // clicking an empty orb fills up to that level
+                  useGameStore.setState({ battle: { ...b, pa: Math.min(i + 1, b.maxPa) } });
+                }
+              }}
+            />
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-5 w-5 p-0 min-w-0"
+            onClick={() => {
+              const { battle: b } = useGameStore.getState();
+              if (b.pa < b.maxPa) {
+                useGameStore.setState({ battle: { ...b, pa: b.pa + 1 } });
+              }
+            }}
+          >
+            <Plus className="w-3 h-3 text-muted-foreground" />
+          </Button>
+          <span className="text-[9px] font-mono font-bold text-amber-400 ml-0.5">
+            {battle.pa}
+          </span>
+        </div>
 
-
-
-
-      </div>
-      <div style={{ paddingBottom: 10 }}></div>
+        {/* Right: Pass Turn + Victory */}
+        <div className="flex items-center gap-1">
+          <Button
+            size="sm"
+            onClick={() => {
+              playButtonClick();
+              endTurn();
+            }}
+            className="h-7 px-2 text-[9px] font-bold bg-amber-500/90 hover:bg-amber-500 text-black gap-0.5"
+          >
+            <SkipForward className="w-3 h-3" />
+            Passar
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => {
+              playButtonClick();
+              setShowVictoryDialog(true);
+              setXpInputs({});
+            }}
+            className="h-7 px-2 text-[9px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white gap-0.5"
+          >
+            <Trophy className="w-3 h-3" />
+            Vitoria
+          </Button>
+        </div>
+      </nav>
+      <div style={{ paddingBottom: 4 }}></div>
 
       <div className=" relative flex flex-col items-center  ">
 
@@ -341,7 +435,7 @@ export function BattleScene() {
                 display: 'block',
                 imageRendering: "pixelated",
                 width: '100%',
-                height: '230px',   // 👈 define a altura
+                height: '270px',   // 👈 define a altura
                 objectFit: 'fill', // 👈 força esticar
                 maxWidth: 'none',
                 minHeight: 80,
@@ -436,7 +530,7 @@ export function BattleScene() {
           ? '' :
 
 
-          <div style={{ position: 'absolute', top: 310, }} className="top-100 px-3 py-2  bg-blue/30">
+          <div style={{ position: 'absolute', top: 350, }} className="top-100 px-3 py-2  bg-blue/30">
             <div className="flex items-center gap-3 mb-1 w-full ">
               <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/50"></div>
               <span style={{ color: 'silver' }} className=" text-[10px] font-bold uppercase tracking-widest drop-shadow-md">
@@ -451,7 +545,7 @@ export function BattleScene() {
         }
         {/* Container Principal: Absolute no topo, largura total e Flex Coluna */}
         <div
-          style={{ position: 'absolute', top: 240 }}
+          style={{ position: 'absolute', top: 280 }}
           className="w-full flex flex-col items-center z-20"
         >
 
@@ -645,65 +739,7 @@ export function BattleScene() {
 
 
 
-      {/* PA Bar */}
-      {battle.phase !== "idle" && (
-        <div className="px-4 py-2">
-          <div className="flex items-center justify-between gap-3 bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2 border border-border/50">
-            {/* Turn counter */}
-            <div className="flex items-center gap-1.5">
-              <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-[10px] font-bold text-muted-foreground">
-                Turno {battle.turnNumber}
-              </span>
-            </div>
 
-            {/* PA orbs */}
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] font-bold text-amber-400 mr-1">PA</span>
-              {Array.from({ length: battle.maxPa }).map((_, i) => (
-                <motion.div
-                  key={i}
-                  initial={false}
-                  animate={{
-                    scale: i < battle.pa ? 1 : 0.7,
-                    opacity: i < battle.pa ? 1 : 0.25,
-                  }}
-                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                  className={`w-4 h-4 rounded-full border-2 ${
-                    i < battle.pa
-                      ? "bg-amber-400 border-amber-300 shadow-[0_0_6px_rgba(251,191,36,0.5)]"
-                      : "bg-transparent border-gray-600"
-                  }`}
-                />
-              ))}
-              <span className="text-xs font-mono font-bold text-amber-400 ml-1">
-                {battle.pa}/{battle.maxPa}
-              </span>
-            </div>
-
-            {/* Board position */}
-            <div className="flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="text-[10px] font-bold text-cyan-400">
-                Casa {battle.boardPosition}
-              </span>
-            </div>
-
-            {/* End turn button */}
-            <Button
-              size="sm"
-              onClick={() => {
-                playButtonClick();
-                endTurn();
-              }}
-              className="h-7 px-2 text-[10px] font-bold bg-amber-500/90 hover:bg-amber-500 text-black gap-1"
-            >
-              <SkipForward className="w-3 h-3" />
-              Passar
-            </Button>
-          </div>
-        </div>
-      )}
 
       {/* Battle content area */}
       <div className="flex-1 px-4 pb-8 flex flex-col">
@@ -1499,15 +1535,93 @@ export function BattleScene() {
             className="absolute inset-0 z-50 flex items-center justify-center bg-black/70"
           >
             <div className="text-center p-6 bg-red-600/90 text-white rounded-lg shadow-lg">
-              <h2 className="text-2xl font-bold mb-2">Você foi derrotado!</h2>
-              <p className="text-sm">Todos os seus Pokémon desmaiaram.</p>
+              <h2 className="text-2xl font-bold mb-2">{"Voc\u00ea foi derrotado!"}</h2>
+              <p className="text-sm">{"Todos os seus Pok\u00e9mon desmaiaram."}</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-
-
+      {/* Victory dialog */}
+      <Dialog open={showVictoryDialog} onOpenChange={setShowVictoryDialog}>
+        <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-foreground">
+              <Trophy className="w-5 h-5 text-amber-400" />
+              Vitoria!
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">
+            Insira o XP ganho para cada Pokemon da batalha:
+          </p>
+          <ScrollArea className="max-h-72">
+            <div className="flex flex-col gap-2">
+              {team.map((p) => {
+                const species = getPokemon(p.speciesId);
+                return (
+                  <div
+                    key={p.uid}
+                    className="flex items-center gap-2 bg-secondary/40 rounded-lg p-2"
+                  >
+                    <img
+                      src={getSpriteUrl(p.speciesId)}
+                      alt={p.name}
+                      width={36}
+                      height={36}
+                      crossOrigin="anonymous"
+                      className="shrink-0 image-rendering-pixelated"
+                    />
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <span className="text-xs font-bold text-foreground truncate">{p.name}</span>
+                      <span className="text-[9px] text-muted-foreground">
+                        Lv.{p.level} {species?.name ?? ""}
+                      </span>
+                    </div>
+                    <Input
+                      type="number"
+                      placeholder="XP"
+                      value={xpInputs[p.uid] || ""}
+                      onChange={(e) =>
+                        setXpInputs((prev) => ({ ...prev, [p.uid]: e.target.value }))
+                      }
+                      className="w-20 h-8 text-xs font-mono text-center bg-secondary border-border text-foreground"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+          <div className="flex gap-2 mt-1">
+            <Button
+              onClick={() => {
+                // Apply XP to each pokemon
+                for (const p of team) {
+                  const val = parseInt(xpInputs[p.uid] || "0");
+                  if (val > 0) {
+                    addXp(p.uid, val);
+                  }
+                }
+                setShowVictoryDialog(false);
+                setXpInputs({});
+                endBattle();
+              }}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
+            >
+              Confirmar XP
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowVictoryDialog(false);
+                setXpInputs({});
+              }}
+              className="border-border text-foreground bg-transparent hover:bg-secondary"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
