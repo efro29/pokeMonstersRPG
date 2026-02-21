@@ -470,7 +470,8 @@ export function BattleScene() {
                   {showParticlePok && (<BattleParticles effectType={'changed'} isAnimating={true} />)}
                   <BattleParticles effectType={effectType} isAnimating={true} />
                   <motion.img
-
+                    onClick={() => setShowDamageInput(true)}
+                    style={{ pointerEvents: "auto", cursor: "pointer" }}
                     src={getBattleSpriteUrl(pokemon.speciesId)}
                     alt={pokemon.name}
                     width={size.width}
@@ -1418,7 +1419,7 @@ export function BattleScene() {
 
       {/* Damage input dialog */}
       <Dialog open={showDamageInput} onOpenChange={setShowDamageInput}>
-        <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
+        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="bg-card border-border text-foreground max-w-sm mx-auto">
           <DialogHeader>
             <DialogTitle className="text-foreground">Dano do Adversario</DialogTitle>
           </DialogHeader>
@@ -1537,7 +1538,7 @@ export function BattleScene() {
 
       {/* Victory dialog */}
       <Dialog open={showVictoryDialog} onOpenChange={setShowVictoryDialog}>
-        <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto overflow-hidden">
+        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="bg-card border-border text-foreground max-w-sm mx-auto overflow-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-center gap-2 text-foreground text-lg">
               <Trophy className="w-6 h-6 text-amber-400" />
