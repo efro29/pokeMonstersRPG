@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/lib/game-store";
 import type { BattleCard, CardElement } from "@/lib/card-data";
@@ -1792,6 +1792,7 @@ export function BattleCards() {
   shuffleDeckAction,
   replenishDeck,
   spendPA,
+  clearPendingAutoDraw,
   } = useGameStore();
 
   const [viewingCard, setViewingCard] = useState<BattleCard | null>(null);
@@ -1857,6 +1858,55 @@ export function BattleCards() {
       setIsDrawing(false);
     }, 350);
   }, [isDrawing, canDraw, drawBattleCard, spendPA]);
+
+  // Auto-draw triggered by "Passar Vez" (no PA cost, same animation flow)
+  useEffect(() => {
+    if (!battle.pendingAutoDraw) return;
+    clearPendingAutoDraw();
+    if (isDrawing || !canDraw) return;
+
+    setIsDrawing(true);
+    setShowDeckMenu(false);
+    playCardDraw();
+
+    const card = drawBattleCard();
+    if (!card) {
+      setIsDrawing(false);
+      return;
+    }
+
+    const state = useGameStore.getState();
+    const cardIsInField = state.battle.cardField.some((c) => c !== null && c.id === card.id);
+    const cardNotPlaced = !cardIsInField && state.battle.lastDrawnCard?.id === card.id;
+
+    setTimeout(() => {
+      if (card.alignment === "aura-elemental" || card.alignment === "aura-amplificada") {
+        playCardRareAppear();
+      } else if (card.alignment === "resurrect") {
+        playCardResurrectAppear();
+      } else if (card.alignment === "luck") {
+        playCardLuck();
+      } else {
+        playCardBadLuck();
+      }
+
+      if (cardNotPlaced) {
+        setPendingCard(card);
+      }
+
+      const currentState = useGameStore.getState();
+      if (currentState.battle.cardTrioEvent) {
+        if (currentState.battle.cardTrioEvent.type === "luck") {
+          playLuckTrio();
+        } else {
+          playBadLuckTrio();
+        }
+      }
+
+      setIsDrawing(false);
+    }, 350);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [battle.pendingAutoDraw]);
 
   const handleShuffle = () => {
     shuffleDeckAction();

@@ -250,6 +250,7 @@ export interface BattleState {
   turnNumber: number;   // Current turn counter
   paLog: string[];      // Log of PA spending this turn
   boardPosition: number; // Symbolic board position
+  pendingAutoDraw: boolean; // Flag to trigger auto card draw from battle-cards
   // Card animation
   pokemonAnimationState: {
     isAnimating: boolean;
@@ -354,6 +355,7 @@ interface GameState {
   spendPA: (action: PAActionType) => boolean;
   endTurn: () => void;
   moveBoardSquares: () => boolean;
+  clearPendingAutoDraw: () => void;
 }
 
 function generateUid(): string {
@@ -668,6 +670,7 @@ export const useGameStore = create<GameState>()(
             turnNumber: 1,
             paLog: [],
             boardPosition: 0,
+            pendingAutoDraw: false,
           },
         });
       },
@@ -699,6 +702,7 @@ export const useGameStore = create<GameState>()(
             turnNumber: 1,
             paLog: [],
             boardPosition: 0,
+            pendingAutoDraw: false,
           },
         });
       },
@@ -2092,10 +2096,14 @@ export const useGameStore = create<GameState>()(
             turnNumber: newTurn,
             paLog: [],
             phase: "menu",
+            pendingAutoDraw: true,
           },
         });
-        // Auto-draw 1 card at the start of the new turn
-        get().drawBattleCard();
+      },
+
+      clearPendingAutoDraw: () => {
+        const { battle } = get();
+        set({ battle: { ...battle, pendingAutoDraw: false } });
       },
 
       moveBoardSquares: (): boolean => {
@@ -2200,6 +2208,7 @@ export const useGameStore = create<GameState>()(
           battle.turnNumber = battle.turnNumber ?? 1;
           battle.paLog = battle.paLog ?? [];
           battle.boardPosition = battle.boardPosition ?? 0;
+          battle.pendingAutoDraw = battle.pendingAutoDraw ?? false;
           state.battle = battle;
         }
         return state as unknown as GameState;
