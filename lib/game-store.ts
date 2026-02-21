@@ -189,6 +189,22 @@ export type BattlePhase =
   | "attribute-test-rolling"
   | "attribute-test-result";
 
+// --- PA (Action Points) System ---
+export const PA_CONFIG = {
+  startingPA: 3,
+  maxPA: 5,
+  costs: {
+    attack: 1,
+    item: 1,
+    switchPokemon: 1,
+    attributeTest: 1,
+    drawCard: 1,
+    moveSquares: 1,
+  },
+} as const;
+
+export type PAActionType = keyof typeof PA_CONFIG.costs;
+
 export interface AttributeTestResult {
   attribute: PokemonAttributeKey;
   roll: number;
@@ -228,6 +244,13 @@ export interface BattleState {
   cardDrawCount: number;
   badLuckPenalty: number; // cumulative -2 per bad card (-4 if same type)
   auraAmplificadaActive: boolean; // When true, hit uses 70% flat chance
+  // PA (Action Points) system
+  pa: number;           // Current action points
+  maxPa: number;        // Max PA per turn
+  turnNumber: number;   // Current turn counter
+  paLog: string[];      // Log of PA spending this turn
+  boardPosition: number; // Symbolic board position
+  pendingAutoDraw: boolean; // Flag to trigger auto card draw from battle-cards
   // Card animation
   pokemonAnimationState: {
     isAnimating: boolean;
@@ -328,6 +351,11 @@ interface GameState {
   activateCardEffect: (slotIndex: number) => { isCrit: boolean; alignment: string } | undefined;
   activateHealCard: (slotIndex: number, targetUid: string) => boolean;
   activateResurrectCard: (slotIndex: number, targetUid: string) => boolean;
+  // PA system
+  spendPA: (action: PAActionType) => boolean;
+  endTurn: () => void;
+  moveBoardSquares: () => boolean;
+  clearPendingAutoDraw: () => void;
 }
 
 function generateUid(): string {
@@ -637,6 +665,12 @@ export const useGameStore = create<GameState>()(
             cardDrawCount: 0,
             badLuckPenalty: 0,
             auraAmplificadaActive: false,
+            pa: PA_CONFIG.startingPA,
+            maxPa: PA_CONFIG.maxPA,
+            turnNumber: 1,
+            paLog: [],
+            boardPosition: 0,
+            pendingAutoDraw: false,
           },
         });
       },
@@ -663,6 +697,12 @@ export const useGameStore = create<GameState>()(
             cardDrawCount: 0,
             badLuckPenalty: 0,
             auraAmplificadaActive: false,
+            pa: PA_CONFIG.startingPA,
+            maxPa: PA_CONFIG.maxPA,
+            turnNumber: 1,
+            paLog: [],
+            boardPosition: 0,
+            pendingAutoDraw: false,
           },
         });
       },
@@ -2022,10 +2062,71 @@ export const useGameStore = create<GameState>()(
         });
       },
 
+      // ---- PA SYSTEM ----
+      spendPA: (action: PAActionType): boolean => {
+        const { battle } = get();
+        const cost = PA_CONFIG.costs[action];
+        if (battle.pa < cost) return false;
+        const actionLabels: Record<PAActionType, string> = {
+          attack: "Atacar",
+          item: "Usar Item",
+          switchPokemon: "Trocar Pokemon",
+          attributeTest: "Teste de Atributo",
+          drawCard: "Comprar Carta",
+          moveSquares: "Mover Casas",
+        };
+        set({
+          battle: {
+            ...battle,
+            pa: battle.pa - cost,
+            paLog: [...battle.paLog, `${actionLabels[action]} (-${cost} PA)`],
+          },
+        });
+        return true;
+      },
+
+      endTurn: () => {
+        const { battle } = get();
+        const newTurn = battle.turnNumber + 1;
+        get().addBattleLog(`--- Fim do Turno ${battle.turnNumber} | Inicio do Turno ${newTurn} ---`);
+        set({
+          battle: {
+            ...battle,
+            pa: PA_CONFIG.startingPA,
+            turnNumber: newTurn,
+            paLog: [],
+            phase: "menu",
+            pendingAutoDraw: true,
+          },
+        });
+      },
+
+      clearPendingAutoDraw: () => {
+        const { battle } = get();
+        set({ battle: { ...battle, pendingAutoDraw: false } });
+      },
+
+      moveBoardSquares: (): boolean => {
+        const { battle } = get();
+        const cost = PA_CONFIG.costs.moveSquares;
+        if (battle.pa < cost) return false;
+        const newPos = battle.boardPosition + 1;
+        get().addBattleLog(`[TABULEIRO] Moveu para casa ${newPos}`);
+        set({
+          battle: {
+            ...battle,
+            pa: battle.pa - cost,
+            boardPosition: newPos,
+            paLog: [...battle.paLog, `Mover Casas (-${cost} PA)`],
+          },
+        });
+        return true;
+      },
+
     }),
     {
       name: getGameStoreKey(),
-      version: 12,
+      version: 13,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         if (version < 2) {
@@ -2098,6 +2199,16 @@ export const useGameStore = create<GameState>()(
             while (field.length < 6) field.push(null);
             battle.cardField = field;
           }
+          state.battle = battle;
+        }
+        if (version < 12) {
+          const battle = (state.battle as Record<string, unknown>) || {};
+          battle.pa = battle.pa ?? PA_CONFIG.startingPA;
+          battle.maxPa = battle.maxPa ?? PA_CONFIG.maxPA;
+          battle.turnNumber = battle.turnNumber ?? 1;
+          battle.paLog = battle.paLog ?? [];
+          battle.boardPosition = battle.boardPosition ?? 0;
+          battle.pendingAutoDraw = battle.pendingAutoDraw ?? false;
           state.battle = battle;
         }
         return state as unknown as GameState;

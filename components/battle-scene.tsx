@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useGameStore } from "@/lib/game-store";
+import { useGameStore, PA_CONFIG } from "@/lib/game-store";
+import type { PAActionType } from "@/lib/game-store";
 import {
   getSpriteUrl,
   getBattleSpriteUrl,
@@ -14,7 +15,7 @@ import {
   POKEMON_ATTRIBUTE_INFO,
   MOVE_RANGE_INFO,
 } from "@/lib/pokemon-data";
-import { PokemonType, HitResult, PokemonBaseAttributes, MoveRange, DamageBreakdown, getBaseAttributes } from "@/lib/pokemon-data";
+import { PokemonType, HitResult, PokemonBaseAttributes, MoveRange, DamageBreakdown, getBaseAttributes, getPokemon } from "@/lib/pokemon-data";
 import type { PokemonAttributeKey } from "@/lib/game-store";
 import { D20Dice } from "./d20-dice";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,12 @@ import {
   Footprints,
   Sword,
   Circle,
+  SkipForward,
+  MapPin,
+  RefreshCw,
+  Trophy,
+  Plus,
+  Minus,
 } from "lucide-react";
 import {
   playAttack,
@@ -71,6 +78,7 @@ import {
   playFlee,
   playHeal,
   playSendPokemon,
+  playVictoryFanfare,
 } from "@/lib/sounds";
 import { BattleCards } from "./battle-cards";
 import { BattleParticles } from "./battle-particles";
@@ -121,6 +129,10 @@ export function BattleScene() {
     resolveAttributeTest,
     switchBattlePokemon,
     showBattleCards,
+    spendPA,
+    endTurn,
+    moveBoardSquares,
+    addXp,
   } = useGameStore();
 
   const attrs = trainer.attributes || { combate: 0, afinidade: 0, sorte: 0, furtividade: 0, percepcao: 0, carisma: 0 };
@@ -154,6 +166,7 @@ export function BattleScene() {
     if (uid === battle.activePokemonUid) return;
     const targetPokemon = team.find((p) => p.uid === uid);
     if (!targetPokemon || targetPokemon.currentHp <= 0) return;
+    if (!spendPA("switchPokemon")) return;
     setShowParticlesPok(true);
     setTimeout(() => setShowParticlesPok(false), 1000);
     // playHeal();
@@ -186,6 +199,12 @@ export function BattleScene() {
   );
 
   const handleAttackSelect = (moveId: string) => {
+    // Moves that consume energy cards are free (no PA cost)
+    const moveDef = getMove(moveId);
+    const usesCards = moveDef && showBattleCards && moveDef.energy_cost > 0;
+    if (!usesCards) {
+      if (!spendPA("attack")) return;
+    }
     selectMove(moveId);
     setIsRolling(true);
     playAttack();
@@ -236,6 +255,10 @@ export function BattleScene() {
 
 
   const handleUseBagItem = (bagItemId: string) => {
+    if (!spendPA("item")) {
+      setShowBagDialog(false);
+      return;
+    }
     const def = BAG_ITEMS.find((d) => d.id === bagItemId);
     if (def && pokemon) {
       useBagItem(bagItemId, pokemon.uid);
@@ -245,12 +268,24 @@ export function BattleScene() {
     setShowBagDialog(false);
     setBattlePhase("menu");
   };
+
+  const [isWalking, setIsWalking] = useState(false);
+  const [showVictoryDialog, setShowVictoryDialog] = useState(false);
+  const [victoryXp, setVictoryXp] = useState("");
+
+  const handleMoveSquares = () => {
+    if (!moveBoardSquares()) return;
+    playButtonClick();
+    setIsWalking(true);
+    setTimeout(() => setIsWalking(false), 1000);
+  };
   const [arena] = useState(getRandomArena());
   const handleSelectAttribute = (attr: PokemonAttributeKey) => {
-    const dc = parseInt(testDC) || 10;
-    selectAttributeTest(attr, dc);
-    setIsTestRolling(true);
-    playDiceRoll();
+  if (!spendPA("attributeTest")) return;
+  const dc = parseInt(testDC) || 10;
+  selectAttributeTest(attr, dc);
+  setIsTestRolling(true);
+  playDiceRoll();
   };
 
   const handleTestDiceResult = useCallback(
@@ -269,23 +304,111 @@ export function BattleScene() {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Battle header */}
-      <div className="flex flex-center  border-border bg-card ">
-        <Button
-          onClick={endBattle}
-          variant="ghost"
-          className="self-start  hover:text-foreground"
-        >   <ChevronLeft className="w-5 h-5" />
-          <Swords className="w-5 h-5 text-primary" />
+      {/* Battle top nav bar */}
+      <nav className="flex items-center justify-between px-2 py-1.5 bg-card border-b border-border gap-1">
+        {/* Left: Back + Turn */}
+        <div className="flex items-center gap-1.5">
+          <Button
+            onClick={endBattle}
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <div className="flex items-center gap-1 bg-secondary/50 rounded px-1.5 py-0.5">
+            <RefreshCw className="w-3 h-3 text-muted-foreground" />
+            <span className="text-[10px] font-bold text-muted-foreground">T{battle.turnNumber}</span>
+          </div>
+        </div>
 
-          <span className="font-semibold text-foreground">Batalha</span>
-        </Button>
+        {/* Center: PA orbs (clickable) */}
+        <div className="flex items-center gap-0.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-5 w-5 p-0 min-w-0"
+            onClick={() => {
+              const { battle: b } = useGameStore.getState();
+              if (b.pa > 0) {
+                useGameStore.setState({ battle: { ...b, pa: b.pa - 1 } });
+              }
+            }}
+          >
+            <Minus className="w-3 h-3 text-muted-foreground" />
+          </Button>
+          {Array.from({ length: battle.maxPa }).map((_, i) => (
+            <motion.div
+              key={i}
+              initial={false}
+              animate={{
+                scale: i < battle.pa ? 1 : 0.65,
+                opacity: i < battle.pa ? 1 : 0.2,
+              }}
+              transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              className={`w-3.5 h-3.5 rounded-full border-[1.5px] cursor-pointer ${
+                i < battle.pa
+                  ? "bg-amber-400 border-amber-300 shadow-[0_0_4px_rgba(251,191,36,0.5)]"
+                  : "bg-transparent border-gray-600"
+              }`}
+              onClick={() => {
+                const { battle: b } = useGameStore.getState();
+                if (i < b.pa) {
+                  // clicking a filled orb removes PA down to that level
+                  useGameStore.setState({ battle: { ...b, pa: i } });
+                } else {
+                  // clicking an empty orb fills up to that level
+                  useGameStore.setState({ battle: { ...b, pa: Math.min(i + 1, b.maxPa) } });
+                }
+              }}
+            />
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-5 w-5 p-0 min-w-0"
+            onClick={() => {
+              const { battle: b } = useGameStore.getState();
+              if (b.pa < b.maxPa) {
+                useGameStore.setState({ battle: { ...b, pa: b.pa + 1 } });
+              }
+            }}
+          >
+            <Plus className="w-3 h-3 text-muted-foreground" />
+          </Button>
+          <span className="text-[9px] font-mono font-bold text-amber-400 ml-0.5">
+            {battle.pa}
+          </span>
+        </div>
 
-
-
-
-      </div>
-      <div style={{ paddingBottom: 10 }}></div>
+        {/* Right: Pass Turn + Victory */}
+        <div className="flex items-center gap-1">
+          <Button
+            size="sm"
+            onClick={() => {
+              playButtonClick();
+              endTurn();
+            }}
+            className="h-7 px-2 text-[9px] font-bold bg-amber-500/90 hover:bg-amber-500 text-black gap-0.5"
+          >
+            <SkipForward className="w-3 h-3" />
+            Passar
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => {
+              playVictoryFanfare();
+              setShowVictoryDialog(true);
+              setVictoryXp("");
+            }}
+            className="h-7 px-2 text-[9px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white gap-0.5"
+          >
+            <Trophy className="w-3 h-3" />
+            Vitoria
+          </Button>
+        </div>
+      </nav>
+      <div style={{ paddingBottom: 4 }}></div>
 
       <div className=" relative flex flex-col items-center  ">
 
@@ -372,9 +495,17 @@ export function BattleScene() {
                       (e.target as HTMLImageElement).src = getSpriteUrl(pokemon.speciesId);
                     }}
                     initial={animProps.initial}
-                    animate={animProps.animate}
-                    transition={animProps.transition}
-                    key={effectType === "none" ? "idle" : `anim-${Date.now()}`}
+                    animate={
+                      isWalking
+                        ? { x: [-0, -60, -60, 0], scaleX: [-1, -1, 1, 1] }
+                        : animProps.animate
+                    }
+                    transition={
+                      isWalking
+                        ? { duration: 1, times: [0, 0.35, 0.65, 1], ease: "easeInOut" }
+                        : animProps.transition
+                    }
+                    key={isWalking ? `walk-${Date.now()}` : (effectType === "none" ? "idle" : `anim-${Date.now()}`)}
                   />
                 </div>
               );
@@ -530,19 +661,19 @@ export function BattleScene() {
           <div style={{ backgroundColor: 'rgb(0,0,0,0.7)' }} className="backdrop-blur-sm rounded-xl bg-black-100 p-3">
             <div className="flex items-center justify-between mb-1.5">
               <h3 className="text-base font-bold text-foreground"><span className="text-blue-400">#{pokemon.speciesId}</span> {pokemon.name} </h3>
-          
+
 
 
               <div className="flex items-center ">
-                  {pokemonTypes?.map((d)=>
-                           <img
-                          style={{width:30}}
-                          src={`/images/cardsTypes/${d}.png`}
-                          alt={d}
-                          className=" rounded-full"
-                          loading="eager"
-                          decoding="sync"
-                           />  )}
+                {pokemonTypes?.map((d) =>
+                  <img key={d}
+                    style={{ width: 30 }}
+                    src={`/images/cardsTypes/${d}.png`}
+                    alt={d}
+                    className=" rounded-full"
+                    loading="eager"
+                    decoding="sync"
+                  />)}
               </div>
               <div className="flex items-center gap-2">
                 {pokemonAttrs && (
@@ -555,7 +686,7 @@ export function BattleScene() {
                 </span>
               </div>
 
-              
+
             </div>
             <div className="flex items-center gap-2">
               <Heart className="w-3.5 h-3.5 text-red-400 shrink-0" />
@@ -566,7 +697,7 @@ export function BattleScene() {
                   animate={{ width: `${hpPercent}%` }}
                   transition={{ duration: 0.5 }}
                 />
-                
+
               </div>
               <span style={{ color: hpColor }} className="text-[10px] font-mono text-muted-foreground w-16 text-right">
                 {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
@@ -609,6 +740,8 @@ export function BattleScene() {
 
 
 
+
+
       {/* Battle content area */}
       <div className="flex-1 px-4 pb-8 flex flex-col">
 
@@ -621,49 +754,82 @@ export function BattleScene() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="grid grid-cols-4 gap-3 mt-auto"
+              className="flex flex-col gap-2 mt-auto"
             >
-              <Button
-                onClick={() => setBattlePhase("attack-select")}
-                disabled={isFainted}
-                className="h-16 flex flex-col gap-1 bg-orange-500 text-primary-foreground hover:bg-primary/90"
-              >
-                <Swords className="w-30 h-10" />
-                <span className="text-[7px] font-bold">Atacar</span>
-              </Button>
-
-              <Button
-                onClick={() => setShowBagDialog(true)}
-                variant="outline"
-                className="h-16 flex flex-col gap-1 border-border text-foreground bg-green-500 hover:bg-secondary"
-              >
-                <Backpack className="w-6 h-6" />
-                <span className="text-[7px] font-bold">Bolsa</span>
-              </Button>
-
-              <Button
-                onClick={() => {
-                  playButtonClick();
-                  setBattlePhase("attribute-test-select");
-                }}
-                disabled={isFainted}
-                variant="outline"
-                className="h-16 flex flex-col gap-1 border-border text-foreground bg-blue-500 hover:bg-secondary"
-              >
-                <Dices className="w-6 h-6" />
-                <span className="text-[7px] font-bold">Teste</span>
-              </Button>
-
-              {/* Receive damage from opponent */}
-              {battle.phase === "menu" && !showDamageInput && !isFainted && (
+              {/* Row 1: Main combat actions */}
+              <div className="grid grid-cols-4 gap-2">
                 <Button
-                  onClick={() => setShowDamageInput(true)}
-                  variant="outline"
-                  className="h-16 flex flex-col gap-1 border-border text-foreground bg-red-500 hover:bg-secondary"
+                  onClick={() => setBattlePhase("attack-select")}
+                  disabled={isFainted || battle.pa < PA_CONFIG.costs.attack}
+                  className="h-16 flex flex-col gap-0.5 bg-orange-500 text-white hover:bg-orange-600 relative"
                 >
-                  <Shield className="w-7 h-6" />
-                  <span className="text-[7px] font-bold">Dano</span>
+                  <Swords className="w-6 h-6" />
+                  <span className="text-[7px] font-bold">Atacar</span>
+                  <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-orange-200">{PA_CONFIG.costs.attack}PA</span>
                 </Button>
+
+                <Button
+                  onClick={() => setShowBagDialog(true)}
+                  disabled={battle.pa < PA_CONFIG.costs.item}
+                  variant="outline"
+                  className="h-16 flex flex-col gap-0.5 border-border text-white bg-green-600 hover:bg-green-700 relative"
+                >
+                  <Backpack className="w-5 h-5" />
+                  <span className="text-[7px] font-bold">Bolsa</span>
+                  <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-green-200">{PA_CONFIG.costs.item}PA</span>
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    playButtonClick();
+                    setBattlePhase("attribute-test-select");
+                  }}
+                  disabled={isFainted || battle.pa < PA_CONFIG.costs.attributeTest}
+                  variant="outline"
+                  className="h-16 flex flex-col gap-0.5 border-border text-white bg-blue-600 hover:bg-blue-700 relative"
+                >
+                  <Dices className="w-5 h-5" />
+                  <span className="text-[7px] font-bold">Teste</span>
+                  <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-blue-200">{PA_CONFIG.costs.attributeTest}PA</span>
+                </Button>
+
+                {/* Receive damage from opponent - free action */}
+                {!showDamageInput && !isFainted && (
+                  <Button
+                    onClick={() => setShowDamageInput(true)}
+                    variant="outline"
+                    className="h-16 flex flex-col gap-0.5 border-border text-white bg-red-600 hover:bg-red-700 relative"
+                  >
+                    <Shield className="w-5 h-5" />
+                    <span className="text-[7px] font-bold">Dano</span>
+                    <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-red-200">0PA</span>
+                  </Button>
+                )}
+              </div>
+
+              {/* Row 2: Board action */}
+              <div className="grid grid-cols-1 gap-2">
+                <Button
+                  onClick={handleMoveSquares}
+                  disabled={battle.pa < PA_CONFIG.costs.moveSquares}
+                  variant="outline"
+                  className="h-10 flex flex-row items-center justify-center gap-2 border-border text-white bg-cyan-600 hover:bg-cyan-700 relative"
+                >
+                  <MapPin className="w-4 h-4" />
+                  <span className="text-[9px] font-bold">Mover Casas</span>
+                  <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-cyan-200">{PA_CONFIG.costs.moveSquares}PA</span>
+                </Button>
+              </div>
+
+              {/* PA spend log this turn */}
+              {battle.paLog.length > 0 && (
+                <div className="bg-black/30 rounded px-2 py-1 flex flex-wrap gap-1">
+                  {battle.paLog.map((entry, i) => (
+                    <span key={i} className="text-[8px] text-muted-foreground bg-white/5 px-1.5 py-0.5 rounded">
+                      {entry}
+                    </span>
+                  ))}
+                </div>
               )}
             </motion.div>
           )}
@@ -1370,15 +1536,146 @@ export function BattleScene() {
             className="absolute inset-0 z-50 flex items-center justify-center bg-black/70"
           >
             <div className="text-center p-6 bg-red-600/90 text-white rounded-lg shadow-lg">
-              <h2 className="text-2xl font-bold mb-2">Você foi derrotado!</h2>
-              <p className="text-sm">Todos os seus Pokémon desmaiaram.</p>
+              <h2 className="text-2xl font-bold mb-2">{"Voc\u00ea foi derrotado!"}</h2>
+              <p className="text-sm">{"Todos os seus Pok\u00e9mon desmaiaram."}</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Victory dialog */}
+      <Dialog open={showVictoryDialog} onOpenChange={setShowVictoryDialog}>
+        <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-center gap-2 text-foreground text-lg">
+              <Trophy className="w-6 h-6 text-amber-400" />
+              Vitoria!
+            </DialogTitle>
+          </DialogHeader>
 
+          {/* Particle animation area */}
+          <div className="relative h-40 flex items-center justify-center overflow-hidden rounded-lg bg-gradient-to-b from-amber-500/10 to-transparent">
+            {/* Floating particles */}
+            {showVictoryDialog && Array.from({ length: 20 }).map((_, i) => (
+              <motion.div
+                key={`particle-${i}`}
+                className="absolute w-1.5 h-1.5 rounded-full"
+                style={{
+                  background: ["#fbbf24", "#f59e0b", "#fcd34d", "#fff7ed", "#d97706"][i % 5],
+                  left: `${10 + Math.random() * 80}%`,
+                  bottom: 0,
+                }}
+                animate={{
+                  y: [0, -(80 + Math.random() * 80)],
+                  x: [0, (Math.random() - 0.5) * 40],
+                  opacity: [0, 1, 1, 0],
+                  scale: [0.5, 1.2, 0.8, 0],
+                }}
+                transition={{
+                  duration: 2 + Math.random() * 1.5,
+                  repeat: Infinity,
+                  delay: Math.random() * 2,
+                  ease: "easeOut",
+                }}
+              />
+            ))}
 
+            {/* Glowing ring behind pokemon */}
+            {showVictoryDialog && (
+              <motion.div
+                className="absolute w-32 h-32 rounded-full border-2 border-amber-400/30"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.3, 0.6, 0.3],
+                }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              />
+            )}
+
+            {/* Pokemon sprites side by side */}
+            <div className="relative z-10 flex items-end justify-center gap-1">
+              {team.map((p, idx) => (
+                <motion.div
+                  key={p.uid}
+                  className="flex flex-col items-center"
+                  initial={{ y: 40, opacity: 0, scale: 0.5 }}
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 18,
+                    delay: 0.15 * idx,
+                  }}
+                >
+                  <motion.img
+                    src={getSpriteUrl(p.speciesId)}
+                    alt={p.name}
+                    width={48}
+                    height={48}
+                    crossOrigin="anonymous"
+                    style={{ imageRendering: "pixelated" }}
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      delay: 0.2 * idx,
+                      ease: "easeInOut",
+                    }}
+                  />
+                  <span className="text-[8px] font-bold text-foreground mt-0.5 truncate max-w-[50px] text-center">
+                    {p.name}
+                  </span>
+                  <span className="text-[7px] text-muted-foreground">Lv.{p.level}</span>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Single XP input */}
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-xs text-muted-foreground text-center">
+              XP ganho (igual para todos):
+            </p>
+            <Input
+              type="number"
+              placeholder="0"
+              value={victoryXp}
+              onChange={(e) => setVictoryXp(e.target.value)}
+              className="w-28 h-10 text-center text-lg font-mono font-bold bg-secondary border-amber-500/50 text-foreground"
+              autoFocus
+            />
+          </div>
+
+          <div className="flex gap-2 mt-1">
+            <Button
+              onClick={() => {
+                const val = parseInt(victoryXp || "0");
+                if (val > 0) {
+                  for (const p of team) {
+                    addXp(p.uid, val);
+                  }
+                }
+                setShowVictoryDialog(false);
+                setVictoryXp("");
+                endBattle();
+              }}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
+            >
+              Confirmar XP
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowVictoryDialog(false);
+                setVictoryXp("");
+              }}
+              className="border-border text-foreground bg-transparent hover:bg-secondary"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
