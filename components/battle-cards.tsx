@@ -1444,7 +1444,7 @@ function TrioEventOverlay() {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 flex items-center justify-center"
-        style={{ background: "radial-gradient(ellipse at center, rgba(197,160,38,0.3) 0%, rgba(0,0,0,0.95) 70%)" }}
+        style={{ background: "radial-gradient(ellipse at center, rgba(37, 30, 5, 0.3) 0%, rgba(0,0,0,0.95) 70%)" }}
       >
         <motion.div
           initial={{ scale: 0.9, y: 20 }}
@@ -1452,35 +1452,93 @@ function TrioEventOverlay() {
           className="flex flex-col items-center gap-4 px-4 max-w-sm w-full"
         >
           <h2
-            className="text-lg font-black tracking-wider text-center"
+            className=" text-lg font-black tracking-wider text-center"
             style={{ color: "#D4AF37", textShadow: "0 0 20px rgba(212,175,55,0.5)" }}
           >
             Escolha o tipo da nova carta
           </h2>
-          <div className="grid grid-cols-3 gap-2 w-full max-h-[50vh] overflow-y-auto p-1">
-            {CARD_ELEMENTS.map((el) => (
-              <button
-                key={el}
-                onClick={() => {
-                  playButtonClick();
-                  trioChoiceTradeForElement(el);
-                  setShowElementPicker(false);
-                }}
-                className="flex items-center gap-1.5 px-2 py-2 rounded-lg text-xs font-bold transition-all hover:scale-105 active:scale-95"
-                style={{
-                  background: `${ELEMENT_COLORS[el]}22`,
-                  border: `1px solid ${ELEMENT_COLORS[el]}66`,
-                  color: ELEMENT_COLORS[el],
-                }}
-              >
-                <span
-                  className="w-3 h-3 rounded-full flex-shrink-0"
-                  style={{ background: ELEMENT_COLORS[el] }}
+        <div className="bonus-particles  w-full flex items-center justify-center p-4">
+          <div className="relative w-80 h-80">
+
+
+
+            {/* Centro */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-24 h-24 rounded-full   flex items-center justify-center   z-20">
+                <img
+                  src="/images/pokebola.png"
+                  alt="Centro"
+                  className=" w-16 h-16 object-contain select-none"
+                  draggable={false}
                 />
-                {ELEMENT_NAMES_PT[el]}
-              </button>
-            ))}
+              </div>
+            </div>
+
+            {CARD_ELEMENTS.map((el, index) => {
+              const total = CARD_ELEMENTS.length;
+              const angle = (360 / total) * index;
+              const radius = 120;
+
+              return (
+                <div key={el}>
+                  
+                  {/* 🔹 Linha radial */}
+                  <div
+                    className="water-particle absolute h-[2px] origin-left opacity-40 animate-pulse"
+                    style={{
+                      top: "50%",
+                      left: "70%",
+                      width: `${radius}px`,
+                      background: ELEMENT_COLORS[el],
+                      transform: `
+                        translate(-50%, -50%)
+                        rotate(${angle}deg)
+                      `,
+                    }}
+                  />
+
+                  {/* 🔹 Botão */}
+                  <button
+                    onClick={() => {
+                      playButtonClick();
+                      trioChoiceTradeForElement(el);
+                      setShowElementPicker(false);
+                    }}
+                    className="group absolute w-16 h-16 flex items-center justify-center rounded-full transition-all duration-300 ease-out"
+                    style={{
+                      top: "50%",
+                      left: "50%",
+                      transform: `
+                        translate(-50%, -50%)
+                        rotate(${angle}deg)
+                        translate(${radius}px)
+                        rotate(-${angle}deg)
+                      `,
+                    }}
+                  >
+                    <div
+                      className="flex items-center justify-center w-full h-full rounded-full 
+                                transition-all duration-300
+                                group-hover:scale-125
+                                group-hover:shadow-[0_0_18px_rgba(255,255,255,0.75)]"
+                      style={{
+                        background: `${ELEMENT_COLORS[el]}22`,
+                        border: `2px solid ${ELEMENT_COLORS[el]}99`,
+                      }}
+                    >
+                      <img
+                        src={`/images/cardsTypes/${el}.png`}
+                        alt={el}
+                        className="w-14 h-14 rounded-full transition-transform duration-300 select-none"
+                        draggable={false}
+                      />
+                    </div>
+                  </button>
+                </div>
+              );
+            })}
           </div>
+        </div>
           <button
             onClick={() => setShowElementPicker(false)}
             className="text-xs text-muted-foreground underline mt-1"

@@ -85,6 +85,19 @@ animation:fireRise 3s linear infinite;
 from{transform:translateY(20px);opacity:.6}
 to{transform:translateY(-40px);opacity:0}
 }
+.bonus-particles::before{
+content:""; position:absolute; inset:0;
+background:
+
+radial-gradient(circle,rgba(255, 252, 252, 0.152) 3px,transparent 4px) 30% 80%/60px 60px,
+radial-gradient(circle,rgba(0, 251, 255, 0.249) 2px,transparent 3px) 70% 70%/70px 70px,
+radial-gradient(circle,rgba(217, 255, 0, 0.322) 3px,transparent 4px) 50% 90%/80px 80px;
+animation:pollen 1s linear infinite;
+}
+@keyframes bubbles{
+from{transform:translateY(20px);opacity:.6}
+to{transform:translateY(-50px);opacity:0}
+}
 .water-particles::before{
 content:""; position:absolute; inset:0;
 background:

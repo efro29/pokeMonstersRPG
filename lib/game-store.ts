@@ -19,6 +19,7 @@ export interface TeamPokemon {
   speciesId: number;
   name: string;
   level: number;
+  type:string[];
   xp: number;
   maxHp: number;
   currentHp: number;
@@ -458,6 +459,7 @@ export const useGameStore = create<GameState>()(
       },
 
       addToTeam: (species) => {
+
         const { team } = get();
         if (team.length >= 6) return;
         const pokemon: TeamPokemon = {
@@ -466,6 +468,7 @@ export const useGameStore = create<GameState>()(
           name: species.name,
           level: 1,
           xp: 0,
+          type:species.types,
           maxHp: species.baseHp,
           currentHp: species.baseHp,
           moves: species.startingMoves

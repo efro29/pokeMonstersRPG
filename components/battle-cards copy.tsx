@@ -1300,6 +1300,7 @@ function TrioEventOverlay() {
           </h2>
           <div className="grid grid-cols-3 gap-2 w-full max-h-[50vh] overflow-y-auto p-1">
             {CARD_ELEMENTS.map((el) => (
+
               <button
                 key={el}
                 onClick={() => {
@@ -1318,8 +1319,18 @@ function TrioEventOverlay() {
                   className="w-3 h-3 rounded-full flex-shrink-0"
                   style={{ background: ELEMENT_COLORS[el] }}
                 />
+                 <img
+                          style={{width:30}}
+                          src={`/images/cardsTypes/${ELEMENT_NAMES_PT[el]}.png`}
+                          alt={ELEMENT_NAMES_PT[el]}
+                          className=" rounded-full"
+                          loading="eager"
+                          decoding="sync"
+                           /> 
                 {ELEMENT_NAMES_PT[el]}
               </button>
+
+              
             ))}
           </div>
           <button
