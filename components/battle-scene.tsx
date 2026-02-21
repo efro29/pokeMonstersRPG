@@ -656,8 +656,6 @@ export function BattleScene() {
 
               <div className="flex items-center ">
                 {pokemonTypes?.map((d) =>
-
-                <>
                   <img key={d}
                     style={{ width: 30 }}
                     src={`/images/cardsTypes/${d}.png`}
@@ -666,8 +664,7 @@ export function BattleScene() {
                     loading="eager"
                     decoding="sync"
                   />
-
-                  </>)}
+                )}
 
                   {}
               </div>
