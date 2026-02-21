@@ -211,22 +211,32 @@ export function BattleScene() {
     playDiceRoll();
   };
 
+  const handlePokemonTap = () => {
+    // Mostra animação de sangue + som ANTES de abrir o popup
+    setShowParticles(true);
+    playDamageReceived();
+
+    setTimeout(() => {
+      setShowParticles(false);
+      setShowDamageInput(true);
+    }, 600);
+  };
+
   const handleApplyDamage = () => {
     const dmg = parseInt(damageInput);
     if (Number.isNaN(dmg) || dmg <= 0) return;
 
-    applyOpponentDamage(dmg);
-    playDamageReceived();
-
-    // Ativa partículas
+    // Mostra animação de sangue ANTES de fechar o diálogo
     setShowParticles(true);
-    setTimeout(() => setShowParticles(false), 1000);
-
-    setDamageInput("");
-    setShowDamageInput(false);
-
-
-
+    playDamageReceived();
+    
+    // Aguarda a animação terminar antes de aplicar o dano e fechar
+    setTimeout(() => {
+      applyOpponentDamage(dmg);
+      setShowParticles(false);
+      setDamageInput("");
+      setShowDamageInput(false);
+    }, 500);
   };
 
 
@@ -471,7 +481,7 @@ export function BattleScene() {
                   {showParticlePok && (<BattleParticles effectType={'changed'} isAnimating={true} />)}
                   <BattleParticles effectType={effectType} isAnimating={true} />
                   <motion.img
-
+                    onClick={handlePokemonTap}
                     src={getBattleSpriteUrl(pokemon.speciesId)}
                     alt={pokemon.name}
                     width={size.width}
@@ -480,6 +490,8 @@ export function BattleScene() {
                       imageRendering: "auto",
                       minHeight: 80,
                       minWidth: 80,
+                      pointerEvents: "auto",
+                      cursor: "pointer",
                     }}
                     crossOrigin="anonymous"
                     onError={(e) => {
@@ -657,8 +669,6 @@ export function BattleScene() {
 
               <div className="flex items-center ">
                 {pokemonTypes?.map((d) =>
-
-                <>
                   <img key={d}
                     style={{ width: 30 }}
                     src={`/images/cardsTypes/${d}.png`}
@@ -667,8 +677,7 @@ export function BattleScene() {
                     loading="eager"
                     decoding="sync"
                   />
-
-                  </>)}
+                )}
 
                   {}
               </div>
@@ -1422,7 +1431,7 @@ export function BattleScene() {
 
       {/* Damage input dialog */}
       <Dialog open={showDamageInput} onOpenChange={setShowDamageInput}>
-        <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
+        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="bg-card border-border text-foreground max-w-sm mx-auto">
           <DialogHeader>
             <DialogTitle className="text-foreground">Dano do Adversario</DialogTitle>
           </DialogHeader>
@@ -1462,7 +1471,6 @@ export function BattleScene() {
             value={damageInput}
             onChange={(e) => setDamageInput(e.target.value)}
             className="bg-secondary border-border text-foreground text-lg font-mono text-center"
-            autoFocus
           />
           <div className="flex gap-2">
 
@@ -1542,7 +1550,7 @@ export function BattleScene() {
 
       {/* Victory dialog */}
       <Dialog open={showVictoryDialog} onOpenChange={setShowVictoryDialog}>
-        <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto overflow-hidden">
+        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="bg-card border-border text-foreground max-w-sm mx-auto overflow-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-center gap-2 text-foreground text-lg">
               <Trophy className="w-6 h-6 text-amber-400" />
@@ -1633,14 +1641,13 @@ export function BattleScene() {
             <p className="text-xs text-muted-foreground text-center">
               XP ganho (igual para todos):
             </p>
-            <Input
-              type="number"
-              placeholder="0"
-              value={victoryXp}
-              onChange={(e) => setVictoryXp(e.target.value)}
-              className="w-28 h-10 text-center text-lg font-mono font-bold bg-secondary border-amber-500/50 text-foreground"
-              autoFocus
-            />
+          <Input
+            type="number"
+            placeholder="Ex: 0"
+            value={victoryXp}
+            onChange={(e) => setVictoryXp(e.target.value)}
+            className="bg-secondary border-border text-foreground text-lg font-mono text-center"
+          />
           </div>
 
           <div className="flex gap-2 mt-1">
