@@ -530,19 +530,19 @@ export function BattleScene() {
           <div style={{ backgroundColor: 'rgb(0,0,0,0.7)' }} className="backdrop-blur-sm rounded-xl bg-black-100 p-3">
             <div className="flex items-center justify-between mb-1.5">
               <h3 className="text-base font-bold text-foreground"><span className="text-blue-400">#{pokemon.speciesId}</span> {pokemon.name} </h3>
-          
+
 
 
               <div className="flex items-center ">
-                  {pokemonTypes?.map((d)=>
-                           <img
-                          style={{width:30}}
-                          src={`/images/cardsTypes/${d}.png`}
-                          alt={d}
-                          className=" rounded-full"
-                          loading="eager"
-                          decoding="sync"
-                           />  )}
+                {pokemonTypes?.map((d) =>
+                  <img key={d}
+                    style={{ width: 30 }}
+                    src={`/images/cardsTypes/${d}.png`}
+                    alt={d}
+                    className=" rounded-full"
+                    loading="eager"
+                    decoding="sync"
+                  />)}
               </div>
               <div className="flex items-center gap-2">
                 {pokemonAttrs && (
@@ -555,7 +555,7 @@ export function BattleScene() {
                 </span>
               </div>
 
-              
+
             </div>
             <div className="flex items-center gap-2">
               <Heart className="w-3.5 h-3.5 text-red-400 shrink-0" />
@@ -566,7 +566,7 @@ export function BattleScene() {
                   animate={{ width: `${hpPercent}%` }}
                   transition={{ duration: 0.5 }}
                 />
-                
+
               </div>
               <span style={{ color: hpColor }} className="text-[10px] font-mono text-muted-foreground w-16 text-right">
                 {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
