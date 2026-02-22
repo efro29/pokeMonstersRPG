@@ -464,6 +464,17 @@ to{transform:translateX(100%)}
   top:0px;
   z-index:400;
 }
+.card-icon-ditto{
+  position:absolute;
+  top:20px;
+  z-index:400;
+}
+.card-icon-zapdos{
+  position:absolute;
+  top:-10px;
+  z-index:400;
+}
+
 
 .energy-rect{
   position:absolute;

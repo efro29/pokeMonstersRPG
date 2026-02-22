@@ -140,7 +140,7 @@ function YuGiOhCard({
     : isAuraAmplificada
     ? "linear-gradient(180deg, #D4AF37 0%, #B8860B 30%, #8B6914 70%, #D4AF37 100%)"
     : isAuraElemental
-    ? "linear-gradient(180deg, #E8E8E8 0%, #C0C0C0 30%, #A8A8A8 70%, #D0D0D0 100%)"
+    ? "linear-gradient(180deg, #D6F0FF 0%, #4FB3FF 30%, #1F8CFF 70%, #A2D6FF 100%)"
     : isLuck
     ? "linear-gradient(180deg, #ffffff 0%, #ffffff 8%, #ffffff 92%, #ffffff 100%)"
     : "linear-gradient(180deg, #502d5a 0%, #4a1547 8%, #2b0a3a 92%, #1A0505 100%)";
@@ -148,7 +148,7 @@ function YuGiOhCard({
   const innerBg = isResurrect
     ? "linear-gradient(180deg, #fdf2f8 0%, #fce7f3 100%)"
     : isAura
-    ? (isAuraAmplificada ? "linear-gradient(180deg, #3a2a00 0%, #1a1200 100%)" : "linear-gradient(180deg, #f0f0f0 0%, #d8d8d8 100%)")
+    ? (isAuraAmplificada ? "linear-gradient(180deg, #3a2a00 0%, #1a1200 100%)" : "linear-gradient(180deg, #FFFFFF 0%, #EAF6FF 40%, #CFEAFF 100%)")
     : isLuck
     ? "linear-gradient(180deg, #FFFDE0 0%, #e9e8e4 100%)"
     : "linear-gradient(180deg, #2D1515 0%, #1A0A0A 100%)";
@@ -158,7 +158,14 @@ function YuGiOhCard({
   const glowShadow = glowing
     ? `0 0 8px 2px ${elColor}, 0 0 16px 4px ${elColor}88`
     : "";
-
+    const float = useMemo(() => {
+      return {
+        height: 8 + Math.random() * 4,      // sobe e desce
+        sideways: Math.random() * 3 - 1,     // leve lateral
+        tilt: Math.random() * 5 - 1,         // inclinação
+        speed: 5.5 + Math.random() * 2.5     // velocidade diferente
+      };
+    }, []);
     
 
   if (size === "small") {
@@ -167,6 +174,45 @@ function YuGiOhCard({
       const isActivated = !!card.activated;
       return (
       <div className="card-perspective">
+                      <motion.div
+                className={isAuraAmplificada?"card-icon-zapdos":'card-icon-ditto'}
+
+                transition={{
+                  duration: float.speed,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                {isAuraAmplificada?
+                      <>
+                   <img style={{width:80}}
+                      src={`/images/cardsTypes/zapdos.gif`}
+                  alt={card.name}
+                  draggable={false}
+                />
+                  <EnergyParticles color={elColor} />
+                
+                </>
+                
+                :
+
+                 <img style={{width:30}}
+                      src={`/images/cardsTypes/ditto.gif`}
+                  alt={card.name}
+                  draggable={false}
+                />
+            
+                
+                
+                }
+               
+              </motion.div>
+
+                        {isAuraAmplificada?
+              <div
+            className="energy-rect"
+            style={{ ['--energy-color' as any]: elColor }}
+            />:''}
       <div className="battle-card">
         <motion.button
           onClick={onClick}
@@ -247,6 +293,7 @@ function YuGiOhCard({
         </div>
       );
     }
+    
 
     // -- RESURRECT card small rendering --
     if (isSpecial) {
@@ -317,14 +364,7 @@ function YuGiOhCard({
         </div>
       );
     }
-    const float = useMemo(() => {
-      return {
-        height: 8 + Math.random() * 4,      // sobe e desce
-        sideways: Math.random() * 3 - 1,     // leve lateral
-        tilt: Math.random() * 5 - 1,         // inclinação
-        speed: 5.5 + Math.random() * 2.5     // velocidade diferente
-      };
-    }, []);
+
     // -- Normal luck/bad-luck small rendering --
     return (
       <>

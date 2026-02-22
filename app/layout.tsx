@@ -52,6 +52,13 @@ export default function RootLayout({
         <link rel="preload" href="/images/cards/card15.png" as="image" />
         <link rel="preload" href="/images/cards/card16.png" as="image" />
         <link rel="preload" href="/images/cards/card17.png" as="image" />
+        <link rel="preload" href="/images/ico/bag.png" as="image" />
+        <link rel="preload" href="/images/ico/moves.png" as="image" />
+        <link rel="preload" href="/images/ico/profile.png" as="image" />
+        <link rel="preload" href="/images/ico/settings.png" as="image" />
+        <link rel="preload" href="/images/ico/shop.png" as="image" />
+        <link rel="preload" href="/images/ico/team.png" as="image" />
+                           
       </head>
       <body className={`${_inter.variable} ${_pixel.variable} font-sans antialiased`}>{children}</body>
     </html>
