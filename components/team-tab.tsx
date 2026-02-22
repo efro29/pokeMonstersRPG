@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/lib/game-store";
 import {
@@ -72,6 +72,9 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
     completeEvolution,
   } = useGameStore();
 
+
+
+      
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [xpInput, setXpInput] = useState("");
   const [levelInput, setLevelInput] = useState("");
@@ -149,7 +152,7 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
 
             return (
 
-              <div key={pokemon.speciesId} style={{backgroundColor:'rgb(0, 3, 21)'}} className=" text-center rounded-lg">
+              <div key={pokemon.uid} style={{backgroundColor:'rgb(0, 3, 21)'}} className=" text-center rounded-lg">
               <div
                 key={pokemon.uid}
               style={{backgroundColor:'rgb(42, 45, 60)'}}
@@ -175,9 +178,9 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
                     <span className="absolute -bottom-1 -right-1 text-[9px] font-bold bg-secondary text-foreground rounded-full px-1.5 py-0.5 border border-border">
                       Lv.{level}
                     </span>
-                    <span className="absolute -top-1 -right-1 text-[8px] font-bold text-blue-400 bg-blue-400/10 rounded-full px-1 py-0.5 border border-blue-400/30">
+                    {/* <span className="absolute -top-1 -right-1 text-[8px] font-bold text-blue-400 bg-blue-400/10 rounded-full px-1 py-0.5 border border-blue-400/30">
                       AC{cardAttrs.defesa}
-                    </span>
+                    </span> */}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">

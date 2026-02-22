@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback,useRef, useEffect  } from "react";
 import { useGameStore, PA_CONFIG } from "@/lib/game-store";
 import type { PAActionType } from "@/lib/game-store";
 import {
@@ -150,6 +150,7 @@ export function BattleScene() {
   const [testDC, setTestDC] = useState("10");
   const [isSwitching, setIsSwitching] = useState(false);
   const [showDefeatMessage, setShowDefeatMessage] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const ARENAS = [
     "campo"

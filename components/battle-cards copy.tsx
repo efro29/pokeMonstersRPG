@@ -1714,28 +1714,7 @@ export function BattleCards() {
           )}
 
           {/* Deck button with remaining count */}
-          <div className="relative">
-            <div
-              onClick={() => setShowDeckMenu(!showDeckMenu)}
-              className="relative flex flex-col items-center justify-center rounded-[5px] select-none"
-              style={{
-                cursor: "pointer",
-                width: 44,
-                height: 64,
-                background: canDraw
-                  ? "linear-gradient(180deg, rgba(2, 2, 26, 0.6) 0%, rgba(1, 1, 3, 0.8) 100%)"
-                  : "linear-gradient(180deg, rgba(40, 10, 10, 0.6) 0%, rgba(20, 5, 5, 0.8) 100%)",
-                borderColor: canDraw ? "rgb(7, 18, 119)" : "rgb(100, 30, 30)",
-                borderWidth: 1,
-              }}
-            >
-              <span className="text-[11px] font-bold font-mono" style={{ color: canDraw ? "#6890F0" : "#EF4444" }}>
-                {deckRemaining}
-              </span>
-              <span className="text-[7px] text-muted-foreground mt-0.5">
-                {canDraw ? "cartas" : "vazio"}
-              </span>
-            </div>
+         
 
             {/* Deck popup menu */}
             <AnimatePresence>

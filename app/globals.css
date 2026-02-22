@@ -394,3 +394,349 @@ to{transform:translateX(100%)}
   }
 }
 
+@keyframes tabBounce {
+  0%   { transform: translateY(-10px); }
+  40%  { transform: translateY(-32px); }
+  65%  { transform: translateY(-22px); }
+  82%  { transform: translateY(-28px); }
+  100% { transform: translateY(-26px); }
+}
+
+.tab-active {
+  animation: tabBounce 420ms cubic-bezier(.34,1.56,.64,1);
+}
+
+.card-perspective{
+  perspective: 700px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.battle-card{
+  transform: rotateX(55deg) scaleY(1.25);
+  transform-origin: bottom center;
+  transition: transform .25s ease;
+  will-change: transform;
+}
+
+.card-pop{
+  position:absolute;
+  left:50%;
+  top:-70px;
+  transform:translateX(-50%) rotateX(-55deg);
+  transform-origin:bottom center;
+  z-index:50;
+  pointer-events:none;
+}
+
+.card-pop-img{
+  width:200px;
+  filter:
+    drop-shadow(0 18px 20px rgba(0,0,0,.55))
+    drop-shadow(0 2px 3px rgba(0,0,0,.7));
+  transition:transform .25s ease;
+}
+.battle-card:hover .card-pop-img{
+  transform:translateY(-18px) scale(1.08);
+}
+@keyframes cardFloat {
+  0%   { transform: translateY(0px); }
+  50%  { transform: translateY(-12px); }
+  100% { transform: translateY(0px); }
+}
+
+
+.card-perspective{
+  position:relative;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.card-icon{
+  position:absolute;
+  top:-20px;
+  z-index:400;
+}
+.card-icon-genga{
+  position:absolute;
+  top:0px;
+  z-index:400;
+}
+
+.energy-rect{
+  position:absolute;
+  bottom:10%;
+  left:50%;
+  transform:translateX(-50%);
+  width:18px;
+  height:70px;
+  background:var(--energy-color);
+  opacity:2;
+  border-radius:6px;
+  filter:blur(6px);
+  pointer-events:none;
+  z-index:150;
+}
+@keyframes energyGrow {
+  0%{
+    height:10px;
+    opacity:0;
+  }
+  40%{
+    opacity:.9;
+  }
+  100%{
+    height:70px;
+    opacity:.6;
+  }
+}
+
+.energy-rect{
+  animation:energyGrow 1.2s ease-out forwards;
+}
+.energy-rect::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+
+  background-image:
+    radial-gradient(circle, white 2px, transparent 3px),
+    radial-gradient(circle, var(--energy-color) 2px, transparent 3px),
+    radial-gradient(circle, white 1.5px, transparent 3px),
+    radial-gradient(circle, var(--energy-color) 2px, transparent 3px),
+    radial-gradient(circle, white 2px, transparent 3px);
+
+  background-repeat:no-repeat;
+
+  animation:energyParticles 1.6s linear infinite;
+  filter:blur(.3px);
+}
+
+@keyframes energyParticles {
+  0%{
+    background-position:
+      50% 100%,
+      30% 100%,
+      70% 100%,
+      40% 100%,
+      60% 100%;
+    opacity:0;
+  }
+
+  10%{ opacity:1; }
+
+  100%{
+    background-position:
+      50% -20%,
+      30% -10%,
+      70% -15%,
+      40% -5%,
+      60% -25%;
+    opacity:0;
+  }
+}
+.battle-card::after{
+  content:"";
+  position:absolute;
+  top:-6px;
+  left:50%;
+  transform:translateX(-50%);
+  width:60px;
+  height:20px;
+
+  background:radial-gradient(ellipse,
+      var(--energy-color) 0%,
+      color-mix(in srgb, var(--energy-color), white 40%) 30%,
+      transparent 70%);
+
+  filter:blur(8px);
+  opacity:.7;
+  pointer-events:none;
+}
+.card-icon img{
+  animation:receiveEnergy 1.6s ease-in-out infinite;
+}
+
+@keyframes receiveEnergy{
+  0%{ filter:drop-shadow(0 0 0px var(--energy-color)); }
+  50%{ filter:drop-shadow(0 0 14px var(--energy-color)); }
+  100%{ filter:drop-shadow(0 0 0px var(--energy-color)); }
+}
+@keyframes energyLoop {
+  0%{
+    height:55px;
+    opacity:.5;
+  }
+
+  50%{
+    height:70px;
+    opacity:.9;
+  }
+
+  100%{
+    height:55px;
+    opacity:.5;
+  }
+}
+
+.energy-rect{
+  position:absolute;
+  bottom:10%;
+  left:50%;
+  transform:translateX(-50%);
+  width:18px;
+  height:70px;
+  background:var(--energy-color);
+  border-radius:6px;
+  filter:blur(6px);
+  pointer-events:none;
+  z-index:150;
+
+  animation:energyLoop 2s ease-in-out infinite;
+}
+.card-perspective{
+  position:relative;
+  overflow:visible;
+}
+
+/* container das poeiras */
+.energy-dust{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:140;
+}
+
+/* partícula */
+.energy-particle{
+  position:absolute;
+  top:45%;
+  left:50%;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:var(--energy-color);
+  filter:blur(1px);
+  opacity:.9;
+
+  animation: dustFall linear infinite;
+}
+
+/* queda */
+@keyframes dustFall{
+  0%{
+    transform:translate(-50%,0) scale(1);
+    opacity:0;
+  }
+  10%{
+    opacity:.9;
+  }
+  100%{
+    transform:translate(calc(-50% + var(--drift)),120px) scale(.4);
+    opacity:0;
+  }
+}
+
+/* partícula */
+.energy-particle{
+  position:absolute;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  pointer-events:none;
+  opacity:0;
+  filter:blur(1px);
+  animation: particleFall linear forwards;
+}
+
+@keyframes particleFall{
+  0%{
+    transform: translateY(-5px) scale(.6);
+    opacity:0;
+  }
+
+  15%{
+    opacity:1;
+  }
+
+  70%{
+    opacity:.9;
+  }
+
+  100%{
+    transform: translateY(70px) scale(.2);
+    opacity:0;
+  }
+}
+
+.deck-stack-wrapper{
+  position:relative;
+  width:44px;
+  height:78px; /* espaço pro texto abaixo */
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+/* pilha */
+.deck-stack{
+  position:relative;
+  width:44px;
+  height:64px;
+}
+
+/* cartas atrás */
+.deck-shadow-card{
+  position:absolute;
+  width:44px;
+  height:64px;
+  border-radius:5px;
+  top:0;
+  left:0;
+
+  background:linear-gradient(180deg,#0b0b1a,#05050a);
+  border:1px solid rgba(255,255,255,0.06);
+
+  box-shadow:
+    0 2px 4px rgba(0,0,0,.5),
+    inset 0 0 6px rgba(255,255,255,.05);
+
+  z-index:1;
+}
+
+/* carta principal */
+.deck-top{
+  position:absolute;
+  z-index:5;
+  top:0;
+  left:0;
+  box-shadow:
+    0 8px 16px rgba(0,0,0,.7),
+    inset 0 0 8px rgba(255,255,255,.08);
+}
+
+/* texto abaixo */
+.deck-counter{
+  position:absolute;
+  bottom:-2px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  line-height:10px;
+}
+
+.deck-number{
+  font-size:11px;
+  font-weight:700;
+  font-family:monospace;
+  color:#7da7ff;
+  text-shadow:0 0 6px rgba(80,120,255,.6);
+}
+
+.deck-label{
+  font-size:8px;
+  color:#aaa;
+}

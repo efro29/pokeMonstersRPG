@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useGameStore } from "@/lib/game-store";
 import { useModeStore, getGameStoreKey } from "@/lib/mode-store";
 import { ModeSelectScreen } from "@/components/mode-select-screen";
@@ -21,7 +21,16 @@ import { getPokemon, POKEMON } from "@/lib/pokemon-data";
 import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords, Crosshair, Settings } from "lucide-react";
 import { playTabSwitch, playButtonClick } from "@/lib/sounds";
 import { useImagePreloader } from "@/hooks/use-image-preloader";
-
+import {
+  ProfileIcon,
+  TeamIcon,
+  NpcIcon,
+  BagIcon,
+  ShopIcon,
+  MovesIcon,
+  PokedexIcon,
+  SettingsIcon,
+} from "@/components/game-icons";
 type Tab = "team" | "bag" | "pokedex" | "profile" | "shop" | "npcs" | "moves" | "settings";
 type Screen = "loading" | "mode-select" | "profile-select" | "start" | "game";
 
@@ -50,6 +59,8 @@ export default function Page() {
       setScreen("start");
     }
   }, [mode, activeProfileId, screen]);
+
+  
 
   useEffect(() => {
     if (!mode) return;
@@ -83,6 +94,79 @@ export default function Page() {
       setScreen("profile-select");
     }
   };
+
+ // cria o player UMA VEZ
+  useEffect(() => {
+    const audio = new Audio();
+    audio.loop = true;
+    audio.volume = 0.01;
+
+    audioRef.current = audio;
+
+    const unlockAudio = () => {
+      audio.play().catch(() => {});
+      window.removeEventListener("click", unlockAudio);
+    };
+
+    // desbloqueia autoplay no primeiro clique
+    window.addEventListener("click", unlockAudio);
+
+    return () => {
+      audio.pause();
+      audio.currentTime = 0;
+      window.removeEventListener("click", unlockAudio);
+    };
+  }, []);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const HOME_TRACKS = [
+  "/mp3/home.mp3",
+  "/mp3/home1.mp3",
+  "/mp3/home2.mp3",
+];
+const lastTrackRef = useRef<string | null>(null);
+
+function getRandomHomeTrack() {
+  let track;
+
+  do {
+    track = HOME_TRACKS[Math.floor(Math.random() * HOME_TRACKS.length)];
+  } while (track === lastTrackRef.current && HOME_TRACKS.length > 1);
+
+  lastTrackRef.current = track;
+  return track;
+}
+
+useEffect(() => {
+  if (!audioRef.current) return;
+
+  const audio = audioRef.current;
+
+  let newMusic: string;
+
+  // BATTLE
+  if (battle.phase !== "idle") {
+    newMusic = "/mp3/battle.mp3";
+  }
+  // HOME (aleatório)
+  else {
+    newMusic = getRandomHomeTrack();
+  }
+
+  // evita reload desnecessário
+  if (audio.src.includes(newMusic)) return;
+
+  audio.pause();
+  audio.currentTime = 0;
+  audio.src = newMusic;
+
+  // loop só na batalha
+  audio.loop = battle.phase !== "idle";
+
+  audio.play().catch(() => {
+    console.log("Aguardando interação do usuário...");
+  });
+
+}, [battle.phase]);
 
   const handleSelectProfile = (profileId: string) => {
     setActiveProfile(profileId);
@@ -203,6 +287,7 @@ export default function Page() {
       />
     );
   }
+  
 
   // Capture mode
   if (captureTarget !== null) {
@@ -231,8 +316,8 @@ export default function Page() {
   return (
     <main className="flex flex-col h-dvh max-w-md mx-auto bg-background">
       {/* Header */}
-      <header className="flex items-center justify-between p-3 border-b border-border bg-card">
-        <div className="flex items-center gap-2">
+      <header className="flex items-center justify-between p-3 border-b border-border bg-[#011a3b] ">
+        <div className="flex items-center gap-2 ">
           {mode === "trainer" && activeProfile ? (
             <button
               onClick={() => {
@@ -251,7 +336,7 @@ export default function Page() {
               </div>
             </button>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ">
               <svg width="24" height="24" viewBox="0 0 100 100" className="shrink-0">
                 <circle cx="50" cy="50" r="48" fill="hsl(var(--primary))" stroke="hsl(var(--border))" strokeWidth="3" />
                 <rect x="2" y="48" width="96" height="4" fill="hsl(var(--foreground))" />
@@ -309,39 +394,97 @@ export default function Page() {
       </div>
 
       {/* Bottom tab bar */}
-      <nav className="flex border-t border-border bg-card" role="tablist">
-        {([
-          { id: "profile" as Tab, label: "Perfil", icon: User },
-          { id: "team" as Tab, label: "Equipe", icon: Users },
-          ...(mode === "master" ? [{ id: "npcs" as Tab, label: "NPCs", icon: Swords }] : []),
-          { id: "bag" as Tab, label: "Bolsa", icon: Backpack },
-          { id: "shop" as Tab, label: "Loja", icon: ShoppingCart },
-          { id: "moves" as Tab, label: "Golpes", icon: Crosshair },
-          { id: "pokedex" as Tab, label: "Pokedex", icon: BookOpen },
-          { id: "settings" as Tab, label: "Config", icon: Settings },
-        ]).map(({ id, label, icon: Icon }) => {
-          const isActive = activeTab === id;
-          return (
-            <button
-              key={id}
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => { playTabSwitch(); setActiveTab(id); }}
-              className={`flex-1 flex flex-col items-center gap-1 py-2.5 transition-colors ${
-                isActive
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+        <nav className="relative w-full   ">
+            <div
+              className="relative items-end bg-[#011a3b] shadow-2xl   overflow-visible"
+              style={{
+       
+                borderTopWidth:1,
+                display: "grid",
+                gridTemplateColumns: "repeat(7, minmax(0,1fr))"
+              }}
             >
-              <Icon className="w-5 h-5" />
-              <span className="text-[9px] font-medium">{label}</span>
-              {isActive && (
-                <div className="w-5 h-0.5 rounded-full bg-primary" />
-              )}
-            </button>
-          );
-        })}
-      </nav>
+            {([
+            { id: "profile", label: "Perfil", icon: ProfileIcon },
+            { id: "team", label: "Equipe", icon: TeamIcon },
+            { id: "bag", label: "Bolsa", icon: ''},
+            { id: "shop", label: "Loja", icon: ShopIcon },
+            { id: "moves", label: "Golpes", icon: MovesIcon },
+            { id: "pokedex", label: "Pokedex", icon: PokedexIcon },
+            { id: "settings", label: "Config", icon: SettingsIcon },
+        ]).map(({ id, label, icon: Icon }) => {
+              const isActive = activeTab === id;
+
+              return (
+                <button
+                  key={id}
+                  onClick={() => {
+                    playTabSwitch();
+                    setActiveTab(id);
+                  }}
+                  className="relative flex-1 flex justify-center"
+                >
+                  {/* CONTAINER DO BOTÃO */}
+                 <div className="flex flex-col items-center justify-end h-[48px]">
+
+                      {/* CÍRCULO FLUTUANTE */}
+                              <div style={{borderRadius:50 , borderTopColor:'gray',borderTopWidth:isActive?1:0}}
+                                className={`
+                                  relative
+                                  flex flex-col items-center justify-center
+                                  w-14 h-14 
+                                  transition-all duration-300
+                                  ${isActive
+                                    ? "bg-[#011a3b]  scale-110 -translate-y-5"
+                                    : "bg-transparent"}
+                                `}
+                              >
+                                {/* ÍCONE */}
+                                <img
+                                  src={`/images/ico/${id}.png`}
+                                  className={`
+                                    transition-all duration-300
+                                    ${isActive ? "w-8 h-8 -mt-3" : "w-5 h-5 opacity-80"}
+                                  `}
+                                />
+
+                                {/* NOME DENTRO DO BOTÃO */}
+                                <span
+                                  className={`
+                                    absolute bottom-1
+                                    text-[7px] font-bold tracking-wide
+                                    transition-all duration-300
+                                    ${isActive
+                                      ? "text-red-400 opacity-100"
+                                      : "text-slate-300 opacity-0"}
+                                  `}
+                                >
+                                  {label}
+                                </span>
+                              </div>
+
+                     
+
+                        </div>
+                            <span
+                                  className={`
+                                    absolute bottom-1
+                                    text-[7px] font-bold tracking-wide
+                                    transition-all duration-300
+                                    ${!isActive
+                                      ? "text-slate-400 opacity-100"
+                                      : "text-red-300 opacity-0"}
+                                  `}
+                                >
+                                  {label}
+                                </span>
+
+           
+                </button>
+              );
+            })}
+          </div>
+        </nav>
     </main>
   );
 }

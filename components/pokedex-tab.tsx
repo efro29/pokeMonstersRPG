@@ -164,7 +164,7 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
                   <button
                     key={pokemon.id}
                     onClick={() => setSelectedId(pokemon.id)}
-                    className="relative flex flex-col items-center justify-between p-4 rounded-2xl border transition-all bg-neutral-900/90 overflow-hidden group"
+                    className="relative flex flex-col items-center p-4 h-56 rounded-2xl border transition-all bg-neutral-900/90 overflow-hidden group"
                     style={{
                       borderColor: mainColor,
                       borderWidth: "1px",
@@ -172,7 +172,7 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
                     }}
                   >
                     {/* Badge ID */}
-                    <div className="absolute top-2 left-2 bg-black/40 backdrop-blur px-2 py-0.5 rounded-md text-[10px] font-mono text-white">
+                    <div className="absolute top-2  bg-black/40 backdrop-blur px-2 py-0.5 rounded-md text-[10px] font-mono text-white">
                       #{String(pokemon.id).padStart(3, "0")}
                     </div>
 
@@ -188,7 +188,7 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
                     )}
 
                     {/* CÍRCULO ATRÁS DO POKEMON */}
-                    <div className="relative flex items-center justify-center mt-6 mb-2">
+                    <div className="relative flex items-center justify-center flex-1 w-full">
                       <div
                         className="absolute w-28 h-28 rounded-full blur-2xl opacity-40"
                         style={{
@@ -201,25 +201,27 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
                       <img
                         src={getSpriteUrl(pokemon.id) || "/placeholder.svg"}
                         alt={pokemon.name}
-                        width={96}
-                        height={96}
+                        width={60}
+                        height={60}
                         className="relative z-10 pixelated drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)] group-hover:scale-110 transition-transform duration-300"
                         crossOrigin="anonymous"
                         loading="lazy"
                       />
                     </div>
+                    {/* CÍRCULO ATRÁS DO POKEMON */}
+                 
+                
 
-                    {/* Nome */}
-                    <span className="text-sm font-semibold text-white capitalize mt-1">
+                    {/* Types */}   {/* Nome */}
+                    <div className="flex flex-col gap-1 mt-2">
+                      <span className="text-sm font-semibold text-white capitalize mt-1">
                       {pokemon.name}
                     </span>
-
-                    {/* Types */}
-                    <div className="flex gap-1 mt-2">
+                    <div className="flex justify-between gap-1 mt-2">
                       {pokemon.types.map((t) => (
                         <span
                           key={t}
-                          className="text-[9px] px-2 py-0.5 rounded-full font-semibold tracking-wide"
+                          className="text-[9px] px-1  rounded-full font-semibold tracking-wide"
                           style={{
                             backgroundColor: TYPE_COLORS[t],
                             color: "#fff",
@@ -227,7 +229,9 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
                         >
                           {t.toUpperCase()}
                         </span>
+                        
                       ))}
+                      </div>
                     </div>
                   </button>
 
