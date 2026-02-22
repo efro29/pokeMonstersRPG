@@ -10,14 +10,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Search, Plus, Check, Heart, Swords, Zap, HelpCircle } from "lucide-react";
+import { Search, Plus, Check, Heart, Swords, Zap, HelpCircle, CircleDot } from "lucide-react";
 import { playButtonClick, playGift } from "@/lib/sounds";
 
 interface PokedexTabProps {
   onStartBattleWithPokemon?: (speciesId: number, level: number) => void;
+  onStartCapture?: (speciesId: number) => void;
 }
 
-export function PokedexTab({ onStartBattleWithPokemon }: PokedexTabProps = {}) {
+export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: PokedexTabProps = {}) {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [discoverInput, setDiscoverInput] = useState("");
@@ -334,25 +335,45 @@ export function PokedexTab({ onStartBattleWithPokemon }: PokedexTabProps = {}) {
                 </div>
               )}
 
-              {/* Add to team button */}
-              {isInTeam(selectedPokemon.id) ? (
-                <div className="flex items-center gap-2 text-sm text-primary">
-                  <Check className="w-4 h-4" />
-                  Ja esta na equipe
-                </div>
-              ) : (
-                <Button
-                  onClick={() => {
-                    addToTeam(selectedPokemon);
-                    setSelectedId(null);
-                  }}
-                  disabled={teamFull}
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  {teamFull ? "Equipe cheia (6/6)" : "Adicionar a Equipe"}
-                </Button>
-              )}
+              {/* Add to team / capture buttons */}
+              <div className="flex flex-col gap-2 w-full">
+                {isInTeam(selectedPokemon.id) ? (
+                  <div className="flex items-center gap-2 text-sm text-primary">
+                    <Check className="w-4 h-4" />
+                    Ja esta na equipe
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => {
+                      addToTeam(selectedPokemon);
+                      setSelectedId(null);
+                    }}
+                    disabled={teamFull}
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {teamFull ? "Equipe cheia (6/6)" : "Adicionar a Equipe"}
+                  </Button>
+                )}
+
+                {/* Capture button - trainer mode only, always visible (allows duplicates) */}
+                {isTrainerMode && onStartCapture && (
+                  <Button
+                    onClick={() => {
+                      onStartCapture(selectedPokemon.id);
+                      setSelectedId(null);
+                    }}
+                    disabled={teamFull}
+                    className="w-full text-white font-bold"
+                    style={{
+                      backgroundColor: "#EF4444",
+                    }}
+                  >
+                    <CircleDot className="w-4 h-4 mr-2" />
+                    {teamFull ? "Equipe cheia (6/6)" : "Tentar Capturar"}
+                  </Button>
+                )}
+              </div>
 
               {/* Battle button - master mode only */}
               {onStartBattleWithPokemon && (
