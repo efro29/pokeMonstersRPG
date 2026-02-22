@@ -15,8 +15,9 @@ import { ShopTab } from "@/components/shop-tab";
 import { NpcTab } from "@/components/npc-tab";
 import { MovesDictionaryTab } from "@/components/moves-dictionary-tab";
 import { SettingsTab } from "@/components/settings-tab";
+import { CaptureScene } from "@/components/capture-scene";
 import { TrainerAvatar } from "@/components/trainer-avatar";
-import { getPokemon } from "@/lib/pokemon-data";
+import { getPokemon, POKEMON } from "@/lib/pokemon-data";
 import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords, Crosshair, Settings } from "lucide-react";
 import { playTabSwitch, playButtonClick } from "@/lib/sounds";
 import { useImagePreloader } from "@/hooks/use-image-preloader";
@@ -33,6 +34,7 @@ export default function Page() {
   const [screen, setScreen] = useState<Screen>("loading");
   const [activeTab, setActiveTab] = useState<Tab>("profile");
   const [hasSave, setHasSave] = useState(false);
+  const [captureTarget, setCaptureTarget] = useState<number | null>(null);
 
   const activeProfile = profiles.find((p) => p.id === activeProfileId);
 
@@ -121,6 +123,29 @@ export default function Page() {
     window.location.reload();
   };
 
+  // Capture mode handlers
+  const handleStartCapture = (speciesId: number) => {
+    setCaptureTarget(speciesId);
+  };
+
+  const handleCaptureSuccess = (species: { id: number; name: string; types: string[]; baseHp: number; startingMoves: string[]; learnableMoves: string[] }) => {
+    const pokemonSpecies = getPokemon(species.id);
+    if (pokemonSpecies && team.length < 6) {
+      // Add to team with 10 HP as specified
+      const uid = addToTeamWithLevel(pokemonSpecies, 1);
+      if (uid) {
+        // Set HP to 10 as per capture rules
+        const currentTeam = useGameStore.getState().team;
+        useGameStore.setState({
+          team: currentTeam.map((p) =>
+            p.uid === uid ? { ...p, maxHp: 10, currentHp: 10 } : p
+          ),
+        });
+      }
+    }
+    setCaptureTarget(null);
+  };
+
   // Loading state while zustand hydrates from localStorage
   if (screen === "loading") {
     return (
@@ -177,6 +202,20 @@ export default function Page() {
         onChangeProfile={mode === "trainer" ? handleBackToProfiles : undefined}
       />
     );
+  }
+
+  // Capture mode
+  if (captureTarget !== null) {
+    const captureSpecies = POKEMON.find((p) => p.id === captureTarget);
+    if (captureSpecies) {
+      return (
+        <CaptureScene
+          pokemon={captureSpecies}
+          onClose={() => setCaptureTarget(null)}
+          onCaptured={handleCaptureSuccess}
+        />
+      );
+    }
   }
 
   // Battle
@@ -261,6 +300,7 @@ export default function Page() {
         {activeTab === "pokedex" && (
           <PokedexTab
             onStartBattleWithPokemon={mode === "master" ? handleStartBattleWithPokemon : undefined}
+            onStartCapture={mode === "trainer" ? handleStartCapture : undefined}
           />
         )}
         {activeTab === "npcs" && (
