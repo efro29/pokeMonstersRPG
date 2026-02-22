@@ -45,6 +45,24 @@ const POKEBALL_TYPES: Record<string, { name: string; multiplier: number; color: 
 
 type CapturePhase = "ready" | "throwing" | "hit" | "shaking" | "captured" | "escaped" | "select-ball";
 
+// Difficulty class (DC) for capture based on pokemon base HP
+function getCaptureDC(baseHp: number, ballId: string): number {
+  // Tougher pokemon = higher DC
+  // baseHp ranges roughly 20-120
+  // DC ranges: 8 (easy) to 18 (legendary)
+  const baseDC = Math.min(18, Math.max(8, Math.floor(6 + (baseHp / 15))));
+
+  // Ball bonus reduces DC
+  const ballReduction: Record<string, number> = {
+    "pokeball": 0,
+    "great-ball": 2,
+    "ultra-ball": 4,
+    "master-ball": 99, // auto-success
+  };
+
+  return Math.max(2, baseDC - (ballReduction[ballId] ?? 0));
+}
+
 export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps) {
   const { bag, addBagItem, trainer } = useGameStore();
   const [phase, setPhase] = useState<CapturePhase>("select-ball");
@@ -52,6 +70,7 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
   const [shakeCount, setShakeCount] = useState(0);
   const [message, setMessage] = useState("");
   const [ballsUsed, setBallsUsed] = useState(0);
+  const [lastRoll, setLastRoll] = useState<{ d20: number; sorteBonus: number; total: number; dc: number } | null>(null);
 
   // Drag/throw state
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,8 +84,8 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
   const [ringScale, setRingScale] = useState(1);
   const ringDir = useRef(1);
 
-  // Carisma bonus from trainer attributes
-  const carismaBonus = trainer.attributes?.carisma ?? 0;
+  // Sorte (luck) bonus from trainer attributes
+  const sorteBonus = trainer.attributes?.sorte ?? 0;
 
   // Available pokeballs from bag
   const availableBalls = bag.filter((item) => {
@@ -96,31 +115,36 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
     useGameStore.setState({ bag: newBag });
   }, []);
 
-  // Calculate capture success
-  const calculateCapture = useCallback((ballId: string, ringAccuracy: number) => {
-    const ballData = POKEBALL_TYPES[ballId];
-    if (!ballData) return false;
-    if (ballId === "master-ball") return true;
+  // Calculate capture success using D20 + Sorte
+  const calculateCapture = useCallback((ballId: string, ringAccuracy: number): boolean => {
+    if (ballId === "master-ball") {
+      setLastRoll({ d20: 20, sorteBonus: 0, total: 20, dc: 0 });
+      return true;
+    }
 
-    // Base capture rate: 40-65% depending on pokemon base HP
-    // Lower HP pokemon = easier to catch
-    const baseRate = Math.max(0.25, Math.min(0.65, 1 - (pokemon.baseHp / 200)));
+    // Roll a d20
+    const d20 = Math.floor(Math.random() * 20) + 1;
 
-    // Ball multiplier
-    const ballMult = ballData.multiplier;
+    // Sorte bonus: +1 per point of sorte attribute
+    const bonus = sorteBonus;
 
-    // Ring accuracy bonus (0.3 to 1.0 based on ring size when thrown)
-    // Smaller ring = better accuracy = higher bonus
-    const accuracyBonus = 1 + (1 - ringAccuracy) * 0.5;
+    // Ring accuracy bonus: smaller ring when thrown = +1 to +3 bonus
+    // ringScale ranges 0.3 (small/hard) to 1.0 (large/easy)
+    const accuracyBonus = ringAccuracy <= 0.4 ? 3 : ringAccuracy <= 0.65 ? 2 : ringAccuracy <= 0.85 ? 1 : 0;
 
-    // Carisma bonus: +5% per point
-    const charismaMult = 1 + (carismaBonus * 0.05);
+    const total = d20 + bonus + accuracyBonus;
 
-    // Final rate
-    const finalRate = Math.min(0.95, baseRate * ballMult * accuracyBonus * charismaMult);
+    // DC depends on pokemon + ball type
+    const dc = getCaptureDC(pokemon.baseHp, ballId);
 
-    return Math.random() < finalRate;
-  }, [pokemon.baseHp, carismaBonus]);
+    setLastRoll({ d20, sorteBonus: bonus + accuracyBonus, total, dc });
+
+    // Natural 1 always fails, natural 20 always succeeds
+    if (d20 === 1) return false;
+    if (d20 === 20) return true;
+
+    return total >= dc;
+  }, [pokemon.baseHp, sorteBonus]);
 
   // Handle touch/mouse events for the pokeball throw
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
@@ -203,6 +227,7 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
                 setPhase("escaped");
                 setMessage(`${pokemon.name} escapou!`);
                 setShakeCount(0);
+                // lastRoll is already set by calculateCapture
 
                 // Check if player still has balls
                 const remainingBalls = useGameStore.getState().bag.filter((item) =>
@@ -566,6 +591,55 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
               exit={{ y: 80, opacity: 0 }}
               transition={{ type: "spring", stiffness: 200, damping: 20 }}
             >
+              {/* D20 Roll result display */}
+              {lastRoll && (
+                <motion.div
+                  className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border bg-secondary/80 backdrop-blur-sm"
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                >
+                  {/* D20 dice icon */}
+                  <div
+                    className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg text-white shrink-0"
+                    style={{
+                      backgroundColor:
+                        lastRoll.d20 === 20
+                          ? "#22C55E"
+                          : lastRoll.d20 === 1
+                          ? "#EF4444"
+                          : lastRoll.total >= lastRoll.dc
+                          ? "#22C55E"
+                          : "#EF4444",
+                      boxShadow: `0 0 12px ${
+                        lastRoll.d20 === 20 || lastRoll.total >= lastRoll.dc
+                          ? "rgba(34,197,94,0.4)"
+                          : "rgba(239,68,68,0.4)"
+                      }`,
+                    }}
+                  >
+                    {lastRoll.d20}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs text-muted-foreground">
+                      D20: {lastRoll.d20}
+                      {lastRoll.sorteBonus > 0 && ` + ${lastRoll.sorteBonus} bonus`}
+                      {` = `}
+                      <span className="font-bold text-foreground">{lastRoll.total}</span>
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Dificuldade (DC): <span className="font-bold text-foreground">{lastRoll.dc}</span>
+                    </span>
+                    {lastRoll.d20 === 20 && (
+                      <span className="text-[10px] font-bold text-green-400">CRITICO! Captura garantida!</span>
+                    )}
+                    {lastRoll.d20 === 1 && (
+                      <span className="text-[10px] font-bold text-red-400">FALHA CRITICA!</span>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
               {phase === "captured" ? (
                 <>
                   <Button
@@ -652,7 +726,9 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
             <span className="text-[10px] text-muted-foreground/60">trocar</span>
           </button>
 
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span>DC: {getCaptureDC(pokemon.baseHp, selectedBall!)}</span>
+            {sorteBonus > 0 && <span>Sorte: +{sorteBonus}</span>}
             <span>Tentativas: {ballsUsed}</span>
           </div>
         </div>
