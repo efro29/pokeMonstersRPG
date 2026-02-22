@@ -50,7 +50,8 @@ function getCaptureDC(baseHp: number, ballId: string): number {
   // Tougher pokemon = higher DC
   // baseHp ranges roughly 20-120
   // DC ranges: 8 (easy) to 18 (legendary)
-  const baseDC = Math.min(18, Math.max(8, Math.floor(6 + (baseHp / 15))));
+  const baseDC = Math.min(18, Math.max(13, Math.floor(6 + (baseHp / 15))));
+
 
   // Ball bonus reduces DC
   const ballReduction: Record<string, number> = {
@@ -117,6 +118,7 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
 
   // Calculate capture success using D20 + Sorte
   const calculateCapture = useCallback((ballId: string, ringAccuracy: number): boolean => {
+
     if (ballId === "master-ball") {
       setLastRoll({ d20: 20, sorteBonus: 0, total: 20, dc: 0 });
       return true;
@@ -130,7 +132,7 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
 
     // Ring accuracy bonus: smaller ring when thrown = +1 to +3 bonus
     // ringScale ranges 0.3 (small/hard) to 1.0 (large/easy)
-    const accuracyBonus = ringAccuracy <= 0.4 ? 3 : ringAccuracy <= 0.65 ? 2 : ringAccuracy <= 0.85 ? 1 : 0;
+    const accuracyBonus = ringAccuracy <= 0.4 ? 2 : ringAccuracy <= 0.65 ? 1 : ringAccuracy <= 0.85 ? 0 : 0;
 
     const total = d20 + bonus + accuracyBonus;
 
@@ -333,7 +335,7 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
           {phase === "ready" && (
             <motion.div
               className="absolute z-10"
-              style={{ top: "22%" }}
+              style={{ top: "20%" }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -341,9 +343,9 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
               <motion.div
                 className="rounded-full border-[3px]"
                 style={{
-                  width: 120,
-                  height: 50,
-                  borderColor: ringScale > 0.65 ? "#22C55E" : ringScale > 0.4 ? "#F59E0B" : "#EF4444",
+                  width: 250,
+                  height: 250,
+                  borderColor: ringScale > 0.65 ? "#c5b522" : ringScale > 0.4 ? "#0ff50b" : "#EF4444",
                   transform: `scale(${ringScale})`,
                 }}
               />
