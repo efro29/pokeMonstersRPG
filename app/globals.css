@@ -268,3 +268,129 @@ animation:steelShine 2s linear infinite;
 from{transform:translateX(-100%)}
 to{transform:translateX(100%)}
 }
+@font-face {
+  font-family: "Pokemon";
+  src: url("/fonts/Pokemon-Solid.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+.pokemon-logo {
+    z-index:1;
+  font-family: "Pokemon", sans-serif;
+  font-size: 52px;
+  color: #ffcc00;
+
+  /* Contorno azul estilo Pokémon */
+  -webkit-text-stroke: 2px #2a4ea1;
+
+  /* sombra interna leve */
+  text-shadow:
+    0 2px 0 #2a4ea1,
+    0 4px 0 #2a4ea1,
+    0 6px 8px rgba(0,0,0,0.6),
+
+    /* glow branco */
+    0 0 50px rgba(255, 225, 225, 0.35),
+    0 0 30px rgba(255,255,255,0.25),
+
+    /* glow azul externo */
+    0 0 40px rgba(59,130,246,0.35);
+
+  letter-spacing: 2;
+}
+.logo-wrapper{
+  position: relative;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.smoke{
+  position:absolute;
+  width:420px;
+  height:220px;
+  z-index:0;
+  pointer-events:none;
+  filter: blur(30px);
+  opacity:.9;
+}
+
+.smoke::before,
+.smoke::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(circle at 30% 60%, rgba(40,80,255,.45), transparent 40%),
+    radial-gradient(circle at 70% 40%, rgba(120,0,255,.40), transparent 45%),
+    radial-gradient(circle at 50% 80%, rgba(0,140,255,.35), transparent 50%);
+}
+
+/* Camada 1 */
+.smoke::before{
+  animation: smokeFast 4s linear infinite;
+}
+
+/* Camada 2 (movimento diferente) */
+.smoke::after{
+  animation: smokeFastReverse 3s linear infinite;
+  transform: scale(1.2);
+  opacity:.8;
+}
+@keyframes smokeMove{
+  0%{
+    transform: translate(-20px,10px) scale(1);
+  }
+  25%{
+    transform: translate(25px,-15px) scale(1.15);
+  }
+  50%{
+    transform: translate(120px,20px) scale(1.05);
+  }
+  75%{
+    transform: translate(-25px,-10px) scale(1.2);
+  }
+  100%{
+    transform: translate(-20px,10px) scale(1);
+  }
+}
+
+.smoke{
+  animation: energyPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes energyPulse{
+  0%{ filter: blur(25px) brightness(1); }
+  50%{ filter: blur(40px) brightness(1.4); }
+  100%{ filter: blur(25px) brightness(1); }
+}
+
+@keyframes smokeFast{
+  0%{
+    transform: translate(-40px,20px) scale(1);
+  }
+  25%{
+    transform: translate(40px,-25px) scale(1.2);
+  }
+  50%{
+    transform: translate(-20px,30px) scale(1.1);
+  }
+  75%{
+    transform: translate(35px,-20px) scale(1.25);
+  }
+  100%{
+    transform: translate(-40px,20px) scale(1);
+  }
+}
+
+@keyframes smokeFastReverse{
+  0%{
+    transform: translate(30px,-15px) scale(1.2);
+  }
+  50%{
+    transform: translate(-30px,25px) scale(1.35);
+  }
+  100%{
+    transform: translate(30px,-15px) scale(1.2);
+  }
+}
+

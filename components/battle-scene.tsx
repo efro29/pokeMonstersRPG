@@ -411,8 +411,10 @@ export function BattleScene() {
       <div style={{ paddingBottom: 4 }}></div>
 
       <div className=" relative flex flex-col items-center  ">
-
+        {/* POKEMON SPRITES */}
+        
         <motion.div
+        style={{borderWidth:2,borderRadius:4,margin:5}}
           animate={
             isFainted
               ? { opacity: 0.3, y: 20 }
@@ -469,7 +471,7 @@ export function BattleScene() {
               const animProps = getPokemonAnimationVariants(effectType);
               return (
                 <div
-                  className="absolute z-10 flex justify-center"
+                  className=" absolute z-10 flex justify-center"
                   style={{
                     bottom: '15%',
                     left: 0,
@@ -561,9 +563,8 @@ export function BattleScene() {
             battle.phase === "attribute-test-rolling" && battle.selectedAttribute && pokemonAttrs ||
             battle.phase === "attribute-test-result" && battle.attributeTestResult ||
             battle.phase === "result" ||
-
             battle.phase === "rolling"
-            ? '' : <>
+            ?    '' : <>
               <div className="flex items-center gap-3 mb-1 w-full px-10">
 
                 <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/50"></div>
@@ -572,10 +573,10 @@ export function BattleScene() {
                 </span>
                 <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/50"></div>
               </div>
-              {team.length > 1 && (
+            
                 <div
                   style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '12px' }}
-                  className="backdrop-blur-md flex flex-row items-center gap-3  border border-white/10"
+                  className="backdrop-blur-md flex flex-row items-center justify-center gap-3 w-[94%]  border border-white/10"
                 >
                   {team.map((p) => {
                     const isActive = p.uid === battle.activePokemonUid;
@@ -655,18 +656,14 @@ export function BattleScene() {
 
                   })}
                 </div>
-              )}  </>}
+               </>}
         </div>
 
         {/* Name + HP overlay on the arena */}
-        <div className="absolute  left-0 p-2  w-full">
-
+        <div  className="absolute   p-4  w-full ">
           <div style={{ backgroundColor: 'rgb(0,0,0,0.6)' }} className=" rounded-xl  p-3">
-            <div                        onClick={() => setShowDamageInput(true)} className="flex items-center justify-between mb-1.5">
-              <h3 className="text-base font-bold text-foreground"><span className="text-blue-400">#{pokemon.speciesId}</span> {pokemon.name} </h3>
-
-
-
+            <div  className="flex items-center justify-between mb-1.5">
+              <h3 className="text-[12px] font-bold text-foreground"><span className="text-blue-400">#{pokemon.speciesId}</span> {pokemon.name} </h3>
               <div className="flex items-center ">
                 {pokemonTypes?.map((d) =>
                   <img key={d}
@@ -678,8 +675,6 @@ export function BattleScene() {
                     decoding="sync"
                   />
                 )}
-
-                  {}
               </div>
               <div className="flex items-center gap-2">
                 {pokemonAttrs && (
@@ -703,7 +698,6 @@ export function BattleScene() {
                   animate={{ width: `${hpPercent}%` }}
                   transition={{ duration: 0.5 }}
                 />
-
               </div>
               <span style={{ color: hpColor }} className="text-[10px] font-mono text-muted-foreground w-16 text-right">
                 {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
@@ -711,7 +705,6 @@ export function BattleScene() {
             </div>
           </div>
         </div>
-
 
 
         {/* Switch transition overlay */}
@@ -745,13 +738,8 @@ export function BattleScene() {
       </div>
 
 
-
-
-
       {/* Battle content area */}
-      <div className="flex-1 px-4 pb-8 flex flex-col">
-
-
+      <div className="flex-1 px-4 pb-9 flex flex-col">
         <AnimatePresence mode="wait">
           {/* Main menu */}
           {battle.phase === "menu" && (
@@ -770,7 +758,7 @@ export function BattleScene() {
                   disabled={isFainted || battle.pa < PA_CONFIG.costs.attack}
                   className="h-16 flex flex-col gap-0.5 bg-orange-500 text-white hover:bg-orange-600 relative"
                 >
-                  <Swords className="w-6 h-6" />
+                 <Swords className="w-40 h-55" />
                   <span className="text-[7px] font-bold">Atacar</span>
                   <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-orange-200">{PA_CONFIG.costs.attack}PA</span>
                 </Button>
@@ -808,7 +796,7 @@ export function BattleScene() {
                 >
                   <MapPin className="w-4 h-4" />
                   <span className="text-[9px] font-bold">Mover</span>
-                  <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-cyan-200">{PA_CONFIG.costs.moveSquares}PA</span>
+                  <span className="absolute top-0.5 right-1 text-[8px] font-mono font-bold text-white-200">{PA_CONFIG.costs.moveSquares}PA</span>
                 </Button>
 
                 {/* Receive damage from opponent - free action */}
@@ -1253,6 +1241,7 @@ export function BattleScene() {
         </AnimatePresence>
         {/* Dice Result */}
       </div>
+
       {battle.phase === "result" && (
         <motion.div
           onClick={() => {

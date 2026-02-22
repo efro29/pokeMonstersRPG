@@ -52,13 +52,25 @@ export function StartScreen({
   };
 
   return (
-    <div
-      className="flex flex-col h-dvh max-w-md mx-auto relative overflow-hidden"
+  <div
+    className="flex flex-col h-dvh max-w-md mx-auto relative overflow-hidden"
+    onClick={handleTap}
+  >
+   <img
+      src={`/images/home.png`}
+      className="absolute inset-0 w-full h-full object-cover"
+      style={{ zIndex: 0 }}
+      loading="eager"
+      decoding="sync"
+    />
+       <div
+      className="absolute inset-0"
       style={{
-        background: "linear-gradient(180deg, #0c1220 0%, #1a1a3e 40%, #2d1b4e 70%, #0c1220 100%)",
+        background:
+          "linear-gradient(180deg, rgba(12,18,32,0.8) 0%, rgba(26,26,62,0.85) 40%, rgba(45,27,78,0.85) 70%, rgba(12,18,32,0.9) 100%)",
+        zIndex: 1,
       }}
-      onClick={handleTap}
-    >
+    />
       {/* Twinkling stars */}
       {stars.map((star, i) => (
         <motion.div
@@ -122,49 +134,32 @@ export function StartScreen({
           transition={{ type: "spring", damping: 12, delay: 0.3 }}
           className="mb-6"
         >
-          <svg width="80" height="80" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="48" fill="#EF4444" stroke="#1E293B" strokeWidth="3" />
-            <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
-            <path d="M 2 50 A 48 48 0 0 1 98 50" fill="#EF4444" />
-            <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#F1F5F9" />
-            <circle cx="50" cy="50" r="16" fill="#F1F5F9" stroke="#1E293B" strokeWidth="3" />
-            <circle cx="50" cy="50" r="8" fill="#1E293B" />
-            <motion.circle
-              cx="50"
-              cy="50"
-              r="4"
-              fill="white"
+
+         
+
+          <motion.img
+               src={`/images/pokebola.png`}
+               style={{width:60}}
               animate={{ opacity: [0.5, 1, 0.5] }}
               transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
             />
-          </svg>
+            
+   
         </motion.div>
 
         {/* Title */}
-        <motion.div
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.6 }}
-          className="text-center mb-2"
-        >
-          <h1 className="font-pixel text-xl leading-relaxed tracking-wider" style={{ color: "#ffffff" }}>
-            POKEMON RPG
-          </h1>
-        </motion.div>
-
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-          className="text-center mb-8"
-        >
-          <h2
-            className="font-pixel text-sm leading-relaxed tracking-widest"
-            style={{ color: "#F59E0B" }}
-          >
-            MANAUS EDITION Beta
-          </h2>
-        </motion.div>
+          <div  className="flex flex-col items-center mb-6">
+            <div className="logo-wrapper">
+             <div className="smoke"></div>
+            <h1 className="pokemon-logo">PoKéMoN</h1>
+              </div>
+              <h4 className="pokemon-subtitle  font-bold">
+              Season 1 
+            </h4>
+            <h2 className="pokemon-subtitle  font-bold">
+              SOMBRAS DA LIGA 
+            </h2>
+          </div>
 
         {/* Subtitle */}
         <motion.p
@@ -174,7 +169,8 @@ export function StartScreen({
           className="text-xs text-center mb-10"
           style={{ color: "rgba(255,255,255,0.4)" }}
         >
-          Tabletop RPG Companion App
+          Tabletop RPG Companion App 
+
         </motion.p>
 
         {/* Menu or Press to Start */}

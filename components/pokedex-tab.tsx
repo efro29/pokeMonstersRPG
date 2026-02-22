@@ -152,50 +152,84 @@ export function PokedexTab({ onStartBattleWithPokemon }: PokedexTabProps = {}) {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-2 p-4">
+          <div className="grid grid-cols-3 gap-1 p-1">
             {filtered.map((pokemon) => {
               const inTeam = isInTeam(pokemon.id);
+              const mainType = pokemon.types[0];
+               const mainColor = TYPE_COLORS[mainType];
               return (
-                <button
-                  key={pokemon.id}
-                  onClick={() => setSelectedId(pokemon.id)}
-                  className={`relative flex flex-col items-center p-2 rounded-lg border transition-all ${inTeam
-                    ? "border-primary/50 bg-primary/10"
-                    : "border-border bg-card hover:border-muted-foreground/50"
-                    }`}
-                >
-                  {inTeam && (
-                    <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                      <Check className="w-3 h-3 text-primary-foreground" />
+
+
+                  <button
+                    key={pokemon.id}
+                    onClick={() => setSelectedId(pokemon.id)}
+                    className="relative flex flex-col items-center justify-between p-4 rounded-2xl border transition-all bg-neutral-900/90 overflow-hidden group"
+                    style={{
+                      borderColor: mainColor,
+                      borderWidth: "1px",
+                      boxShadow: `0 0 18px ${mainColor}55`,
+                    }}
+                  >
+                    {/* Badge ID */}
+                    <div className="absolute top-2 left-2 bg-black/40 backdrop-blur px-2 py-0.5 rounded-md text-[10px] font-mono text-white">
+                      #{String(pokemon.id).padStart(3, "0")}
                     </div>
-                  )}
-                  <img
-                    src={getSpriteUrl(pokemon.id) || "/placeholder.svg"}
-                    alt={pokemon.name}
-                    width={64}
-                    height={64}
-                    className="pixelated"
-                    crossOrigin="anonymous"
-                    loading="lazy"
-                  />
-                  <span className="text-[10px] text-muted-foreground font-mono">
-                    #{String(pokemon.id).padStart(3, "0")}
-                  </span>
-                  <span className="text-xs font-medium text-foreground truncate w-full text-center">
-                    {pokemon.name}
-                  </span>
-                  <div className="flex gap-0.5 mt-1">
-                    {pokemon.types.map((t) => (
-                      <span
-                        key={t}
-                        className="text-[8px] px-1 py-0.5 rounded font-medium"
-                        style={{ backgroundColor: TYPE_COLORS[t], color: "#ffffff" }}
-                      >
-                        {t.toUpperCase()}
-                      </span>
-                    ))}
-                  </div>
-                </button>
+
+                    {/* Indicator (time selecionado) */}
+                    {inTeam && (
+                      <div
+                        className="absolute top-2 right-2 w-3 h-3 rounded-full"
+                        style={{
+                          backgroundColor: mainColor,
+                          boxShadow: `0 0 10px ${mainColor}`,
+                        }}
+                      />
+                    )}
+
+                    {/* CÍRCULO ATRÁS DO POKEMON */}
+                    <div className="relative flex items-center justify-center mt-6 mb-2">
+                      <div
+                        className="absolute w-28 h-28 rounded-full blur-2xl opacity-40"
+                        style={{
+                          background: `radial-gradient(circle, ${mainColor} 0%, transparent 70%)`,
+                        }}
+                      />
+
+                      <div className="absolute w-24 h-24 rounded-full bg-white/10" />
+
+                      <img
+                        src={getSpriteUrl(pokemon.id) || "/placeholder.svg"}
+                        alt={pokemon.name}
+                        width={96}
+                        height={96}
+                        className="relative z-10 pixelated drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)] group-hover:scale-110 transition-transform duration-300"
+                        crossOrigin="anonymous"
+                        loading="lazy"
+                      />
+                    </div>
+
+                    {/* Nome */}
+                    <span className="text-sm font-semibold text-white capitalize mt-1">
+                      {pokemon.name}
+                    </span>
+
+                    {/* Types */}
+                    <div className="flex gap-1 mt-2">
+                      {pokemon.types.map((t) => (
+                        <span
+                          key={t}
+                          className="text-[9px] px-2 py-0.5 rounded-full font-semibold tracking-wide"
+                          style={{
+                            backgroundColor: TYPE_COLORS[t],
+                            color: "#fff",
+                          }}
+                        >
+                          {t.toUpperCase()}
+                        </span>
+                      ))}
+                    </div>
+                  </button>
+
               );
             })}
           </div>
@@ -218,7 +252,7 @@ export function PokedexTab({ onStartBattleWithPokemon }: PokedexTabProps = {}) {
             <div className="flex flex-col items-center gap-3">
               <img
 
-                src={getBattleSpriteUrl(selectedPokemon.id)}
+                src={getSpriteUrl(selectedPokemon.id)}
                 alt={selectedPokemon.name}
                 width={96}
                 height={96}

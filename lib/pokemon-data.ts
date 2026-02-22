@@ -625,7 +625,7 @@ export function getPokemon(id: number): PokemonSpecies | undefined {
 }
 
 export function getSpriteUrl(id: number): string {
-  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/${id}.svg`;
 }
 
 export function getOfficialArtUrl(id: number): string {

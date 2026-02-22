@@ -693,7 +693,7 @@ function EmptySlot({ index }: { index: number }) {
         width: 44,
         height: 64,
         background: "linear-gradient(180deg, rgba(30,30,30,0.6) 0%, rgba(20,20,20,0.8) 100%)",
-        border: "1.5px dashed rgba(255,255,255,0.1)",
+        borderColor: " rgba(81, 73, 73, 0.1)",borderWidth:1
       }}
     >
       <span className="text-[9px] text-muted-foreground/30 font-mono">
