@@ -48,6 +48,8 @@ import {
   Zap,
   Shield,
   Wind,
+  ArrowRightLeft,
+  Archive,
 } from "lucide-react";
 import { EvolutionAnimation } from "@/components/evolution-animation";
 
@@ -58,8 +60,12 @@ interface TeamTabProps {
 export function TeamTab({ onStartBattle }: TeamTabProps) {
   const {
     team,
+    reserves,
     bag,
     removeFromTeam,
+    moveToReserves,
+    moveToTeam,
+    removeFromReserves,
     learnMove,
     forgetMove,
     addXp,
@@ -89,10 +95,11 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
 
   // Derive selectedPokemon directly from store state so it's always fresh
   const selectedPokemon = selectedUid
-    ? team.find((p) => p.uid === selectedUid) ?? null
+    ? team.find((p) => p.uid === selectedUid) ?? reserves.find((p) => p.uid === selectedUid) ?? null
     : null;
+  const isSelectedInReserves = selectedUid ? reserves.some((p) => p.uid === selectedUid) : false;
 
-  if (team.length === 0) {
+  if (team.length === 0 && reserves.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
         <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center">
@@ -108,6 +115,147 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
     );
   }
 
+  const renderPokemonCard = (pokemon: typeof team[number], isReserve: boolean) => {
+    const species = getPokemon(pokemon.speciesId);
+    const level = pokemon.level ?? 1;
+    const xp = pokemon.xp ?? 0;
+    const hpPercent =
+      pokemon.maxHp > 0
+        ? (Math.round(pokemon.currentHp) / pokemon.maxHp) * 100
+        : 0;
+    const hpColor =
+      hpPercent > 50
+        ? "#22C55E"
+        : hpPercent > 25
+          ? "#F59E0B"
+          : "#EF4444";
+    const isFainted = pokemon.currentHp <= 0;
+    const xpNeeded = xpForLevel(level + 1);
+    const xpPercent =
+      xpNeeded > 0 ? Math.min(100, (xp / xpNeeded) * 100) : 0;
+
+    return (
+      <div key={pokemon.uid} style={{backgroundColor:'rgb(0, 3, 21)'}} className="text-center rounded-lg">
+        <div
+          style={{backgroundColor:'rgb(42, 45, 60)'}}
+          className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+            isFainted
+              ? "border-destructive/30 bg-destructive/5 opacity-60"
+              : "border-border bg-card"
+          }`}
+        >
+          <button
+            onClick={() => setSelectedUid(pokemon.uid)}
+            className="flex items-center gap-3 flex-1 text-left"
+          >
+            <div className="relative">
+              <img
+                src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
+                alt={pokemon.name}
+                width={56}
+                height={56}
+                className="pixelated"
+                crossOrigin="anonymous"
+              />
+              <span className="absolute -bottom-1 -right-1 text-[9px] font-bold bg-secondary text-foreground rounded-full px-1.5 py-0.5 border border-border">
+                Lv.{level}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-sm text-foreground">
+                  {pokemon.name}
+                </span>
+                {species && (
+                  <div className="flex gap-0.5">
+                    {species.types.map((t) => (
+                      <span
+                        key={t}
+                        className="text-[8px] px-1 py-0.5 rounded text-white"
+                        style={{ backgroundColor: TYPE_COLORS[t] }}
+                      >
+                        {t.toUpperCase()}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {/* HP bar */}
+              <div className="flex items-center gap-2 mt-1">
+                <Heart className="w-3 h-3 text-red-400 shrink-0" />
+                <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{
+                      width: `${hpPercent}%`,
+                      backgroundColor: hpColor,
+                    }}
+                  />
+                </div>
+                <span className="text-[10px] font-mono text-muted-foreground w-16 text-right">
+                  {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
+                </span>
+              </div>
+              {/* XP bar */}
+              <div className="flex items-center gap-2 mt-0.5">
+                <Star className="w-3 h-3 text-accent shrink-0" />
+                <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-accent transition-all duration-300"
+                    style={{ width: `${xpPercent}%` }}
+                  />
+                </div>
+                <span className="text-[9px] font-mono text-muted-foreground w-16 text-right">
+                  {xp}/{xpNeeded}
+                </span>
+              </div>
+            </div>
+          </button>
+
+          <div className="flex flex-col gap-1 shrink-0">
+            {!isReserve ? (
+              <>
+                <Button
+                  size="sm"
+                  disabled={isFainted}
+                  onClick={() => onStartBattle(pokemon.uid)}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  <Swords className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => moveToReserves(pokemon.uid)}
+                  className="border-border text-muted-foreground hover:bg-secondary text-[9px] px-1.5"
+                  title="Enviar para Reservas"
+                >
+                  <Archive className="w-3.5 h-3.5" />
+                </Button>
+              </>
+            ) : (
+              <Button
+                size="sm"
+                disabled={team.length >= 6}
+                onClick={() => moveToTeam(pokemon.uid)}
+                className="bg-green-600 text-white hover:bg-green-700 text-[9px] px-2"
+                title="Promover para Equipe"
+              >
+                <ArrowUp className="w-3.5 h-3.5 mr-0.5" />
+                <span className="sr-only">Equipe</span>
+              </Button>
+            )}
+          </div>
+        </div>
+        <span className={`items-center transition-all ${
+            isFainted
+              ? "border-destructive/30 bg-destructive/5 opacity-60"
+              : ""
+          }`} style={{fontSize:10}}>{getBaseAttributes(pokemon.speciesId).especial}</span>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Evolution animation overlay */}
@@ -122,138 +270,55 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
         )}
       </AnimatePresence>
 
-      <div className="p-4 border-b border-border">
-        <h2 className="font-semibold text-foreground">
-          Minha Equipe ({team.length}/6)
-        </h2>
-      </div>
-
       <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-2 p-4">
-          {team.map((pokemon) => {
-            const species = getPokemon(pokemon.speciesId);
-            const level = pokemon.level ?? 1;
-            const xp = pokemon.xp ?? 0;
-            const hpPercent =
-              pokemon.maxHp > 0
-                ? (Math.round(pokemon.currentHp) / pokemon.maxHp) * 100
-                : 0;
-            const hpColor =
-              hpPercent > 50
-                ? "#22C55E"
-                : hpPercent > 25
-                  ? "#F59E0B"
-                  : "#EF4444";
-            const isFainted = pokemon.currentHp <= 0;
-            const xpNeeded = xpForLevel(level + 1);
-            const xpPercent =
-              xpNeeded > 0 ? Math.min(100, (xp / xpNeeded) * 100) : 0;
-            const cardAttrs = computeAttributes(pokemon.speciesId, level, pokemon.customAttributes);
-
-            return (
-
-              <div key={pokemon.uid} style={{backgroundColor:'rgb(0, 3, 21)'}} className=" text-center rounded-lg">
-              <div
-                key={pokemon.uid}
-              style={{backgroundColor:'rgb(42, 45, 60)'}}
-                className={`flex items-center gap-3 p-3 rounded-lg  transition-all ${
-                  isFainted
-                    ? "border-destructive/30 bg-destructive/5 opacity-60"
-                    : "border-border bg-card"
-                }`}
-              >
-                <button
-                  onClick={() => setSelectedUid(pokemon.uid)}
-                  className="flex items-center gap-3 flex-1 text-left"
-                >
-                  <div className="relative">
-                    <img
-                      src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
-                      alt={pokemon.name}
-                      width={56}
-                      height={56}
-                      className="pixelated"
-                      crossOrigin="anonymous"
-                    />
-                    <span className="absolute -bottom-1 -right-1 text-[9px] font-bold bg-secondary text-foreground rounded-full px-1.5 py-0.5 border border-border">
-                      Lv.{level}
-                    </span>
-                    {/* <span className="absolute -top-1 -right-1 text-[8px] font-bold text-blue-400 bg-blue-400/10 rounded-full px-1 py-0.5 border border-blue-400/30">
-                      AC{cardAttrs.defesa}
-                    </span> */}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm text-foreground">
-                        {pokemon.name}
-                      </span>
-                      {species && (
-                        <div className="flex gap-0.5">
-                          {species.types.map((t) => (
-                            <span
-                              key={t}
-                              className="text-[8px] px-1 py-0.5 rounded text-white"
-                              style={{ backgroundColor: TYPE_COLORS[t] }}
-                            >
-                              {t.toUpperCase()}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    {/* HP bar */}
-                    <div className="flex items-center gap-2 mt-1">
-                      <Heart className="w-3 h-3 text-red-400 shrink-0" />
-                      <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-300"
-                          style={{
-                            width: `${hpPercent}%`,
-                            backgroundColor: hpColor,
-                          }}
-                        />
-                      </div>
-                      <span className="text-[10px] font-mono text-muted-foreground w-16 text-right">
-                        {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
-                      </span>
-                    </div>
-                    {/* XP bar */}
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <Star className="w-3 h-3 text-accent shrink-0" />
-                      <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-accent transition-all duration-300"
-                          style={{ width: `${xpPercent}%` }}
-                        />
-                      </div>
-                      <span className="text-[9px] font-mono text-muted-foreground w-16 text-right">
-                        {xp}/{xpNeeded}
-                      </span>
-                    </div>
-          
-                  </div>
-                </button>
-
-                <Button
-                  size="sm"
-                  disabled={isFainted}
-                  onClick={() => onStartBattle(pokemon.uid)}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0"
-                >
-                  <Swords className="w-4 h-4" />
-                </Button>
-                   
-              </div>       
-              <span  className={` items-center  transition-all ${
-                  isFainted
-                    ? "border-destructive/30 bg-destructive/5 opacity-60"
-                    : ""
-                }`}  style={{fontSize:10}}>{getBaseAttributes(pokemon.speciesId).especial}</span>
-         
+        {/* Section 1: Minha Equipe */}
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center gap-2 mb-3">
+            <Swords className="w-4 h-4 text-primary" />
+            <h2 className="font-semibold text-foreground">
+              Minha Equipe ({team.length}/6)
+            </h2>
+          </div>
+          <p className="text-[10px] text-muted-foreground mb-3">
+            Apenas Pokemon da equipe podem batalhar.
+          </p>
+          <div className="flex flex-col gap-2">
+            {team.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-4 text-center">
+                <Swords className="w-6 h-6 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">
+                  Equipe vazia. Promova Pokemon das Reservas ou adicione da Pokedex.
+                </p>
               </div>
-            );
-          })}
-          
+            ) : (
+              team.map((pokemon) => renderPokemonCard(pokemon, false))
+            )}
+          </div>
+        </div>
+
+        {/* Section 2: Reservas */}
+        <div className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Archive className="w-4 h-4 text-muted-foreground" />
+            <h2 className="font-semibold text-foreground">
+              Reservas ({reserves.length})
+            </h2>
+          </div>
+          <p className="text-[10px] text-muted-foreground mb-3">
+            Pokemon capturados que nao estao na equipe ativa. Transfira para a equipe para batalhar.
+          </p>
+          <div className="flex flex-col gap-2">
+            {reserves.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-4 text-center">
+                <Archive className="w-6 h-6 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">
+                  Nenhum Pokemon nas reservas.
+                </p>
+              </div>
+            ) : (
+              reserves.map((pokemon) => renderPokemonCard(pokemon, true))
+            )}
+          </div>
         </div>
       </ScrollArea>
 
@@ -278,7 +343,7 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
           useRareCandy={useRareCandy}
           learnMove={learnMove}
           forgetMove={forgetMove}
-          removeFromTeam={removeFromTeam}
+          removeFromTeam={isSelectedInReserves ? removeFromReserves : removeFromTeam}
           onClose={() => setSelectedUid(null)}
         />}
       </Dialog>
