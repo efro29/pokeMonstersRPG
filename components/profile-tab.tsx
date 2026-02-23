@@ -117,19 +117,31 @@ export function ProfileTab() {
 
   return (
     <ScrollArea className="h-full">
-      <div className="flex flex-col gap-4 p-4">
+      <div className="flex flex-col gap-2 p-2">
         {/* Trainer Card */}
         <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <div className="relative bg-gradient-to-r from-primary/20 to-accent/20 p-4 pb-6">
+          <div className="relative bg-gradient-to-r from-primary/20 to-accent/20 p-4 ">
             <div className="absolute top-3 right-3 flex items-center gap-1 bg-card/80 backdrop-blur-sm rounded-full px-3 py-1">
               <Award className="w-3 h-3 text-accent" />
               <span className="text-xs font-medium text-accent">
                 {kantoBadgesObtained + johtoBadgesObtained}/16
               </span>
             </div>
-            <div className="flex items-center gap-4">
+            <div 
+            
+                 onClick={() => {
+                setEditForm({
+                  name: trainer.name,
+                  age: trainer.age,
+                  hometown: trainer.hometown,
+                  trainerClass: trainer.trainerClass,
+                });
+                setEditing(true);
+              }}
+            
+            className="flex items-center gap-4">
               {activeProfile ? (
-                <TrainerAvatar avatarId={activeProfile.avatarId} size={64} />
+                <TrainerAvatar  avatarId={activeProfile.avatarId} size={64} />
               ) : (
                 <div className="w-16 h-16 rounded-full bg-secondary border-2 border-border flex items-center justify-center">
                   <User className="w-8 h-8 text-muted-foreground" />
@@ -158,7 +170,7 @@ export function ProfileTab() {
               )}
             </div>
 
-            <div className="flex items-center justify-between bg-secondary/50 rounded-lg p-3">
+            {/* <div className="flex items-center justify-between bg-secondary/50 rounded-lg p-3">
               <div className="flex items-center gap-2">
                 <Coins className="w-5 h-5 text-accent" />
                 <span className="text-sm font-medium text-foreground">Dinheiro</span>
@@ -176,9 +188,9 @@ export function ProfileTab() {
                   <Plus className="w-3 h-3" />
                 </Button>
               </div>
-            </div>
+            </div> */}
 
-            <Button
+            {/* <Button
               onClick={() => {
                 setEditForm({
                   name: trainer.name,
@@ -193,7 +205,7 @@ export function ProfileTab() {
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Editar Ficha
-            </Button>
+            </Button> */}
           </div>
         </div>
 

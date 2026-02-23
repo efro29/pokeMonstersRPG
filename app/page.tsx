@@ -8,8 +8,16 @@ import { ProfileSelectScreen } from "@/components/profile-select-screen";
 import { StartScreen } from "@/components/start-screen";
 import { PokedexTab } from "@/components/pokedex-tab";
 import { TeamTab } from "@/components/team-tab";
+import { Input } from "@/components/ui/input";
 import { BagTab } from "@/components/bag-tab";
 import { BattleScene } from "@/components/battle-scene";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { ProfileTab } from "@/components/profile-tab";
 import { ShopTab } from "@/components/shop-tab";
 import { NpcTab } from "@/components/npc-tab";
@@ -18,7 +26,7 @@ import { SettingsTab } from "@/components/settings-tab";
 import { CaptureScene } from "@/components/capture-scene";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 import { getPokemon, POKEMON } from "@/lib/pokemon-data";
-import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords, Crosshair, Settings } from "lucide-react";
+import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords, Crosshair, Settings, Plus } from "lucide-react";
 import { playTabSwitch, playButtonClick } from "@/lib/sounds";
 import { useImagePreloader } from "@/hooks/use-image-preloader";
 import {
@@ -31,6 +39,7 @@ import {
   PokedexIcon,
   SettingsIcon,
 } from "@/components/game-icons";
+import { Button } from "@/components/ui/button";
 type Tab = "team" | "bag" | "pokedex" | "profile" | "shop" | "npcs" | "moves" | "settings";
 type Screen = "loading" | "mode-select" | "profile-select" | "start" | "game";
 
@@ -39,8 +48,10 @@ export default function Page() {
   useImagePreloader();
   const { mode, setMode, profiles, activeProfileId, setActiveProfile, clearActiveProfile, resetMode } = useModeStore();
   const { battle, startBattle, addToTeamWithLevel, team, trainer } = useGameStore();
-
+  const { updateTrainer, updateAttributes, addMoney, toggleBadge, toggleJohtoBadge, addTrainerXp, setTrainerLevel, damageTrainer, healTrainer, recalcTrainerStats } = useGameStore();
   const [screen, setScreen] = useState<Screen>("loading");
+  const [moneyDialog, setMoneyDialog] = useState(false);
+  const [moneyAmount, setMoneyAmount] = useState("");
   const [activeTab, setActiveTab] = useState<Tab>("profile");
   const [hasSave, setHasSave] = useState(false);
   const [captureTarget, setCaptureTarget] = useState<number | null>(null);
@@ -60,7 +71,14 @@ export default function Page() {
     }
   }, [mode, activeProfileId, screen]);
 
-  
+    const handleAddMoney = () => {
+    const amount = parseInt(moneyAmount);
+    if (amount > 0) {
+      addMoney(amount);
+      setMoneyAmount("");
+      setMoneyDialog(false);
+    }
+  };
 
   useEffect(() => {
     if (!mode) return;
@@ -312,6 +330,8 @@ useEffect(() => {
     );
   }
 
+ 
+
   // Game
   return (
     <main className="flex flex-col h-dvh max-w-md mx-auto bg-background">
@@ -356,6 +376,14 @@ useEffect(() => {
             <span className="text-xs font-bold font-mono text-accent">
               {"$"}{trainer.money.toLocaleString("pt-BR")}
             </span>
+              <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setMoneyDialog(true)}
+                  className="h-7 w-7 p-0 border-border text-foreground bg-transparent hover:bg-secondary"
+                >
+                  <Plus className="w-3 h-3" />
+                </Button>
           </div>
           <button
             onClick={() => {
@@ -405,10 +433,11 @@ useEffect(() => {
               }}
             >
             {([
-            { id: "profile", label: "Perfil", icon: ProfileIcon },
+          
             { id: "team", label: "Equipe", icon: TeamIcon },
             { id: "bag", label: "Bolsa", icon: ''},
             { id: "shop", label: "Loja", icon: ShopIcon },
+              { id: "profile", label: "Perfil", icon: ProfileIcon },
             { id: "moves", label: "Golpes", icon: MovesIcon },
             { id: "pokedex", label: "Pokedex", icon: PokedexIcon },
             { id: "settings", label: "Config", icon: SettingsIcon },
@@ -484,6 +513,45 @@ useEffect(() => {
               );
             })}
           </div>
+                  {/* Add Money Dialog */}
+        <Dialog open={moneyDialog} onOpenChange={setMoneyDialog}>
+          <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
+            <DialogHeader>
+              <DialogTitle className="text-foreground">Receber Dinheiro</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">Quanto dinheiro o treinador recebeu?</p>
+            <div className="flex gap-2 flex-wrap">
+              {[100, 500, 1000, 2000, 5000].map((val) => (
+                <Button
+                  key={val}
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setMoneyAmount(String(val))}
+                  className={`border-border bg-transparent hover:bg-secondary ${
+                    moneyAmount === String(val) ? "text-accent border-accent" : "text-foreground"
+                  }`}
+                >
+                  {"$"}{val.toLocaleString("pt-BR")}
+                </Button>
+              ))}
+            </div>
+            <Input
+              type="number"
+              value={moneyAmount}
+              onChange={(e) => setMoneyAmount(e.target.value)}
+              placeholder="Valor personalizado"
+              className="bg-secondary border-border text-foreground"
+            />
+            <Button
+              onClick={handleAddMoney}
+              disabled={!moneyAmount || parseInt(moneyAmount) <= 0}
+              className="bg-accent text-accent-foreground hover:bg-accent/90"
+            >
+              <Coins className="w-4 h-4 mr-2" />
+              Receber {"$"}{parseInt(moneyAmount || "0").toLocaleString("pt-BR")}
+            </Button>
+          </DialogContent>
+        </Dialog>
         </nav>
     </main>
   );
