@@ -1,12 +1,26 @@
 "use client";
 
+import { useState } from "react";
 import { useGameStore } from "@/lib/game-store";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Eye, EyeOff } from "lucide-react";
+import { Settings, Eye, EyeOff, Volume2, VolumeX } from "lucide-react";
 import { playButtonClick } from "@/lib/sounds";
 
 export function SettingsTab() {
   const { showBattleCards, toggleBattleCards } = useGameStore();
+  const [musicMuted, setMusicMuted] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("pokerpg-music-muted") === "true";
+    }
+    return false;
+  });
+
+  const toggleMusic = () => {
+    const newVal = !musicMuted;
+    setMusicMuted(newVal);
+    localStorage.setItem("pokerpg-music-muted", String(newVal));
+    window.dispatchEvent(new Event("pokerpg-music-toggle"));
+  };
 
   return (
     <ScrollArea className="h-full">
@@ -77,11 +91,70 @@ export function SettingsTab() {
               </div>
             </div>
 
+            {/* Music Toggle */}
+            <div className="bg-secondary/50 rounded-lg p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    {musicMuted ? (
+                      <VolumeX className="w-4 h-4 text-muted-foreground" />
+                    ) : (
+                      <Volume2 className="w-4 h-4 text-accent" />
+                    )}
+                    <h4 className="font-medium text-foreground text-sm">
+                      Musica
+                    </h4>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {musicMuted
+                      ? "A musica esta desligada. Nenhuma trilha sonora sera tocada."
+                      : "A musica esta ligada. Trilhas sonoras tocam na tela inicial e durante batalhas."}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    playButtonClick();
+                    toggleMusic();
+                  }}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                    !musicMuted
+                      ? "bg-primary border-primary"
+                      : "bg-secondary border-border"
+                  }`}
+                  role="switch"
+                  aria-checked={!musicMuted}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      !musicMuted ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-border/50">
+                <div className="flex items-center gap-2 text-xs">
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      !musicMuted ? "bg-accent" : "bg-muted-foreground"
+                    }`}
+                  />
+                  <span className="text-muted-foreground">
+                    Status:{" "}
+                    <span className="font-medium text-foreground">
+                      {musicMuted ? "Desligada" : "Ligada"}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
               <p className="text-xs text-blue-200 leading-relaxed">
                 <strong className="font-semibold">Dica:</strong> Desative as
                 cartas se preferir jogar com o sistema clássico de PP, onde cada
-                golpe tem um número limitado de usos por batalha.
+                golpe tem um numero limitado de usos por batalha.
               </p>
             </div>
           </div>

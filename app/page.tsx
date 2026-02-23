@@ -55,6 +55,12 @@ export default function Page() {
   const [activeTab, setActiveTab] = useState<Tab>("profile");
   const [hasSave, setHasSave] = useState(false);
   const [captureTarget, setCaptureTarget] = useState<number | null>(null);
+  const [musicMuted, setMusicMuted] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("pokerpg-music-muted") === "true";
+    }
+    return false;
+  });
 
   const activeProfile = profiles.find((p) => p.id === activeProfileId);
 
@@ -113,6 +119,26 @@ export default function Page() {
     }
   };
 
+  // Listen for mute toggle from settings
+  useEffect(() => {
+    const handler = () => {
+      const muted = localStorage.getItem("pokerpg-music-muted") === "true";
+      setMusicMuted(muted);
+    };
+    window.addEventListener("pokerpg-music-toggle", handler);
+    return () => window.removeEventListener("pokerpg-music-toggle", handler);
+  }, []);
+
+  // Apply mute state to audio
+  useEffect(() => {
+    if (!audioRef.current) return;
+    if (musicMuted) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(() => {});
+    }
+  }, [musicMuted]);
+
  // cria o player UMA VEZ
   useEffect(() => {
     const audio = new Audio();
@@ -159,6 +185,12 @@ useEffect(() => {
 
   const audio = audioRef.current;
 
+  // If muted, just stop playing
+  if (musicMuted) {
+    audio.pause();
+    return;
+  }
+
   let newMusic: string;
 
   // BATTLE
@@ -184,7 +216,7 @@ useEffect(() => {
     console.log("Aguardando interação do usuário...");
   });
 
-}, [battle.phase]);
+}, [battle.phase, musicMuted]);
 
   const handleSelectProfile = (profileId: string) => {
     setActiveProfile(profileId);
