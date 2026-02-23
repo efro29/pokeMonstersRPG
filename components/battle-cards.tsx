@@ -2534,7 +2534,7 @@ export function BattleCards() {
   const [viewingCardSlotIndex, setViewingCardSlotIndex] = useState<number | undefined>(undefined);
   const [pendingCard, setPendingCard] = useState<BattleCard | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [showDeckMenu, setShowDeckMenu] = useState(false);
+  // showDeckMenu removed - deck click draws directly
 
   const fieldCards = battle.cardField;
   const hasEmptySlot = fieldCards.some((c) => c === null);
@@ -2551,7 +2551,6 @@ export function BattleCards() {
   if (isDrawing || !canDraw) return;
   if (!spendPA("drawCard")) return;
   setIsDrawing(true);
-  setShowDeckMenu(false);
   playCardDraw();
 
     const card = drawBattleCard();
@@ -2601,7 +2600,6 @@ export function BattleCards() {
     if (isDrawing || !canDraw) return;
 
     setIsDrawing(true);
-    setShowDeckMenu(false);
     playCardDraw();
 
     const card = drawBattleCard();
@@ -2645,12 +2643,10 @@ export function BattleCards() {
 
   const handleShuffle = () => {
     shuffleDeckAction();
-    setShowDeckMenu(false);
   };
 
   const handleReplenish = () => {
     replenishDeck();
-    setShowDeckMenu(false);
   };
 
   const handleReplace = (slotIndex: number) => {
@@ -2706,111 +2702,129 @@ export function BattleCards() {
             )
           )}
 
-          {/* Deck button with remaining count */}
-          <div className="">
-            <div className="">
-              <div className="relative">
-                <div
-                  onClick={() => setShowDeckMenu(!showDeckMenu)}
-                  className="relative flex flex-col items-center justify-center rounded-[5px] select-none"
-                  style={{
-                    cursor: "pointer",
-                    width: 44,
-                    height: 64,
-                    background: canDraw
-                      ? "linear-gradient(180deg, rgba(2, 2, 26, 0.6) 0%, rgba(1, 1, 3, 0.8) 100%)"
-                      : "linear-gradient(180deg, rgba(40, 10, 10, 0.6) 0%, rgba(20, 5, 5, 0.8) 100%)",
-                    borderColor: canDraw ? "rgb(7, 18, 119)" : "rgb(100, 30, 30)",
-                    borderWidth: 1,
-                  }}
-                >
-                  <span className="text-[11px] font-bold font-mono" style={{ color: canDraw ? "#6890F0" : "#EF4444" }}>
-                    {deckRemaining}
-                  </span>
-                  <span className="text-[7px] text-muted-foreground mt-0.5">
-                    {canDraw ? "cartas" : "vazio"}
-                  </span>
-                </div>
-                </div>
+          {/* Deck as 3D stacked cards - click to draw or auto-replenish */}
+          <div className="card-perspective">
+            <div className="battle-card">
+              <div
+                onClick={() => {
+                  if (canDraw) {
+                    handleDraw();
+                  } else {
+                    handleReplenish();
+                  }
+                }}
+                className="relative select-none"
+                style={{
+                  cursor: isDrawing ? "wait" : "pointer",
+                  width: 44,
+                  height: 64,
+                }}
+              >
+                {/* Stacked card layers - visible thickness that shrinks */}
+                {(() => {
+                  const maxLayers = 24;
+                  const fraction = deckRemaining / DECK_SIZE;
+                  const layerCount = Math.max(canDraw ? 1 : 0, Math.round(fraction * maxLayers));
+                  const offsetPerCard = 1.5;
+
+                  if (layerCount === 0) {
+                    // Empty deck placeholder
+                    return (
+                      <div
+                        className="absolute inset-0 rounded-[4px] flex flex-col items-center justify-center"
+                        style={{
+                          background: "linear-gradient(180deg, #1a0a0a 0%, #0d0505 100%)",
+                          border: "1.5px dashed #7f1d1d",
+                        }}
+                      >
+                        <span className="text-[11px] font-black font-mono text-red-500" style={{ textShadow: "0 0 6px rgba(239,68,68,0.4)" }}>
+                          0
+                        </span>
+                        <span className="text-[6px] font-bold uppercase tracking-wider text-red-400/60">
+                          REPOR
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  return Array.from({ length: layerCount }).map((_, i) => {
+                    const isTop = i === layerCount - 1;
+                    const yOffset = -(i * offsetPerCard);
+                    // Colors darken toward the bottom of the stack
+                    const depth = i / Math.max(1, layerCount - 1);
+                    const baseR = canDraw ? 12 : 42;
+                    const baseG = canDraw ? 22 : 10;
+                    const baseB = canDraw ? 84 : 10;
+                    const r = Math.round(baseR * (0.4 + depth * 0.6));
+                    const g = Math.round(baseG * (0.4 + depth * 0.6));
+                    const b = Math.round(baseB * (0.4 + depth * 0.6));
+
+                    return (
+                      <div
+                        key={i}
+                        className="absolute rounded-[4px]"
+                        style={{
+                          inset: 0,
+                          transform: `translateY(${yOffset}px)`,
+                          background: isTop
+                            ? canDraw
+                              ? "linear-gradient(180deg, #0e1a5e 0%, #070d38 100%)"
+                              : "linear-gradient(180deg, #2a0a0a 0%, #140505 100%)"
+                            : `rgb(${r}, ${g}, ${b})`,
+                          border: isTop
+                            ? `1.5px solid ${canDraw ? "#2545a8" : "#7f1d1d"}`
+                            : `1px solid rgba(${canDraw ? "37,69,168" : "127,29,29"}, ${0.2 + depth * 0.3})`,
+                          zIndex: i,
+                          boxShadow: isTop
+                            ? `0 4px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)`
+                            : i === 0
+                              ? `0 ${layerCount * offsetPerCard + 4}px ${layerCount * offsetPerCard + 10}px rgba(0,0,0,0.7)`
+                              : "none",
+                        }}
+                      >
+                        {/* Top card face content */}
+                        {isTop && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-[4px]">
+                            <div
+                              className="absolute inset-[3px] rounded-[3px] border"
+                              style={{
+                                borderColor: canDraw ? "rgba(104,144,240,0.3)" : "rgba(239,68,68,0.25)",
+                                background: canDraw
+                                  ? "radial-gradient(ellipse at center, rgba(104,144,240,0.1) 0%, transparent 70%)"
+                                  : "radial-gradient(ellipse at center, rgba(239,68,68,0.06) 0%, transparent 70%)",
+                              }}
+                            />
+                            <span
+                              className="text-[13px] font-black font-mono relative"
+                              style={{
+                                color: canDraw ? "#6890F0" : "#EF4444",
+                                textShadow: canDraw
+                                  ? "0 0 8px rgba(104,144,240,0.6)"
+                                  : "0 0 8px rgba(239,68,68,0.5)",
+                              }}
+                            >
+                              {deckRemaining}
+                            </span>
+                            <span
+                              className="text-[6px] font-bold uppercase tracking-wider relative"
+                              style={{ color: canDraw ? "rgba(104,144,240,0.8)" : "rgba(239,68,68,0.6)" }}
+                            >
+                              DECK
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
-
-            {/* Deck popup menu */}
-            <AnimatePresence>
-              {showDeckMenu && (
-                <>
-                  {/* Backdrop to close */}
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowDeckMenu(false)}
-                  />
-                  <motion.div
-                    initial={{ opacity: 0, y: 5, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 5, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute bottom-[68px] right-0 z-50 flex flex-col gap-1 p-2 rounded-lg border"
-                    style={{
-                      background: "linear-gradient(180deg, #0a0a2e 0%, #050510 100%)",
-                      borderColor: "#1e3a8a",
-                      minWidth: 160,
-                      boxShadow: "0 8px 30px rgba(0,0,0,0.6)",
-                    }}
-                  >
-                    <p className="text-[9px] text-muted-foreground text-center mb-1">
-                      Baralho: {deckRemaining} restantes 
-                    </p>
-
-                    {/* Option 1: Draw card (costs 1 PA) */}
-                    <button
-                      onClick={handleDraw}
-                      disabled={!canDraw || isDrawing || battle.pa < 1}
-                      className="flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                      style={{
-                        background: canDraw && battle.pa >= 1 ? "rgba(104,144,240,0.15)" : "rgba(100,100,100,0.1)",
-                        color: canDraw && battle.pa >= 1 ? "#93C5FD" : "#666",
-                      }}
-                    >
-                      <span className="text-[10px]">{"\uD83C\uDCCF"}</span>
-                      Comprar carta
-                      <span className="text-[8px] font-mono text-amber-400 ml-auto">1PA</span>
-                    </button>
-
-                    {/* Option 2: Shuffle */}
-                    <button
-                      onClick={handleShuffle}
-                      disabled={deckRemaining <= 1}
-                      className="flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                      style={{
-                        background: "rgba(168,104,255,0.15)",
-                        color: deckRemaining > 1 ? "#C4B5FD" : "#666",
-                      }}
-                    >
-                      <span className="text-[10px]">{"\uD83D\uDD00"}</span>
-                      Embaralhar
-                    </button>
-
-                    {/* Option 3: Replenish */}
-                    <button
-                      onClick={handleReplenish}
-                      disabled={discardCount === 0}
-                      className="flex items-center gap-2 px-2 py-1.5 rounded text-left text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                      style={{
-                        background: discardCount > 0 ? "rgba(74,222,128,0.15)" : "rgba(100,100,100,0.1)",
-                        color: discardCount > 0 ? "#86EFAC" : "#666",
-                      }}
-                    >
-                      <span className="text-[10px]">{"\u267B"}</span>
-                      Repor cartas ({totalDrawn})
-                    </button>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Card viewer */}
+
       <CardViewer 
         card={viewingCard} 
         open={!!viewingCard} 

@@ -14,6 +14,22 @@ export interface ActiveMove {
   maxPP: number;
 }
 
+export interface BattleHistoryEntry {
+  id: string;
+  type: "victory" | "faint";
+  date: string; // ISO string
+  xpGained?: number;
+  opponentName?: string;
+}
+
+export interface TrainerBattleHistoryEntry {
+  id: string;
+  type: "team-victory";
+  date: string;
+  xpPerPokemon?: number;
+  teamSnapshot: string[]; // pokemon names at time of victory
+}
+
 export interface TeamPokemon {
   uid: string;
   speciesId: number;
@@ -27,6 +43,7 @@ export interface TeamPokemon {
   learnableMoves: string[];
   /** Override base attributes (modified by faint penalties and level-up bonuses) */
   customAttributes?: PokemonBaseAttributes;
+  battleHistory?: BattleHistoryEntry[];
 }
 
 export interface BagItem {
@@ -76,6 +93,7 @@ export interface TrainerProfile {
   maxHp: number;
   currentHp: number;
   defesa: number; // AC / defense
+  battleHistory?: TrainerBattleHistoryEntry[];
 }
 
 /** XP required for a given trainer level */
@@ -269,6 +287,7 @@ export interface PendingEvolution {
 interface GameState {
   trainer: TrainerProfile;
   team: TeamPokemon[];
+  reserves: TeamPokemon[];
   bag: BagItem[];
   battle: BattleState;
   npcs: NpcEnemy[];
@@ -287,6 +306,14 @@ interface GameState {
   addToTeam: (species: PokemonSpecies) => void;
   addToTeamWithLevel: (species: PokemonSpecies, level: number) => string;
   removeFromTeam: (uid: string) => void;
+  reorderTeam: (fromIndex: number, toIndex: number) => void;
+  // Reserves management
+  moveToReserves: (uid: string) => void;
+  moveToTeam: (uid: string) => void;
+  removeFromReserves: (uid: string) => void;
+  // Battle history
+  addPokemonBattleHistory: (uid: string, entry: Omit<BattleHistoryEntry, "id">) => void;
+  addTrainerBattleHistory: (entry: Omit<TrainerBattleHistoryEntry, "id">) => void;
   learnMove: (uid: string, moveId: string) => void;
   forgetMove: (uid: string, moveId: string) => void;
   // Bag management
@@ -379,8 +406,10 @@ export const useGameStore = create<GameState>()(
         maxHp: 20,
         currentHp: 20,
         defesa: 10,
+        battleHistory: [],
       },
       team: [],
+      reserves: [],
       bag: [
         { itemId: "potion", quantity: 5 },
         { itemId: "super-potion", quantity: 2 },
@@ -487,9 +516,8 @@ export const useGameStore = create<GameState>()(
       },
 
       addToTeam: (species) => {
-
-        const { team } = get();
-        if (team.length >= 6) return;
+  
+        const { team, reserves } = get();
         const pokemon: TeamPokemon = {
           uid: generateUid(),
           speciesId: species.id,
@@ -504,12 +532,15 @@ export const useGameStore = create<GameState>()(
             .map((id) => ({ moveId: id, currentPP: 10, maxPP: 10 })),
           learnableMoves: species.learnableMoves,
         };
-        set({ team: [...team, pokemon] });
+        if (team.length >= 6) {
+          set({ reserves: [...reserves, pokemon] });
+        } else {
+          set({ team: [...team, pokemon] });
+        }
       },
 
       addToTeamWithLevel: (species, level) => {
-        const { team } = get();
-        if (team.length >= 6) return "";
+        const { team, reserves } = get();
         const levelBonus = (level - 1) * 3;
         const hp = species.baseHp + levelBonus;
         const uid = generateUid();
@@ -526,7 +557,11 @@ export const useGameStore = create<GameState>()(
             .map((id) => ({ moveId: id, currentPP: 10, maxPP: 10 })),
           learnableMoves: species.learnableMoves,
         };
-        set({ team: [...team, pokemon] });
+        if (team.length >= 6) {
+          set({ reserves: [...reserves, pokemon] });
+        } else {
+          set({ team: [...team, pokemon] });
+        }
         return uid;
       },
 
@@ -534,9 +569,67 @@ export const useGameStore = create<GameState>()(
         set({ team: get().team.filter((p) => p.uid !== uid) });
       },
 
-      learnMove: (uid, moveId) => {
+      reorderTeam: (fromIndex, toIndex) => {
+        const newTeam = [...get().team];
+        if (fromIndex < 0 || fromIndex >= newTeam.length) return;
+        if (toIndex < 0 || toIndex >= newTeam.length) return;
+        // Swap positions
+        const temp = newTeam[fromIndex];
+        newTeam[fromIndex] = newTeam[toIndex];
+        newTeam[toIndex] = temp;
+        set({ team: newTeam });
+      },
+
+      moveToReserves: (uid) => {
+        const { team, reserves } = get();
+        const pokemon = team.find((p) => p.uid === uid);
+        if (!pokemon) return;
         set({
-          team: get().team.map((p) => {
+          team: team.filter((p) => p.uid !== uid),
+          reserves: [...reserves, pokemon],
+        });
+      },
+
+      moveToTeam: (uid) => {
+        const { team, reserves } = get();
+        if (team.length >= 6) return;
+        const pokemon = reserves.find((p) => p.uid === uid);
+        if (!pokemon) return;
+        set({
+          team: [...team, pokemon],
+          reserves: reserves.filter((p) => p.uid !== uid),
+        });
+      },
+
+      removeFromReserves: (uid) => {
+        set({ reserves: get().reserves.filter((p) => p.uid !== uid) });
+      },
+
+      addPokemonBattleHistory: (uid, entry) => {
+        const fullEntry: BattleHistoryEntry = { ...entry, id: generateUid() };
+        const mapHistory = (p: TeamPokemon) => {
+          if (p.uid !== uid) return p;
+          return { ...p, battleHistory: [...(p.battleHistory || []), fullEntry] };
+        };
+        set({
+          team: get().team.map(mapHistory),
+          reserves: get().reserves.map(mapHistory),
+        });
+      },
+
+      addTrainerBattleHistory: (entry) => {
+        const fullEntry: TrainerBattleHistoryEntry = { ...entry, id: generateUid() };
+        const { trainer } = get();
+        set({
+          trainer: {
+            ...trainer,
+            battleHistory: [...(trainer.battleHistory || []), fullEntry],
+          },
+        });
+      },
+
+      learnMove: (uid, moveId) => {
+        const mapLearn = (p: TeamPokemon) => {
             if (p.uid !== uid) return p;
             if (p.moves.length >= 4) return p;
             if (p.moves.some((m) => m.moveId === moveId)) return p;
@@ -545,20 +638,25 @@ export const useGameStore = create<GameState>()(
               moves: [...p.moves, { moveId, currentPP: 10, maxPP: 10 }],
               learnableMoves: p.learnableMoves.filter((id) => id !== moveId),
             };
-          }),
+          };
+        set({
+          team: get().team.map(mapLearn),
+          reserves: get().reserves.map(mapLearn),
         });
       },
 
       forgetMove: (uid, moveId) => {
-        set({
-          team: get().team.map((p) => {
+        const mapForget = (p: TeamPokemon) => {
             if (p.uid !== uid) return p;
             return {
               ...p,
               moves: p.moves.filter((m) => m.moveId !== moveId),
               learnableMoves: [...p.learnableMoves, moveId],
             };
-          }),
+          };
+        set({
+          team: get().team.map(mapForget),
+          reserves: get().reserves.map(mapForget),
         });
       },
 
@@ -919,51 +1017,54 @@ export const useGameStore = create<GameState>()(
       },
 
       healPokemon: (uid, amount) => {
+        const mapHeal = (p: TeamPokemon) =>
+          p.uid === uid
+            ? { ...p, currentHp: Math.min(p.maxHp, p.currentHp + amount) }
+            : p;
         set({
-          team: get().team.map((p) =>
-            p.uid === uid
-              ? { ...p, currentHp: Math.min(p.maxHp, p.currentHp + amount) }
-              : p
-          ),
+          team: get().team.map(mapHeal),
+          reserves: get().reserves.map(mapHeal),
         });
       },
 
       restorePP: (uid, moveId, amount) => {
+        const mapPP = (p: TeamPokemon) =>
+          p.uid === uid
+            ? {
+                ...p,
+                moves: p.moves.map((m) =>
+                  m.moveId === moveId
+                    ? { ...m, currentPP: Math.min(m.maxPP, m.currentPP + amount) }
+                    : m
+                ),
+              }
+            : p;
         set({
-          team: get().team.map((p) =>
-            p.uid === uid
-              ? {
-                  ...p,
-                  moves: p.moves.map((m) =>
-                    m.moveId === moveId
-                      ? { ...m, currentPP: Math.min(m.maxPP, m.currentPP + amount) }
-                      : m
-                  ),
-                }
-              : p
-          ),
+          team: get().team.map(mapPP),
+          reserves: get().reserves.map(mapPP),
         });
       },
 
       restoreAllPP: (uid, amount) => {
+        const mapAllPP = (p: TeamPokemon) =>
+          p.uid === uid
+            ? {
+                ...p,
+                moves: p.moves.map((m) => ({
+                  ...m,
+                  currentPP: Math.min(m.maxPP, m.currentPP + amount),
+                })),
+              }
+            : p;
         set({
-          team: get().team.map((p) =>
-            p.uid === uid
-              ? {
-                  ...p,
-                  moves: p.moves.map((m) => ({
-                    ...m,
-                    currentPP: Math.min(m.maxPP, m.currentPP + amount),
-                  })),
-                }
-              : p
-          ),
+          team: get().team.map(mapAllPP),
+          reserves: get().reserves.map(mapAllPP),
         });
       },
 
       addXp: (uid, amount) => {
-        const { team } = get();
-        const pokemon = team.find((p) => p.uid === uid);
+        const { team, reserves } = get();
+        const pokemon = team.find((p) => p.uid === uid) || reserves.find((p) => p.uid === uid);
         if (!pokemon) return;
 
         const currentXp = pokemon.xp ?? 0;
@@ -985,8 +1086,7 @@ export const useGameStore = create<GameState>()(
           currentAttrs = applyLevelUpBonus(currentAttrs);
         }
 
-        set({
-          team: team.map((p) =>
+        const mapXp = (p: TeamPokemon) =>
             p.uid === uid
               ? {
                   ...p,
@@ -996,8 +1096,10 @@ export const useGameStore = create<GameState>()(
                   currentHp: Math.min(p.currentHp + hpGain, p.maxHp + hpGain),
                   customAttributes: levelsGained > 0 ? currentAttrs : p.customAttributes,
                 }
-              : p
-          ),
+              : p;
+        set({
+          team: team.map(mapXp),
+          reserves: reserves.map(mapXp),
         });
 
         // Auto-trigger evolution if level requirement met
@@ -1021,8 +1123,8 @@ export const useGameStore = create<GameState>()(
       },
 
       setLevel: (uid, level) => {
-        const { team } = get();
-        const pokemon = team.find((p) => p.uid === uid);
+        const { team, reserves } = get();
+        const pokemon = team.find((p) => p.uid === uid) || reserves.find((p) => p.uid === uid);
         if (!pokemon) return;
         const currentLevel = pokemon.level ?? 1;
         const levelDiff = level - currentLevel;
@@ -1036,8 +1138,7 @@ export const useGameStore = create<GameState>()(
           }
         }
 
-        set({
-          team: team.map((p) =>
+        const mapLevel = (p: TeamPokemon) =>
             p.uid === uid
               ? {
                   ...p,
@@ -1047,8 +1148,10 @@ export const useGameStore = create<GameState>()(
                   currentHp: Math.max(1, Math.min(p.currentHp + Math.max(0, hpChange), Math.max(1, p.maxHp + hpChange))),
                   customAttributes: levelDiff > 0 ? currentAttrs : p.customAttributes,
                 }
-              : p
-          ),
+              : p;
+        set({
+          team: team.map(mapLevel),
+          reserves: reserves.map(mapLevel),
         });
 
         // Auto-trigger evolution if level requirement met
@@ -1071,11 +1174,10 @@ export const useGameStore = create<GameState>()(
       },
 
       evolvePokemon: (uid, toSpeciesId) => {
-        const { team } = get();
+        const { team, reserves } = get();
         const species = getPokemon(toSpeciesId);
         if (!species) return;
-        set({
-          team: team.map((p) => {
+        const mapEvolve = (p: TeamPokemon) => {
             if (p.uid !== uid) return p;
             const hpDiff = species.baseHp - (getPokemon(p.speciesId)?.baseHp || 0);
             // Add level-based HP bonus
@@ -1097,13 +1199,16 @@ export const useGameStore = create<GameState>()(
                 (id) => !species.startingMoves.includes(id)
               ),
             };
-          }),
+          };
+        set({
+          team: team.map(mapEvolve),
+          reserves: reserves.map(mapEvolve),
         });
       },
 
       useStone: (uid, stoneId) => {
-        const { team, bag } = get();
-        const pokemon = team.find((p) => p.uid === uid);
+        const { team, reserves, bag } = get();
+        const pokemon = team.find((p) => p.uid === uid) || reserves.find((p) => p.uid === uid);
         if (!pokemon) return false;
         const evo = canEvolveByStone(pokemon.speciesId, stoneId);
         if (!evo) return false;
@@ -1121,8 +1226,8 @@ export const useGameStore = create<GameState>()(
       },
 
       evolveByTrade: (uid) => {
-        const { team } = get();
-        const pokemon = team.find((p) => p.uid === uid);
+        const { team, reserves } = get();
+        const pokemon = team.find((p) => p.uid === uid) || reserves.find((p) => p.uid === uid);
         if (!pokemon) return false;
         const evo = canEvolveByTrade(pokemon.speciesId);
         if (!evo) return false;
@@ -1131,8 +1236,8 @@ export const useGameStore = create<GameState>()(
       },
 
       useRareCandy: (uid) => {
-        const { team, bag } = get();
-        const pokemon = team.find((p) => p.uid === uid);
+        const { team, reserves, bag } = get();
+        const pokemon = team.find((p) => p.uid === uid) || reserves.find((p) => p.uid === uid);
         if (!pokemon) return;
         const candy = bag.find((b) => b.itemId === "rare-candy");
         if (!candy || candy.quantity <= 0) return;

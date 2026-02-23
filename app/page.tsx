@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useGameStore } from "@/lib/game-store";
 import { useModeStore, getGameStoreKey } from "@/lib/mode-store";
 import { ModeSelectScreen } from "@/components/mode-select-screen";
@@ -55,6 +55,12 @@ export default function Page() {
   const [activeTab, setActiveTab] = useState<Tab>("profile");
   const [hasSave, setHasSave] = useState(false);
   const [captureTarget, setCaptureTarget] = useState<number | null>(null);
+  const [musicMuted, setMusicMuted] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("pokerpg-music-muted") === "true";
+    }
+    return false;
+  });
 
   const activeProfile = profiles.find((p) => p.id === activeProfileId);
 
@@ -113,78 +119,109 @@ export default function Page() {
     }
   };
 
- // cria o player UMA VEZ
+  // ── Audio refs (declared before any effect that uses them) ──
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const lastTrackRef = useRef<string | null>(null);
+  const audioUnlockedRef = useRef(false);
+
+  const HOME_TRACKS = ["/mp3/home.mp3", "/mp3/home1.mp3", "/mp3/home2.mp3"];
+
+  const getRandomHomeTrack = useCallback(() => {
+    let track: string;
+    do {
+      track = HOME_TRACKS[Math.floor(Math.random() * HOME_TRACKS.length)];
+    } while (track === lastTrackRef.current && HOME_TRACKS.length > 1);
+    lastTrackRef.current = track;
+    return track;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Listen for mute toggle from settings
+  useEffect(() => {
+    const handler = () => {
+      const muted = localStorage.getItem("pokerpg-music-muted") === "true";
+      setMusicMuted(muted);
+    };
+    window.addEventListener("pokerpg-music-toggle", handler);
+    return () => window.removeEventListener("pokerpg-music-toggle", handler);
+  }, []);
+
+  // Create audio player ONCE
   useEffect(() => {
     const audio = new Audio();
-    audio.loop = true;
     audio.volume = 0.01;
-
     audioRef.current = audio;
 
+    // When a home track ends, play another random one (not looped)
+    const onEnded = () => {
+      if (!audioRef.current) return;
+      if (localStorage.getItem("pokerpg-music-muted") === "true") return;
+      const nextTrack = getRandomHomeTrack();
+      audioRef.current.src = nextTrack;
+      audioRef.current.loop = false;
+      audioRef.current.play().catch(() => {});
+    };
+    audio.addEventListener("ended", onEnded);
+
+    // Unlock audio on first user click
     const unlockAudio = () => {
-      audio.play().catch(() => {});
+      audioUnlockedRef.current = true;
+      // Only play if not muted
+      if (localStorage.getItem("pokerpg-music-muted") !== "true" && audioRef.current?.src) {
+        audioRef.current.play().catch(() => {});
+      }
       window.removeEventListener("click", unlockAudio);
     };
-
-    // desbloqueia autoplay no primeiro clique
     window.addEventListener("click", unlockAudio);
 
     return () => {
       audio.pause();
       audio.currentTime = 0;
+      audio.removeEventListener("ended", onEnded);
       window.removeEventListener("click", unlockAudio);
     };
-  }, []);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const HOME_TRACKS = [
-  "/mp3/home.mp3",
-  "/mp3/home1.mp3",
-  "/mp3/home2.mp3",
-];
-const lastTrackRef = useRef<string | null>(null);
+  }, [getRandomHomeTrack]);
 
-function getRandomHomeTrack() {
-  let track;
+  // Main music controller: reacts to battle phase AND mute state
+  useEffect(() => {
+    if (!audioRef.current) return;
+    const audio = audioRef.current;
 
-  do {
-    track = HOME_TRACKS[Math.floor(Math.random() * HOME_TRACKS.length)];
-  } while (track === lastTrackRef.current && HOME_TRACKS.length > 1);
+    // If muted, stop everything
+    if (musicMuted) {
+      audio.pause();
+      return;
+    }
 
-  lastTrackRef.current = track;
-  return track;
-}
+    let newMusic: string;
 
-useEffect(() => {
-  if (!audioRef.current) return;
+    // BATTLE
+    if (battle.phase !== "idle") {
+      newMusic = "/mp3/battle.mp3";
+    }
+    // HOME (random)
+    else {
+      newMusic = getRandomHomeTrack();
+    }
 
-  const audio = audioRef.current;
+    // Avoid reloading the same track
+    if (audio.src && audio.src.includes(newMusic)) {
+      // Same track, just resume if paused
+      if (audio.paused && audioUnlockedRef.current) {
+        audio.play().catch(() => {});
+      }
+      return;
+    }
 
-  let newMusic: string;
+    audio.pause();
+    audio.currentTime = 0;
+    audio.src = newMusic;
+    audio.loop = battle.phase !== "idle"; // loop only in battle
 
-  // BATTLE
-  if (battle.phase !== "idle") {
-    newMusic = "/mp3/battle.mp3";
-  }
-  // HOME (aleatório)
-  else {
-    newMusic = getRandomHomeTrack();
-  }
-
-  // evita reload desnecessário
-  if (audio.src.includes(newMusic)) return;
-
-  audio.pause();
-  audio.currentTime = 0;
-  audio.src = newMusic;
-
-  // loop só na batalha
-  audio.loop = battle.phase !== "idle";
-
-  audio.play().catch(() => {
-    console.log("Aguardando interação do usuário...");
-  });
-
-}, [battle.phase]);
+    if (audioUnlockedRef.current) {
+      audio.play().catch(() => {});
+    }
+  }, [battle.phase, musicMuted, getRandomHomeTrack]);
 
   const handleSelectProfile = (profileId: string) => {
     setActiveProfile(profileId);
@@ -207,14 +244,15 @@ useEffect(() => {
       startBattle(existing.uid);
       return;
     }
-    // If team is full, replace the last slot
-    if (team.length >= 6) {
-      const lastUid = team[team.length - 1].uid;
-      useGameStore.getState().removeFromTeam(lastUid);
-    }
-    // Add to team with the specified level and start battle
+    // Add to team (or reserves if full) with the specified level and start battle
     const uid = addToTeamWithLevel(species, level);
     if (uid) {
+      // If it went to reserves, move it to team for battle
+      const state = useGameStore.getState();
+      const inReserves = state.reserves.some((p) => p.uid === uid);
+      if (inReserves && state.team.length < 6) {
+        state.moveToTeam(uid);
+      }
       startBattle(uid);
     }
   };
@@ -232,16 +270,17 @@ useEffect(() => {
 
   const handleCaptureSuccess = (species: { id: number; name: string; types: string[]; baseHp: number; startingMoves: string[]; learnableMoves: string[] }) => {
     const pokemonSpecies = getPokemon(species.id);
-    if (pokemonSpecies && team.length < 6) {
-      // Add to team with 10 HP as specified
+    if (pokemonSpecies) {
+      // Add to team (or reserves if team full) with 10 HP as specified
       const uid = addToTeamWithLevel(pokemonSpecies, 1);
       if (uid) {
         // Set HP to 10 as per capture rules
-        const currentTeam = useGameStore.getState().team;
+        const state = useGameStore.getState();
+        const mapHp = (p: typeof state.team[number]) =>
+          p.uid === uid ? { ...p, maxHp: 10, currentHp: 10 } : p;
         useGameStore.setState({
-          team: currentTeam.map((p) =>
-            p.uid === uid ? { ...p, maxHp: 10, currentHp: 10 } : p
-          ),
+          team: state.team.map(mapHp),
+          reserves: state.reserves.map(mapHp),
         });
       }
     }
