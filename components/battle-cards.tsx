@@ -2706,33 +2706,83 @@ export function BattleCards() {
             )
           )}
 
-          {/* Deck button with remaining count */}
-          <div className="">
-            <div className="">
-              <div className="relative">
+          {/* Deck as 3D stacked cards in perspective */}
+          <div className="relative">
+            <div className="card-perspective">
+              <div className="battle-card">
                 <div
                   onClick={() => setShowDeckMenu(!showDeckMenu)}
-                  className="relative flex flex-col items-center justify-center rounded-[5px] select-none"
-                  style={{
-                    cursor: "pointer",
-                    width: 44,
-                    height: 64,
-                    background: canDraw
-                      ? "linear-gradient(180deg, rgba(2, 2, 26, 0.6) 0%, rgba(1, 1, 3, 0.8) 100%)"
-                      : "linear-gradient(180deg, rgba(40, 10, 10, 0.6) 0%, rgba(20, 5, 5, 0.8) 100%)",
-                    borderColor: canDraw ? "rgb(7, 18, 119)" : "rgb(100, 30, 30)",
-                    borderWidth: 1,
-                  }}
+                  className="relative select-none"
+                  style={{ cursor: "pointer", width: 44, height: 64 }}
                 >
-                  <span className="text-[11px] font-bold font-mono" style={{ color: canDraw ? "#6890F0" : "#EF4444" }}>
-                    {deckRemaining}
-                  </span>
-                  <span className="text-[7px] text-muted-foreground mt-0.5">
-                    {canDraw ? "cartas" : "vazio"}
-                  </span>
-                </div>
+                  {/* Stacked card layers - each layer is offset upward */}
+                  {(() => {
+                    const maxVisibleLayers = 20;
+                    const layerCount = Math.min(maxVisibleLayers, deckRemaining);
+                    const offsetPerCard = 1.2;
+                    const totalStackHeight = layerCount * offsetPerCard;
+                    return Array.from({ length: layerCount }).map((_, i) => {
+                      const isTop = i === layerCount - 1;
+                      const yOffset = -(i * offsetPerCard);
+                      return (
+                        <div
+                          key={i}
+                          className="absolute inset-0 rounded-[4px]"
+                          style={{
+                            transform: `translateY(${yOffset}px)`,
+                            background: isTop
+                              ? canDraw
+                                ? "linear-gradient(180deg, #0c1654 0%, #060a2e 100%)"
+                                : "linear-gradient(180deg, #2a0a0a 0%, #140505 100%)"
+                              : `rgba(${canDraw ? "8,14,60" : "30,8,8"}, ${0.7 + (i / layerCount) * 0.3})`,
+                            border: isTop
+                              ? `1.5px solid ${canDraw ? "#1e3a8a" : "#7f1d1d"}`
+                              : `1px solid ${canDraw ? "rgba(30,58,138,0.4)" : "rgba(127,29,29,0.3)"}`,
+                            zIndex: i,
+                            boxShadow: isTop
+                              ? `0 ${totalStackHeight + 2}px ${totalStackHeight + 8}px rgba(0,0,0,0.6)`
+                              : "none",
+                          }}
+                        />
+                      );
+                    });
+                  })()}
+                  {/* Top face content */}
+                  <div
+                    className="absolute inset-0 flex flex-col items-center justify-center rounded-[4px]"
+                    style={{ zIndex: 25 }}
+                  >
+                    {/* Card back design */}
+                    <div
+                      className="absolute inset-[3px] rounded-[3px] border"
+                      style={{
+                        borderColor: canDraw ? "rgba(104,144,240,0.25)" : "rgba(239,68,68,0.2)",
+                        background: canDraw
+                          ? "radial-gradient(ellipse at center, rgba(104,144,240,0.08) 0%, transparent 70%)"
+                          : "radial-gradient(ellipse at center, rgba(239,68,68,0.05) 0%, transparent 70%)",
+                      }}
+                    />
+                    <span
+                      className="text-[13px] font-black font-mono relative"
+                      style={{
+                        color: canDraw ? "#6890F0" : "#EF4444",
+                        textShadow: canDraw
+                          ? "0 0 8px rgba(104,144,240,0.5)"
+                          : "0 0 8px rgba(239,68,68,0.4)",
+                      }}
+                    >
+                      {deckRemaining}
+                    </span>
+                    <span
+                      className="text-[6px] font-bold uppercase tracking-wider relative"
+                      style={{ color: canDraw ? "rgba(104,144,240,0.7)" : "rgba(239,68,68,0.5)" }}
+                    >
+                      {canDraw ? "DECK" : "VAZIO"}
+                    </span>
+                  </div>
                 </div>
               </div>
+            </div>
 
             {/* Deck popup menu */}
             <AnimatePresence>
@@ -2811,6 +2861,7 @@ export function BattleCards() {
       </div>
 
       {/* Card viewer */}
+
       <CardViewer 
         card={viewingCard} 
         open={!!viewingCard} 
