@@ -955,7 +955,54 @@ export const EVOLUTIONS: EvolutionData[] = [
   { from: 270, to: 271, method: "level", level: 14 },  // Lotad -> Lombre
   { from: 271, to: 272, method: "stone", stone: "water-stone" },  // Lombre -> Ludicolo
   { from: 273, to: 274, method: "level", level: 14 },  // Seedot -> Nuzleaf
-  { from: 274, to: 275, method: "stone", stone: "leaf-stone" }   // Nuzleaf -> Shiftry
+  { from: 274, to: 275, method: "stone", stone: "leaf-stone" },  // Nuzleaf -> Shiftry
+
+  // Gen 3
+  { from: 276, to: 277, method: "level", level: 22 },  // Taillow -> Swellow
+  { from: 278, to: 279, method: "level", level: 25 },  // Wingull -> Pelipper
+  { from: 280, to: 281, method: "level", level: 20 },  // Ralts -> Kirlia
+  { from: 281, to: 282, method: "level", level: 30 },  // Kirlia -> Gardevoir
+  { from: 283, to: 284, method: "level", level: 22 },  // Surskit -> Masquerain
+  { from: 285, to: 286, method: "level", level: 23 },  // Shroomish -> Breloom
+  { from: 287, to: 288, method: "level", level: 18 },  // Slakoth -> Vigoroth
+  { from: 288, to: 289, method: "level", level: 36 },  // Vigoroth -> Slaking
+  { from: 290, to: 291, method: "level", level: 20 },  // Nincada -> Ninjask
+  { from: 292, to: 293, method: "level", level: 23 },  // Whismur -> Loudred
+  { from: 293, to: 294, method: "level", level: 40 },  // Loudred -> Exploud
+  { from: 295, to: 296, method: "level", level: 24 },  // Makuhita -> Hariyama
+  { from: 299, to: 300, method: "level", level: 23 },  // Spoink -> Grumpig
+  { from: 301, to: 302, method: "level", level: 11 },  // Trapinch -> Vibrava
+  { from: 302, to: 303, method: "level", level: 45 },  // Vibrava -> Flygon
+  { from: 304, to: 305, method: "level", level: 32 },  // Cacnea -> Cacturne
+  { from: 306, to: 307, method: "level", level: 35 },  // Swablu -> Altaria
+  { from: 309, to: 310, method: "level", level: 30 },  // Castform -> none (no evolution in main series)
+  { from: 311, to: 312, method: "level", level: 37 },  // Shuppet -> Banette
+  { from: 313, to: 314, method: "level", level: 24 },  // Duskull -> Dusclops
+  { from: 315, to: 316, method: "level", level: 44 },  // Tropius -> none (no standard evolution)
+  { from: 317, to: 318, method: "level", level: 25 },  // Chimecho -> Chimera
+  { from: 319, to: 320, method: "level", level: 20 },  // Meditite -> Medicham
+  { from: 321, to: 322, method: "level", level: 24 },  // Electrike -> Manectric
+  { from: 323, to: 324, method: "level", level: 20 },  // Roselia -> none
+  { from: 325, to: 326, method: "level", level: 25 },  // Gulpin -> Swalot
+  { from: 327, to: 328, method: "level", level: 22 },  // Carvanha -> Sharpedo
+  { from: 329, to: 330, method: "level", level: 40 },  // Wailmer -> Wailord
+  { from: 331, to: 332, method: "level", level: 25 },  // Barboach -> Whiscash
+  { from: 333, to: 334, method: "level", level: 18 },  // Corphish -> Crawdaunt
+  { from: 335, to: 336, method: "level", level: 12 },  // Baltoy -> Claydol
+  { from: 337, to: 338, method: "level", level: 40 },  // Lileep -> Cradily
+  { from: 339, to: 340, method: "level", level: 40 },  // Anorith -> Armaldo
+  { from: 341, to: 342, method: "level", level: 30 },  // Feebas -> Milotic
+  { from: 343, to: 344, method: "level", level: 50 },  // Absol -> none
+  { from: 347, to: 348, method: "level", level: 20 },  // Wynaut -> Wobbuffet
+  { from: 349, to: 350, method: "level", level: 18 },  // Snorunt -> Glalie
+  { from: 351, to: 352, method: "level", level: 32 },  // Spheal -> Sealeo
+  { from: 352, to: 353, method: "level", level: 44 },  // Sealeo -> Walrein
+  { from: 357, to: 358, method: "level", level: 30 },  // Zangoose -> none
+  { from: 359, to: 360, method: "level", level: 35 },  // Spoink -> Grumpig
+  { from: 361, to: 362, method: "level", level: 37 },  // Shuppet -> Banette
+  { from: 363, to: 364, method: "level", level: 24 },  // Duskull -> Dusclops
+  { from: 375, to: 376, method: "level", level: 50 },  // Latis -> none (Latias/Latios)
+  { from: 379, to: 380, method: "level", level: 50 }   // Wynaut -> Wobbuffet
 
 ];
 
