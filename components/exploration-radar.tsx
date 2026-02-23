@@ -29,7 +29,7 @@ const NOCTURNAL_TYPES: Set<string> = new Set(["ghost", "dark"]);
 const GEN_RANGES: [number, number][] = [
   [1, 151],   // G1 Kanto
   [152, 251], // G2 Johto
-  [252, 275], // G3 Hoenn (parcial)
+  [252, 386], // G3 Hoenn (completa)
 ];
 
 function isNightTime(): boolean {
