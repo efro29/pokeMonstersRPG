@@ -119,7 +119,7 @@ export default function Page() {
     }
   };
 
-  // ── Audio refs (declared before any effect that uses them) ──
+  // ── Audio refs ──
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastTrackRef = useRef<string | null>(null);
   const audioUnlockedRef = useRef(false);
