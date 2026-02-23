@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useGameStore } from "@/lib/game-store";
 import { useModeStore, getGameStoreKey } from "@/lib/mode-store";
 import { ModeSelectScreen } from "@/components/mode-select-screen";
