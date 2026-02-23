@@ -125,28 +125,27 @@ function getRadarPool(): PokemonSpecies[] {
 interface RadarEnergy {
   charges: number;
   lastUsed: number; // timestamp
-  usesToday: number;
-  dayKey: string; // "YYYY-MM-DD"
-}
-
-function todayKey(): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 function loadEnergy(): RadarEnergy {
-  if (typeof window === "undefined") return { charges: MAX_ENERGY, lastUsed: 0, usesToday: 0, dayKey: todayKey() };
+  if (typeof window === "undefined") return { charges: MAX_ENERGY, lastUsed: 0 };
   try {
     const raw = localStorage.getItem("radar-energy");
     if (raw) {
       const data = JSON.parse(raw) as RadarEnergy;
-      // Resetar se mudou o dia
-      if (data.dayKey !== todayKey()) {
-        return { charges: MAX_ENERGY, lastUsed: 0, usesToday: 0, dayKey: todayKey() };
+      // Recuperar cargas offline
+      if (data.charges < MAX_ENERGY && data.lastUsed > 0) {
+        const elapsed = Date.now() - data.lastUsed;
+        const recovered = Math.floor(elapsed / ENERGY_RECOVERY_MS);
+        if (recovered > 0) {
+          data.charges = Math.min(MAX_ENERGY, data.charges + recovered);
+          data.lastUsed = data.lastUsed + recovered * ENERGY_RECOVERY_MS;
+        }
       }
       return data;
     }
   } catch { /* ignore */ }
-  return { charges: MAX_ENERGY, lastUsed: 0, usesToday: 0, dayKey: todayKey() };
+  return { charges: MAX_ENERGY, lastUsed: 0 };
 }
 
 function saveEnergy(e: RadarEnergy) {
@@ -264,11 +263,6 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
       setTimeout(() => setScanMessage(null), 3000);
       return;
     }
-    if (energy.usesToday >= MAX_ENERGY) {
-      setScanMessage("Limite diario atingido (4 scans).");
-      setTimeout(() => setScanMessage(null), 3000);
-      return;
-    }
 
     playButtonClick();
 
@@ -276,8 +270,6 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
     const next: RadarEnergy = {
       charges: energy.charges - 1,
       lastUsed: Date.now(),
-      usesToday: energy.usesToday + 1,
-      dayKey: todayKey(),
     };
     setEnergy(next);
     saveEnergy(next);
@@ -334,7 +326,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
           <h2 className="text-sm font-bold text-foreground tracking-wide">Radar de Exploracao</h2>
           <p className="text-[10px] text-muted-foreground">
             {isNightTime() ? "Modo noturno ativo" : "Modo diurno"}
-            {" - "}{energy.usesToday}/{MAX_ENERGY} scans hoje
+            {" - "}{energy.charges}/{MAX_ENERGY} cargas
           </p>
         </div>
 
