@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/lib/game-store";
 import {
@@ -53,6 +53,7 @@ import {
   Trophy,
   Clock,
   Skull,
+  GripVertical,
 } from "lucide-react";
 import { EvolutionAnimation } from "@/components/evolution-animation";
 
@@ -66,6 +67,7 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
     reserves,
     bag,
     removeFromTeam,
+    reorderTeam,
     moveToReserves,
     moveToTeam,
     removeFromReserves,
@@ -118,52 +120,113 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
     );
   }
 
-  // Auto-sort: fainted pokemon go to the end of the array
-  useEffect(() => {
-    const alive = team.filter((p) => p.currentHp > 0);
-    const fainted = team.filter((p) => p.currentHp <= 0);
-    if (fainted.length > 0 && team.length > 0) {
-      const sorted = [...alive, ...fainted];
-      const isSame = sorted.every((p, i) => p.uid === team[i]?.uid);
-      if (!isSame) {
-        useGameStore.setState({ team: sorted });
-      }
-    }
-  }, [team]);
+  // Drag state for reordering team
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // First alive pokemon for the battle button
   const firstAlive = team.find((p) => p.currentHp > 0);
 
-  const renderPokemonCard = (pokemon: typeof team[number], isReserve: boolean) => {
+  // Build the 6 fixed slots
+  const slots: (typeof team[number] | null)[] = Array.from({ length: 6 }, (_, i) => team[i] ?? null);
+
+  const handleDragStart = (index: number) => {
+    if (!slots[index]) return;
+    setDragIndex(index);
+  };
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+  const handleDrop = (targetIndex: number) => {
+    if (dragIndex === null || dragIndex === targetIndex) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+    const sourcePokemon = slots[dragIndex];
+    const targetPokemon = slots[targetIndex];
+
+    if (sourcePokemon && targetPokemon) {
+      // Both slots have pokemon -> swap
+      reorderTeam(dragIndex, targetIndex);
+    } else if (sourcePokemon && !targetPokemon && targetIndex < team.length) {
+      // Move to an occupied-range slot (shouldn't happen with contiguous array)
+      reorderTeam(dragIndex, targetIndex);
+    } else if (sourcePokemon && !targetPokemon) {
+      // Moving to an empty slot beyond current length - reorder by removing and inserting
+      const newTeam = [...team];
+      const [moved] = newTeam.splice(dragIndex, 1);
+      // Insert at the target position (clamped to array length)
+      const insertAt = Math.min(targetIndex, newTeam.length);
+      newTeam.splice(insertAt, 0, moved);
+      useGameStore.setState({ team: newTeam });
+    }
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const renderTeamSlot = (pokemon: typeof team[number] | null, slotIndex: number) => {
+    if (!pokemon) {
+      // Empty slot
+      return (
+        <div
+          key={`empty-${slotIndex}`}
+          className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed transition-all ${
+            dragOverIndex === slotIndex
+              ? "border-primary/60 bg-primary/5"
+              : "border-border/40 bg-card/20"
+          }`}
+          style={{ minHeight: 140 }}
+          onDragOver={(e) => handleDragOver(e, slotIndex)}
+          onDrop={() => handleDrop(slotIndex)}
+        >
+          <span className="text-[10px] text-muted-foreground/40 font-mono">#{slotIndex + 1}</span>
+          <Plus className="w-4 h-4 text-muted-foreground/30 mt-1" />
+        </div>
+      );
+    }
+
     const species = getPokemon(pokemon.speciesId);
     const level = pokemon.level ?? 1;
     const xp = pokemon.xp ?? 0;
-    const hpPercent =
-      pokemon.maxHp > 0
-        ? (Math.round(pokemon.currentHp) / pokemon.maxHp) * 100
-        : 0;
-    const hpColor =
-      hpPercent > 50
-        ? "#22C55E"
-        : hpPercent > 25
-          ? "#F59E0B"
-          : "#EF4444";
+    const hpPercent = pokemon.maxHp > 0 ? (Math.round(pokemon.currentHp) / pokemon.maxHp) * 100 : 0;
+    const hpColor = hpPercent > 50 ? "#22C55E" : hpPercent > 25 ? "#F59E0B" : "#EF4444";
     const isFainted = pokemon.currentHp <= 0;
     const xpNeeded = xpForLevel(level + 1);
-    const xpPercent =
-      xpNeeded > 0 ? Math.min(100, (xp / xpNeeded) * 100) : 0;
+    const xpPercent = xpNeeded > 0 ? Math.min(100, (xp / xpNeeded) * 100) : 0;
+    const isDragging = dragIndex === slotIndex;
+    const isDragOver = dragOverIndex === slotIndex && dragIndex !== slotIndex;
 
     return (
-      <div key={pokemon.uid} style={{backgroundColor:'rgb(0, 3, 21)'}} className="text-center rounded-lg">
+      <div
+        key={pokemon.uid}
+        draggable
+        onDragStart={() => handleDragStart(slotIndex)}
+        onDragOver={(e) => handleDragOver(e, slotIndex)}
+        onDrop={() => handleDrop(slotIndex)}
+        onDragEnd={handleDragEnd}
+        className={`text-center rounded-lg transition-all ${
+          isDragging ? "opacity-40 scale-95" : ""
+        } ${isDragOver ? "ring-2 ring-primary/60 ring-offset-1 ring-offset-background" : ""}`}
+        style={{ backgroundColor: "rgb(0, 3, 21)" }}
+      >
         <button
           onClick={() => setSelectedUid(pokemon.uid)}
-          style={{backgroundColor:'rgb(42, 45, 60)'}}
+          style={{ backgroundColor: "rgb(42, 45, 60)" }}
           className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all w-full ${
-            isFainted
-              ? "border-destructive/30 bg-destructive/5 opacity-60"
-              : "border-border bg-card"
+            isFainted ? "border-destructive/30 bg-destructive/5 opacity-60" : "border-border bg-card"
           }`}
         >
+          {/* Drag handle */}
+          <div className="flex items-center gap-0.5 w-full justify-center">
+            <GripVertical className="w-3 h-3 text-muted-foreground/40 cursor-grab active:cursor-grabbing" />
+            <span className="text-[8px] text-muted-foreground/40 font-mono">#{slotIndex + 1}</span>
+          </div>
           <div className="relative">
             <img
               src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
@@ -217,33 +280,83 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
             </div>
           </div>
         </button>
-        {/* Action button below card */}
+        {/* Action button */}
         <div className="flex gap-0.5 mt-1 justify-center">
-          {!isReserve ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => moveToReserves(pokemon.uid)}
-              className="h-5 px-1.5 border-border text-muted-foreground hover:bg-secondary text-[8px]"
-              title="Enviar para Reservas"
-            >
-              <Archive className="w-3 h-3" />
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              disabled={team.length >= 6}
-              onClick={() => moveToTeam(pokemon.uid)}
-              className="h-5 px-1.5 bg-green-600 text-white hover:bg-green-700 text-[8px]"
-              title="Promover para Equipe"
-            >
-              <ArrowUp className="w-3 h-3" />
-            </Button>
-          )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => moveToReserves(pokemon.uid)}
+            className="h-5 px-1.5 border-border text-muted-foreground hover:bg-secondary text-[8px]"
+            title="Enviar para Reservas"
+          >
+            <Archive className="w-3 h-3" />
+          </Button>
         </div>
-        <span className={`block text-[8px] mt-0.5 transition-all ${
+        <span className={`block text-[8px] mt-0.5 transition-all ${isFainted ? "opacity-60" : ""}`}>
+          {getBaseAttributes(pokemon.speciesId).especial}
+        </span>
+      </div>
+    );
+  };
+
+  const renderReserveCard = (pokemon: typeof team[number]) => {
+    const species = getPokemon(pokemon.speciesId);
+    const level = pokemon.level ?? 1;
+    const hpPercent = pokemon.maxHp > 0 ? (Math.round(pokemon.currentHp) / pokemon.maxHp) * 100 : 0;
+    const hpColor = hpPercent > 50 ? "#22C55E" : hpPercent > 25 ? "#F59E0B" : "#EF4444";
+    const isFainted = pokemon.currentHp <= 0;
+
+    return (
+      <div key={pokemon.uid} className="text-center rounded-lg" style={{ backgroundColor: "rgb(0, 3, 21)" }}>
+        <button
+          onClick={() => setSelectedUid(pokemon.uid)}
+          style={{ backgroundColor: "rgb(42, 45, 60)" }}
+          className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all w-full ${
             isFainted ? "opacity-60" : ""
-          }`}>{getBaseAttributes(pokemon.speciesId).especial}</span>
+          }`}
+        >
+          <div className="relative">
+            <img
+              src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
+              alt={pokemon.name}
+              width={48}
+              height={48}
+              className="pixelated"
+              crossOrigin="anonymous"
+            />
+            <span className="absolute -bottom-1 -right-1 text-[8px] font-bold bg-secondary text-foreground rounded-full px-1 py-0.5 border border-border">
+              Lv.{level}
+            </span>
+          </div>
+          <span className="font-medium text-[10px] text-foreground truncate w-full">{pokemon.name}</span>
+          {species && (
+            <div className="flex gap-0.5 justify-center">
+              {species.types.map((t) => (
+                <span key={t} className="text-[7px] px-0.5 py-0.5 rounded text-white leading-none" style={{ backgroundColor: TYPE_COLORS[t] }}>
+                  {t.toUpperCase()}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="w-full flex items-center gap-1 mt-0.5">
+            <Heart className="w-2.5 h-2.5 text-red-400 shrink-0" />
+            <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-300" style={{ width: `${hpPercent}%`, backgroundColor: hpColor }} />
+            </div>
+          </div>
+          <span className="text-[8px] font-mono text-muted-foreground">{Math.round(pokemon.currentHp)}/{pokemon.maxHp}</span>
+        </button>
+        <div className="flex gap-0.5 mt-1 justify-center">
+          <Button
+            size="sm"
+            disabled={team.length >= 6}
+            onClick={() => moveToTeam(pokemon.uid)}
+            className="h-5 px-1.5 bg-green-600 text-white hover:bg-green-700 text-[8px]"
+            title="Promover para Equipe"
+          >
+            <ArrowUp className="w-3 h-3" />
+          </Button>
+        </div>
       </div>
     );
   };
@@ -263,7 +376,7 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
       </AnimatePresence>
 
       <ScrollArea className="flex-1">
-        {/* Section 1: Minha Equipe */}
+        {/* Section 1: Minha Equipe - always 6 slots */}
         <div className="p-3 border-b border-border">
           <div className="flex items-center gap-2 mb-2">
             <Swords className="w-4 h-4 text-primary" />
@@ -281,16 +394,7 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
             </Button>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            {team.length === 0 ? (
-              <div className="col-span-3 flex flex-col items-center gap-2 py-4 text-center">
-                <Swords className="w-6 h-6 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">
-                  Equipe vazia.
-                </p>
-              </div>
-            ) : (
-              team.map((pokemon) => renderPokemonCard(pokemon, false))
-            )}
+            {slots.map((pokemon, i) => renderTeamSlot(pokemon, i))}
           </div>
         </div>
 
@@ -311,7 +415,7 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
                 </p>
               </div>
             ) : (
-              reserves.map((pokemon) => renderPokemonCard(pokemon, true))
+              reserves.map((pokemon) => renderReserveCard(pokemon))
             )}
           </div>
         </div>

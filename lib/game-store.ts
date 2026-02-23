@@ -306,6 +306,7 @@ interface GameState {
   addToTeam: (species: PokemonSpecies) => void;
   addToTeamWithLevel: (species: PokemonSpecies, level: number) => string;
   removeFromTeam: (uid: string) => void;
+  reorderTeam: (fromIndex: number, toIndex: number) => void;
   // Reserves management
   moveToReserves: (uid: string) => void;
   moveToTeam: (uid: string) => void;
@@ -566,6 +567,17 @@ export const useGameStore = create<GameState>()(
 
       removeFromTeam: (uid) => {
         set({ team: get().team.filter((p) => p.uid !== uid) });
+      },
+
+      reorderTeam: (fromIndex, toIndex) => {
+        const newTeam = [...get().team];
+        if (fromIndex < 0 || fromIndex >= newTeam.length) return;
+        if (toIndex < 0 || toIndex >= newTeam.length) return;
+        // Swap positions
+        const temp = newTeam[fromIndex];
+        newTeam[fromIndex] = newTeam[toIndex];
+        newTeam[toIndex] = temp;
+        set({ team: newTeam });
       },
 
       moveToReserves: (uid) => {
