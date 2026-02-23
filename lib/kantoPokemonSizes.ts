@@ -245,7 +245,157 @@ export const kantoPokemonSizes: Record<number, PokemonSize> = {
   384: MEGA, // Rayquaza
 
   385: SMALL, // Jirachi
-  386: MEGA  // Deoxys
+  386: MEGA , // Deoxys
+    387: SMALL,
+  388: MEDIUM,
+  389: BIG,
+
+  390: SMALL,
+  391: MEDIUM,
+  392: BIG,
+
+  393: SMALL,
+  394: MEDIUM,
+  395: BIG,
+
+  396: SMALL,
+  397: MEDIUM,
+  398: BIG,
+
+  399: SMALL,
+  400: MEDIUM,
+
+  401: SMALL,
+  402: MEDIUM,
+
+  403: SMALL,
+  404: MEDIUM,
+  405: BIG,
+
+  406: SMALL,
+  407: MEDIUM,
+
+  408: SMALL,
+  409: BIG,
+
+  410: SMALL,
+  411: BIG,
+
+  412: SMALL,
+  413: MEDIUM,
+  414: MEDIUM,
+
+  415: SMALL,
+  416: MEDIUM,
+
+  417: SMALL,
+
+  418: SMALL,
+  419: MEDIUM,
+
+  420: SMALL,
+  421: MEDIUM,
+
+  422: SMALL,
+  423: MEDIUM,
+
+  424: MEDIUM,
+
+  425: SMALL,
+  426: MEDIUM,
+
+  427: SMALL,
+  428: MEDIUM,
+
+  429: MEDIUM,
+  430: MEDIUM,
+
+  431: SMALL,
+  432: MEDIUM,
+
+  433: SMALL,
+
+  434: SMALL,
+  435: MEDIUM,
+
+  436: SMALL,
+  437: MEDIUM,
+
+  438: SMALL,
+  439: SMALL,
+  440: SMALL,
+
+  441: SMALL,
+
+  442: BIG,
+
+  443: SMALL,
+  444: MEDIUM,
+  445: BIG,
+
+  446: SMALL,
+
+  447: SMALL,
+  448: BIG,
+
+  449: SMALL,
+  450: BIG,
+
+  451: SMALL,
+  452: BIG,
+
+  453: SMALL,
+  454: BIG,
+
+  455: MEDIUM,
+
+  456: SMALL,
+  457: MEDIUM,
+
+  458: SMALL,
+
+  459: SMALL,
+  460: BIG,
+
+  461: BIG,
+  462: BIG,
+  463: BIG,
+  464: BIG,
+  465: BIG,
+  466: BIG,
+  467: BIG,
+  468: BIG,
+  469: BIG,
+  470: BIG,
+  471: BIG,
+  472: BIG,
+  473: BIG,
+  474: BIG,
+  475: BIG,
+  476: BIG,
+  477: BIG,
+  478: BIG,
+
+  // Lake Trio
+  480: BIG,
+  481: BIG,
+  482: BIG,
+
+  // Creation Trio
+  483: MEGA, // Dialga
+  484: MEGA, // Palkia
+  487: MEGA, // Giratina
+
+  485: BIG,  // Heatran
+  486: MEGA, // Regigigas
+  488: BIG,  // Cresselia
+
+  489: SMALL,
+  490: BIG,
+
+  491: BIG,   // Darkrai
+  492: SMALL, // Shaymin
+  493: MEGA   // Arceus
 
 };
 

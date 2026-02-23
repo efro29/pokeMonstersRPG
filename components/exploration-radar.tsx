@@ -15,9 +15,30 @@ const MAX_POKEMON_PER_SCAN = 5;
 
 // Legendários / Míticos – nunca aparecem no radar
 const LEGENDARY_IDS = new Set([
-  144, 145, 146, 150, 151, // Kanto
-  243, 244, 245, 249, 250, 251, // Johto
+// Kanto
+144, 145, 146, 150, 151,
+
+// Johto
+243, 244, 245, 249, 250, 251,
+
+// Hoenn
+377, 378, 379, // Regis
+380, 381,      // Lati@s
+382, 383, 384, // Weather trio
+385, 386,      // Míticos
+
+// Sinnoh
+480, 481, 482, // Lake trio
+483, 484, 487, // Dialga, Palkia, Giratina
+485,           // Heatran
+486,           // Regigigas
+488,           // Cresselia
+489, 490,      // Phione, Manaphy
+491,           // Darkrai
+492,           // Shaymin
+493            // Arceus
 ]);
+
 
 // IDs que são resultado de evolução (o campo "to" de EVOLUTIONS)
 const EVOLVED_IDS = new Set(EVOLUTIONS.map((e) => e.to));
@@ -30,6 +51,7 @@ const GEN_RANGES: [number, number][] = [
   [1, 151],   // G1 Kanto
   [152, 251], // G2 Johto
   [252, 386], // G3 Hoenn (completa)
+  [387, 493], // G4
 ];
 
 function isNightTime(): boolean {
