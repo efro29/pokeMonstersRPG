@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { POKEMON, TYPE_COLORS, getSpriteUrl, getMove } from "@/lib/pokemon-data";
 import type { PokemonType } from "@/lib/pokemon-data";
 import { useGameStore } from "@/lib/game-store";
@@ -80,8 +80,23 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
   const [discoverMessage, setDiscoverMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [battleLevel, setBattleLevel] = useState("5");
   const [activeGen, setActiveGen] = useState<number | null>(null);
+  const [discoverByNumber, setDiscoverByNumber] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("pokerpg-discover-by-number") === "true";
+    }
+    return false;
+  });
   const { team, reserves, addToTeam } = useGameStore();
   const { mode, activeProfileId, discoveredPokemon, discoverPokemon } = useModeStore();
+
+  // Listen for changes from settings
+  useEffect(() => {
+    const handler = () => {
+      setDiscoverByNumber(localStorage.getItem("pokerpg-discover-by-number") === "true");
+    };
+    window.addEventListener("pokerpg-discover-toggle", handler);
+    return () => window.removeEventListener("pokerpg-discover-toggle", handler);
+  }, []);
 
   const isTrainerMode = mode === "trainer";
   const discovered = activeProfileId ? (discoveredPokemon[activeProfileId] || []) : [];
@@ -187,8 +202,8 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
       <>
       {/* Header area */}
       <div className="p-3 border-b border-border flex flex-col gap-2">
-        {/* Discover input - only for trainer mode */}
-        {isTrainerMode && (
+        {/* Discover input - only for trainer mode when unlocked in settings */}
+        {isTrainerMode && discoverByNumber && (
           <div className="flex flex-col gap-2">
             <label className="text-xs text-muted-foreground flex items-center gap-1.5">
               <HelpCircle className="w-3 h-3" />
