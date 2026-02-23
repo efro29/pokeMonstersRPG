@@ -473,10 +473,11 @@ export default function Page() {
             >
             {([
           
-            { id: "team", label: "Equipe", icon: TeamIcon },
+
             { id: "bag", label: "Bolsa", icon: ''},
             { id: "shop", label: "Loja", icon: ShopIcon },
-              { id: "profile", label: "Perfil", icon: ProfileIcon },
+            { id: "team", label: "Equipe", icon: TeamIcon },
+            { id: "profile", label: "Perfil", icon: ProfileIcon },
             { id: "moves", label: "Golpes", icon: MovesIcon },
             { id: "pokedex", label: "Pokedex", icon: PokedexIcon },
             { id: "settings", label: "Config", icon: SettingsIcon },

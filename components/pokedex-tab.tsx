@@ -16,8 +16,8 @@ import { playButtonClick, playGift } from "@/lib/sounds";
 // Generation definitions
 const GENERATIONS = [
   { id: 1, name: "KANTO", label: "G1", range: [1, 151] as [number, number], color: "#EF4444", icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/6.svg" },
-  { id: 2, name: "JOHTO", label: "G2", range: [152, 251] as [number, number], color: "#3B82F6", icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/249.svg" },
-  { id: 3, name: "HOENN", label: "G3", range: [252, 275] as [number, number], color: "#22C55E", icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/254.svg" },
+  { id: 2, name: "JOHTO", label: "G2", range: [152, 251] as [number, number], color: "#3B82F6", icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/157.svg" },
+  { id: 3, name: "HOENN", label: "G3", range: [252, 275] as [number, number], color: "#22C55E", icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/257.svg" },
 ];
 
 function DonutChart({ discovered, total, color, size = 64 }: { discovered: number; total: number; color: string; size?: number }) {

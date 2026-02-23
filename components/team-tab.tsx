@@ -54,6 +54,8 @@ import {
   Clock,
   Skull,
   GripVertical,
+  ArrowDown,
+  BookAIcon,
 } from "lucide-react";
 import { EvolutionAnimation } from "@/components/evolution-animation";
 
@@ -176,17 +178,30 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
       return (
         <div
           key={`empty-${slotIndex}`}
-          className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed transition-all ${
+          className={`flex flex-col items-center justify-center rounded-lg border-1 transition-all ${
             dragOverIndex === slotIndex
               ? "border-primary/60 bg-primary/5"
               : "border-border/40 bg-card/20"
           }`}
-          style={{ minHeight: 140 }}
+          style={{ height: 150 }}
           onDragOver={(e) => handleDragOver(e, slotIndex)}
           onDrop={() => handleDrop(slotIndex)}
         >
-          <span className="text-[10px] text-muted-foreground/40 font-mono">#{slotIndex + 1}</span>
-          <Plus className="w-4 h-4 text-muted-foreground/30 mt-1" />
+      
+      <span className="text-[9px] text-muted-foreground/30 font-mono">
+      <svg
+          width="60"
+          height="60"
+          viewBox="0 0 100 100"
+        >
+          <circle cx="50" cy="50" r="48" fill="#08080a" stroke="#1E293B" strokeWidth="4" />
+          <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
+          <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#606264" />
+          <circle cx="50" cy="50" r="14" fill="#3c3d3d" stroke="#1E293B" strokeWidth="3" />
+          <circle cx="50" cy="50" r="6" fill="#1E293B" />
+        </svg>
+                    
+                    </span>
         </div>
       );
     }
@@ -203,6 +218,7 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
     const isDragOver = dragOverIndex === slotIndex && dragIndex !== slotIndex;
 
     return (
+
       <div
         key={pokemon.uid}
         draggable
@@ -210,91 +226,118 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
         onDragOver={(e) => handleDragOver(e, slotIndex)}
         onDrop={() => handleDrop(slotIndex)}
         onDragEnd={handleDragEnd}
-        className={`text-center rounded-lg transition-all ${
+        className={`relativew-full rounded-[4px] p-[2px] transition-all duration-200 ${
           isDragging ? "opacity-40 scale-95" : ""
-        } ${isDragOver ? "ring-2 ring-primary/60 ring-offset-1 ring-offset-background" : ""}`}
-        style={{ backgroundColor: "rgb(0, 3, 21)" }}
+        } ${
+          isDragOver
+            ? "ring-2 ring-primary/60 ring-offset-1 ring-offset-background"
+            : ""
+        }`}
+        style={{
+          background: isFainted?"linear-gradient(135deg, #6d6969, #000000, #403f3f)":"linear-gradient(135deg, #1852e6, #09bfcf, #030240)",
+        }}
       >
         <button
           onClick={() => setSelectedUid(pokemon.uid)}
-          style={{ backgroundColor: "rgb(42, 45, 60)" }}
-          className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all w-full ${
-            isFainted ? "border-destructive/30 bg-destructive/5 opacity-60" : "border-border bg-card"
-          }`}
+          className={`w-full rounded-[4px] p-1.5 flex flex-col h-full
+        
+              ${ isFainted ? "bg-gradient-to-b from-[#4b4b4b] via-[#2e2e2e] to-[#1a1a1a]" : " bg-gradient-to-b from-[#1e3a8a] to-[#0f172a] border " }
+         ${ isFainted ? "border-red-800 " : "border-neutral-700 " }
+         
+         `}
         >
-          {/* Drag handle */}
-          <div className="flex items-center gap-0.5 w-full justify-center">
-            <GripVertical className="w-3 h-3 text-muted-foreground/40 cursor-grab active:cursor-grabbing" />
-            <span className="text-[8px] text-muted-foreground/40 font-mono">#{slotIndex + 1}</span>
+          {/* HEADER */}
+          <div className="flex justify-between items-start border-b border-neutral-700 pb-[2px]">
+            <div className="min-w-0">
+              <div className="text-[9px] font-bold text-neutral-100 truncate leading-none">
+                {pokemon.name}
+              </div>
+
+            </div>
+
+            <div className="text-right shrink-0">
+              {species && (
+                <div className="flex gap-[2px] mt-[1px]">
+                  {species.types.map((t) => (
+                    <span
+                      key={t}
+                      className="text-[6px] px-[2px] rounded-[2px] text-white"
+                      style={{ backgroundColor: TYPE_COLORS[t] }}
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-          <div className="relative">
+
+          {/* ART AREA */}
+          <div className={`relative flex justify-center items-center my-1.5 h-[56px]
+          
+            ${ isFainted ? "bg-gradient-to-b from-[#3a3a3a] via-[#262626] to-[#141414]" : " bg-gradient-to-b from-[#1e2f5a] via-[#162447] to-[#0f1a33] " }
+          rounded `}>
             <img
               src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
               alt={pokemon.name}
-              width={48}
-              height={48}
-              className="pixelated"
+              className={`pixelated h-[48px]  ${isFainted?'grayscale':''}` }
               crossOrigin="anonymous"
             />
-            <span className="absolute -bottom-1 -right-1 text-[8px] font-bold bg-secondary text-foreground rounded-full px-1 py-0.5 border border-border">
-              Lv.{level}
+                <span className="absolute top-1 left-1 text-[7px] font-mono text-neutral-500">
+                  Lv{level}
             </span>
+
           </div>
-          <span className="font-medium text-[10px] text-foreground truncate w-full">
-            {pokemon.name}
-          </span>
-          {species && (
-            <div className="flex gap-0.5 justify-center">
-              {species.types.map((t) => (
-                <span
-                  key={t}
-                  className="text-[7px] px-0.5 py-0.5 rounded text-white leading-none"
-                  style={{ backgroundColor: TYPE_COLORS[t] }}
-                >
-                  {t.toUpperCase()}
-                </span>
-              ))}
+
+          {/* STATUS */}
+          <div className="flex flex-col gap-[3px] mt-auto">
+
+            {/* HP */}
+            <div className="flex items-center gap-[3px]">
+              <Heart className="w-2.5 h-2.5 text-red-500" />
+              <div className="flex-1 h-[6px] bg-neutral-800 rounded-full overflow-hidden border border-neutral-700">
+                <div
+                  className="h-full transition-all duration-300"
+                  style={{
+                    width: `${hpPercent}%`,
+                    backgroundColor: hpColor,
+                  }}
+                />
+              </div>
             </div>
-          )}
-          {/* HP bar */}
-          <div className="w-full flex items-center gap-1 mt-0.5">
-            <Heart className="w-2.5 h-2.5 text-red-400 shrink-0" />
-            <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-300"
-                style={{ width: `${hpPercent}%`, backgroundColor: hpColor }}
-              />
+               <div className="text-[7px] font-mono text-neutral-400 leading-none">
+        {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
+      </div>
+            
+
+            {/* XP */}
+            <div className="flex items-center gap-[3px]">
+              <Star className="w-2.5 h-2.5 text-yellow-500" />
+              <div className="flex-1 h-[6px] bg-neutral-800 rounded-full overflow-hidden border border-neutral-700">
+                <div
+                  className="h-full bg-yellow-500 transition-all duration-300"
+                  style={{ width: `${xpPercent}%` }}
+                />
+              </div>
             </div>
-          </div>
-          <span className="text-[8px] font-mono text-muted-foreground">
-            {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
-          </span>
-          {/* XP bar */}
-          <div className="w-full flex items-center gap-1">
-            <Star className="w-2.5 h-2.5 text-accent shrink-0" />
-            <div className="flex-1 h-1 bg-secondary rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full bg-accent transition-all duration-300"
-                style={{ width: `${xpPercent}%` }}
-              />
+
+            {/* FOOTER */}
+            <div className="flex justify-end pt-[2px]">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  moveToReserves(pokemon.uid)
+                }}
+                   className="h-5 w-full px-1.5 bg-gray-600 text-white hover:bg-red-700 text-[8px]"
+            
+              >
+                       Reserva
+              </Button>
             </div>
           </div>
         </button>
-        {/* Action button */}
-        <div className="flex gap-0.5 mt-1 justify-center">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => moveToReserves(pokemon.uid)}
-            className="h-5 px-1.5 border-border text-muted-foreground hover:bg-secondary text-[8px]"
-            title="Enviar para Reservas"
-          >
-            <Archive className="w-3 h-3" />
-          </Button>
-        </div>
-        <span className={`block text-[8px] mt-0.5 transition-all ${isFainted ? "opacity-60" : ""}`}>
-          {getBaseAttributes(pokemon.speciesId).especial}
-        </span>
       </div>
     );
   };
@@ -302,62 +345,114 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
   const renderReserveCard = (pokemon: typeof team[number]) => {
     const species = getPokemon(pokemon.speciesId);
     const level = pokemon.level ?? 1;
+        const xp = pokemon.xp ?? 0;
+     const xpNeeded = xpForLevel(level + 1);
     const hpPercent = pokemon.maxHp > 0 ? (Math.round(pokemon.currentHp) / pokemon.maxHp) * 100 : 0;
     const hpColor = hpPercent > 50 ? "#22C55E" : hpPercent > 25 ? "#F59E0B" : "#EF4444";
     const isFainted = pokemon.currentHp <= 0;
+    const xpPercent = xpNeeded > 0 ? Math.min(100, (xp / xpNeeded) * 100) : 0;
 
     return (
-      <div key={pokemon.uid} className="text-center rounded-lg" style={{ backgroundColor: "rgb(0, 3, 21)" }}>
-        <button
-          onClick={() => setSelectedUid(pokemon.uid)}
-          style={{ backgroundColor: "rgb(42, 45, 60)" }}
-          className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all w-full ${
-            isFainted ? "opacity-60" : ""
-          }`}
-        >
-          <div className="relative">
-            <img
-              src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
-              alt={pokemon.name}
-              width={48}
-              height={48}
-              className="pixelated"
-              crossOrigin="anonymous"
-            />
-            <span className="absolute -bottom-1 -right-1 text-[8px] font-bold bg-secondary text-foreground rounded-full px-1 py-0.5 border border-border">
-              Lv.{level}
-            </span>
-          </div>
-          <span className="font-medium text-[10px] text-foreground truncate w-full">{pokemon.name}</span>
-          {species && (
-            <div className="flex gap-0.5 justify-center">
-              {species.types.map((t) => (
-                <span key={t} className="text-[7px] px-0.5 py-0.5 rounded text-white leading-none" style={{ backgroundColor: TYPE_COLORS[t] }}>
-                  {t.toUpperCase()}
-                </span>
-              ))}
-            </div>
-          )}
-          <div className="w-full flex items-center gap-1 mt-0.5">
-            <Heart className="w-2.5 h-2.5 text-red-400 shrink-0" />
-            <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
-              <div className="h-full rounded-full transition-all duration-300" style={{ width: `${hpPercent}%`, backgroundColor: hpColor }} />
-            </div>
-          </div>
-          <span className="text-[8px] font-mono text-muted-foreground">{Math.round(pokemon.currentHp)}/{pokemon.maxHp}</span>
-        </button>
-        <div className="flex gap-0.5 mt-1 justify-center">
-          <Button
-            size="sm"
-            disabled={team.length >= 6}
-            onClick={() => moveToTeam(pokemon.uid)}
-            className="h-5 px-1.5 bg-green-600 text-white hover:bg-green-700 text-[8px]"
-            title="Promover para Equipe"
-          >
-            <ArrowUp className="w-3 h-3" />
-          </Button>
+<div
+  key={pokemon.uid}
+  className="relative w-[108px] rounded-[4px] p-[2px] transition-all duration-200"
+  style={{
+    background: "linear-gradient(135deg, #e02d2d, #1e0000, #180101)",
+  }}
+>
+  <button
+    onClick={() => setSelectedUid(pokemon.uid)}
+    className={`w-full rounded-[4px]  p-1.5 flex flex-col h-full
+    bg-gradient-to-b from-[#2b2b2b] to-[#161616] border transition-all
+    ${isFainted ? "border-red-800 opacity-60" : "border-neutral-700"}`}
+  >
+    {/* HEADER */}
+    <div className="flex justify-between items-start border-b border-neutral-700 pb-[2px]">
+      <div className="min-w-0">
+        <div className="text-[9px] font-bold text-neutral-100 truncate leading-none">
+          {pokemon.name}
         </div>
       </div>
+
+              {species && (
+                <div className="flex gap-[2px] mt-[1px]">
+                  {species.types.map((t) => (
+                    <span
+                      key={t}
+                      className="text-[6px] px-[2px] rounded-[2px] text-white"
+                      style={{ backgroundColor: 'gray' }}
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              )}
+    </div>
+
+    {/* ART AREA */}
+        <div className="relative flex justify-center items-center my-1.5 h-[56px] bg-gradient-to-b from-neutral-800 to-neutral-900 rounded  border-neutral-700">
+      <img
+        src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
+        alt={pokemon.name}
+        className="pixelated h-[48px] select-none pointer-events-none grayscale"
+        crossOrigin="anonymous"
+        draggable={false}
+      />
+
+      <span className="absolute top-1 left-1 text-[7px] font-mono text-neutral-500">
+        Lv{level}
+      </span>
+    </div>
+
+    {/* STATUS */}
+    <div className="flex flex-col gap-[3px] mt-auto">
+
+      {/* HP */}
+      <div className="flex items-center gap-[3px]">
+        <Heart className="w-2.5 h-2.5 text-gray-500" />
+        <div className="flex-1 h-[6px] bg-neutral-800 rounded-full overflow-hidden border border-neutral-700">
+          <div
+            className="h-full transition-all duration-300"
+            style={{
+              width: `${hpPercent}%`,
+              backgroundColor: 'gray',
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="text-[7px] font-mono text-neutral-400 leading-none">
+        {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
+      </div>
+        {/* XP */}
+        <div className="flex items-center gap-[3px]">
+          <Star className="w-2.5 h-2.5 text-gray-500" />
+          <div className="flex-1 h-[6px] bg-neutral-800 rounded-full overflow-hidden border border-neutral-700">
+            <div
+              className="h-full bg-gray-500 transition-all duration-300"
+              style={{ width: `${xpPercent}%` }}
+            />
+          </div>
+        </div>
+      {/* FOOTER BUTTON */}
+      <div className="flex justify-end pt-[2px]">
+        <Button
+          size="sm"
+          style={{backgroundColor:team.length >= 6?"gray":'green'}}
+          disabled={team.length >= 6}
+          onClick={(e) => {
+            e.stopPropagation()
+            moveToTeam(pokemon.uid)
+          }}
+          className="h-5 w-full px-1.5  text-white hover:bg-green-700 text-[7px]"
+          title="Promover para Equipe"
+        >
+          Promover
+        </Button>
+      </div>
+    </div>
+  </button>
+</div>
     );
   };
 
@@ -499,7 +594,7 @@ function PokemonDetailContent({
 const habildade_especial = getBaseAttributes(pokemon.speciesId).especial
 
   return (
-    <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto max-h-[85vh] overflow-y-auto">
+    <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto h-[75vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2 text-foreground">
           {pokemon.name}
@@ -507,7 +602,7 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial
             Lv.{level}
           </span>
         </DialogTitle>
-      <DialogDescription className="sr-only">Detalhes e gerenciamento do Pokemon selecionado.</DialogDescription>
+
       </DialogHeader>
       <Tabs defaultValue="info" className="w-full">
         <TabsList className="w-full bg-secondary">
@@ -539,19 +634,19 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial
           >
             Atributos
           </TabsTrigger>
-          <TabsTrigger
+          {/* <TabsTrigger
                     style={{fontSize:9}}
             value="evolve"
             className="flex-1  data-[state=active]:bg-card"
           >
-            Evoluir
-          </TabsTrigger>
+           <ArrowUp size={10} />
+          </TabsTrigger> */}
           <TabsTrigger
                     style={{fontSize:9}}
             value="history"
             className="flex-1  data-[state=active]:bg-card"
           >
-            Historico
+            <Swords size={25} />
           </TabsTrigger>
         </TabsList>
 
@@ -566,16 +661,16 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial
               className="pixelated"
               crossOrigin="anonymous"
             />
-            <div className="flex items-center gap-2 text-sm">
+            {/* <div className="flex items-center gap-2 text-sm">
               <Heart className="w-4 h-4 text-red-400" />
               <span className="text-foreground">
                 {Math.round(pokemon.currentHp)} / {pokemon.maxHp} HP
               </span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
+            </div> */}
+            {/* <div className="flex items-center gap-2 text-sm">
               <Star className="w-4 h-4 text-yellow-400" />
                 <p> {habildade_especial.toLowerCase().replace("_"," ")}</p>
-            </div>
+            </div> */}
 
                  
             {/* XP display */}
@@ -600,9 +695,7 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial
 
             {/* Add XP */}
             <div className="w-full flex flex-col gap-2">
-              <label className="text-xs text-muted-foreground">
-                Adicionar XP (recompensa do mestre)
-              </label>
+         
               <div className="flex gap-2">
                 {[50, 100, 250, 500].map((val) => (
                   <Button
@@ -642,13 +735,11 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial
 
             {/* Set Level directly */}
             <div className="w-full flex flex-col gap-2">
-              <label className="text-xs text-muted-foreground">
-                Definir Level (decisao do mestre)
-              </label>
+      
               <div className="flex gap-2">
                 <Input
                   type="number"
-                  placeholder="Ex: 16"
+                  placeholder="Definir Nivel: Ex 60"
                   value={levelInput}
                   onChange={(e) => setLevelInput(e.target.value)}
                   className="bg-secondary border-border text-foreground text-sm"
