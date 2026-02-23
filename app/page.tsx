@@ -207,14 +207,15 @@ useEffect(() => {
       startBattle(existing.uid);
       return;
     }
-    // If team is full, replace the last slot
-    if (team.length >= 6) {
-      const lastUid = team[team.length - 1].uid;
-      useGameStore.getState().removeFromTeam(lastUid);
-    }
-    // Add to team with the specified level and start battle
+    // Add to team (or reserves if full) with the specified level and start battle
     const uid = addToTeamWithLevel(species, level);
     if (uid) {
+      // If it went to reserves, move it to team for battle
+      const state = useGameStore.getState();
+      const inReserves = state.reserves.some((p) => p.uid === uid);
+      if (inReserves && state.team.length < 6) {
+        state.moveToTeam(uid);
+      }
       startBattle(uid);
     }
   };
@@ -232,16 +233,17 @@ useEffect(() => {
 
   const handleCaptureSuccess = (species: { id: number; name: string; types: string[]; baseHp: number; startingMoves: string[]; learnableMoves: string[] }) => {
     const pokemonSpecies = getPokemon(species.id);
-    if (pokemonSpecies && team.length < 6) {
-      // Add to team with 10 HP as specified
+    if (pokemonSpecies) {
+      // Add to team (or reserves if team full) with 10 HP as specified
       const uid = addToTeamWithLevel(pokemonSpecies, 1);
       if (uid) {
         // Set HP to 10 as per capture rules
-        const currentTeam = useGameStore.getState().team;
+        const state = useGameStore.getState();
+        const mapHp = (p: typeof state.team[number]) =>
+          p.uid === uid ? { ...p, maxHp: 10, currentHp: 10 } : p;
         useGameStore.setState({
-          team: currentTeam.map((p) =>
-            p.uid === uid ? { ...p, maxHp: 10, currentHp: 10 } : p
-          ),
+          team: state.team.map(mapHp),
+          reserves: state.reserves.map(mapHp),
         });
       }
     }

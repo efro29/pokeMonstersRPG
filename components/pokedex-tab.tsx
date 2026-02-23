@@ -24,7 +24,7 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
   const [discoverInput, setDiscoverInput] = useState("");
   const [discoverMessage, setDiscoverMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [battleLevel, setBattleLevel] = useState("5");
-  const { team, addToTeam } = useGameStore();
+  const { team, reserves, addToTeam } = useGameStore();
   const { mode, activeProfileId, discoveredPokemon, discoverPokemon } = useModeStore();
 
   const isTrainerMode = mode === "trainer";
@@ -42,7 +42,7 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
   );
 
   const selectedPokemon = selectedId ? POKEMON.find((p) => p.id === selectedId) : null;
-  const isInTeam = (id: number) => team.some((t) => t.speciesId === id);
+  const isInTeam = (id: number) => team.some((t) => t.speciesId === id) || reserves.some((t) => t.speciesId === id);
   const teamFull = team.length >= 6;
 
   const handleDiscover = () => {
@@ -131,8 +131,8 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
         </div>
         <p className="text-xs text-muted-foreground">
           {isTrainerMode
-            ? `${discovered.length}/275 Descobertos - Equipe: ${team.length}/6`
-            : `${POKEMON.length} Pokemon - Equipe: ${team.length}/6`}
+            ? `${discovered.length}/275 Descobertos - Equipe: ${team.length}/6 - Reservas: ${reserves.length}`
+            : `${POKEMON.length} Pokemon - Equipe: ${team.length}/6 - Reservas: ${reserves.length}`}
         </p>
       </div>
 
@@ -352,11 +352,10 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
                       addToTeam(selectedPokemon);
                       setSelectedId(null);
                     }}
-                    disabled={teamFull}
                     className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    {teamFull ? "Equipe cheia (6/6)" : "Adicionar a Equipe"}
+                    {teamFull ? "Adicionar nas Reservas" : "Adicionar a Equipe"}
                   </Button>
                 )}
 
@@ -367,14 +366,13 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
                       onStartCapture(selectedPokemon.id);
                       setSelectedId(null);
                     }}
-                    disabled={teamFull}
                     className="w-full text-white font-bold"
                     style={{
                       backgroundColor: "#EF4444",
                     }}
                   >
                     <CircleDot className="w-4 h-4 mr-2" />
-                    {teamFull ? "Equipe cheia (6/6)" : "Tentar Capturar"}
+                    Tentar Capturar
                   </Button>
                 )}
               </div>

@@ -133,6 +133,8 @@ export function BattleScene() {
     endTurn,
     moveBoardSquares,
     addXp,
+    addPokemonBattleHistory,
+    addTrainerBattleHistory,
   } = useGameStore();
 
   const attrs = trainer.attributes || { combate: 0, afinidade: 0, sorte: 0, furtividade: 0, percepcao: 0, carisma: 0 };
@@ -151,6 +153,26 @@ export function BattleScene() {
   const [isSwitching, setIsSwitching] = useState(false);
   const [showDefeatMessage, setShowDefeatMessage] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Auto-log faint events for the active pokemon
+  useEffect(() => {
+    if (!battle.activePokemonUid) return;
+    const activePokemon = team.find((p) => p.uid === battle.activePokemonUid);
+    if (activePokemon && activePokemon.currentHp <= 0 && !faintLoggedRef.current.has(activePokemon.uid)) {
+      faintLoggedRef.current.add(activePokemon.uid);
+      addPokemonBattleHistory(activePokemon.uid, {
+        type: "faint",
+        date: new Date().toISOString(),
+      });
+    }
+  }, [team, battle.activePokemonUid, addPokemonBattleHistory]);
+
+  // Reset faint tracker when battle ends
+  useEffect(() => {
+    if (!battle.activePokemonUid) {
+      faintLoggedRef.current.clear();
+    }
+  }, [battle.activePokemonUid]);
 
   const ARENAS = [
     "campo"
@@ -283,6 +305,9 @@ export function BattleScene() {
   const [isWalking, setIsWalking] = useState(false);
   const [showVictoryDialog, setShowVictoryDialog] = useState(false);
   const [victoryXp, setVictoryXp] = useState("");
+  const [showIndividualVictory, setShowIndividualVictory] = useState(false);
+  const [individualVictoryXp, setIndividualVictoryXp] = useState("");
+  const faintLoggedRef = useRef<Set<string>>(new Set());
 
   const handleMoveSquares = () => {
     if (!moveBoardSquares()) return;
@@ -703,6 +728,21 @@ export function BattleScene() {
               <span style={{ color: hpColor }} className="text-[10px] font-mono text-muted-foreground w-16 text-right">
                 {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
               </span>
+            </div>
+            {/* Individual pokemon victory button */}
+            <div className="flex items-center justify-between mt-2">
+              <Button
+                size="sm"
+                disabled={isFainted}
+                onClick={() => {
+                  setShowIndividualVictory(true);
+                  setIndividualVictoryXp("");
+                }}
+                className="h-6 px-2 text-[9px] font-bold bg-amber-600 hover:bg-amber-500 text-white gap-1"
+              >
+                <Star className="w-3 h-3" />
+                Vitoria Individual
+              </Button>
             </div>
           </div>
         </div>
@@ -1538,6 +1578,72 @@ export function BattleScene() {
         )}
       </AnimatePresence>
 
+      {/* Individual pokemon victory dialog */}
+      <Dialog open={showIndividualVictory} onOpenChange={setShowIndividualVictory}>
+        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="bg-card border-border text-foreground max-w-xs mx-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-center gap-2 text-foreground text-base">
+              <Star className="w-5 h-5 text-amber-400" />
+              Vitoria de {pokemon.name}
+            </DialogTitle>
+            <DialogDescription className="sr-only">Registrar vitoria individual do Pokemon.</DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center gap-3">
+            <img
+              src={getSpriteUrl(pokemon.speciesId)}
+              alt={pokemon.name}
+              width={64}
+              height={64}
+              className="pixelated"
+              crossOrigin="anonymous"
+            />
+            <p className="text-xs text-muted-foreground text-center">
+              Registrar vitoria individual e XP ganho.
+            </p>
+            <Input
+              type="number"
+              placeholder="XP ganho (ex: 50)"
+              value={individualVictoryXp}
+              onChange={(e) => setIndividualVictoryXp(e.target.value)}
+              className="bg-secondary border-border text-foreground text-center"
+            />
+          </div>
+
+          <div className="flex gap-2 mt-1">
+            <Button
+              onClick={() => {
+                const val = parseInt(individualVictoryXp || "0");
+                if (val > 0) {
+                  addXp(pokemon.uid, val);
+                }
+                addPokemonBattleHistory(pokemon.uid, {
+                  type: "victory",
+                  date: new Date().toISOString(),
+                  xpGained: val > 0 ? val : undefined,
+                });
+                addBattleLog(`${pokemon.name} registrou uma vitoria individual!${val > 0 ? ` +${val} XP` : ""}`);
+                setShowIndividualVictory(false);
+                setIndividualVictoryXp("");
+              }}
+              className="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold"
+            >
+              Confirmar
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowIndividualVictory(false);
+                setIndividualVictoryXp("");
+              }}
+              className="border-border text-foreground bg-transparent hover:bg-secondary"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Victory dialog */}
       <Dialog open={showVictoryDialog} onOpenChange={setShowVictoryDialog}>
         <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="bg-card border-border text-foreground max-w-sm mx-auto overflow-hidden">
@@ -1649,6 +1755,13 @@ export function BattleScene() {
                     addXp(p.uid, val);
                   }
                 }
+                // Save to trainer battle history
+                addTrainerBattleHistory({
+                  type: "team-victory",
+                  date: new Date().toISOString(),
+                  xpPerPokemon: val > 0 ? val : undefined,
+                  teamSnapshot: team.map((p) => p.name),
+                });
                 setShowVictoryDialog(false);
                 setVictoryXp("");
                 endBattle();

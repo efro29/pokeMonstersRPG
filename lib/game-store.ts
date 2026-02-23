@@ -14,6 +14,22 @@ export interface ActiveMove {
   maxPP: number;
 }
 
+export interface BattleHistoryEntry {
+  id: string;
+  type: "victory" | "faint";
+  date: string; // ISO string
+  xpGained?: number;
+  opponentName?: string;
+}
+
+export interface TrainerBattleHistoryEntry {
+  id: string;
+  type: "team-victory";
+  date: string;
+  xpPerPokemon?: number;
+  teamSnapshot: string[]; // pokemon names at time of victory
+}
+
 export interface TeamPokemon {
   uid: string;
   speciesId: number;
@@ -27,6 +43,7 @@ export interface TeamPokemon {
   learnableMoves: string[];
   /** Override base attributes (modified by faint penalties and level-up bonuses) */
   customAttributes?: PokemonBaseAttributes;
+  battleHistory?: BattleHistoryEntry[];
 }
 
 export interface BagItem {
@@ -76,6 +93,7 @@ export interface TrainerProfile {
   maxHp: number;
   currentHp: number;
   defesa: number; // AC / defense
+  battleHistory?: TrainerBattleHistoryEntry[];
 }
 
 /** XP required for a given trainer level */
@@ -292,6 +310,9 @@ interface GameState {
   moveToReserves: (uid: string) => void;
   moveToTeam: (uid: string) => void;
   removeFromReserves: (uid: string) => void;
+  // Battle history
+  addPokemonBattleHistory: (uid: string, entry: Omit<BattleHistoryEntry, "id">) => void;
+  addTrainerBattleHistory: (entry: Omit<TrainerBattleHistoryEntry, "id">) => void;
   learnMove: (uid: string, moveId: string) => void;
   forgetMove: (uid: string, moveId: string) => void;
   // Bag management
@@ -384,6 +405,7 @@ export const useGameStore = create<GameState>()(
         maxHp: 20,
         currentHp: 20,
         defesa: 10,
+        battleHistory: [],
       },
       team: [],
       reserves: [],
@@ -569,6 +591,29 @@ export const useGameStore = create<GameState>()(
 
       removeFromReserves: (uid) => {
         set({ reserves: get().reserves.filter((p) => p.uid !== uid) });
+      },
+
+      addPokemonBattleHistory: (uid, entry) => {
+        const fullEntry: BattleHistoryEntry = { ...entry, id: generateUid() };
+        const mapHistory = (p: TeamPokemon) => {
+          if (p.uid !== uid) return p;
+          return { ...p, battleHistory: [...(p.battleHistory || []), fullEntry] };
+        };
+        set({
+          team: get().team.map(mapHistory),
+          reserves: get().reserves.map(mapHistory),
+        });
+      },
+
+      addTrainerBattleHistory: (entry) => {
+        const fullEntry: TrainerBattleHistoryEntry = { ...entry, id: generateUid() };
+        const { trainer } = get();
+        set({
+          trainer: {
+            ...trainer,
+            battleHistory: [...(trainer.battleHistory || []), fullEntry],
+          },
+        });
       },
 
       learnMove: (uid, moveId) => {

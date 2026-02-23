@@ -30,6 +30,7 @@ import {
   Users,
   Star,
   ArrowUp,
+  Trophy,
 } from "lucide-react";
 import { playBadgeObtained, playBadgeRemoved, playButtonClick } from "@/lib/sounds";
 import { useModeStore } from "@/lib/mode-store";
@@ -699,6 +700,53 @@ export function ProfileTab() {
             </Button>
           </DialogContent>
         </Dialog>
+
+        {/* Trainer Battle History */}
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <div className="p-3 border-b border-border flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-amber-400" />
+            <h3 className="font-semibold text-sm text-foreground">Historico de Batalhas</h3>
+            <span className="ml-auto text-xs text-muted-foreground">
+              {(trainer.battleHistory || []).length} registro(s)
+            </span>
+          </div>
+          <div className="p-3">
+            {(!trainer.battleHistory || trainer.battleHistory.length === 0) ? (
+              <p className="text-xs text-muted-foreground text-center py-4">
+                Nenhuma vitoria de equipe registrada.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1.5 max-h-[250px] overflow-y-auto">
+                {[...(trainer.battleHistory || [])].reverse().map((entry) => {
+                  const date = new Date(entry.date);
+                  const formatted = `${date.toLocaleDateString("pt-BR")} ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+                  return (
+                    <div
+                      key={entry.id}
+                      className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2"
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                        <span className="text-xs font-medium text-foreground">Vitoria da Equipe</span>
+                        {entry.xpPerPokemon && entry.xpPerPokemon > 0 && (
+                          <span className="text-[10px] text-amber-400 font-mono">+{entry.xpPerPokemon} XP/cada</span>
+                        )}
+                        <span className="ml-auto text-[9px] text-muted-foreground">{formatted}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {entry.teamSnapshot.map((name, i) => (
+                          <span key={i} className="text-[9px] bg-secondary rounded px-1.5 py-0.5 text-muted-foreground">
+                            {name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </ScrollArea>
   );

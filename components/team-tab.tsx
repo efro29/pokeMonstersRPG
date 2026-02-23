@@ -50,6 +50,9 @@ import {
   Wind,
   ArrowRightLeft,
   Archive,
+  Trophy,
+  Clock,
+  Skull,
 } from "lucide-react";
 import { EvolutionAnimation } from "@/components/evolution-animation";
 
@@ -446,6 +449,13 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial
             className="flex-1  data-[state=active]:bg-card"
           >
             Evoluir
+          </TabsTrigger>
+          <TabsTrigger
+                    style={{fontSize:9}}
+            value="history"
+            className="flex-1  data-[state=active]:bg-card"
+          >
+            Historico
           </TabsTrigger>
         </TabsList>
 
@@ -934,6 +944,76 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial
                 </p>
               </div>
             )}
+          </div>
+        </TabsContent>
+
+        {/* History Tab */}
+        <TabsContent value="history" className="mt-3">
+          <div className="flex flex-col gap-2">
+            {(() => {
+              const history = [...(pokemon.battleHistory || [])].reverse();
+              const victories = history.filter((h) => h.type === "victory").length;
+              const faints = history.filter((h) => h.type === "faint").length;
+
+              return (
+                <>
+                  {/* Stats summary */}
+                  <div className="flex gap-3 mb-2">
+                    <div className="flex-1 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 text-center">
+                      <Trophy className="w-4 h-4 text-amber-400 mx-auto mb-1" />
+                      <span className="text-lg font-bold text-amber-400">{victories}</span>
+                      <p className="text-[9px] text-muted-foreground">Vitorias</p>
+                    </div>
+                    <div className="flex-1 bg-red-500/10 border border-red-500/20 rounded-lg p-2 text-center">
+                      <Skull className="w-4 h-4 text-red-400 mx-auto mb-1" />
+                      <span className="text-lg font-bold text-red-400">{faints}</span>
+                      <p className="text-[9px] text-muted-foreground">Derrotas</p>
+                    </div>
+                  </div>
+
+                  {history.length === 0 ? (
+                    <div className="flex flex-col items-center gap-2 py-6 text-center">
+                      <Clock className="w-8 h-8 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        Nenhum registro de batalha ainda.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto">
+                      {history.map((entry) => {
+                        const date = new Date(entry.date);
+                        const formatted = `${date.toLocaleDateString("pt-BR")} ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+                        return (
+                          <div
+                            key={entry.id}
+                            className={`flex items-center gap-2 rounded-lg p-2 text-xs ${
+                              entry.type === "victory"
+                                ? "bg-amber-500/10 border border-amber-500/20"
+                                : "bg-red-500/10 border border-red-500/20"
+                            }`}
+                          >
+                            {entry.type === "victory" ? (
+                              <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            ) : (
+                              <Skull className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <span className="font-medium text-foreground">
+                                {entry.type === "victory" ? "Vitoria" : "Desmaiou"}
+                              </span>
+                              {entry.xpGained && entry.xpGained > 0 && (
+                                <span className="ml-1.5 text-amber-400 font-mono">+{entry.xpGained} XP</span>
+                              )}
+                            </div>
+                            <span className="text-[9px] text-muted-foreground shrink-0">{formatted}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </TabsContent>
       </Tabs>
