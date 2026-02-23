@@ -546,9 +546,10 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
       </Button>
 
       {/* Painel do pokemon selecionado */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {selectedBlip && (
           <motion.div
+            key={selectedBlip.id}
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -649,7 +650,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
   );
 }
 
-// ─── Ícone de bateria com raio ──────────────────────────────
+// ─── Ícone de bateria com raio ���─────────────────────────────
 function BatteryIcon({ charges, max, size = 28 }: { charges: number; max: number; size?: number }) {
   const pct = charges / max;
   const barColor = pct > 0.5 ? "#22C55E" : pct > 0.25 ? "#F59E0B" : "#EF4444";
