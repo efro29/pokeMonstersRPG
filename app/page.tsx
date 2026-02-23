@@ -119,6 +119,23 @@ export default function Page() {
     }
   };
 
+  // ── Audio refs (declared before any effect that uses them) ──
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const lastTrackRef = useRef<string | null>(null);
+  const audioUnlockedRef = useRef(false);
+
+  const HOME_TRACKS = ["/mp3/home.mp3", "/mp3/home1.mp3", "/mp3/home2.mp3"];
+
+  const getRandomHomeTrack = useCallback(() => {
+    let track: string;
+    do {
+      track = HOME_TRACKS[Math.floor(Math.random() * HOME_TRACKS.length)];
+    } while (track === lastTrackRef.current && HOME_TRACKS.length > 1);
+    lastTrackRef.current = track;
+    return track;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Listen for mute toggle from settings
   useEffect(() => {
     const handler = () => {
@@ -129,94 +146,82 @@ export default function Page() {
     return () => window.removeEventListener("pokerpg-music-toggle", handler);
   }, []);
 
-  // Apply mute state to audio
-  useEffect(() => {
-    if (!audioRef.current) return;
-    if (musicMuted) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play().catch(() => {});
-    }
-  }, [musicMuted]);
-
- // cria o player UMA VEZ
+  // Create audio player ONCE
   useEffect(() => {
     const audio = new Audio();
-    audio.loop = true;
     audio.volume = 0.01;
-
     audioRef.current = audio;
 
+    // When a home track ends, play another random one (not looped)
+    const onEnded = () => {
+      if (!audioRef.current) return;
+      if (localStorage.getItem("pokerpg-music-muted") === "true") return;
+      const nextTrack = getRandomHomeTrack();
+      audioRef.current.src = nextTrack;
+      audioRef.current.loop = false;
+      audioRef.current.play().catch(() => {});
+    };
+    audio.addEventListener("ended", onEnded);
+
+    // Unlock audio on first user click
     const unlockAudio = () => {
-      audio.play().catch(() => {});
+      audioUnlockedRef.current = true;
+      // Only play if not muted
+      if (localStorage.getItem("pokerpg-music-muted") !== "true" && audioRef.current?.src) {
+        audioRef.current.play().catch(() => {});
+      }
       window.removeEventListener("click", unlockAudio);
     };
-
-    // desbloqueia autoplay no primeiro clique
     window.addEventListener("click", unlockAudio);
 
     return () => {
       audio.pause();
       audio.currentTime = 0;
+      audio.removeEventListener("ended", onEnded);
       window.removeEventListener("click", unlockAudio);
     };
-  }, []);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const HOME_TRACKS = [
-  "/mp3/home.mp3",
-  "/mp3/home1.mp3",
-  "/mp3/home2.mp3",
-];
-const lastTrackRef = useRef<string | null>(null);
+  }, [getRandomHomeTrack]);
 
-function getRandomHomeTrack() {
-  let track;
+  // Main music controller: reacts to battle phase AND mute state
+  useEffect(() => {
+    if (!audioRef.current) return;
+    const audio = audioRef.current;
 
-  do {
-    track = HOME_TRACKS[Math.floor(Math.random() * HOME_TRACKS.length)];
-  } while (track === lastTrackRef.current && HOME_TRACKS.length > 1);
+    // If muted, stop everything
+    if (musicMuted) {
+      audio.pause();
+      return;
+    }
 
-  lastTrackRef.current = track;
-  return track;
-}
+    let newMusic: string;
 
-useEffect(() => {
-  if (!audioRef.current) return;
+    // BATTLE
+    if (battle.phase !== "idle") {
+      newMusic = "/mp3/battle.mp3";
+    }
+    // HOME (random)
+    else {
+      newMusic = getRandomHomeTrack();
+    }
 
-  const audio = audioRef.current;
+    // Avoid reloading the same track
+    if (audio.src && audio.src.includes(newMusic)) {
+      // Same track, just resume if paused
+      if (audio.paused && audioUnlockedRef.current) {
+        audio.play().catch(() => {});
+      }
+      return;
+    }
 
-  // If muted, just stop playing
-  if (musicMuted) {
     audio.pause();
-    return;
-  }
+    audio.currentTime = 0;
+    audio.src = newMusic;
+    audio.loop = battle.phase !== "idle"; // loop only in battle
 
-  let newMusic: string;
-
-  // BATTLE
-  if (battle.phase !== "idle") {
-    newMusic = "/mp3/battle.mp3";
-  }
-  // HOME (aleatório)
-  else {
-    newMusic = getRandomHomeTrack();
-  }
-
-  // evita reload desnecessário
-  if (audio.src.includes(newMusic)) return;
-
-  audio.pause();
-  audio.currentTime = 0;
-  audio.src = newMusic;
-
-  // loop só na batalha
-  audio.loop = battle.phase !== "idle";
-
-  audio.play().catch(() => {
-    console.log("Aguardando interação do usuário...");
-  });
-
-}, [battle.phase, musicMuted]);
+    if (audioUnlockedRef.current) {
+      audio.play().catch(() => {});
+    }
+  }, [battle.phase, musicMuted, getRandomHomeTrack]);
 
   const handleSelectProfile = (profileId: string) => {
     setActiveProfile(profileId);
