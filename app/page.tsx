@@ -271,6 +271,10 @@ export default function Page() {
   const handleCaptureSuccess = (species: { id: number; name: string; types: string[]; baseHp: number; startingMoves: string[]; learnableMoves: string[] }) => {
     const pokemonSpecies = getPokemon(species.id);
     if (pokemonSpecies) {
+      // Auto-discover pokemon in Pokedex when captured
+      if (mode === "trainer") {
+        useModeStore.getState().discoverPokemon(species.id);
+      }
       // Add to team (or reserves if team full) with 10 HP as specified
       const uid = addToTeamWithLevel(pokemonSpecies, 1);
       if (uid) {
