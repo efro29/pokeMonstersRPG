@@ -1580,24 +1580,76 @@ export function BattleScene() {
 
       {/* Individual pokemon victory dialog */}
       <Dialog open={showIndividualVictory} onOpenChange={setShowIndividualVictory}>
-        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="bg-card border-border text-foreground max-w-xs mx-auto">
+        <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="bg-card border-border text-foreground max-w-xs mx-auto overflow-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-center gap-2 text-foreground text-base">
-              <Star className="w-5 h-5 text-amber-400" />
+              <motion.div
+                animate={{ rotate: [0, -15, 15, -10, 10, 0], scale: [1, 1.2, 1] }}
+                transition={{ duration: 0.6, ease: "easeInOut" }}
+              >
+                <Star className="w-5 h-5 text-amber-400" />
+              </motion.div>
               Vitoria de {pokemon.name}
             </DialogTitle>
             <DialogDescription className="sr-only">Registrar vitoria individual do Pokemon.</DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col items-center gap-3">
-            <img
-              src={getSpriteUrl(pokemon.speciesId)}
-              alt={pokemon.name}
-              width={64}
-              height={64}
-              className="pixelated"
-              crossOrigin="anonymous"
-            />
+          <div className="relative flex flex-col items-center gap-3">
+            {/* Confetti particles */}
+            {Array.from({ length: 12 }).map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-2 h-2 rounded-full"
+                style={{
+                  backgroundColor: ["#EAB308", "#F59E0B", "#EF4444", "#3B82F6", "#22C55E", "#A855F7"][i % 6],
+                  left: `${50 + Math.cos((i * Math.PI * 2) / 12) * 40}%`,
+                  top: "40%",
+                }}
+                initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+                animate={{
+                  opacity: [0, 1, 1, 0],
+                  scale: [0, 1.2, 0.8, 0],
+                  x: Math.cos((i * Math.PI * 2) / 12) * 60,
+                  y: Math.sin((i * Math.PI * 2) / 12) * 50 - 20,
+                }}
+                transition={{ duration: 1.2, delay: i * 0.05, ease: "easeOut" }}
+              />
+            ))}
+
+            {/* Pokemon with glow and bounce */}
+            <motion.div
+              className="relative"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", damping: 8, stiffness: 150, delay: 0.1 }}
+            >
+              <motion.div
+                className="absolute inset-0 rounded-full bg-amber-400/20 blur-xl"
+                animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0.6, 0.3] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              />
+              <motion.img
+                src={getSpriteUrl(pokemon.speciesId)}
+                alt={pokemon.name}
+                width={80}
+                height={80}
+                className="pixelated relative z-10"
+                crossOrigin="anonymous"
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              />
+            </motion.div>
+
+            {/* Victory text animation */}
+            <motion.p
+              className="text-sm font-bold text-amber-400"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              Vitoria!
+            </motion.p>
+
             <p className="text-xs text-muted-foreground text-center">
               Registrar vitoria individual e XP ganho.
             </p>

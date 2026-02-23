@@ -118,6 +118,22 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
     );
   }
 
+  // Auto-sort: fainted pokemon go to the end of the array
+  useEffect(() => {
+    const alive = team.filter((p) => p.currentHp > 0);
+    const fainted = team.filter((p) => p.currentHp <= 0);
+    if (fainted.length > 0 && team.length > 0) {
+      const sorted = [...alive, ...fainted];
+      const isSame = sorted.every((p, i) => p.uid === team[i]?.uid);
+      if (!isSame) {
+        useGameStore.setState({ team: sorted });
+      }
+    }
+  }, [team]);
+
+  // First alive pokemon for the battle button
+  const firstAlive = team.find((p) => p.currentHp > 0);
+
   const renderPokemonCard = (pokemon: typeof team[number], isReserve: boolean) => {
     const species = getPokemon(pokemon.speciesId);
     const level = pokemon.level ?? 1;
@@ -139,122 +155,95 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
 
     return (
       <div key={pokemon.uid} style={{backgroundColor:'rgb(0, 3, 21)'}} className="text-center rounded-lg">
-        <div
+        <button
+          onClick={() => setSelectedUid(pokemon.uid)}
           style={{backgroundColor:'rgb(42, 45, 60)'}}
-          className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+          className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all w-full ${
             isFainted
               ? "border-destructive/30 bg-destructive/5 opacity-60"
               : "border-border bg-card"
           }`}
         >
-          <button
-            onClick={() => setSelectedUid(pokemon.uid)}
-            className="flex items-center gap-3 flex-1 text-left"
-          >
-            <div className="relative">
-              <img
-                src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
-                alt={pokemon.name}
-                width={56}
-                height={56}
-                className="pixelated"
-                crossOrigin="anonymous"
-              />
-              <span className="absolute -bottom-1 -right-1 text-[9px] font-bold bg-secondary text-foreground rounded-full px-1.5 py-0.5 border border-border">
-                Lv.{level}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-sm text-foreground">
-                  {pokemon.name}
-                </span>
-                {species && (
-                  <div className="flex gap-0.5">
-                    {species.types.map((t) => (
-                      <span
-                        key={t}
-                        className="text-[8px] px-1 py-0.5 rounded text-white"
-                        style={{ backgroundColor: TYPE_COLORS[t] }}
-                      >
-                        {t.toUpperCase()}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {/* HP bar */}
-              <div className="flex items-center gap-2 mt-1">
-                <Heart className="w-3 h-3 text-red-400 shrink-0" />
-                <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-300"
-                    style={{
-                      width: `${hpPercent}%`,
-                      backgroundColor: hpColor,
-                    }}
-                  />
-                </div>
-                <span className="text-[10px] font-mono text-muted-foreground w-16 text-right">
-                  {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
-                </span>
-              </div>
-              {/* XP bar */}
-              <div className="flex items-center gap-2 mt-0.5">
-                <Star className="w-3 h-3 text-accent shrink-0" />
-                <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-accent transition-all duration-300"
-                    style={{ width: `${xpPercent}%` }}
-                  />
-                </div>
-                <span className="text-[9px] font-mono text-muted-foreground w-16 text-right">
-                  {xp}/{xpNeeded}
-                </span>
-              </div>
-            </div>
-          </button>
-
-          <div className="flex flex-col gap-1 shrink-0">
-            {!isReserve ? (
-              <>
-                <Button
-                  size="sm"
-                  disabled={isFainted}
-                  onClick={() => onStartBattle(pokemon.uid)}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  <Swords className="w-4 h-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => moveToReserves(pokemon.uid)}
-                  className="border-border text-muted-foreground hover:bg-secondary text-[9px] px-1.5"
-                  title="Enviar para Reservas"
-                >
-                  <Archive className="w-3.5 h-3.5" />
-                </Button>
-              </>
-            ) : (
-              <Button
-                size="sm"
-                disabled={team.length >= 6}
-                onClick={() => moveToTeam(pokemon.uid)}
-                className="bg-green-600 text-white hover:bg-green-700 text-[9px] px-2"
-                title="Promover para Equipe"
-              >
-                <ArrowUp className="w-3.5 h-3.5 mr-0.5" />
-                <span className="sr-only">Equipe</span>
-              </Button>
-            )}
+          <div className="relative">
+            <img
+              src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
+              alt={pokemon.name}
+              width={48}
+              height={48}
+              className="pixelated"
+              crossOrigin="anonymous"
+            />
+            <span className="absolute -bottom-1 -right-1 text-[8px] font-bold bg-secondary text-foreground rounded-full px-1 py-0.5 border border-border">
+              Lv.{level}
+            </span>
           </div>
+          <span className="font-medium text-[10px] text-foreground truncate w-full">
+            {pokemon.name}
+          </span>
+          {species && (
+            <div className="flex gap-0.5 justify-center">
+              {species.types.map((t) => (
+                <span
+                  key={t}
+                  className="text-[7px] px-0.5 py-0.5 rounded text-white leading-none"
+                  style={{ backgroundColor: TYPE_COLORS[t] }}
+                >
+                  {t.toUpperCase()}
+                </span>
+              ))}
+            </div>
+          )}
+          {/* HP bar */}
+          <div className="w-full flex items-center gap-1 mt-0.5">
+            <Heart className="w-2.5 h-2.5 text-red-400 shrink-0" />
+            <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{ width: `${hpPercent}%`, backgroundColor: hpColor }}
+              />
+            </div>
+          </div>
+          <span className="text-[8px] font-mono text-muted-foreground">
+            {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
+          </span>
+          {/* XP bar */}
+          <div className="w-full flex items-center gap-1">
+            <Star className="w-2.5 h-2.5 text-accent shrink-0" />
+            <div className="flex-1 h-1 bg-secondary rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full bg-accent transition-all duration-300"
+                style={{ width: `${xpPercent}%` }}
+              />
+            </div>
+          </div>
+        </button>
+        {/* Action button below card */}
+        <div className="flex gap-0.5 mt-1 justify-center">
+          {!isReserve ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => moveToReserves(pokemon.uid)}
+              className="h-5 px-1.5 border-border text-muted-foreground hover:bg-secondary text-[8px]"
+              title="Enviar para Reservas"
+            >
+              <Archive className="w-3 h-3" />
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              disabled={team.length >= 6}
+              onClick={() => moveToTeam(pokemon.uid)}
+              className="h-5 px-1.5 bg-green-600 text-white hover:bg-green-700 text-[8px]"
+              title="Promover para Equipe"
+            >
+              <ArrowUp className="w-3 h-3" />
+            </Button>
+          )}
         </div>
-        <span className={`items-center transition-all ${
-            isFainted
-              ? "border-destructive/30 bg-destructive/5 opacity-60"
-              : ""
-          }`} style={{fontSize:10}}>{getBaseAttributes(pokemon.speciesId).especial}</span>
+        <span className={`block text-[8px] mt-0.5 transition-all ${
+            isFainted ? "opacity-60" : ""
+          }`}>{getBaseAttributes(pokemon.speciesId).especial}</span>
       </div>
     );
   };
@@ -275,22 +264,28 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
 
       <ScrollArea className="flex-1">
         {/* Section 1: Minha Equipe */}
-        <div className="p-4 border-b border-border">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="p-3 border-b border-border">
+          <div className="flex items-center gap-2 mb-2">
             <Swords className="w-4 h-4 text-primary" />
-            <h2 className="font-semibold text-foreground">
+            <h2 className="font-semibold text-sm text-foreground">
               Minha Equipe ({team.length}/6)
             </h2>
+            <Button
+              size="sm"
+              disabled={!firstAlive}
+              onClick={() => firstAlive && onStartBattle(firstAlive.uid)}
+              className="ml-auto h-7 px-3 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold gap-1.5"
+            >
+              <Swords className="w-3.5 h-3.5" />
+              Batalhar
+            </Button>
           </div>
-          <p className="text-[10px] text-muted-foreground mb-3">
-            Apenas Pokemon da equipe podem batalhar.
-          </p>
-          <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {team.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-4 text-center">
+              <div className="col-span-3 flex flex-col items-center gap-2 py-4 text-center">
                 <Swords className="w-6 h-6 text-muted-foreground" />
                 <p className="text-xs text-muted-foreground">
-                  Equipe vazia. Promova Pokemon das Reservas ou adicione da Pokedex.
+                  Equipe vazia.
                 </p>
               </div>
             ) : (
@@ -300,19 +295,16 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
         </div>
 
         {/* Section 2: Reservas */}
-        <div className="p-4">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="p-3">
+          <div className="flex items-center gap-2 mb-2">
             <Archive className="w-4 h-4 text-muted-foreground" />
-            <h2 className="font-semibold text-foreground">
+            <h2 className="font-semibold text-sm text-foreground">
               Reservas ({reserves.length})
             </h2>
           </div>
-          <p className="text-[10px] text-muted-foreground mb-3">
-            Pokemon capturados que nao estao na equipe ativa. Transfira para a equipe para batalhar.
-          </p>
-          <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {reserves.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-4 text-center">
+              <div className="col-span-3 flex flex-col items-center gap-2 py-4 text-center">
                 <Archive className="w-6 h-6 text-muted-foreground" />
                 <p className="text-xs text-muted-foreground">
                   Nenhum Pokemon nas reservas.
