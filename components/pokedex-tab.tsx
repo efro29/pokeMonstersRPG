@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Plus, Check, Heart, Swords, Zap, HelpCircle, CircleDot, ArrowLeft } from "lucide-react";
-import { playButtonClick, playGift } from "@/lib/sounds";
+import { Search, Plus, Check, Heart, Swords, Zap, HelpCircle, CircleDot, ArrowLeft, Crosshair } from "lucide-react";
+import { playButtonClick, playGift, playTabSwitch } from "@/lib/sounds";
+import { ExplorationRadar } from "@/components/exploration-radar";
 
 // Generation definitions
 const GENERATIONS = [
@@ -69,7 +70,10 @@ interface PokedexTabProps {
   onStartCapture?: (speciesId: number) => void;
 }
 
+type PokedexSubTab = "lista" | "radar";
+
 export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: PokedexTabProps = {}) {
+  const [subTab, setSubTab] = useState<PokedexSubTab>("lista");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [discoverInput, setDiscoverInput] = useState("");
@@ -147,6 +151,40 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
 
   return (
     <div className="flex flex-col h-full">
+      {/* Sub-tab switcher */}
+      {isTrainerMode && (
+        <div className="flex border-b border-border bg-card">
+          {([
+            { id: "lista" as PokedexSubTab, label: "Pokedex", icon: <Search className="w-3.5 h-3.5" /> },
+            { id: "radar" as PokedexSubTab, label: "Radar", icon: <Crosshair className="w-3.5 h-3.5" /> },
+          ]).map(({ id, label, icon }) => (
+            <button
+              key={id}
+              onClick={() => { playTabSwitch(); setSubTab(id); }}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold tracking-wide transition-all relative ${
+                subTab === id
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground/80"
+              }`}
+            >
+              {icon}
+              {label}
+              {subTab === id && (
+                <div
+                  className="absolute bottom-0 left-1/4 right-1/4 h-[2px] rounded-full"
+                  style={{ backgroundColor: id === "radar" ? "#22C55E" : "hsl(var(--primary))" }}
+                />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Radar tab */}
+      {isTrainerMode && subTab === "radar" ? (
+        <ExplorationRadar onStartCapture={onStartCapture} />
+      ) : (
+      <>
       {/* Header area */}
       <div className="p-3 border-b border-border flex flex-col gap-2">
         {/* Discover input - only for trainer mode */}
@@ -550,6 +588,8 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
           </DialogContent>
         )}
       </Dialog>
+      </>
+      )}
     </div>
   );
 }
