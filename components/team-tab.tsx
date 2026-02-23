@@ -104,6 +104,10 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
     : null;
   const isSelectedInReserves = selectedUid ? reserves.some((p) => p.uid === selectedUid) : false;
 
+  // Drag state for reordering team (must be before any early return)
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
   if (team.length === 0 && reserves.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 p-8 text-center">
@@ -119,10 +123,6 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
       </div>
     );
   }
-
-  // Drag state for reordering team
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // First alive pokemon for the battle button
   const firstAlive = team.find((p) => p.currentHp > 0);
