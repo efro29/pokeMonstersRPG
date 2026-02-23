@@ -25,9 +25,85 @@ const EVOLVED_IDS = new Set(EVOLUTIONS.map((e) => e.to));
 // Pokemon noturnos (Ghost, Dark) – só aparecem entre 18h e 6h
 const NOCTURNAL_TYPES: Set<string> = new Set(["ghost", "dark"]);
 
+// Gerações com ranges para cálculo de dificuldade
+const GEN_RANGES: [number, number][] = [
+  [1, 151],   // G1 Kanto
+  [152, 251], // G2 Johto
+  [252, 275], // G3 Hoenn (parcial)
+];
+
 function isNightTime(): boolean {
   const h = new Date().getHours();
   return h >= 18 || h < 6;
+}
+
+/** Retorna a geração de um Pokemon pelo ID */
+function getGenRange(id: number): [number, number] | null {
+  return GEN_RANGES.find(([start, end]) => id >= start && id <= end) ?? null;
+}
+
+/**
+ * Calcula o peso (chance) de um Pokemon aparecer no radar.
+ * Pokemon com número mais baixo dentro da sua geração têm peso maior.
+ * Exemplo G1: #1 Bulbasaur peso ~1.0, #60 peso ~0.25, #151 peso ~0.05
+ */
+function getSpawnWeight(p: PokemonSpecies): number {
+  const range = getGenRange(p.id);
+  if (!range) return 0.5; // fallback
+
+  const [start, end] = range;
+  const genSize = end - start + 1;
+  const positionInGen = p.id - start; // 0 = primeiro da geração
+  const normalizedPosition = positionInGen / (genSize - 1 || 1); // 0..1
+
+  // Curva exponencial: peso decresce drasticamente conforme o número sobe
+  // posição 0 (primeiro) => peso ~1.0
+  // posição 0.4 (~meio-baixo) => peso ~0.45
+  // posição 0.7 (~alto) => peso ~0.15
+  // posição 1.0 (último) => peso ~0.05
+  const weight = Math.max(0.05, Math.pow(1 - normalizedPosition, 2.5));
+  return weight;
+}
+
+/**
+ * Seleção ponderada: Pokemon com número mais baixo na geração
+ * têm muito mais chance de aparecer no radar.
+ */
+function weightedRandomSelect(pool: PokemonSpecies[], count: number): PokemonSpecies[] {
+  if (pool.length === 0 || count === 0) return [];
+
+  const weights = pool.map((p) => getSpawnWeight(p));
+  const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+
+  const selected: PokemonSpecies[] = [];
+  const usedIndices = new Set<number>();
+
+  for (let i = 0; i < count && usedIndices.size < pool.length; i++) {
+    let roll = Math.random() * totalWeight;
+    let picked = -1;
+
+    for (let j = 0; j < pool.length; j++) {
+      if (usedIndices.has(j)) continue;
+      roll -= weights[j];
+      if (roll <= 0) {
+        picked = j;
+        break;
+      }
+    }
+
+    // Fallback caso rounding cause problemas
+    if (picked === -1) {
+      for (let j = 0; j < pool.length; j++) {
+        if (!usedIndices.has(j)) { picked = j; break; }
+      }
+    }
+    if (picked === -1) break;
+
+    usedIndices.add(picked);
+    selected.push(pool[picked]);
+  }
+
+  return selected;
 }
 
 /** Filtra Pokemon que podem aparecer no radar */
@@ -163,9 +239,8 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
       return;
     }
 
-    // Pegar pokemons aleatórios sem repetição
-    const shuffled = [...pool].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, finalCount);
+    // Seleção ponderada: Pokemon de número baixo na geração aparecem mais
+    const selected = weightedRandomSelect(pool, finalCount);
 
     const newBlips: RadarBlip[] = selected.map((p, i) => ({
       id: `${p.id}-${Date.now()}-${i}`,
