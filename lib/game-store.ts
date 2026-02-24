@@ -429,6 +429,120 @@ export function getCurrentWeeklyEvent(): WeeklyEvent {
   return WEEKLY_EVENT_POOL[idx];
 }
 
+// ---- Egg System ----
+export type EggTier = "green" | "yellow" | "red";
+
+export interface EggPokemonDef {
+  speciesId: number;
+  name: string;
+  tier: EggTier;
+}
+
+// Baby Pokemon that ONLY come from eggs (never from radar)
+export const EGG_POKEMON: EggPokemonDef[] = [
+  // Green eggs (3h) - common babies
+  { speciesId: 172, name: "Pichu", tier: "green" },
+  { speciesId: 173, name: "Cleffa", tier: "green" },
+  { speciesId: 174, name: "Igglybuff", tier: "green" },
+  { speciesId: 175, name: "Togepi", tier: "green" },
+  { speciesId: 298, name: "Azurill", tier: "green" },
+  { speciesId: 406, name: "Budew", tier: "green" },
+  { speciesId: 440, name: "Happiny", tier: "green" },
+  // Yellow eggs (6h) - intermediate babies
+  { speciesId: 236, name: "Tyrogue", tier: "yellow" },
+  { speciesId: 238, name: "Smoochum", tier: "yellow" },
+  { speciesId: 239, name: "Elekid", tier: "yellow" },
+  { speciesId: 240, name: "Magby", tier: "yellow" },
+  { speciesId: 360, name: "Wynaut", tier: "yellow" },
+  { speciesId: 433, name: "Chingling", tier: "yellow" },
+  { speciesId: 438, name: "Bonsly", tier: "yellow" },
+  // Red eggs (10h) - rare babies
+  { speciesId: 446, name: "Munchlax", tier: "red" },
+  { speciesId: 447, name: "Riolu", tier: "red" },
+  { speciesId: 458, name: "Mantyke", tier: "red" },
+];
+
+// Set of all egg-exclusive Pokemon IDs (to exclude from radar)
+export const BABY_POKEMON_IDS = new Set(EGG_POKEMON.map((e) => e.speciesId));
+
+// Hatch times per tier in milliseconds
+export const EGG_HATCH_TIMES: Record<EggTier, number> = {
+  green: 3 * 60 * 60 * 1000,   // 3 hours
+  yellow: 6 * 60 * 60 * 1000,  // 6 hours
+  red: 10 * 60 * 60 * 1000,    // 10 hours
+};
+
+// XP per tier
+export const EGG_HATCH_XP: Record<EggTier, number> = {
+  green: 50,
+  yellow: 80,
+  red: 120,
+};
+
+// Egg tier colors
+export const EGG_TIER_COLORS: Record<EggTier, { bg: string; border: string; glow: string; label: string }> = {
+  green: { bg: "#22C55E", border: "#16A34A", glow: "rgba(34,197,94,0.3)", label: "Comum" },
+  yellow: { bg: "#EAB308", border: "#CA8A04", glow: "rgba(234,179,8,0.3)", label: "Intermediario" },
+  red: { bg: "#EF4444", border: "#DC2626", glow: "rgba(239,68,68,0.3)", label: "Raro" },
+};
+
+export const MAX_EGGS = 4;
+
+export interface PokemonEgg {
+  id: string;
+  speciesId: number;
+  name: string;
+  tier: EggTier;
+  foundAt: number; // timestamp ms
+  hatchTimeMs: number;
+}
+
+/** Roll a random egg from the pool, weighted by tier rarity */
+export function rollRandomEgg(): PokemonEgg {
+  const roll = Math.random();
+  let tier: EggTier;
+  if (roll < 0.10) {
+    tier = "red";      // 10% chance
+  } else if (roll < 0.40) {
+    tier = "yellow";   // 30% chance
+  } else {
+    tier = "green";    // 60% chance
+  }
+
+  const pool = EGG_POKEMON.filter((e) => e.tier === tier);
+  const chosen = pool[Math.floor(Math.random() * pool.length)];
+
+  return {
+    id: `egg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    speciesId: chosen.speciesId,
+    name: chosen.name,
+    tier,
+    foundAt: Date.now(),
+    hatchTimeMs: EGG_HATCH_TIMES[tier],
+  };
+}
+
+/** Check if an egg is ready to hatch */
+export function isEggReady(egg: PokemonEgg): boolean {
+  return Date.now() >= egg.foundAt + egg.hatchTimeMs;
+}
+
+/** Get remaining time in ms */
+export function getEggRemainingMs(egg: PokemonEgg): number {
+  return Math.max(0, (egg.foundAt + egg.hatchTimeMs) - Date.now());
+}
+
+/** Format remaining time as "Xh Xm" */
+export function formatEggTime(ms: number): string {
+  if (ms <= 0) return "Pronto!";
+  const hours = Math.floor(ms / (60 * 60 * 1000));
+  const mins = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+  const secs = Math.floor((ms % (60 * 1000)) / 1000);
+  if (hours > 0) return `${hours}h ${mins}m`;
+  if (mins > 0) return `${mins}m ${secs}s`;
+  return `${secs}s`;
+}
+
 /** Compute trainer defense from attributes + level */
 export function computeTrainerDefesa(level: number, combate: number, furtividade: number): number {
   // Base AC 10 + floor(combate/2) + floor(furtividade/3) + floor(level/5)
@@ -616,10 +730,15 @@ interface GameState {
   team: TeamPokemon[];
   reserves: TeamPokemon[];
   bag: BagItem[];
+  eggs: PokemonEgg[];
   battle: BattleState;
   npcs: NpcEnemy[];
   pendingEvolution: PendingEvolution | null;
-  showBattleCards: boolean; // Toggle to show/hide battle cards
+  showBattleCards: boolean;
+  // Egg management
+  addEgg: (egg: PokemonEgg) => boolean;
+  hatchEgg: (eggId: string) => TeamPokemon | null;
+  removeEgg: (eggId: string) => void;
   // Trainer management
   updateTrainer: (data: Partial<TrainerProfile>) => void;
   toggleBattleCards: () => void;
@@ -750,6 +869,7 @@ export const useGameStore = create<GameState>()(
       },
       team: [],
       reserves: [],
+      eggs: [],
       bag: [
         { itemId: "potion", quantity: 5 },
         { itemId: "super-potion", quantity: 2 },
@@ -788,6 +908,49 @@ export const useGameStore = create<GameState>()(
           effectType: "none",
           duration: 0,
         },
+      },
+
+      // ── Egg management ──
+      addEgg: (egg) => {
+        const { eggs } = get();
+        if (eggs.length >= MAX_EGGS) return false;
+        set({ eggs: [...eggs, egg] });
+        return true;
+      },
+      hatchEgg: (eggId) => {
+        const { eggs } = get();
+        const egg = eggs.find((e) => e.id === eggId);
+        if (!egg || !isEggReady(egg)) return null;
+
+        // Add pokemon to team/reserves
+        const species = getPokemon(egg.speciesId);
+        if (!species) return null;
+
+        const uid = get().addToTeamWithLevel(species, 1);
+        if (!uid) return null;
+
+        // Set HP to 10 for hatched babies
+        const state = get();
+        const mapHp = (p: TeamPokemon) =>
+          p.uid === uid ? { ...p, maxHp: 10, currentHp: 10 } : p;
+        set({
+          team: state.team.map(mapHp),
+          reserves: state.reserves.map(mapHp),
+        });
+
+        // Grant exploration XP
+        const xp = EGG_HATCH_XP[egg.tier];
+        get().addExplorationXp(xp);
+
+        // Remove egg
+        set({ eggs: get().eggs.filter((e) => e.id !== eggId) });
+
+        // Return the hatched pokemon
+        const allPokemon = [...get().team, ...get().reserves];
+        return allPokemon.find((p) => p.uid === uid) ?? null;
+      },
+      removeEgg: (eggId) => {
+        set({ eggs: get().eggs.filter((e) => e.id !== eggId) });
       },
 
       updateTrainer: (data) => {

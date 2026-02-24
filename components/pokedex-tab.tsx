@@ -14,6 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Search, Plus, Check, Heart, Swords, Zap, HelpCircle, CircleDot, ArrowLeft, Crosshair } from "lucide-react";
 import { playButtonClick, playPokedexRegister, playTabSwitch } from "@/lib/sounds";
 import { ExplorationRadar } from "@/components/exploration-radar";
+import { EggsTab } from "@/components/eggs-tab";
+import { Egg } from "lucide-react";
 
 // Generation definitions
 const GENERATIONS = [
@@ -109,7 +111,7 @@ interface PokedexTabProps {
   onStartCapture?: (speciesId: number) => void;
 }
 
-type PokedexSubTab = "lista" | "radar";
+type PokedexSubTab = "lista" | "radar" | "ovos";
 
 export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: PokedexTabProps = {}) {
   const [subTab, setSubTab] = useState<PokedexSubTab>("lista");
@@ -252,6 +254,7 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
           {([
             { id: "lista" as PokedexSubTab, label: "Pokedex", icon: <Search className="w-3.5 h-3.5" /> },
             { id: "radar" as PokedexSubTab, label: "Radar", icon: <Crosshair className="w-3.5 h-3.5" /> },
+            { id: "ovos" as PokedexSubTab, label: "Ovos", icon: <Egg className="w-3.5 h-3.5" /> },
           ]).map(({ id, label, icon }) => (
             <button
               key={id}
@@ -266,7 +269,7 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
               {subTab === id && (
                 <div
                   className="absolute bottom-0 left-1/4 right-1/4 h-[2px] rounded-full"
-                  style={{ backgroundColor: id === "radar" ? "#22C55E" : "hsl(var(--primary))" }}
+                  style={{ backgroundColor: id === "radar" ? "#22C55E" : id === "ovos" ? "#EAB308" : "hsl(var(--primary))" }}
                 />
               )}
             </button>
@@ -274,8 +277,13 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
         </div>
       )}
 
-      {/* Radar tab */}
-      {isTrainerMode && subTab === "radar" ? (
+      {/* Eggs tab */}
+      {isTrainerMode && subTab === "ovos" ? (
+        <div className="flex-1 overflow-y-auto">
+          <EggsTab />
+        </div>
+      ) : /* Radar tab */
+      isTrainerMode && subTab === "radar" ? (
         <ExplorationRadar onStartCapture={onStartCapture} />
       ) : (
         <>
