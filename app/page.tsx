@@ -27,7 +27,8 @@ import { CaptureScene } from "@/components/capture-scene";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 import { getPokemon, POKEMON } from "@/lib/pokemon-data";
 import { calculateExplorationXp } from "@/lib/game-store";
-import type { ExplorationReward } from "@/lib/game-store";
+import type { ExplorationReward, StreakUpdateResult } from "@/lib/game-store";
+
 import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords, Crosshair, Settings, Plus } from "lucide-react";
 import { playTabSwitch, playButtonClick } from "@/lib/sounds";
 import { useImagePreloader } from "@/hooks/use-image-preloader";
@@ -63,6 +64,13 @@ export default function Page() {
     rewards: ExplorationReward[];
     newLevel: number;
     oldLevel: number;
+  } | null>(null);
+  const [streakToast, setStreakToast] = useState<{
+    streak: number;
+    broken: boolean;
+    milestone: number | null;
+    legendaryId: number | null;
+    legendaryName: string | null;
   } | null>(null);
   const [musicMuted, setMusicMuted] = useState(() => {
     if (typeof window !== "undefined") {
@@ -321,6 +329,25 @@ export default function Page() {
         oldLevel,
       });
       setTimeout(() => setExplorationRewardToast(null), 6000);
+
+      // Register daily streak
+      const streakResult = useGameStore.getState().registerDailyCapture();
+      let legendaryName: string | null = null;
+      if (streakResult.legendaryId) {
+        const leg = getPokemon(streakResult.legendaryId);
+        legendaryName = leg?.name ?? null;
+      }
+      // Show streak toast only if streak changed or milestone was reached
+      if (streakResult.newStreak !== (useGameStore.getState().trainer.dailyStreak - 1) || streakResult.milestoneReached || streakResult.streakBroken) {
+        setStreakToast({
+          streak: streakResult.newStreak,
+          broken: streakResult.streakBroken,
+          milestone: streakResult.milestoneReached,
+          legendaryId: streakResult.legendaryId,
+          legendaryName,
+        });
+        setTimeout(() => setStreakToast(null), streakResult.milestoneReached ? 9000 : 5000);
+      }
     }
     setCaptureTarget(null);
   };
@@ -412,6 +439,48 @@ export default function Page() {
   // Game
   return (
     <main className="flex flex-col h-dvh max-w-md mx-auto bg-background relative">
+      {/* Daily Streak Toast */}
+      {streakToast && (
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[101] animate-in fade-in slide-in-from-top-4 duration-300 w-[300px]">
+          {streakToast.milestone ? (
+            // Milestone unlocked - special legendary toast
+            <div className="bg-card border-2 border-amber-400/60 rounded-xl shadow-2xl p-4 text-center">
+              <div className="text-2xl mb-1">🔥</div>
+              <p className="text-sm font-bold text-amber-400">{streakToast.milestone} dias de ofensiva!</p>
+              <p className="text-xs text-foreground mt-1">Pokemon Lendario liberado para captura!</p>
+              {streakToast.legendaryName && (
+                <div className="mt-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-400/30">
+                  <p className="text-xs font-bold text-amber-300 capitalize">{streakToast.legendaryName} apareceu no Radar!</p>
+                </div>
+              )}
+            </div>
+          ) : streakToast.broken ? (
+            // Streak broken
+            <div className="bg-card border border-red-500/40 rounded-xl shadow-xl p-3 flex items-center gap-3">
+              <div className="text-xl">💔</div>
+              <div>
+                <p className="text-xs font-bold text-red-400">Ofensiva quebrada!</p>
+                <p className="text-[10px] text-muted-foreground">Capture 1 pokemon por dia para manter a ofensiva.</p>
+              </div>
+            </div>
+          ) : (
+            // Normal streak update
+            <div className="bg-card border border-orange-500/30 rounded-xl shadow-xl p-3 flex items-center gap-3">
+              <div className="flex items-center gap-1">
+                <span className="text-xl">🔥</span>
+                <span className="text-lg font-black text-orange-400">{streakToast.streak}</span>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-orange-400">{streakToast.streak === 1 ? "Ofensiva iniciada!" : `${streakToast.streak} dias seguidos!`}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  Proximo lendario em {30 - (streakToast.streak % 30)} dia{30 - (streakToast.streak % 30) !== 1 ? "s" : ""}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Exploration XP Toast */}
       {explorationRewardToast && (
         <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
