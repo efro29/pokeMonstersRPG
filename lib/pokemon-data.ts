@@ -577,141 +577,208 @@ const RAW_POKEMON: PokemonRaw[] = [
   [250, "Ho-Oh", ["fire", "flying"], 106, ["peck", "ember"], ["sacred-fire", "fire-blast", "fly", "ancient-power", "hyper-beam", "earthquake"]],
   [251, "Celebi", ["psychic", "grass"], 100, ["confusion", "leech-seed"], ["psychic", "giga-drain", "solar-beam", "ancient-power", "future-sight", "hyper-beam"]],
    // Generation # (252-386)
-  [252, "Treecko", ["grass"], 50, ["pound", "leer"], ["quick-attack", "mega-drain", "slam", "leaf-blade"]],
-  [253, "Grovyle", ["grass"], 70, ["pound", "quick-attack", "leer"], ["leaf-blade", "screech", "agility", "fury-cutter"]],
-  [254, "Sceptile", ["grass"], 100, ["quick-attack", "leer", "fury-cutter"], ["leaf-blade", "dragon-claw", "slam", "solar-beam", "hyper-beam"]],
-  [255, "Torchic", ["fire"], 50, ["scratch", "growl"], ["ember", "peck", "focus-energy", "flamethrower"]],
-  [256, "Combusken", ["fire", "fighting"], 70, ["scratch", "ember", "peck"], ["double-kick", "bulk-up", "flamethrower", "sky-uppercut"]],
-  [257, "Blaziken", ["fire", "fighting"], 100, ["ember", "double-kick", "peck"], ["blaze-kick", "sky-uppercut", "bulk-up", "fire-blast", "hyper-beam"]],
-  [258, "Mudkip", ["water"], 50, ["tackle", "growl"], ["water-gun", "mud-slap", "bite", "take-down"]],
-  [259, "Marshtomp", ["water", "ground"], 70, ["water-gun", "mud-slap", "tackle"], ["mud-shot", "take-down", "protect", "surf"]],
-  [260, "Swampert", ["water", "ground"], 100, ["water-gun", "mud-shot", "tackle"], ["earthquake", "surf", "muddy-water", "ice-beam", "hyper-beam"]],
-  [261, "Poochyena", ["dark"], 45, ["tackle", "howl"], ["bite", "sand-attack", "roar", "crunch"]],
-  [262, "Mightyena", ["dark"], 70, ["bite", "howl", "sand-attack"], ["crunch", "swagger", "take-down", "roar"]],
-  [263, "Zigzagoon", ["normal"], 40, ["tackle", "growl"], ["headbutt", "sand-attack", "pin-missile", "rest"]],
-  [264, "Linoone", ["normal"], 70, ["headbutt", "growl", "tackle"], ["slash", "rest", "belly-drum", "hyper-beam"]],
-  [265, "Wurmple", ["bug"], 30, ["tackle", "string-shot"], ["poison-sting", "bug-bite"]],
-  [266, "Silcoon", ["bug"], 40, ["harden"], ["iron-defense"]],
-  [267, "Beautifly", ["bug", "flying"], 70, ["gust", "string-shot"], ["silver-wind", "air-cutter", "mega-drain", "stun-spore"]],
-  [268, "Cascoon", ["bug"], 40, ["harden"], ["iron-defense"]],
-  [269, "Dustox", ["bug", "poison"], 70, ["gust", "confusion"], ["poison-powder", "psybeam", "silver-wind", "toxic"]],
-  [270, "Lotad", ["water", "grass"], 40, ["astonish", "growl"], ["absorb", "bubble-beam", "rain-dance", "mega-drain"]],
-  [271, "Lombre", ["water", "grass"], 70, ["bubble", "astonish"], ["fake-out", "rain-dance", "mega-drain", "nature-power"]],
-  [272, "Ludicolo", ["water", "grass"], 100, ["fake-out", "bubble-beam"], ["rain-dance", "surf", "giga-drain", "hydro-pump", "hyper-beam"]],
-  [273, "Seedot", ["grass"], 40, ["bide", "harden"], ["growth", "nature-power", "solar-beam"]],
-  [274, "Nuzleaf", ["grass", "dark"], 70, ["razor-leaf", "growth"], ["fake-out", "torment", "nature-power", "swagger"]],
-  [275, "Shiftry", ["grass", "dark"], 100, ["razor-leaf", "fake-out"], ["leaf-blade", "extrasensory", "hurricane", "solar-beam", "hyper-beam"]],
-  [276, "Taillow", ["normal", "flying"], 40, ["peck", "growl"], ["quick-attack", "wing-attack", "double-attack", "agility"]],
-  [277, "Swellow", ["normal", "flying"], 70, ["peck", "quick-attack"], ["wing-attack", "double-attack", "agility", "hyper-beam"]],
-  [278, "Wingull", ["water", "flying"], 40, ["peck", "growl"], ["water-gun", "supersonic", "quick-attack", "aerial-ace"]],
-  [279, "Pelipper", ["water", "flying"], 70, ["peck", "water-gun"], ["supersonic", "aerial-ace", "protect", "hydro-pump"]],
-  [280, "Ralts", ["psychic"], 30, ["growl", "confusion"], ["double-team", "teleport", "shock-wave", "psychic"]],
-  [281, "Kirlia", ["psychic"], 50, ["growl", "confusion", "double-team"], ["teleport", "psychic", "calm-mind", "future-sight"]],
-  [282, "Gardevoir", ["psychic"], 80, ["growl", "confusion", "double-team"], ["calm-mind", "psychic", "future-sight", "hyper-beam"]],
-  [283, "Surskit", ["bug", "water"], 40, ["bubble", "quick-attack"], ["water-gun", "bug-bite", "aqua-jet", "ice-beam"]],
-  [284, "Masquerain", ["bug", "flying"], 70, ["quick-attack", "bubble-beam"], ["stun-spore", "silver-wind", "air-cutter", "hydro-pump"]],
-  [285, "Shroomish", ["grass"], 50, ["absorb", "growl"], ["mega-drain", "toxic-spores", "stun-spore", "solar-beam"]],
-  [286, "Breloom", ["grass", "fighting"], 80, ["growl", "mega-drain"], ["bullet-seed", "drain-punch", "sky-uppercut", "earthquake"]],
-  [287, "Slakoth", ["normal"], 60, ["scratch", "yawn"], ["slack-off", "comet-punch", "earthquake"]],
-  [288, "Vigoroth", ["normal"], 80, ["scratch", "focus-energy"], ["slack-off", "comet-punch", "earthquake", "hyper-beam"]],
-  [289, "Slaking", ["normal"], 100, ["scratch", "yawn"], ["earthquake", "hyper-beam", "giga-impact", "comet-punch"]],
-  [290, "Nincada", ["bug", "ground"], 50, ["scratch", "harden"], ["x-scissor", "fury-swipes", "earthquake"]],
-  [291, "Ninjask", ["bug", "flying"], 80, ["scratch", "harden"], ["x-scissor", "aerial-ace", "swords-dance", "agility"]],
-  [292, "Shedinja", ["bug", "ghost"], 30, ["scratch", "harden"], ["x-scissor", "will-o-wisp", "shadow-sneak"]],
-  [293, "Whismur", ["normal"], 60, ["pound", "echo"], ["uproar", "howl", "bite", "crunch"]],
-  [294, "Loudred", ["normal"], 80, ["pound", "echo"], ["uproar", "roar", "crunch", "hyper-beam"]],
-  [295, "Exploud", ["normal"], 104, ["echo", "pound"], ["uproar", "hyper-beam", "giga-impact", "fire-blast"]],
-  [296, "Makuhita", ["fighting"], 60, ["tackle", "focus-energy"], ["vital-throw", "arm-thrust", "earthquake", "close-combat"]],
-  [297, "Hariyama", ["fighting"], 120, ["tackle", "focus-energy"], ["vital-throw", "close-combat", "earthquake", "hyper-beam"]],
-  [298, "Azurill", ["normal", "water"], 50, ["pound", "charm"], ["bubble-beam", "water-gun", "tail-whip"]],
-  [299, "Spoink", ["psychic"], 60, ["psywave", "growl"], ["light-screen", "psybeam", "calm-mind", "psychic"]],
-  [300, "Grumpig", ["psychic"], 80, ["psywave", "psybeam"], ["calm-mind", "psychic", "power-gem", "hyper-beam"]],
-  [301, "Spinda", ["normal"], 60, ["pound", "spot"], ["dizzy-punch", "fake-out", "sucker-punch", "hyper-beam"]],
-  [302, "Trapinch", ["ground"], 45, ["bite", "growl"], ["sand-attack", "crunch", "earthquake", "sandstorm"]],
-  [303, "Vibrava", ["ground", "flying"], 70, ["bite", "sand-attack"], ["crunch", "earthquake", "sandstorm", "dragon-dance"]],
-  [304, "Flygon", ["ground", "flying"], 80, ["bite", "sand-attack"], ["earthquake", "outrage", "dragon-dance", "sandstorm"]],
-  [305, "Cacnea", ["grass"], 50, ["poison-powder", "growth"], ["spike-cannon", "sand-attack", "needle-arm", "solar-beam"]],
-  [306, "Cacturne", ["grass", "dark"], 70, ["poison-powder", "growth"], ["spike-cannon", "needle-arm", "solar-beam", "dark-pulse"]],
-  [307, "Swablu", ["normal", "flying"], 45, ["peck", "growl"], ["fury-attack", "refresh", "power-reserve", "cotton-guard"]],
-  [308, "Altaria", ["dragon", "flying"], 75, ["peck", "refresh"], ["dragon-breath", "dragon-dance", "cotton-guard", "hyper-beam"]],
-  [309, "Zangoose", ["normal"], 73, ["scratch", "leer"], ["false-swipe", "fury-cutter", "crush-claw", "close-combat"]],
-  [310, "Castform", ["normal"], 70, ["tackle", "powder-snow"], ["weather-ball", "protect", "sunny-day", "rain-dance"]],
-  [311, "Kecleon", ["normal"], 60, ["scratch", "tail-whip"], ["astonish", "fury-swipes", "sucker-punch", "shadow-claw"]],
-  [312, "Shuppet", ["ghost"], 50, ["knock-off", "growl"], ["night-shade", "shadow-sneak", "will-o-wisp", "dark-pulse"]],
-  [313, "Banette", ["ghost"], 80, ["knock-off", "shadow-sneak"], ["shadow-ball", "will-o-wisp", "curse", "hyper-beam"]],
-  [314, "Duskull", ["ghost"], 70, ["leer", "night-shade"], ["shadow-sneak", "astonish", "will-o-wisp", "psychic"]],
-  [315, "Dusclops", ["ghost"], 80, ["leer", "shadow-punch"], ["focus-punch", "shadow-ball", "curse", "hyper-beam"]],
-  [316, "Tropius", ["grass", "flying"], 99, ["gust", "growl"], ["synthesis", "giga-drain", "air-slash", "solar-beam"]],
-  [317, "Chimecho", ["psychic"], 65, ["psywave", "growl"], ["astonish", "psybeam", "calm-mind", "psychic"]],
-  [318, "Chingling", ["psychic"], 45, ["psywave", "growl"], ["astonish", "psybeam", "calm-mind"]],
-  [319, "Meditite", ["fighting", "psychic"], 30, ["confusion", "light-screen"], ["low-kick", "hi-jump-kick", "calm-mind", "psychic"]],
-  [320, "Medicham", ["fighting", "psychic"], 60, ["confusion", "meditation"], ["low-kick", "hi-jump-kick", "calm-mind", "psychic"]],
-  [321, "Electrike", ["electric"], 40, ["tackle", "growl"], ["quick-attack", "thunderbolt", "wild-charge", "thunder"]],
-  [322, "Manectric", ["electric"], 70, ["tackle", "growl"], ["quick-attack", "thunderbolt", "wild-charge", "thunder"]],
-  [323, "Plusle", ["electric"], 60, ["growl", "thundershock"], ["quick-attack", "thunder-wave", "signal-beam", "thunderbolt"]],
-  [324, "Minun", ["electric"], 60, ["growl", "thundershock"], ["quick-attack", "thunder-wave", "signal-beam", "thunderbolt"]],
-  [325, "Volbeat", ["bug"], 65, ["tackle", "flash"], ["quick-attack", "signal-beam", "bug-buzz", "x-scissor"]],
-  [326, "Illumise", ["bug"], 65, ["tackle", "flash"], ["quick-attack", "signal-beam", "bug-buzz", "x-scissor"]],
-  [327, "Roselia", ["grass", "poison"], 50, ["powder-poison", "grab"], ["mega-drain", "toxic-spores", "stun-spore", "giga-drain"]],
-  [328, "Gulpin", ["poison"], 70, ["pound", "acid-spray"], ["sludge-bomb", "recover", "toxic-spores", "gastro-acid"]],
-  [329, "Swalot", ["poison"], 100, ["pound", "acid-spray"], ["sludge-bomb", "recover", "toxic-spores", "hyper-beam"]],
-  [330, "Carvanha", ["water", "dark"], 45, ["leer", "bite"], ["crunch", "aqua-jet", "dark-pulse", "waterfall"]],
-  [331, "Sharpedo", ["water", "dark"], 70, ["leer", "bite"], ["crunch", "waterfall", "dark-pulse", "hyper-beam"]],
-  [332, "Wailmer", ["water"], 130, ["growl", "water-gun"], ["water-pulse", "rest", "aurora-beam", "surf"]],
-  [333, "Wailord", ["water"], 170, ["growl", "water-gun"], ["surf", "hydro-pump", "aqua-ring", "hyper-beam"]],
-  [334, "Barboach", ["water", "ground"], 50, ["mud-slap", "water-gun"], ["earthquake", "waterfall", "stone-edge", "muddy-water"]],
-  [335, "Whiscash", ["water", "ground"], 110, ["mud-slap", "water-gun"], ["earthquake", "waterfall", "stone-edge", "hyper-beam"]],
-  [336, "Corphish", ["water"], 43, ["scratch", "harden"], ["bubble-beam", "crunch", "waterfall", "ice-beam"]],
-  [337, "Crawdaunt", ["water", "dark"], 63, ["scratch", "crunch"], ["waterfall", "dark-pulse", "x-scissor", "earthquake"]],
-  [338, "Baltoy", ["ground", "psychic"], 40, ["confusion", "harden"], ["psybeam", "ancient-power", "earthquake"]],
-  [339, "Claydol", ["ground", "psychic"], 60, ["confusion", "ancient-power"], ["earthquake", "psychic", "power-gem", "hyper-beam"]],
-  [340, "Lileep", ["rock", "grass"], 66, ["astonish", "constrict"], ["ancient-power", "absorb", "giga-drain", "solar-beam"]],
-  [341, "Cradily", ["rock", "grass"], 86, ["astonish", "giga-drain"], ["ancient-power", "solar-beam", "stone-edge", "earthquake"]],
-  [342, "Anorith", ["rock", "bug"], 45, ["bite", "scratch"], ["ancient-power", "x-scissor", "waterfall", "earthquake"]],
-  [343, "Armaldo", ["rock", "bug"], 75, ["bite", "x-scissor"], ["ancient-power", "stone-edge", "earthquake", "hyper-beam"]],
-  [344, "Feebas", ["water"], 20, ["splash"], ["water-gun", "rain-dance", "tackle", "protect"]],
-  [345, "Milotic", ["water"], 95, ["water-gun", "rain-dance"], ["aqua-ring", "recover", "hydro-pump", "ice-beam"]],
-  [346, "Corphish", ["water"], 43, ["scratch", "harden"], ["bubble-beam", "crunch", "waterfall", "ice-beam"]],
-  [347, "Crawdaunt", ["water", "dark"], 63, ["scratch", "crunch"], ["waterfall", "dark-pulse", "x-scissor", "earthquake"]],
-  [348, "Baltoy", ["ground", "psychic"], 40, ["confusion", "harden"], ["psybeam", "ancient-power", "earthquake"]],
-  [349, "Claydol", ["ground", "psychic"], 60, ["confusion", "ancient-power"], ["earthquake", "psychic", "power-gem", "hyper-beam"]],
-  [350, "Shuppet", ["ghost"], 50, ["knock-off", "growl"], ["night-shade", "shadow-sneak", "will-o-wisp", "dark-pulse"]],
-  [351, "Banette", ["ghost"], 80, ["knock-off", "shadow-sneak"], ["shadow-ball", "will-o-wisp", "curse", "hyper-beam"]],
-  [352, "Duskull", ["ghost"], 70, ["leer", "night-shade"], ["shadow-sneak", "astonish", "will-o-wisp", "psychic"]],
-  [353, "Dusclops", ["ghost"], 80, ["leer", "shadow-punch"], ["focus-punch", "shadow-ball", "curse", "hyper-beam"]],
-  [354, "Tropius", ["grass", "flying"], 99, ["gust", "growl"], ["synthesis", "giga-drain", "air-slash", "solar-beam"]],
-  [355, "Chimecho", ["psychic"], 65, ["psywave", "growl"], ["astonish", "psybeam", "calm-mind", "psychic"]],
-  [356, "Snorunt", ["ice"], 50, ["powder-snow", "growl"], ["ice-shard", "bite", "ice-beam", "blizzard"]],
-  [357, "Glalie", ["ice"], 80, ["powder-snow", "bite"], ["ice-shard", "ice-beam", "blizzard", "hyper-beam"]],
-  [358, "Spheal", ["ice", "water"], 70, ["growl", "powder-snow"], ["water-gun", "ice-ball", "rest", "aurora-beam"]],
-  [359, "Sealeo", ["ice", "water"], 90, ["growl", "aurora-beam"], ["ice-ball", "rest", "protect", "hydro-pump"]],
-  [360, "Walrein", ["ice", "water"], 110, ["growl", "aurora-beam"], ["ice-beam", "blizzard", "hydro-pump", "earthquake"]],
-  [361, "Carvanha", ["water", "dark"], 45, ["leer", "bite"], ["crunch", "aqua-jet", "dark-pulse", "waterfall"]],
-  [362, "Sharpedo", ["water", "dark"], 70, ["leer", "bite"], ["crunch", "waterfall", "dark-pulse", "hyper-beam"]],
-  [363, "Wailmer", ["water"], 130, ["growl", "water-gun"], ["water-pulse", "rest", "aurora-beam", "surf"]],
-  [364, "Wailord", ["water"], 170, ["growl", "water-gun"], ["surf", "hydro-pump", "aqua-ring", "hyper-beam"]],
-  [365, "Barboach", ["water", "ground"], 50, ["mud-slap", "water-gun"], ["earthquake", "waterfall", "stone-edge", "muddy-water"]],
-  [366, "Whiscash", ["water", "ground"], 110, ["mud-slap", "water-gun"], ["earthquake", "waterfall", "stone-edge", "hyper-beam"]],
-  [367, "Corphish", ["water"], 43, ["scratch", "harden"], ["bubble-beam", "crunch", "waterfall", "ice-beam"]],
-  [368, "Crawdaunt", ["water", "dark"], 63, ["scratch", "crunch"], ["waterfall", "dark-pulse", "x-scissor", "earthquake"]],
-  [369, "Baltoy", ["ground", "psychic"], 40, ["confusion", "harden"], ["psybeam", "ancient-power", "earthquake"]],
-  [370, "Claydol", ["ground", "psychic"], 60, ["confusion", "ancient-power"], ["earthquake", "psychic", "power-gem", "hyper-beam"]],
-  [371, "Lileep", ["rock", "grass"], 66, ["astonish", "constrict"], ["ancient-power", "absorb", "giga-drain", "solar-beam"]],
-  [372, "Cradily", ["rock", "grass"], 86, ["astonish", "giga-drain"], ["ancient-power", "solar-beam", "stone-edge", "earthquake"]],
-  [373, "Anorith", ["rock", "bug"], 45, ["bite", "scratch"], ["ancient-power", "x-scissor", "waterfall", "earthquake"]],
-  [374, "Armaldo", ["rock", "bug"], 75, ["bite", "x-scissor"], ["ancient-power", "stone-edge", "earthquake", "hyper-beam"]],
-  [375, "Feebas", ["water"], 20, ["splash"], ["water-gun", "rain-dance", "tackle", "protect"]],
-  [376, "Milotic", ["water"], 95, ["water-gun", "rain-dance"], ["aqua-ring", "recover", "hydro-pump", "ice-beam"]],
-  [377, "Absol", ["dark"], 65, ["scratch", "leer"], ["feint-attack", "pursuit", "night-slash", "psycho-cut"]],
-  [378, "Wynaut", ["psychic"], 60, ["growl", "charm"], ["counter", "mirror-coat", "safeguard"]],
-  [379, "Wobbuffet", ["psychic"], 190, ["charm", "counter"], ["mirror-coat", "safeguard", "destiny-bond"]],
-  [380, "Latis", ["dragon", "psychic"], 80, ["confusion", "dragon-breath"], ["psychic", "outrage", "recover", "calm-mind"]],
-  [381, "Latios", ["dragon", "psychic"], 80, ["confusion", "dragon-breath"], ["psychic", "outrage", "recover", "calm-mind"]],
-  [382, "Kyogre", ["water"], 100, ["water-gun", "gust"], ["hydro-pump", "ice-beam", "origin-pulse", "water-spout"]],
-  [383, "Groudon", ["ground"], 100, ["pound", "sand-attack"], ["earthquake", "fire-punch", "precipice-blades", "giga-impact"]],
-  [384, "Rayquaza", ["dragon", "flying"], 105, ["ancient-power", "dragon-breath"], ["dragon-dance", "outrage", "earthquake", "hyper-beam"]],
-  [385, "Jirachi", ["steel", "psychic"], 60, ["confusion", "wish"], ["psychic", "iron-head", "meteor-mash", "doom-desire"]],
-  [386, "Deoxys", ["psychic"], 50, ["leer", "confusion"], ["psycho-boost", "superpower", "extremespeed", "hyper-beam"]],
+ 
+[252,"Treecko",["grass"],50,["pound","leer"],["quick-attack","mega-drain","slam","leaf-blade"]],
+[253,"Grovyle",["grass"],70,["pound","quick-attack","leer"],["leaf-blade","screech","agility","fury-cutter"]],
+[254,"Sceptile",["grass"],100,["quick-attack","leer","fury-cutter"],["leaf-blade","dragon-claw","slam","solar-beam","hyper-beam"]],
+
+[255,"Torchic",["fire"],50,["scratch","growl"],["ember","peck","focus-energy","flamethrower"]],
+[256,"Combusken",["fire","fighting"],70,["scratch","ember","peck"],["double-kick","bulk-up","flamethrower","sky-uppercut"]],
+[257,"Blaziken",["fire","fighting"],100,["ember","double-kick","peck"],["blaze-kick","sky-uppercut","bulk-up","fire-blast","hyper-beam"]],
+
+[258,"Mudkip",["water"],50,["tackle","growl"],["water-gun","mud-slap","bite","take-down"]],
+[259,"Marshtomp",["water","ground"],70,["water-gun","mud-slap","tackle"],["mud-shot","take-down","protect","surf"]],
+[260,"Swampert",["water","ground"],100,["water-gun","mud-shot","tackle"],["earthquake","surf","muddy-water","ice-beam","hyper-beam"]],
+
+[261,"Poochyena",["dark"],45,["tackle","howl"],["bite","sand-attack","roar","crunch"]],
+[262,"Mightyena",["dark"],70,["bite","howl","sand-attack"],["crunch","swagger","take-down","roar"]],
+
+[263,"Zigzagoon",["normal"],40,["tackle","growl"],["headbutt","sand-attack","pin-missile","rest"]],
+[264,"Linoone",["normal"],70,["headbutt","growl","tackle"],["slash","rest","belly-drum","hyper-beam"]],
+
+[265,"Wurmple",["bug"],30,["tackle","string-shot"],["poison-sting","bug-bite"]],
+[266,"Silcoon",["bug"],40,["harden"],["iron-defense"]],
+[267,"Beautifly",["bug","flying"],70,["gust","string-shot"],["silver-wind","air-cutter","mega-drain","stun-spore"]],
+[268,"Cascoon",["bug"],40,["harden"],["iron-defense"]],
+[269,"Dustox",["bug","poison"],70,["gust","confusion"],["poison-powder","psybeam","silver-wind","toxic"]],
+
+[270,"Lotad",["water","grass"],40,["astonish","growl"],["absorb","bubble-beam","rain-dance","mega-drain"]],
+[271,"Lombre",["water","grass"],70,["bubble","astonish"],["fake-out","rain-dance","mega-drain","nature-power"]],
+[272,"Ludicolo",["water","grass"],100,["fake-out","bubble-beam"],["rain-dance","surf","giga-drain","hydro-pump","hyper-beam"]],
+
+[273,"Seedot",["grass"],40,["bide","harden"],["growth","nature-power","solar-beam"]],
+[274,"Nuzleaf",["grass","dark"],70,["razor-leaf","growth"],["fake-out","torment","nature-power","swagger"]],
+[275,"Shiftry",["grass","dark"],100,["razor-leaf","fake-out"],["leaf-blade","extrasensory","hurricane","solar-beam","hyper-beam"]],
+
+[276,"Taillow",["normal","flying"],40,["peck","growl"],["quick-attack","wing-attack","double-attack","agility"]],
+[277,"Swellow",["normal","flying"],70,["peck","quick-attack"],["wing-attack","double-attack","agility","hyper-beam"]],
+
+[278,"Wingull",["water","flying"],40,["peck","growl"],["water-gun","supersonic","quick-attack","aerial-ace"]],
+[279,"Pelipper",["water","flying"],70,["peck","water-gun"],["supersonic","aerial-ace","protect","hydro-pump"]],
+
+[280,"Ralts",["psychic"],30,["growl","confusion"],["double-team","teleport","shock-wave","psychic"]],
+[281,"Kirlia",["psychic"],50,["growl","confusion","double-team"],["teleport","psychic","calm-mind","future-sight"]],
+
+
+
+[282,"Gardevoir",["psychic"],80,["growl","confusion","double-team"],["calm-mind","psychic","future-sight","hyper-beam"]],
+
+[283,"Surskit",["bug","water"],40,["bubble","quick-attack"],["water-gun","bug-bite","aqua-jet","ice-beam"]],
+[284,"Masquerain",["bug","flying"],70,["quick-attack","bubble-beam"],["stun-spore","silver-wind","air-cutter","hydro-pump"]],
+
+[285,"Shroomish",["grass"],50,["absorb","growl"],["mega-drain","toxic-spores","stun-spore","solar-beam"]],
+[286,"Breloom",["grass","fighting"],80,["growl","mega-drain"],["bullet-seed","drain-punch","sky-uppercut","earthquake"]],
+
+[287,"Slakoth",["normal"],60,["scratch","yawn"],["slack-off","comet-punch","earthquake"]],
+[288,"Vigoroth",["normal"],80,["scratch","focus-energy"],["slack-off","comet-punch","earthquake","hyper-beam"]],
+[289,"Slaking",["normal"],100,["scratch","yawn"],["earthquake","hyper-beam","giga-impact","comet-punch"]],
+
+[290,"Nincada",["bug","ground"],50,["scratch","harden"],["x-scissor","fury-swipes","earthquake"]],
+[291,"Ninjask",["bug","flying"],80,["scratch","harden"],["x-scissor","aerial-ace","swords-dance","agility"]],
+[292,"Shedinja",["bug","ghost"],30,["scratch","harden"],["x-scissor","will-o-wisp","shadow-sneak"]],
+
+[293,"Whismur",["normal"],60,["pound","echo"],["uproar","howl","bite","crunch"]],
+[294,"Loudred",["normal"],80,["pound","echo"],["uproar","roar","crunch","hyper-beam"]],
+[295,"Exploud",["normal"],104,["echo","pound"],["uproar","hyper-beam","giga-impact","fire-blast"]],
+
+[296,"Makuhita",["fighting"],60,["tackle","focus-energy"],["vital-throw","arm-thrust","earthquake","close-combat"]],
+[297,"Hariyama",["fighting"],120,["tackle","focus-energy"],["vital-throw","close-combat","earthquake","hyper-beam"]],
+
+[298,"Azurill",["normal","water"],50,["pound","charm"],["bubble-beam","water-gun","tail-whip"]],
+
+[299,"Nosepass",["rock"],80,["tackle","harden"],["rock-throw","block","sandstorm","power-gem"]],
+[300,"Skitty",["normal"],50,["tackle","growl"],["sing","attract","assist","double-edge"]],
+[301,"Delcatty",["normal"],70,["tackle","sing"],["attract","assist","heal-bell","double-edge"]],
+
+[302,"Sableye",["dark","ghost"],50,["scratch","leer"],["night-shade","fake-out","shadow-sneak","shadow-claw"]],
+[303,"Mawile",["steel","fairy"],50,["astonish","growl"],["bite","sweet-scent","iron-head","crunch"]],
+
+[304,"Aron",["steel","rock"],50,["tackle","harden"],["metal-claw","rock-tomb","iron-defense","take-down"]],
+[305,"Lairon",["steel","rock"],70,["tackle","metal-claw"],["rock-tomb","iron-defense","take-down","iron-tail"]],
+[306,"Aggron",["steel","rock"],100,["metal-claw","iron-defense"],["iron-tail","rock-slide","earthquake","hyper-beam"]],
+
+[307,"Meditite",["fighting","psychic"],30,["confusion","light-screen"],["low-kick","hi-jump-kick","calm-mind","psychic"]],
+[308,"Medicham",["fighting","psychic"],60,["confusion","meditation"],["low-kick","hi-jump-kick","calm-mind","psychic"]],
+
+[309,"Electrike",["electric"],40,["tackle","growl"],["quick-attack","thunderbolt","wild-charge","thunder"]],
+[310,"Manectric",["electric"],70,["tackle","growl"],["quick-attack","thunderbolt","wild-charge","thunder"]],
+
+[311,"Plusle",["electric"],60,["growl","thundershock"],["quick-attack","thunder-wave","signal-beam","thunderbolt"]],
+
+
+[312,"Minun",["electric"],60,["growl","thundershock"],["quick-attack","thunder-wave","signal-beam","thunderbolt"]],
+[313,"Volbeat",["bug"],65,["tackle","flash"],["quick-attack","signal-beam","bug-buzz","x-scissor"]],
+[314,"Illumise",["bug"],65,["tackle","flash"],["quick-attack","signal-beam","bug-buzz","x-scissor"]],
+
+[315,"Roselia",["grass","poison"],50,["poison-powder","absorb"],["mega-drain","toxic-spikes","stun-spore","giga-drain"]],
+
+[316,"Gulpin",["poison"],70,["pound","yawn"],["sludge","amnesia","sludge-bomb","gastro-acid"]],
+[317,"Swalot",["poison"],100,["pound","yawn"],["sludge","amnesia","sludge-bomb","gastro-acid"]],
+
+[318,"Carvanha",["water","dark"],45,["leer","bite"],["crunch","aqua-jet","dark-pulse","waterfall"]],
+[319,"Sharpedo",["water","dark"],70,["leer","bite"],["crunch","waterfall","dark-pulse","hyper-beam"]],
+
+[320,"Wailmer",["water"],130,["growl","water-gun"],["water-pulse","rest","aurora-beam","surf"]],
+[321,"Wailord",["water"],170,["growl","water-gun"],["surf","hydro-pump","aqua-ring","hyper-beam"]],
+
+[322,"Numel",["fire","ground"],60,["tackle","growl"],["ember","magnitude","earth-power","lava-plume"]],
+[323,"Camerupt",["fire","ground"],90,["tackle","ember"],["magnitude","earth-power","lava-plume","earthquake"]],
+
+[324,"Torkoal",["fire"],70,["ember","smog"],["flamethrower","iron-defense","heat-wave","amnesia"]],
+
+[325,"Spoink",["psychic"],60,["psywave","growl"],["light-screen","psybeam","calm-mind","psychic"]],
+[326,"Grumpig",["psychic"],80,["psywave","psybeam"],["calm-mind","psychic","power-gem","hyper-beam"]],
+
+[327,"Spinda",["normal"],60,["pound","teeter-dance"],["dizzy-punch","fake-out","sucker-punch","hyper-beam"]],
+
+[328,"Trapinch",["ground"],45,["bite","sand-attack"],["crunch","dig","earthquake","sandstorm"]],
+[329,"Vibrava",["ground","dragon"],70,["bite","sand-attack"],["crunch","dragon-breath","earthquake","dragon-dance"]],
+[330,"Flygon",["ground","dragon"],80,["dragon-breath","sand-attack"],["earthquake","dragon-claw","dragon-dance","hyper-beam"]],
+
+[331,"Cacnea",["grass"],50,["poison-sting","leer"],["needle-arm","pin-missile","spikes","energy-ball"]],
+[332,"Cacturne",["grass","dark"],70,["poison-sting","leer"],["needle-arm","spikes","dark-pulse","energy-ball"]],
+
+[333,"Swablu",["normal","flying"],45,["peck","growl"],["sing","dragon-breath","cotton-guard","refresh"]],
+[334,"Altaria",["dragon","flying"],75,["peck","dragon-breath"],["dragon-dance","dragon-pulse","cotton-guard","hyper-beam"]],
+
+[335,"Zangoose",["normal"],73,["scratch","leer"],["slash","swords-dance","close-combat","crush-claw"]],
+[336,"Seviper",["poison"],73,["wrap","leer"],["poison-fang","bite","sludge-bomb","crunch"]],
+
+[337,"Lunatone",["rock","psychic"],70,["confusion","harden"],["rock-slide","cosmic-power","psychic","moonlight"]],
+[338,"Solrock",["rock","psychic"],70,["confusion","harden"],["rock-slide","cosmic-power","psychic","sunny-day"]],
+
+[339,"Barboach",["water","ground"],50,["mud-slap","water-gun"],["earthquake","waterfall","stone-edge","muddy-water"]],
+[340,"Whiscash",["water","ground"],110,["mud-slap","water-gun"],["earthquake","waterfall","stone-edge","hyper-beam"]],
+
+[341,"Corphish",["water"],43,["scratch","harden"],["bubble-beam","crunch","waterfall","ice-beam"]],
+[342,"Crawdaunt",["water","dark"],63,["scratch","crunch"],["waterfall","dark-pulse","x-scissor","earthquake"]],
+
+[343,"Baltoy",["ground","psychic"],40,["confusion","harden"],["psybeam","ancient-power","earthquake"]],
+[344,"Claydol",["ground","psychic"],60,["confusion","ancient-power"],["earthquake","psychic","power-gem","hyper-beam"]],
+
+[345,"Lileep",["rock","grass"],66,["astonish","constrict"],["ancient-power","giga-drain","stockpile","energy-ball"]],
+[346,"Cradily",["rock","grass"],86,["astonish","giga-drain"],["ancient-power","energy-ball","stone-edge","earthquake"]],
+
+[347,"Anorith",["rock","bug"],45,["scratch","harden"],["ancient-power","x-scissor","rock-slide","earthquake"]],
+[348,"Armaldo",["rock","bug"],75,["scratch","x-scissor"],["ancient-power","stone-edge","earthquake","hyper-beam"]],
+
+[349,"Feebas",["water"],20,["splash","tackle"],["water-pulse","rain-dance","flail","protect"]],
+[350,"Milotic",["water"],95,["water-gun","rain-dance"],["aqua-ring","recover","hydro-pump","ice-beam"]],
+
+[351,"Castform",["normal"],70,["tackle","powder-snow"],["weather-ball","sunny-day","rain-dance","hail"]],
+
+[352,"Kecleon",["normal"],60,["scratch","tail-whip"],["fury-swipes","shadow-claw","sucker-punch","slash"]],
+
+[353,"Shuppet",["ghost"],50,["knock-off","screech"],["shadow-sneak","will-o-wisp","curse","night-shade"]],
+[354,"Banette",["ghost"],80,["knock-off","shadow-sneak"],["shadow-ball","will-o-wisp","curse","hyper-beam"]],
+
+[355,"Duskull",["ghost"],70,["leer","night-shade"],["shadow-sneak","will-o-wisp","confuse-ray","payback"]],
+[356,"Dusclops",["ghost"],80,["shadow-punch","leer"],["shadow-ball","will-o-wisp","curse","hyper-beam"]],
+
+[357,"Tropius",["grass","flying"],99,["gust","growl"],["razor-leaf","air-slash","solar-beam","synthesis"]],
+
+[358,"Chimecho",["psychic"],65,["wrap","growl"],["psybeam","calm-mind","psychic","healing-wish"]],
+
+[359,"Absol",["dark"],65,["scratch","leer"],["night-slash","swords-dance","psycho-cut","bite"]],
+
+[360,"Wynaut",["psychic"],60,["charm","counter"],["mirror-coat","safeguard","destiny-bond"]],
+[361,"Snorunt",["ice"],50,["powder-snow","leer"],["ice-shard","bite","ice-beam","hail"]],
+[362,"Glalie",["ice"],80,["powder-snow","bite"],["ice-beam","crunch","blizzard","hyper-beam"]],
+
+[363,"Spheal",["ice","water"],70,["powder-snow","growl"],["water-gun","ice-ball","rest","aurora-beam"]],
+[364,"Sealeo",["ice","water"],90,["growl","aurora-beam"],["ice-ball","rest","protect","surf"]],
+[365,"Walrein",["ice","water"],110,["aurora-beam","growl"],["ice-beam","blizzard","hydro-pump","earthquake"]],
+
+[366,"Clamperl",["water"],35,["clamp","water-gun"],["whirlpool","iron-defense","shell-smash","brine"]],
+[367,"Huntail",["water"],55,["bite","water-gun"],["crunch","aqua-tail","hydro-pump","ice-beam"]],
+[368,"Gorebyss",["water"],55,["confusion","water-gun"],["aqua-ring","baton-pass","hydro-pump","ice-beam"]],
+
+[369,"Relicanth",["water","rock"],100,["tackle","harden"],["waterfall","ancient-power","yawn","double-edge"]],
+[370,"Luvdisc",["water"],43,["tackle","charm"],["water-gun","attract","sweet-kiss","aqua-ring"]],
+
+[371,"Bagon",["dragon"],45,["rage","bite"],["dragon-breath","headbutt","crunch","dragon-claw"]],
+[372,"Shelgon",["dragon"],65,["bite","headbutt"],["dragon-breath","zen-headbutt","crunch","dragon-claw"]],
+[373,"Salamence",["dragon","flying"],95,["bite","dragon-breath"],["fly","dragon-claw","crunch","hyper-beam"]],
+
+[374,"Beldum",["steel","psychic"],40,["tackle"],["take-down"]],
+[375,"Metang",["steel","psychic"],60,["tackle","confusion"],["metal-claw","psychic","iron-defense","take-down"]],
+[376,"Metagross",["steel","psychic"],80,["metal-claw","confusion"],["meteor-mash","psychic","earthquake","hyper-beam"]],
+
+[377,"Regirock",["rock"],80,["rock-throw","curse"],["ancient-power","superpower","stone-edge","hyper-beam"]],
+[378,"Regice",["ice"],80,["icy-wind","curse"],["ice-beam","amnesia","blizzard","hyper-beam"]],
+[379,"Registeel",["steel"],80,["metal-claw","curse"],["iron-head","amnesia","flash-cannon","hyper-beam"]],
+
+[380,"Latias",["dragon","psychic"],80,["confusion","dragon-breath"],["recover","psychic","calm-mind","outrage"]],
+[381,"Latios",["dragon","psychic"],80,["confusion","dragon-breath"],["recover","psychic","calm-mind","outrage"]],
+
+[382,"Kyogre",["water"],100,["water-gun","scary-face"],["hydro-pump","ice-beam","calm-mind","water-spout"]],
+[383,"Groudon",["ground"],100,["mud-shot","scary-face"],["earthquake","fire-blast","bulk-up","solar-beam"]],
+[384,"Rayquaza",["dragon","flying"],105,["twister","scary-face"],["dragon-dance","outrage","fly","hyper-beam"]],
+
+[385,"Jirachi",["steel","psychic"],60,["confusion","wish"],["psychic","iron-head","calm-mind","doom-desire"]],
+[386,"Deoxys",["psychic"],50,["leer","confusion"],["psycho-boost","superpower","extreme-speed","hyper-beam"]],
+
+
      // Generation 4 # (252-386)
 [387, "Turtwig", ["grass"], 45, ["tackle", "withdraw"], ["razor-leaf", "bite", "mega-drain", "leaf-storm"]],
 [388, "Grotle", ["grass"], 60, ["tackle", "withdraw"], ["razor-leaf", "bite", "curse", "leaf-storm"]],
@@ -1040,70 +1107,116 @@ export const EVOLUTIONS: EvolutionData[] = [
   { from: 231, to: 232, method: "level", level: 25 },  // Phanpy -> Donphan
   { from: 246, to: 247, method: "level", level: 30 },  // Larvitar -> Pupitar
   { from: 247, to: 248, method: "level", level: 55 },  // Pupitar -> Tyranitar
-  { from: 252, to: 253, method: "level", level: 16 },
-  { from: 253, to: 254, method: "level", level: 36 },
-  { from: 255, to: 256, method: "level", level: 16 },  // Torchic -> Combusken
-  { from: 256, to: 257, method: "level", level: 36 },  // Combusken -> Blaziken
-  { from: 258, to: 259, method: "level", level: 16 },  // Mudkip -> Marshtomp
-  { from: 259, to: 260, method: "level", level: 36 },  // Marshtomp -> Swampert
-  { from: 261, to: 262, method: "level", level: 18 },  // Poochyena -> Mightyena
-  { from: 263, to: 264, method: "level", level: 20 },  // Zigzagoon -> Linoone
-  { from: 265, to: 266, method: "level", level: 7 },   // Wurmple -> Silcoon
-  { from: 266, to: 267, method: "level", level: 10 },  // Silcoon -> Beautifly
-  { from: 265, to: 268, method: "level", level: 7 },   // Wurmple -> Cascoon
-  { from: 268, to: 269, method: "level", level: 10 },  // Cascoon -> Dustox
-  { from: 270, to: 271, method: "level", level: 14 },  // Lotad -> Lombre
-  { from: 271, to: 272, method: "stone", stone: "water-stone" },  // Lombre -> Ludicolo
-  { from: 273, to: 274, method: "level", level: 14 },  // Seedot -> Nuzleaf
-  { from: 274, to: 275, method: "stone", stone: "leaf-stone" },  // Nuzleaf -> Shiftry
+ 
 
-  // Gen 3
-  { from: 276, to: 277, method: "level", level: 22 },  // Taillow -> Swellow
-  { from: 278, to: 279, method: "level", level: 25 },  // Wingull -> Pelipper
-  { from: 280, to: 281, method: "level", level: 20 },  // Ralts -> Kirlia
-  { from: 281, to: 282, method: "level", level: 30 },  // Kirlia -> Gardevoir
-  { from: 283, to: 284, method: "level", level: 22 },  // Surskit -> Masquerain
-  { from: 285, to: 286, method: "level", level: 23 },  // Shroomish -> Breloom
-  { from: 287, to: 288, method: "level", level: 18 },  // Slakoth -> Vigoroth
-  { from: 288, to: 289, method: "level", level: 36 },  // Vigoroth -> Slaking
-  { from: 290, to: 291, method: "level", level: 20 },  // Nincada -> Ninjask
-  { from: 292, to: 293, method: "level", level: 23 },  // Whismur -> Loudred
-  { from: 293, to: 294, method: "level", level: 40 },  // Loudred -> Exploud
-  { from: 295, to: 296, method: "level", level: 24 },  // Makuhita -> Hariyama
-  { from: 299, to: 300, method: "level", level: 23 },  // Spoink -> Grumpig
-  { from: 301, to: 302, method: "level", level: 11 },  // Trapinch -> Vibrava
-  { from: 302, to: 303, method: "level", level: 45 },  // Vibrava -> Flygon
-  { from: 304, to: 305, method: "level", level: 32 },  // Cacnea -> Cacturne
-  { from: 306, to: 307, method: "level", level: 35 },  // Swablu -> Altaria
-  { from: 309, to: 310, method: "level", level: 30 },  // Castform -> none (no evolution in main series)
-  { from: 311, to: 312, method: "level", level: 37 },  // Shuppet -> Banette
-  { from: 313, to: 314, method: "level", level: 24 },  // Duskull -> Dusclops
-  { from: 315, to: 316, method: "level", level: 44 },  // Tropius -> none (no standard evolution)
-  { from: 317, to: 318, method: "level", level: 25 },  // Chimecho -> Chimera
-  { from: 319, to: 320, method: "level", level: 20 },  // Meditite -> Medicham
-  { from: 321, to: 322, method: "level", level: 24 },  // Electrike -> Manectric
-  { from: 323, to: 324, method: "level", level: 20 },  // Roselia -> none
-  { from: 325, to: 326, method: "level", level: 25 },  // Gulpin -> Swalot
-  { from: 327, to: 328, method: "level", level: 22 },  // Carvanha -> Sharpedo
-  { from: 329, to: 330, method: "level", level: 40 },  // Wailmer -> Wailord
-  { from: 331, to: 332, method: "level", level: 25 },  // Barboach -> Whiscash
-  { from: 333, to: 334, method: "level", level: 18 },  // Corphish -> Crawdaunt
-  { from: 335, to: 336, method: "level", level: 12 },  // Baltoy -> Claydol
-  { from: 337, to: 338, method: "level", level: 40 },  // Lileep -> Cradily
-  { from: 339, to: 340, method: "level", level: 40 },  // Anorith -> Armaldo
-  { from: 341, to: 342, method: "level", level: 30 },  // Feebas -> Milotic
-  { from: 343, to: 344, method: "level", level: 50 },  // Absol -> none
-  { from: 347, to: 348, method: "level", level: 20 },  // Wynaut -> Wobbuffet
-  { from: 349, to: 350, method: "level", level: 18 },  // Snorunt -> Glalie
-  { from: 351, to: 352, method: "level", level: 32 },  // Spheal -> Sealeo
-  { from: 352, to: 353, method: "level", level: 44 },  // Sealeo -> Walrein
-  { from: 357, to: 358, method: "level", level: 30 },  // Zangoose -> none
-  { from: 359, to: 360, method: "level", level: 35 },  // Spoink -> Grumpig
-  { from: 361, to: 362, method: "level", level: 37 },  // Shuppet -> Banette
-  { from: 363, to: 364, method: "level", level: 24 },  // Duskull -> Dusclops
-  { from: 375, to: 376, method: "level", level: 50 },  // Latis -> none (Latias/Latios)
-  { from: 379, to: 380, method: "level", level: 50 } ,  // Wynaut -> Wobbuffet
-  { from: 387, to: 388, method: "level", level: 18 }, // Turtwig -> Grotle
+{ from:252, to:253, method:"level", level:16 },
+{ from:253, to:254, method:"level", level:36 },
+
+{ from:255, to:256, method:"level", level:16 },
+{ from:256, to:257, method:"level", level:36 },
+
+{ from:258, to:259, method:"level", level:16 },
+{ from:259, to:260, method:"level", level:36 },
+
+{ from:261, to:262, method:"level", level:18 },
+{ from:263, to:264, method:"level", level:20 },
+
+// Wurmple split
+{ from:265, to:266, method:"level", level:7 },
+{ from:265, to:268, method:"level", level:7 },
+{ from:266, to:267, method:"level", level:10 },
+{ from:268, to:269, method:"level", level:10 },
+
+{ from:270, to:271, method:"level", level:14 },
+{ from:271, to:272, method:"stone", stone:"water-stone" },
+
+{ from:273, to:274, method:"level", level:14 },
+{ from:274, to:275, method:"stone", stone:"leaf-stone" },
+
+{ from:276, to:277, method:"level", level:22 },
+{ from:278, to:279, method:"level", level:25 },
+
+{ from:280, to:281, method:"level", level:20 },
+{ from:281, to:282, method:"level", level:30 },
+
+{ from:283, to:284, method:"level", level:22 },
+{ from:285, to:286, method:"level", level:23 },
+
+{ from:287, to:288, method:"level", level:18 },
+{ from:288, to:289, method:"level", level:36 },
+
+// Nincada special (Shedinja extra)
+{ from:290, to:291, method:"level", level:20 },
+{ from:290, to:292, method:"special", requirement:"empty-slot+pokeball" },
+
+{ from:293, to:294, method:"level", level:20 },
+{ from:294, to:295, method:"level", level:40 },
+
+{ from:296, to:297, method:"level", level:24 },
+
+{ from:299, to:476, method:"later-gen" }, // Nosepass evolves only gen4
+
+{ from:300, to:301, method:"stone", stone:"moon-stone" },
+
+{ from:304, to:305, method:"level", level:32 },
+{ from:305, to:306, method:"level", level:42 },
+
+{ from:307, to:308, method:"level", level:37 },
+
+{ from:309, to:310, method:"level", level:26 },
+
+{ from:315, to:407, method:"later-gen" }, // Roselia -> Roserade (Gen4)
+
+{ from:316, to:317, method:"level", level:26 },
+
+{ from:318, to:319, method:"level", level:30 },
+
+{ from:320, to:321, method:"level", level:40 },
+
+{ from:322, to:323, method:"level", level:33 },
+
+{ from:325, to:326, method:"level", level:32 },
+
+{ from:328, to:329, method:"level", level:35 },
+{ from:329, to:330, method:"level", level:45 },
+
+{ from:331, to:332, method:"level", level:32 },
+
+{ from:333, to:334, method:"level", level:35 },
+
+{ from:339, to:340, method:"level", level:30 },
+{ from:341, to:342, method:"level", level:30 },
+
+{ from:343, to:344, method:"level", level:36 },
+
+{ from:345, to:346, method:"level", level:40 },
+{ from:347, to:348, method:"level", level:40 },
+
+// Feebas special beauty
+{ from:349, to:350, method:"beauty", value:170 },
+
+{ from:353, to:354, method:"level", level:37 },
+{ from:355, to:356, method:"level", level:37 },
+
+{ from:360, to:202, method:"friendship" }, // Wynaut -> Wobbuffet
+
+{ from:361, to:362, method:"level", level:42 },
+
+{ from:363, to:364, method:"level", level:32 },
+{ from:364, to:365, method:"level", level:44 },
+
+{ from:366, to:367, method:"trade", item:"deep-sea-tooth" },
+{ from:366, to:368, method:"trade", item:"deep-sea-scale" },
+
+{ from:371, to:372, method:"level", level:30 },
+{ from:372, to:373, method:"level", level:50 },
+
+{ from:374, to:375, method:"level", level:20 },
+{ from:375, to:376, method:"level", level:45 },
+
+
+
+{ from: 387, to: 388, method: "level", level: 18 }, // Turtwig -> Grotle
 { from: 388, to: 389, method: "level", level: 32 }, // Grotle -> Torterra
 
 { from: 390, to: 391, method: "level", level: 14 }, // Chimchar -> Monferno
@@ -1888,6 +2001,8 @@ const SPECIES_BASE_ATTRIBUTES: Record<number, PokemonBaseAttributes> = {
   384: { velocidade: 10, felicidade: 10, resistencia: 10, acrobacia: 10, especial: "Desce dos céus dominando ventos" }, // Rayquaza
   385: { velocidade: 8, felicidade: 10, resistencia: 8, acrobacia: 8, especial: "Realiza desejos envolvendo o campo em luz" }, // Jirachi
   386: { velocidade: 10, felicidade: 7, resistencia: 8, acrobacia: 10, especial: "Altera a própria forma para combater" }, // Deoxys
+
+  
   387: { velocidade: 4, felicidade: 6, resistencia: 6, acrobacia: 3, especial: "Faz brotar pequenas vinhas ao redor" }, // Turtwig
 388: { velocidade: 5, felicidade: 6, resistencia: 7, acrobacia: 4, especial: "Fortalece o solo com raízes espessas" }, // Grotle
 389: { velocidade: 6, felicidade: 7, resistencia: 9, acrobacia: 4, especial: "Ergue pilares de terra cobertos por árvores" }, // Torterra

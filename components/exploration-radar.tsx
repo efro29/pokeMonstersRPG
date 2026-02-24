@@ -848,7 +848,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
       </AnimatePresence>
 
       {/* Legenda */}
-      <div className="w-full max-w-sm mt-auto pt-3 border-t border-border">
+      {/* <div className="w-full max-w-sm mt-auto pt-3 border-t border-border">
         <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <BatteryIcon charges={1} max={4} size={14} />
@@ -867,7 +867,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
             <span>Noturnos: 18h-6h</span>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

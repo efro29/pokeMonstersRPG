@@ -324,11 +324,39 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
               </div>
             )}
 
-            <p className="text-[10px] text-muted-foreground">
+            {/* <p className="text-[10px] text-muted-foreground">
               {isTrainerMode
                 ? `${discovered.length}/493 Descobertos - Equipe: ${team.length}/6 - Reservas: ${reserves.length}`
                 : `${POKEMON.length} Pokemon - Equipe: ${team.length}/6 - Reservas: ${reserves.length}`}
-            </p>
+            </p> */}
+               <div className="flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => { setActiveGen(null); setSearch(""); }}
+                    className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                      style={{ backgroundColor: genRange?.color, color: "#fff" }}
+                    >
+                      {genRange?.label}
+                    </span>
+                    <span className="text-sm font-semibold text-foreground">{genRange?.name}</span>
+                  </div>
+                  <div className="relative flex-1 ml-2">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="pl-7 h-7 bg-secondary border-border text-foreground text-xs"
+                    />
+                  </div>
+                </div>
           </div>
 
           <ScrollArea className="flex-1" ref={scrollAreaRef}>
@@ -390,34 +418,7 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
               /* Pokemon grid for selected generation */
               <div className="flex flex-col">
                 {/* Back button + search */}
-                <div className="flex items-center gap-2 p-3 border-b border-border">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => { setActiveGen(null); setSearch(""); }}
-                    className="h-7 px-2 text-muted-foreground hover:text-foreground hover:bg-secondary"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                  </Button>
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                      style={{ backgroundColor: genRange?.color, color: "#fff" }}
-                    >
-                      {genRange?.label}
-                    </span>
-                    <span className="text-sm font-semibold text-foreground">{genRange?.name}</span>
-                  </div>
-                  <div className="relative flex-1 ml-2">
-                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                    <Input
-                      placeholder="Buscar..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      className="pl-7 h-7 bg-secondary border-border text-foreground text-xs"
-                    />
-                  </div>
-                </div>
+
 
                 {filtered.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 px-6 gap-3">
