@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useGameStore, ATTRIBUTE_INFO, trainerXpForLevel, explorationXpForLevel } from "@/lib/game-store";
+import { useGameStore, ATTRIBUTE_INFO, trainerXpForLevel, explorationXpForLevel, STREAK_LEGENDARY_IDS, getTodayDateStr } from "@/lib/game-store";
+import { getPokemon } from "@/lib/pokemon-data";
 import { useModeStore } from "@/lib/mode-store";
 import type { TrainerAttributes } from "@/lib/game-store";
 import { KANTO_BADGE_ICONS, JOHTO_BADGE_ICONS } from "./badge-icons";
@@ -34,6 +35,8 @@ import {
   Trophy,
   Crosshair,
   Compass,
+  Flame,
+  Zap,
 } from "lucide-react";
 import { playBadgeObtained, playBadgeRemoved, playButtonClick } from "@/lib/sounds";
 import { TrainerAvatar } from "@/components/trainer-avatar";
@@ -226,6 +229,170 @@ export function ProfileTab() {
                 Ganhe XP capturando Pokemon no radar. Bonus por capturar com menos pokebolas!
               </p>
             </div>
+
+            {/* Daily Streak / Ofensiva */}
+            {(() => {
+              const streak = trainer.dailyStreak ?? 0;
+              const lastDate = trainer.lastCaptureDate ?? null;
+              const unlockedDays = trainer.legendaryUnlockedDays ?? [];
+              const today = getTodayDateStr();
+              const capturedToday = lastDate === today;
+
+              // Next milestone calculation
+              const nextMilestone = Math.ceil((streak + 1) / 30) * 30;
+              const daysToNextMilestone = nextMilestone - streak;
+              const milestoneProgress = streak % 30;
+              const milestonePercent = (milestoneProgress / 30) * 100;
+
+              // Streak broken check
+              let streakActive = true;
+              if (lastDate && lastDate !== today) {
+                const last = new Date(lastDate + "T12:00:00");
+                const now = new Date(today + "T12:00:00");
+                const diffDays = Math.round((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
+                if (diffDays > 1) streakActive = false;
+              }
+
+              // Next legendary info
+              const nextMilestoneLegIdx = nextMilestone / 30 - 1;
+              const nextLegendaryId = STREAK_LEGENDARY_IDS[nextMilestoneLegIdx] ?? null;
+              const nextLegendary = nextLegendaryId ? getPokemon(nextLegendaryId) : null;
+
+              // All unlocked legendaries
+              const unlockedLegendaries = unlockedDays.map((day) => {
+                const idx = day / 30 - 1;
+                const id = STREAK_LEGENDARY_IDS[idx];
+                const pokemon = id ? getPokemon(id) : null;
+                return { day, pokemon };
+              });
+
+              const streakColor = !streakActive && streak > 0 ? "#EF4444" : streak >= 7 ? "#F97316" : "#F59E0B";
+
+              return (
+                <div className="rounded-xl overflow-hidden border border-orange-500/20" style={{ background: "rgba(249,115,22,0.04)" }}>
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-3 pt-3 pb-2">
+                    <div className="flex items-center gap-2">
+                      <Flame className="w-4 h-4" style={{ color: streakColor }} />
+                      <span className="text-sm font-bold text-foreground">Ofensiva Diaria</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {!streakActive && streak > 0 && (
+                        <span className="text-[10px] text-red-400 font-medium">Quebrada</span>
+                      )}
+                      {capturedToday && (
+                        <span className="text-[10px] text-emerald-400 font-medium">Hoje</span>
+                      )}
+                      <div
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-full"
+                        style={{ background: `${streakColor}20`, border: `1px solid ${streakColor}40` }}
+                      >
+                        <Flame className="w-3 h-3" style={{ color: streakColor }} />
+                        <span className="text-sm font-black font-mono" style={{ color: streakColor }}>
+                          {streak}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Streak mini-dots (last 7 days visualization) */}
+                  <div className="px-3 pb-2">
+                    <div className="flex gap-1.5 items-center">
+                      {Array.from({ length: 7 }).map((_, i) => {
+                        const dayNum = streak - (6 - i);
+                        const active = dayNum > 0;
+                        const isToday = i === 6 && capturedToday;
+                        return (
+                          <div
+                            key={i}
+                            className="flex-1 flex flex-col items-center gap-0.5"
+                          >
+                            <div
+                              className="w-full h-5 rounded-md flex items-center justify-center transition-all"
+                              style={{
+                                background: active
+                                  ? isToday
+                                    ? `${streakColor}30`
+                                    : `${streakColor}18`
+                                  : "rgba(255,255,255,0.04)",
+                                border: `1px solid ${active ? streakColor + "40" : "rgba(255,255,255,0.06)"}`,
+                              }}
+                            >
+                              {active && (
+                                <Flame className="w-2.5 h-2.5" style={{ color: isToday ? streakColor : streakColor + "80" }} />
+                              )}
+                            </div>
+                            <span className="text-[8px] text-muted-foreground font-mono">
+                              {["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"][i]}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Progress to next milestone */}
+                  <div className="px-3 pb-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1">
+                        <Star className="w-3 h-3 text-amber-400" />
+                        <span className="text-[10px] text-muted-foreground">
+                          Proximo Lendario em
+                          {nextLegendary && (
+                            <span className="text-amber-400 font-semibold capitalize ml-1">({nextLegendary.name})</span>
+                          )}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-mono text-amber-400 font-bold">
+                        {daysToNextMilestone} dia{daysToNextMilestone !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    <div className="h-2 bg-background rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${milestonePercent}%`, background: "linear-gradient(90deg, #F59E0B, #F97316)" }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-0.5">
+                      <span className="text-[9px] text-muted-foreground font-mono">{milestoneProgress}/30 dias</span>
+                      <span className="text-[9px] text-muted-foreground font-mono">Marco: {nextMilestone} dias</span>
+                    </div>
+                  </div>
+
+                  {/* Unlocked legendaries */}
+                  {unlockedLegendaries.length > 0 && (
+                    <div className="px-3 pb-3">
+                      <div className="flex items-center gap-1 mb-1.5">
+                        <Zap className="w-3 h-3 text-amber-400" />
+                        <span className="text-[10px] font-semibold text-amber-400">Lendarios Desbloqueados</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {unlockedLegendaries.map(({ day, pokemon }) => (
+                          <div
+                            key={day}
+                            className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
+                            style={{ background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", color: "#F59E0B" }}
+                          >
+                            <Star className="w-2.5 h-2.5" />
+                            <span className="capitalize">{pokemon?.name ?? `Lendario ${day / 30}`}</span>
+                            <span className="opacity-60">({day}d)</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No capture today warning */}
+                  {!capturedToday && (
+                    <div className="mx-3 mb-3 px-2 py-1.5 rounded-lg" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                      <p className="text-[10px] text-red-400 text-center">
+                        Capture um Pokemon hoje para manter a ofensiva!
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* <div className="flex items-center justify-between bg-secondary/50 rounded-lg p-3">
               <div className="flex items-center gap-2">

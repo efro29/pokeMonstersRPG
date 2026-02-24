@@ -97,6 +97,10 @@ export interface TrainerProfile {
   // Exploration system
   explorationXp: number;
   explorationLevel: number;
+  // Daily streak system
+  dailyStreak: number;
+  lastCaptureDate: string | null; // ISO date string YYYY-MM-DD
+  legendaryUnlockedDays: number[]; // which 30-day milestones were unlocked (30, 60, 90...)
 }
 
 /** XP required for a given trainer level */
@@ -168,6 +172,84 @@ export function getExplorationLevelRewards(level: number): ExplorationReward[] {
   }
 
   return rewards;
+}
+
+// ---- Legendary Pokemon desbloqueados a cada 30 dias de ofensiva ----
+// IDs dos lendários em ordem de desbloqueio (Kanto/Johto)
+export const STREAK_LEGENDARY_IDS: number[] = [
+  144, // Articuno  (30 dias)
+  145, // Zapdos    (60 dias)
+  146, // Moltres   (90 dias)
+  243, // Raikou    (120 dias)
+  244, // Entei     (150 dias)
+  245, // Suicune   (180 dias)
+  249, // Lugia     (210 dias)
+  250, // Ho-Oh     (240 dias)
+  151, // Mew       (270 dias)
+  250, // Celebi    (300 dias) – placeholder 251 if available
+];
+
+export function getLegendaryForMilestone(milestone: number): number | null {
+  const idx = milestone / 30 - 1;
+  return STREAK_LEGENDARY_IDS[idx] ?? null;
+}
+
+export interface StreakUpdateResult {
+  newStreak: number;
+  milestoneReached: number | null; // e.g. 30, 60, 90
+  legendaryId: number | null;
+  streakBroken: boolean;
+}
+
+/** Returns today's date as YYYY-MM-DD string */
+export function getTodayDateStr(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Compute streak status given lastCaptureDate and current streak */
+export function computeStreakUpdate(
+  currentStreak: number,
+  lastCaptureDate: string | null,
+  legendaryUnlockedDays: number[]
+): StreakUpdateResult {
+  const today = getTodayDateStr();
+  let newStreak = currentStreak;
+  let streakBroken = false;
+
+  if (!lastCaptureDate) {
+    // First ever capture
+    newStreak = 1;
+  } else if (lastCaptureDate === today) {
+    // Already captured today, no change
+    return { newStreak: currentStreak, milestoneReached: null, legendaryId: null, streakBroken: false };
+  } else {
+    // Check if yesterday
+    const last = new Date(lastCaptureDate + "T12:00:00");
+    const now = new Date(today + "T12:00:00");
+    const diffDays = Math.round((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) {
+      newStreak = currentStreak + 1;
+    } else {
+      // Streak broken
+      newStreak = 1;
+      streakBroken = true;
+    }
+  }
+
+  // Check if new 30-day milestone was reached
+  let milestoneReached: number | null = null;
+  let legendaryId: number | null = null;
+  if (newStreak > 0 && newStreak % 30 === 0) {
+    const milestone = newStreak;
+    if (!legendaryUnlockedDays.includes(milestone)) {
+      milestoneReached = milestone;
+      legendaryId = getLegendaryForMilestone(milestone);
+    }
+  }
+
+  return { newStreak, milestoneReached, legendaryId, streakBroken };
 }
 
 /** Compute trainer defense from attributes + level */
@@ -416,6 +498,8 @@ interface GameState {
   recalcTrainerStats: () => void;
   // Exploration system
   addExplorationXp: (amount: number) => ExplorationReward[];
+  // Daily streak system
+  registerDailyCapture: () => StreakUpdateResult;
   // Pokemon attribute modifications
   applyFaintPenaltyToPokemon: (uid: string) => void;
   applyLevelUpBonusToPokemon: (uid: string) => void;
@@ -479,6 +563,9 @@ export const useGameStore = create<GameState>()(
         battleHistory: [],
         explorationXp: 0,
         explorationLevel: 1,
+        dailyStreak: 0,
+        lastCaptureDate: null,
+        legendaryUnlockedDays: [],
       },
       team: [],
       reserves: [],
@@ -1441,6 +1528,31 @@ export const useGameStore = create<GameState>()(
         });
 
         return allRewards;
+      },
+
+      // Daily streak system
+      registerDailyCapture: () => {
+        const { trainer } = get();
+        const currentStreak = trainer.dailyStreak ?? 0;
+        const lastCaptureDate = trainer.lastCaptureDate ?? null;
+        const legendaryUnlockedDays = trainer.legendaryUnlockedDays ?? [];
+
+        const result = computeStreakUpdate(currentStreak, lastCaptureDate, legendaryUnlockedDays);
+
+        const newUnlockedDays = result.milestoneReached
+          ? [...legendaryUnlockedDays, result.milestoneReached]
+          : legendaryUnlockedDays;
+
+        set({
+          trainer: {
+            ...get().trainer,
+            dailyStreak: result.newStreak,
+            lastCaptureDate: getTodayDateStr(),
+            legendaryUnlockedDays: newUnlockedDays,
+          },
+        });
+
+        return result;
       },
 
       // Pokemon attribute modifications
