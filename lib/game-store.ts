@@ -100,6 +100,7 @@ export interface TrainerProfile {
   // Daily streak system
   dailyStreak: number;
   lastCaptureDate: string | null; // ISO date string YYYY-MM-DD
+  weekStartDate: string | null; // ISO date string YYYY-MM-DD - quando a semana atual começou
   legendaryUnlockedDays: number[]; // which 30-day milestones were unlocked (30, 60, 90...)
   // Weekly events
   weeklyEventProgress: WeeklyEventProgress | null;
@@ -209,24 +210,54 @@ export function getTodayDateStr(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/** Returns the Monday of the current week as YYYY-MM-DD */
+export function getWeekStartDate(): string {
+  const d = new Date();
+  // Get current day of week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+  const dayOfWeek = d.getDay();
+  // Calculate days since Monday (0 if today is Monday, 1 if Tuesday, etc.)
+  const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const monday = new Date(d);
+  monday.setDate(monday.getDate() - daysSinceMonday);
+  return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+}
+
 /** Compute streak status given lastCaptureDate and current streak */
 export function computeStreakUpdate(
   currentStreak: number,
   lastCaptureDate: string | null,
+  weekStartDate: string | null,
   legendaryUnlockedDays: number[]
 ): StreakUpdateResult {
   const today = getTodayDateStr();
+  const currentWeekStart = getWeekStartDate();
   let newStreak = currentStreak;
   let streakBroken = false;
 
+  // Check if we're in a new week - if so, reset streak to 0 until they capture today
+  const weekChanged = weekStartDate !== currentWeekStart;
+  
   if (!lastCaptureDate) {
     // First ever capture
     newStreak = 1;
   } else if (lastCaptureDate === today) {
     // Already captured today, no change
     return { newStreak: currentStreak, milestoneReached: null, legendaryId: null, streakBroken: false };
+  } else if (weekChanged) {
+    // New week started - reset to 1 if captured today (which means yesterday was last day of last week)
+    const last = new Date(lastCaptureDate + "T12:00:00");
+    const now = new Date(today + "T12:00:00");
+    const diffDays = Math.round((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) {
+      // Captured yesterday, continuing into new week
+      newStreak = 1;
+    } else {
+      // Gap, reset to 1 (for today)
+      newStreak = 1;
+    }
   } else {
-    // Check if yesterday
+    // Same week - check if consecutive days
     const last = new Date(lastCaptureDate + "T12:00:00");
     const now = new Date(today + "T12:00:00");
     const diffDays = Math.round((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
@@ -234,7 +265,7 @@ export function computeStreakUpdate(
     if (diffDays === 1) {
       newStreak = currentStreak + 1;
     } else {
-      // Streak broken
+      // Streak broken within week
       newStreak = 1;
       streakBroken = true;
     }
@@ -864,6 +895,7 @@ export const useGameStore = create<GameState>()(
         explorationLevel: 1,
         dailyStreak: 0,
         lastCaptureDate: null,
+        weekStartDate: null,
         legendaryUnlockedDays: [],
         weeklyEventProgress: null,
       },
@@ -1879,9 +1911,10 @@ export const useGameStore = create<GameState>()(
         const { trainer } = get();
         const currentStreak = trainer.dailyStreak ?? 0;
         const lastCaptureDate = trainer.lastCaptureDate ?? null;
+        const weekStartDate = trainer.weekStartDate ?? null;
         const legendaryUnlockedDays = trainer.legendaryUnlockedDays ?? [];
 
-        const result = computeStreakUpdate(currentStreak, lastCaptureDate, legendaryUnlockedDays);
+        const result = computeStreakUpdate(currentStreak, lastCaptureDate, weekStartDate, legendaryUnlockedDays);
 
         const newUnlockedDays = result.milestoneReached
           ? [...legendaryUnlockedDays, result.milestoneReached]
@@ -1892,6 +1925,7 @@ export const useGameStore = create<GameState>()(
             ...get().trainer,
             dailyStreak: result.newStreak,
             lastCaptureDate: getTodayDateStr(),
+            weekStartDate: getWeekStartDate(),
             legendaryUnlockedDays: newUnlockedDays,
           },
         });
