@@ -26,6 +26,8 @@ import { SettingsTab } from "@/components/settings-tab";
 import { CaptureScene } from "@/components/capture-scene";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 import { getPokemon, POKEMON } from "@/lib/pokemon-data";
+import { calculateExplorationXp } from "@/lib/game-store";
+import type { ExplorationReward } from "@/lib/game-store";
 import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords, Crosshair, Settings, Plus } from "lucide-react";
 import { playTabSwitch, playButtonClick } from "@/lib/sounds";
 import { useImagePreloader } from "@/hooks/use-image-preloader";
@@ -55,6 +57,13 @@ export default function Page() {
   const [activeTab, setActiveTab] = useState<Tab>("profile");
   const [hasSave, setHasSave] = useState(false);
   const [captureTarget, setCaptureTarget] = useState<number | null>(null);
+  const [explorationRewardToast, setExplorationRewardToast] = useState<{
+    xp: number;
+    ballsUsed: number;
+    rewards: ExplorationReward[];
+    newLevel: number;
+    oldLevel: number;
+  } | null>(null);
   const [musicMuted, setMusicMuted] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("pokerpg-music-muted") === "true";
@@ -269,7 +278,7 @@ export default function Page() {
     setCaptureTarget(speciesId);
   };
 
-  const handleCaptureSuccess = (species: { id: number; name: string; types: string[]; baseHp: number; startingMoves: string[]; learnableMoves: string[] }) => {
+  const handleCaptureSuccess = (species: { id: number; name: string; types: string[]; baseHp: number; startingMoves: string[]; learnableMoves: string[] }, ballsUsed: number) => {
     const pokemonSpecies = getPokemon(species.id);
     if (pokemonSpecies) {
       // Auto-discover pokemon in Pokedex when captured
@@ -296,6 +305,22 @@ export default function Page() {
           reserves: state.reserves.map(mapHp),
         });
       }
+
+      // Grant exploration XP for radar capture
+      const explorationXpGained = calculateExplorationXp(ballsUsed);
+      const oldLevel = useGameStore.getState().trainer.explorationLevel ?? 1;
+      const rewards = useGameStore.getState().addExplorationXp(explorationXpGained);
+      const newLevel = useGameStore.getState().trainer.explorationLevel ?? 1;
+
+      // Show exploration reward toast
+      setExplorationRewardToast({
+        xp: explorationXpGained,
+        ballsUsed,
+        rewards,
+        newLevel,
+        oldLevel,
+      });
+      setTimeout(() => setExplorationRewardToast(null), 6000);
     }
     setCaptureTarget(null);
   };
@@ -386,7 +411,51 @@ export default function Page() {
 
   // Game
   return (
-    <main className="flex flex-col h-dvh max-w-md mx-auto bg-background">
+    <main className="flex flex-col h-dvh max-w-md mx-auto bg-background relative">
+      {/* Exploration XP Toast */}
+      {explorationRewardToast && (
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="bg-card border border-border rounded-xl shadow-2xl p-3 min-w-[260px] max-w-[320px]">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <Crosshair className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-emerald-400">
+                  +{explorationRewardToast.xp} XP Exploracao
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {explorationRewardToast.ballsUsed === 1
+                    ? "Captura perfeita! 1 pokebola"
+                    : `${explorationRewardToast.ballsUsed} pokebolas usadas`}
+                </p>
+              </div>
+            </div>
+            {explorationRewardToast.newLevel > explorationRewardToast.oldLevel && (
+              <div className="mb-2 px-2 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <p className="text-xs font-bold text-emerald-400 text-center">
+                  Explorador Nivel {explorationRewardToast.newLevel}!
+                </p>
+              </div>
+            )}
+            {explorationRewardToast.rewards.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {explorationRewardToast.rewards.map((r, i) => (
+                  <span
+                    key={i}
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-foreground font-medium"
+                  >
+                    {r.type === "money"
+                      ? `$${r.quantity.toLocaleString("pt-BR")}`
+                      : `${r.itemName} x${r.quantity}`}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="flex items-center justify-between p-3 border-b border-border bg-[#011a3b] ">
         <div className="flex items-center gap-2 ">

@@ -94,12 +94,80 @@ export interface TrainerProfile {
   currentHp: number;
   defesa: number; // AC / defense
   battleHistory?: TrainerBattleHistoryEntry[];
+  // Exploration system
+  explorationXp: number;
+  explorationLevel: number;
 }
 
 /** XP required for a given trainer level */
 export function trainerXpForLevel(level: number): number {
   if (level <= 1) return 0;
   return Math.floor(100 * Math.pow(level - 1, 1.5));
+}
+
+/** XP required for a given exploration level */
+export function explorationXpForLevel(level: number): number {
+  if (level <= 1) return 0;
+  // Slightly easier curve than trainer XP
+  return Math.floor(80 * Math.pow(level - 1, 1.4));
+}
+
+/** Calculate exploration XP for a capture based on balls used */
+export function calculateExplorationXp(ballsUsed: number): number {
+  // 1 ball = 100 XP (perfect catch bonus)
+  // 2 balls = 70 XP
+  // 3 balls = 50 XP
+  // 4 balls = 35 XP
+  // 5+ balls = 20 XP (minimum)
+  if (ballsUsed <= 1) return 100;
+  if (ballsUsed === 2) return 70;
+  if (ballsUsed === 3) return 50;
+  if (ballsUsed === 4) return 35;
+  return 20;
+}
+
+/** Rewards for reaching an exploration level */
+export interface ExplorationReward {
+  type: "money" | "item";
+  itemId?: string;
+  itemName?: string;
+  quantity: number;
+}
+
+export function getExplorationLevelRewards(level: number): ExplorationReward[] {
+  // Every level gives some reward
+  const rewards: ExplorationReward[] = [];
+
+  // Money at every level (scales with level)
+  rewards.push({ type: "money", quantity: 200 + (level - 1) * 100 });
+
+  // Pokeballs
+  if (level % 2 === 0) {
+    // Even levels: regular pokeballs
+    rewards.push({ type: "item", itemId: "pokeball", itemName: "Pokeball", quantity: 3 + Math.floor(level / 3) });
+  }
+
+  if (level % 3 === 0) {
+    // Every 3 levels: great balls
+    rewards.push({ type: "item", itemId: "great-ball", itemName: "Great Ball", quantity: 2 + Math.floor(level / 5) });
+  }
+
+  if (level % 5 === 0) {
+    // Every 5 levels: ultra balls
+    rewards.push({ type: "item", itemId: "ultra-ball", itemName: "Ultra Ball", quantity: 1 + Math.floor(level / 10) });
+  }
+
+  if (level % 7 === 0) {
+    // Every 7 levels: super potions
+    rewards.push({ type: "item", itemId: "super-potion", itemName: "Super Pocao", quantity: 2 });
+  }
+
+  if (level === 10 || level === 20 || level === 30) {
+    // Milestone levels: rare candy
+    rewards.push({ type: "item", itemId: "rare-candy", itemName: "Rare Candy", quantity: 1 });
+  }
+
+  return rewards;
 }
 
 /** Compute trainer defense from attributes + level */
@@ -346,6 +414,8 @@ interface GameState {
   damageTrainer: (amount: number) => void;
   healTrainer: (amount: number) => void;
   recalcTrainerStats: () => void;
+  // Exploration system
+  addExplorationXp: (amount: number) => ExplorationReward[];
   // Pokemon attribute modifications
   applyFaintPenaltyToPokemon: (uid: string) => void;
   applyLevelUpBonusToPokemon: (uid: string) => void;
@@ -407,6 +477,8 @@ export const useGameStore = create<GameState>()(
         currentHp: 20,
         defesa: 10,
         battleHistory: [],
+        explorationXp: 0,
+        explorationLevel: 1,
       },
       team: [],
       reserves: [],
@@ -1328,6 +1400,47 @@ export const useGameStore = create<GameState>()(
             defesa: newDefesa,
           },
         });
+      },
+
+      // Exploration system
+      addExplorationXp: (amount) => {
+        const { trainer } = get();
+        const currentXp = trainer.explorationXp ?? 0;
+        const currentLevel = trainer.explorationLevel ?? 1;
+        let newXp = currentXp + amount;
+        let newLevel = currentLevel;
+        const allRewards: ExplorationReward[] = [];
+
+        while (newXp >= explorationXpForLevel(newLevel + 1) && newLevel < 100) {
+          newLevel++;
+          // Collect rewards for each level gained
+          const levelRewards = getExplorationLevelRewards(newLevel);
+          allRewards.push(...levelRewards);
+          // Apply rewards immediately
+          for (const reward of levelRewards) {
+            if (reward.type === "money") {
+              // Will be applied after set
+            } else if (reward.type === "item" && reward.itemId) {
+              get().addBagItem(reward.itemId, reward.quantity);
+            }
+          }
+        }
+
+        // Calculate total money from rewards
+        const totalMoney = allRewards
+          .filter((r) => r.type === "money")
+          .reduce((sum, r) => sum + r.quantity, 0);
+
+        set({
+          trainer: {
+            ...get().trainer,
+            explorationXp: newXp,
+            explorationLevel: newLevel,
+            money: get().trainer.money + totalMoney,
+          },
+        });
+
+        return allRewards;
       },
 
       // Pokemon attribute modifications

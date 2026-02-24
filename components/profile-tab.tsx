@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGameStore, ATTRIBUTE_INFO, trainerXpForLevel } from "@/lib/game-store";
+import { useGameStore, ATTRIBUTE_INFO, trainerXpForLevel, explorationXpForLevel } from "@/lib/game-store";
 import { useModeStore } from "@/lib/mode-store";
 import type { TrainerAttributes } from "@/lib/game-store";
 import { KANTO_BADGE_ICONS, JOHTO_BADGE_ICONS } from "./badge-icons";
@@ -32,6 +32,8 @@ import {
   Star,
   ArrowUp,
   Trophy,
+  Crosshair,
+  Compass,
 } from "lucide-react";
 import { playBadgeObtained, playBadgeRemoved, playButtonClick } from "@/lib/sounds";
 import { TrainerAvatar } from "@/components/trainer-avatar";
@@ -160,6 +162,12 @@ export function ProfileTab() {
                   <Shield className="w-3 h-3" />
                   <span className="text-xs">{trainer.trainerClass}</span>
                 </div>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <Compass className="w-3 h-3 text-emerald-400" />
+                  <span className="text-[10px] font-semibold text-emerald-400">
+                    Explorador Nivel {trainer.explorationLevel ?? 1}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -173,6 +181,50 @@ export function ProfileTab() {
               {trainer.age && (
                 <span className="text-xs text-muted-foreground">{trainer.age} anos</span>
               )}
+            </div>
+
+            {/* Exploration Level & XP */}
+            <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Compass className="w-4 h-4 text-emerald-400" />
+                  <span className="text-sm font-medium text-foreground">Explorador Nivel {trainer.explorationLevel ?? 1}</span>
+                </div>
+                <span className="text-[10px] text-emerald-400 font-mono font-bold">
+                  Nv.{trainer.explorationLevel ?? 1}
+                </span>
+              </div>
+              {/* Exploration XP Progress Bar */}
+              {(() => {
+                const currentLevel = trainer.explorationLevel ?? 1;
+                const currentXp = trainer.explorationXp ?? 0;
+                const xpCurrent = explorationXpForLevel(currentLevel);
+                const xpNext = explorationXpForLevel(currentLevel + 1);
+                const xpInLevel = currentXp - xpCurrent;
+                const xpNeeded = xpNext - xpCurrent;
+                const xpPercent = xpNeeded > 0 ? Math.min(100, (xpInLevel / xpNeeded) * 100) : 100;
+                return (
+                  <>
+                    <div className="flex-1 h-2.5 bg-background rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${xpPercent}%`, backgroundColor: "#10B981" }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        XP: {currentXp.toLocaleString("pt-BR")}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        Proximo: {xpNext.toLocaleString("pt-BR")}
+                      </span>
+                    </div>
+                  </>
+                );
+              })()}
+              <p className="text-[9px] text-muted-foreground mt-1.5 leading-relaxed">
+                Ganhe XP capturando Pokemon no radar. Bonus por capturar com menos pokebolas!
+              </p>
             </div>
 
             {/* <div className="flex items-center justify-between bg-secondary/50 rounded-lg p-3">
