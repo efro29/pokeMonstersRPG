@@ -34,7 +34,6 @@ import {
   Trophy,
 } from "lucide-react";
 import { playBadgeObtained, playBadgeRemoved, playButtonClick } from "@/lib/sounds";
-import { useModeStore } from "@/lib/mode-store";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 
 const TRAINER_CLASSES = [
