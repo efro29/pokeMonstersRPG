@@ -314,7 +314,7 @@ export function EggsTab() {
       </div>
 
       {/* Baby Pokemon catalog */}
-      <div>
+      {/*}  <div>
         <div className="flex items-center gap-2 mb-3">
           <span className="text-sm font-bold text-foreground">Catalogo de Ovos</span>
         </div>
@@ -358,7 +358,7 @@ export function EggsTab() {
             </div>
           );
         })}
-      </div>
+      </div>*/}
     </div>
   );
 }
