@@ -321,12 +321,6 @@ export function ProfileTab() {
                     <div className="flex items-center justify-between mb-1">
 
 
-
-
-
-                      <span className="text-[10px] font-mono text-amber-400 font-bold">
-                        {daysToNextMilestone} dia{daysToNextMilestone !== 1 ? "s" : ""}
-                      </span>
                     </div>
                     <div className="h-2 bg-background rounded-full overflow-hidden">
                       <div
@@ -653,8 +647,8 @@ export function ProfileTab() {
                       type="button"
                       onClick={() => setEditForm({ ...editForm, trainerClass: cls })}
                       className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${editForm.trainerClass === cls
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-secondary text-muted-foreground border-border hover:text-foreground"
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-secondary text-muted-foreground border-border hover:text-foreground"
                         }`}
                     >
                       {cls}
@@ -776,8 +770,8 @@ export function ProfileTab() {
                   variant="outline"
                   onClick={() => setHpAmount(String(val))}
                   className={`border-border bg-transparent hover:bg-secondary ${hpAmount === String(val)
-                      ? hpMode === "damage" ? "text-destructive border-destructive" : "text-green-500 border-green-500"
-                      : "text-foreground"
+                    ? hpMode === "damage" ? "text-destructive border-destructive" : "text-green-500 border-green-500"
+                    : "text-foreground"
                     }`}
                 >
                   {hpMode === "damage" ? "-" : "+"}{val}
