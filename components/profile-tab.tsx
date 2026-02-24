@@ -36,6 +36,7 @@ import {
 import { playBadgeObtained, playBadgeRemoved, playButtonClick } from "@/lib/sounds";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 
+// Trainer class options
 const TRAINER_CLASSES = [
   "Treinador Pokemon",
   "Ace Trainer",
