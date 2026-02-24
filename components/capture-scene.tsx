@@ -12,7 +12,7 @@ import { playPokeball, playGift, playButtonClick, playFlee } from "@/lib/sounds"
 interface CaptureSceneProps {
   pokemon: PokemonSpecies;
   onClose: () => void;
-  onCaptured: (species: PokemonSpecies) => void;
+  onCaptured: (species: PokemonSpecies, ballsUsed: number) => void;
 }
 
 // Pokeball types with capture rate multipliers
@@ -811,7 +811,7 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
 
               {phase === "captured" ? (
                 <Button
-                  onClick={() => onCaptured(pokemon)}
+                  onClick={() => onCaptured(pokemon, ballsUsed)}
                   className="w-full max-w-xs font-bold text-sm"
                   style={{ backgroundColor: mainColor, color: "#fff" }}
                 >
