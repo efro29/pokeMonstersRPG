@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { POKEMON, EVOLUTIONS, getSpriteUrl, TYPE_COLORS } from "@/lib/pokemon-data";
 import type { PokemonSpecies, PokemonType } from "@/lib/pokemon-data";
 import { Button } from "@/components/ui/button";
-import { playButtonClick, playGift } from "@/lib/sounds";
+import { useGameStore } from "@/lib/game-store";
+import { playButtonClick, playGift, playBuy } from "@/lib/sounds";
 
 // ─── Regras do Radar ───────────────────────────────────────
 const MAX_ENERGY = 4;
@@ -174,10 +175,94 @@ function saveEnergy(e: RadarEnergy) {
   if (typeof window !== "undefined") localStorage.setItem("radar-energy", JSON.stringify(e));
 }
 
+// ─── Kit de presente (caixas do radar) ─────────────────────
+type KitRarity = "normal" | "raro" | "epico";
+
+interface GiftKitReward {
+  type: "money" | "item";
+  itemId?: string;
+  itemName?: string;
+  quantity: number;
+}
+
+interface GiftKit {
+  rarity: KitRarity;
+  label: string;
+  color: string;
+  rewards: GiftKitReward[];
+}
+
+// Chance de spawn por raridade (total = 100%)
+// Normal: ~60%, Raro: ~30%, Epico: ~10%
+function rollGiftKit(): GiftKit {
+  const roll = Math.random();
+
+  if (roll < 0.10) {
+    // Epico
+    const options: GiftKit[] = [
+      { rarity: "epico", label: "Kit Epico", color: "#A855F7", rewards: [
+        { type: "money", quantity: 3000 },
+        { type: "item", itemId: "ultra-ball", itemName: "Ultra Ball", quantity: 2 },
+        { type: "item", itemId: "hyper-potion", itemName: "Hyper Pocao", quantity: 1 },
+      ]},
+      { rarity: "epico", label: "Kit Epico", color: "#A855F7", rewards: [
+        { type: "money", quantity: 2500 },
+        { type: "item", itemId: "rare-candy", itemName: "Rare Candy", quantity: 1 },
+      ]},
+      { rarity: "epico", label: "Kit Epico", color: "#A855F7", rewards: [
+        { type: "money", quantity: 2000 },
+        { type: "item", itemId: "great-ball", itemName: "Great Ball", quantity: 3 },
+        { type: "item", itemId: "revive", itemName: "Revive", quantity: 2 },
+      ]},
+    ];
+    return options[Math.floor(Math.random() * options.length)];
+  }
+
+  if (roll < 0.40) {
+    // Raro
+    const options: GiftKit[] = [
+      { rarity: "raro", label: "Kit Raro", color: "#3B82F6", rewards: [
+        { type: "money", quantity: 1200 },
+        { type: "item", itemId: "great-ball", itemName: "Great Ball", quantity: 2 },
+      ]},
+      { rarity: "raro", label: "Kit Raro", color: "#3B82F6", rewards: [
+        { type: "money", quantity: 1000 },
+        { type: "item", itemId: "super-potion", itemName: "Super Pocao", quantity: 2 },
+      ]},
+      { rarity: "raro", label: "Kit Raro", color: "#3B82F6", rewards: [
+        { type: "item", itemId: "pokeball", itemName: "Pokeball", quantity: 3 },
+        { type: "item", itemId: "potion", itemName: "Pocao", quantity: 2 },
+        { type: "money", quantity: 800 },
+      ]},
+    ];
+    return options[Math.floor(Math.random() * options.length)];
+  }
+
+  // Normal
+  const options: GiftKit[] = [
+    { rarity: "normal", label: "Kit Normal", color: "#22C55E", rewards: [
+      { type: "money", quantity: 600 },
+    ]},
+    { rarity: "normal", label: "Kit Normal", color: "#22C55E", rewards: [
+      { type: "item", itemId: "pokeball", itemName: "Pokeball", quantity: 1 },
+    ]},
+    { rarity: "normal", label: "Kit Normal", color: "#22C55E", rewards: [
+      { type: "money", quantity: 400 },
+      { type: "item", itemId: "potion", itemName: "Pocao", quantity: 1 },
+    ]},
+    { rarity: "normal", label: "Kit Normal", color: "#22C55E", rewards: [
+      { type: "money", quantity: 300 },
+    ]},
+  ];
+  return options[Math.floor(Math.random() * options.length)];
+}
+
 // ─── Tipos de ponto no radar ────────────────────────────────
 interface RadarBlip {
   id: string;
-  pokemon: PokemonSpecies;
+  pokemon?: PokemonSpecies;
+  giftKit?: GiftKit;
+  isGift: boolean;
   angle: number;  // graus
   distance: number; // 0-1 (centro para borda)
   delay: number; // animação
@@ -188,6 +273,7 @@ interface ExplorationRadarProps {
 }
 
 export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
+  const { addMoney, addBagItem } = useGameStore();
   const [energy, setEnergy] = useState<RadarEnergy>(loadEnergy);
   const [scanning, setScanning] = useState(false);
   const [blips, setBlips] = useState<RadarBlip[]>([]);
@@ -195,6 +281,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
   const [selectedBlip, setSelectedBlip] = useState<RadarBlip | null>(null);
   const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [recoveryTimer, setRecoveryTimer] = useState<string>("");
+  const [claimedGift, setClaimedGift] = useState<GiftKit | null>(null);
   const scanInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Recuperação de energia (a cada 5 min) ──
@@ -255,6 +342,24 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
     const finalCount = Math.max(0, Math.min(MAX_POKEMON_PER_SCAN, count));
 
     if (finalCount === 0) {
+      // Even with no pokemon, can still find a gift box
+      const loneGiftChance = Math.random();
+      if (loneGiftChance < 0.35) {
+        const kit = rollGiftKit();
+        const giftBlip: RadarBlip = {
+          id: `gift-${Date.now()}`,
+          giftKit: kit,
+          isGift: true,
+          angle: Math.random() * 360,
+          distance: 0.2 + Math.random() * 0.55,
+          delay: 0.2,
+        };
+        setBlips([giftBlip]);
+        playGift();
+        setScanMessage("1 presente detectado!");
+        setTimeout(() => setScanMessage(null), 4000);
+        return;
+      }
       setScanMessage("Nenhum Pokemon detectado nesta area...");
       setTimeout(() => setScanMessage(null), 5000);
       return;
@@ -266,14 +371,34 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
     const newBlips: RadarBlip[] = selected.map((p, i) => ({
       id: `${p.id}-${Date.now()}-${i}`,
       pokemon: p,
+      isGift: false,
       angle: Math.random() * 360,
       distance: 0.2 + Math.random() * 0.65,
       delay: i * 0.3,
     }));
 
+    // Gift box chance: ~40% chance per scan (independent of pokemon count)
+    const giftChance = Math.random();
+    if (giftChance < 0.40) {
+      const kit = rollGiftKit();
+      newBlips.push({
+        id: `gift-${Date.now()}`,
+        giftKit: kit,
+        isGift: true,
+        angle: Math.random() * 360,
+        distance: 0.15 + Math.random() * 0.6,
+        delay: finalCount * 0.3 + 0.2,
+      });
+    }
+
     setBlips(newBlips);
     playGift();
-    setScanMessage(`${finalCount} Pokemon detectado${finalCount > 1 ? "s" : ""}!`);
+    const giftCount = newBlips.filter(b => b.isGift).length;
+    const pokemonCount = newBlips.filter(b => !b.isGift).length;
+    const parts: string[] = [];
+    if (pokemonCount > 0) parts.push(`${pokemonCount} Pokemon`);
+    if (giftCount > 0) parts.push(`${giftCount} presente${giftCount > 1 ? "s" : ""}`);
+    setScanMessage(parts.length > 0 ? `${parts.join(" e ")} detectado${pokemonCount + giftCount > 1 ? "s" : ""}!` : "Nenhum Pokemon detectado nesta area...");
     setTimeout(() => setScanMessage(null), 4000);
   }, []);
 
@@ -300,6 +425,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
     setScanProgress(0);
     setBlips([]);
     setSelectedBlip(null);
+    setClaimedGift(null);
     setScanMessage(null);
 
     // Progresso do scan
@@ -325,11 +451,26 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
   const handleBlipClick = (blip: RadarBlip) => {
     if (scanning) return;
     playButtonClick();
-    setSelectedBlip(blip);
+    if (blip.isGift && blip.giftKit) {
+      // Claim gift immediately
+      blip.giftKit.rewards.forEach((r) => {
+        if (r.type === "money") {
+          addMoney(r.quantity);
+        } else if (r.type === "item" && r.itemId) {
+          addBagItem(r.itemId, r.quantity);
+        }
+      });
+      playBuy();
+      setClaimedGift(blip.giftKit);
+      setBlips((prev) => prev.filter((b) => b.id !== blip.id));
+      setTimeout(() => setClaimedGift(null), 4000);
+    } else {
+      setSelectedBlip(blip);
+    }
   };
 
   const handleCapture = () => {
-    if (!selectedBlip || !onStartCapture) return;
+    if (!selectedBlip || !onStartCapture || !selectedBlip.pokemon) return;
     onStartCapture(selectedBlip.pokemon.id);
     // Remove from blips
     setBlips((prev) => prev.filter((b) => b.id !== selectedBlip.id));
@@ -450,8 +591,9 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
             const maxR = center - 16;
             const x = center + Math.cos(rad) * maxR * blip.distance;
             const y = center + Math.sin(rad) * maxR * blip.distance;
-            const mainType = blip.pokemon.types[0] as PokemonType;
-            const color = TYPE_COLORS[mainType] || "#22C55E";
+            const color = blip.isGift
+              ? (blip.giftKit?.color || "#F59E0B")
+              : TYPE_COLORS[(blip.pokemon?.types[0] || "normal") as PokemonType] || "#22C55E";
 
             return (
               <motion.button
@@ -482,12 +624,18 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
                 />
                 {/* Dot */}
                 <div
-                  className="absolute inset-1 rounded-full"
+                  className="absolute inset-1 rounded-full flex items-center justify-center"
                   style={{
                     backgroundColor: color,
                     boxShadow: `0 0 6px ${color}`,
                   }}
-                />
+                >
+                  {blip.isGift && (
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="white">
+                      <path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 110-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 100-5C13 2 12 7 12 7z" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
                 {/* Hover/selected indicator */}
                 {selectedBlip?.id === blip.id && (
                   <motion.div
@@ -559,9 +707,69 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
         )}
       </Button>
 
+      {/* Painel do presente coletado */}
+      <AnimatePresence>
+        {claimedGift && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            className="w-full max-w-sm rounded-xl border-2 p-4 flex flex-col items-center gap-3"
+            style={{
+              borderColor: claimedGift.color,
+              background: `linear-gradient(135deg, rgba(0,0,0,0.7) 0%, ${claimedGift.color}20 100%)`,
+            }}
+          >
+            {/* Gift icon */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1, rotate: [0, -10, 10, -5, 5, 0] }}
+              transition={{ duration: 0.6 }}
+              className="w-14 h-14 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: `${claimedGift.color}30` }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={claimedGift.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 110-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 100-5C13 2 12 7 12 7z"/>
+              </svg>
+            </motion.div>
+
+            <div className="text-center">
+              <span className="text-xs font-bold tracking-wider" style={{ color: claimedGift.color }}>
+                {claimedGift.label.toUpperCase()}
+              </span>
+            </div>
+
+            {/* Rewards list */}
+            <div className="flex flex-col gap-1.5 w-full">
+              {claimedGift.rewards.map((r, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.15 }}
+                  className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-1.5"
+                >
+                  {r.type === "money" ? (
+                    <>
+                      <span className="text-amber-400 text-sm">$</span>
+                      <span className="text-xs font-bold text-amber-400">{r.quantity.toLocaleString("pt-BR")}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-xs text-foreground">{r.itemName}</span>
+                      <span className="text-[10px] text-muted-foreground ml-auto">x{r.quantity}</span>
+                    </>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Painel do pokemon selecionado */}
       <AnimatePresence mode="wait">
-        {selectedBlip && (
+        {selectedBlip && selectedBlip.pokemon && (
           <motion.div
             key={selectedBlip.id}
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -652,7 +860,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-yellow-500 shrink-0" />
-            <span>Max 4 scans/dia</span>
+            <span>Caixas presente</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />

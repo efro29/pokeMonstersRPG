@@ -1,10 +1,14 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Shield, Eye } from "lucide-react";
+import { Shield, Eye, Lock, X } from "lucide-react";
 import { playButtonClick, playStartGame } from "@/lib/sounds";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import type { GameMode } from "@/lib/mode-store";
+
+const MASTER_SECRET = "mestreares";
 
 interface ModeSelectScreenProps {
   onSelectMode: (mode: GameMode) => void;
@@ -12,6 +16,22 @@ interface ModeSelectScreenProps {
 
 export function ModeSelectScreen({ onSelectMode }: ModeSelectScreenProps) {
   const [stars, setStars] = useState<{ x: number; y: number; delay: number; size: number }[]>([]);
+  const [showMasterPassword, setShowMasterPassword] = useState(false);
+  const [masterPasswordInput, setMasterPasswordInput] = useState("");
+  const [masterPasswordError, setMasterPasswordError] = useState(false);
+
+  const handleMasterPasswordSubmit = () => {
+    if (masterPasswordInput.toLowerCase().trim() === MASTER_SECRET) {
+      playStartGame();
+      onSelectMode("master");
+      setShowMasterPassword(false);
+      setMasterPasswordInput("");
+      setMasterPasswordError(false);
+    } else {
+      setMasterPasswordError(true);
+      setMasterPasswordInput("");
+    }
+  };
 
   useEffect(() => {
     const generated = Array.from({ length: 20 }, () => ({
@@ -80,8 +100,10 @@ export function ModeSelectScreen({ onSelectMode }: ModeSelectScreenProps) {
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.5 }}
             onClick={() => {
-              playStartGame();
-              onSelectMode("master");
+              playButtonClick();
+              setShowMasterPassword(true);
+              setMasterPasswordInput("");
+              setMasterPasswordError(false);
             }}
             className="relative w-full rounded-xl border-2 p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
             style={{
@@ -153,6 +175,84 @@ export function ModeSelectScreen({ onSelectMode }: ModeSelectScreenProps) {
           POKEMON RPG MANAUS
         </p>
       </motion.div>
+
+      {/* Master Password Modal */}
+      <AnimatePresence>
+        {showMasterPassword && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 flex items-center justify-center px-6"
+            style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
+            onClick={() => setShowMasterPassword(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-xs rounded-xl border-2 p-5 flex flex-col gap-4"
+              style={{
+                borderColor: "#EF4444",
+                background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Lock className="w-4 h-4" style={{ color: "#EF4444" }} />
+                  <h3 className="font-pixel text-xs tracking-wider" style={{ color: "#EF4444" }}>
+                    MODO MESTRE
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowMasterPassword(false)}
+                  className="p-1 rounded-full hover:bg-white/10 transition-colors"
+                >
+                  <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.5)" }} />
+                </button>
+              </div>
+
+              <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
+                Digite a senha do Mestre para acessar o modo completo.
+              </p>
+
+              <Input
+                type="password"
+                placeholder="Senha..."
+                value={masterPasswordInput}
+                onChange={(e) => {
+                  setMasterPasswordInput(e.target.value);
+                  setMasterPasswordError(false);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleMasterPasswordSubmit();
+                }}
+                className="bg-white/5 border-white/10 text-white placeholder:text-white/30 h-10"
+                autoFocus
+              />
+
+              {masterPasswordError && (
+                <p className="text-xs font-medium" style={{ color: "#EF4444" }}>
+                  Senha incorreta. Tente novamente.
+                </p>
+              )}
+
+              <Button
+                onClick={handleMasterPasswordSubmit}
+                disabled={!masterPasswordInput}
+                className="w-full font-bold text-sm h-10"
+                style={{
+                  backgroundColor: masterPasswordInput ? "#EF4444" : "rgba(239,68,68,0.3)",
+                  color: "#fff",
+                }}
+              >
+                Entrar
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

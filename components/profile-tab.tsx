@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useGameStore, ATTRIBUTE_INFO, trainerXpForLevel } from "@/lib/game-store";
+import { useModeStore } from "@/lib/mode-store";
 import type { TrainerAttributes } from "@/lib/game-store";
 import { KANTO_BADGE_ICONS, JOHTO_BADGE_ICONS } from "./badge-icons";
 import { Input } from "@/components/ui/input";
@@ -86,7 +87,10 @@ export function ProfileTab() {
     setEditing(false);
   };
 
+  const economyLocked = useModeStore((s) => s.economyLocked);
+
   const handleAddMoney = () => {
+    if (economyLocked) return;
     const amount = parseInt(moneyAmount);
     if (amount > 0) {
       addMoney(amount);

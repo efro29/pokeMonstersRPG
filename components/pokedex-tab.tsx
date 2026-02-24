@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Search, Plus, Check, Heart, Swords, Zap, HelpCircle, CircleDot, ArrowLeft, Crosshair } from "lucide-react";
-import { playButtonClick, playGift, playTabSwitch } from "@/lib/sounds";
+import { playButtonClick, playPokedexRegister, playTabSwitch } from "@/lib/sounds";
 import { ExplorationRadar } from "@/components/exploration-radar";
 
 // Generation definitions
@@ -163,7 +163,7 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
     // Start the reveal after a short delay for the gen to render
     const timer = setTimeout(() => {
       setRevealingId(pokemonId);
-      playGift();
+      playPokedexRegister();
 
       // Scroll to the card
       requestAnimationFrame(() => {

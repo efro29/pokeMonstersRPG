@@ -78,6 +78,7 @@ export default function Page() {
   }, [mode, activeProfileId, screen]);
 
     const handleAddMoney = () => {
+    if (useModeStore.getState().economyLocked) return;
     const amount = parseInt(moneyAmount);
     if (amount > 0) {
       addMoney(amount);
@@ -427,7 +428,8 @@ export default function Page() {
             <span className="text-xs font-bold font-mono text-accent">
               {"$"}{trainer.money.toLocaleString("pt-BR")}
             </span>
-              <Button
+              {!useModeStore.getState().economyLocked && (
+                <Button
                   size="sm"
                   variant="outline"
                   onClick={() => setMoneyDialog(true)}
@@ -435,6 +437,7 @@ export default function Page() {
                 >
                   <Plus className="w-3 h-3" />
                 </Button>
+              )}
           </div>
           <button
             onClick={() => {
