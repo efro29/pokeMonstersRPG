@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGameStore, ATTRIBUTE_INFO, trainerXpForLevel, explorationXpForLevel, STREAK_LEGENDARY_IDS, getTodayDateStr } from "@/lib/game-store";
-import { getPokemon } from "@/lib/pokemon-data";
+import { useGameStore, ATTRIBUTE_INFO, trainerXpForLevel, explorationXpForLevel, getTodayDateStr } from "@/lib/game-store";
 import { useModeStore } from "@/lib/mode-store";
 import type { TrainerAttributes } from "@/lib/game-store";
 import { KANTO_BADGE_ICONS, JOHTO_BADGE_ICONS } from "./badge-icons";
@@ -252,11 +251,6 @@ export function ProfileTab() {
                 if (diffDays > 1) streakActive = false;
               }
 
-              // Next legendary info
-              const nextMilestoneLegIdx = nextMilestone / 30 - 1;
-              const nextLegendaryId = STREAK_LEGENDARY_IDS[nextMilestoneLegIdx] ?? null;
-              const nextLegendary = nextLegendaryId ? getPokemon(nextLegendaryId) : null;
-
               const streakColor = !streakActive && streak > 0 ? "#EF4444" : streak >= 7 ? "#F97316" : "#F59E0B";
 
               return (
@@ -329,9 +323,6 @@ export function ProfileTab() {
                         <Star className="w-3 h-3 text-amber-400" />
                         <span className="text-[10px] text-muted-foreground">
                           Proximo Lendario em
-                          {nextLegendary && (
-                            <span className="text-amber-400 font-semibold capitalize ml-1">({nextLegendary.name})</span>
-                          )}
                         </span>
                       </div>
                       <span className="text-[10px] font-mono text-amber-400 font-bold">
