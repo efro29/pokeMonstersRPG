@@ -135,9 +135,9 @@ export function ProfileTab() {
                 {kantoBadgesObtained + johtoBadgesObtained}/16
               </span>
             </div>
-            <div 
-            
-                 onClick={() => {
+            <div
+
+              onClick={() => {
                 setEditForm({
                   name: trainer.name,
                   age: trainer.age,
@@ -146,10 +146,10 @@ export function ProfileTab() {
                 });
                 setEditing(true);
               }}
-            
-            className="flex items-center gap-4">
+
+              className="flex items-center gap-4">
               {activeProfile ? (
-                <TrainerAvatar  avatarId={activeProfile.avatarId} size={64} />
+                <TrainerAvatar avatarId={activeProfile.avatarId} size={64} />
               ) : (
                 <div className="w-16 h-16 rounded-full bg-secondary border-2 border-border flex items-center justify-center">
                   <User className="w-8 h-8 text-muted-foreground" />
@@ -319,15 +319,8 @@ export function ProfileTab() {
                   {/* Progress to next milestone */}
                   <div className="px-3 pb-2">
                     <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-1">
-                        <Star className="w-3 h-3 text-amber-400" />
-                        <span className="text-[10px] text-muted-foreground">
-                          Proximo Lendario em
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-mono text-amber-400 font-bold">
-                        {daysToNextMilestone} dia{daysToNextMilestone !== 1 ? "s" : ""}
-                      </span>
+
+
                     </div>
                     <div className="h-2 bg-background rounded-full overflow-hidden">
                       <div
@@ -653,11 +646,10 @@ export function ProfileTab() {
                       key={cls}
                       type="button"
                       onClick={() => setEditForm({ ...editForm, trainerClass: cls })}
-                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                        editForm.trainerClass === cls
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-secondary text-muted-foreground border-border hover:text-foreground"
-                      }`}
+                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${editForm.trainerClass === cls
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-secondary text-muted-foreground border-border hover:text-foreground"
+                        }`}
                     >
                       {cls}
                     </button>
@@ -685,9 +677,8 @@ export function ProfileTab() {
                   size="sm"
                   variant="outline"
                   onClick={() => setXpAmount(String(val))}
-                  className={`border-border bg-transparent hover:bg-secondary ${
-                    xpAmount === String(val) ? "text-accent border-accent" : "text-foreground"
-                  }`}
+                  className={`border-border bg-transparent hover:bg-secondary ${xpAmount === String(val) ? "text-accent border-accent" : "text-foreground"
+                    }`}
                 >
                   +{val}
                 </Button>
@@ -778,11 +769,10 @@ export function ProfileTab() {
                   size="sm"
                   variant="outline"
                   onClick={() => setHpAmount(String(val))}
-                  className={`border-border bg-transparent hover:bg-secondary ${
-                    hpAmount === String(val)
-                      ? hpMode === "damage" ? "text-destructive border-destructive" : "text-green-500 border-green-500"
-                      : "text-foreground"
-                  }`}
+                  className={`border-border bg-transparent hover:bg-secondary ${hpAmount === String(val)
+                    ? hpMode === "damage" ? "text-destructive border-destructive" : "text-green-500 border-green-500"
+                    : "text-foreground"
+                    }`}
                 >
                   {hpMode === "damage" ? "-" : "+"}{val}
                 </Button>
@@ -857,9 +847,8 @@ export function ProfileTab() {
                   size="sm"
                   variant="outline"
                   onClick={() => setMoneyAmount(String(val))}
-                  className={`border-border bg-transparent hover:bg-secondary ${
-                    moneyAmount === String(val) ? "text-accent border-accent" : "text-foreground"
-                  }`}
+                  className={`border-border bg-transparent hover:bg-secondary ${moneyAmount === String(val) ? "text-accent border-accent" : "text-foreground"
+                    }`}
                 >
                   {"$"}{val.toLocaleString("pt-BR")}
                 </Button>
