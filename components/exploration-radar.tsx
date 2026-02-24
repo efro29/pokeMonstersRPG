@@ -11,6 +11,7 @@ import { playButtonClick, playGift, playBuy } from "@/lib/sounds";
 
 // ─── Regras do Radar ───────────────────────────────────────
 const MAX_ENERGY = 4;
+const BATTERY_ENERGY = 10;
 const ENERGY_RECOVERY_MS = 5 * 60 * 1000; // 5 minutos
 const SCAN_DURATION_MS = 8_000; // 8 segundos (animação visível, mas < 1 min)
 const MAX_POKEMON_PER_SCAN = 5;
@@ -153,6 +154,20 @@ interface RadarEnergy {
   lastUsed: number; // timestamp
 }
 
+function getBagBatteryCount(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    const raw = localStorage.getItem("pokerpg-storage");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const bag: { itemId: string; quantity: number }[] = parsed?.state?.bag ?? [];
+      const battery = bag.find((i) => i.itemId === "radar-battery");
+      return battery?.quantity ?? 0;
+    }
+  } catch { /* ignore */ }
+  return 0;
+}
+
 function loadEnergy(): RadarEnergy {
   if (typeof window === "undefined") return { charges: MAX_ENERGY, lastUsed: 0 };
   try {
@@ -278,7 +293,7 @@ interface ExplorationRadarProps {
 }
 
 export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
-  const { addMoney, addBagItem, addEgg, eggs } = useGameStore();
+  const { addMoney, addBagItem, addEgg, eggs, bag } = useGameStore();
   const [energy, setEnergy] = useState<RadarEnergy>(loadEnergy);
   const [scanning, setScanning] = useState(false);
   const [blips, setBlips] = useState<RadarBlip[]>([]);
@@ -290,11 +305,16 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
   const [claimedEgg, setClaimedEgg] = useState<PokemonEgg | null>(null);
   const scanInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Calcula max de energia: se tem bateria na bag usa 10, senão 4
+  const batteryCount = bag.find((i) => i.itemId === "radar-battery")?.quantity ?? 0;
+  const hasBattery = batteryCount > 0;
+  const effectiveMaxEnergy = hasBattery ? BATTERY_ENERGY : MAX_ENERGY;
+
   // ── Recuperação de energia (a cada 5 min) ──
   useEffect(() => {
     const tick = () => {
       setEnergy((prev) => {
-        if (prev.charges >= MAX_ENERGY) return prev;
+        if (prev.charges >= effectiveMaxEnergy) return prev;
         const now = Date.now();
         const elapsed = now - prev.lastUsed;
         const recovered = Math.floor(elapsed / ENERGY_RECOVERY_MS);
