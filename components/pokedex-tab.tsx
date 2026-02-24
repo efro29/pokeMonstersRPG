@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { POKEMON, TYPE_COLORS, getSpriteUrl, getMove } from "@/lib/pokemon-data";
 import type { PokemonType } from "@/lib/pokemon-data";
 import { useGameStore } from "@/lib/game-store";
@@ -21,6 +22,13 @@ const GENERATIONS = [
   { id: 3, name: "HOENN", label: "G3", range: [252, 386] as [number, number], color: "#22C55E", icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/258.svg" },
   { id: 4, name: "SINNOH", label: "G4", range: [387, 493] as [number, number], color: "#eb8a3a", icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/393.svg" },
 ];
+
+function getGenForPokemon(pokemonId: number): number | null {
+  for (const gen of GENERATIONS) {
+    if (pokemonId >= gen.range[0] && pokemonId <= gen.range[1]) return gen.id;
+  }
+  return null;
+}
 
 function DonutChart({ discovered, total, color, size = 64 }: { discovered: number; total: number; color: string; size?: number }) {
   const pct = total > 0 ? discovered / total : 0;
@@ -66,6 +74,36 @@ function DonutChart({ discovered, total, color, size = 64 }: { discovered: numbe
   );
 }
 
+// Particle burst animation for reveal
+function RevealParticles({ color }: { color: string }) {
+  const particles = Array.from({ length: 14 }, (_, i) => {
+    const angle = (i / 14) * Math.PI * 2;
+    const dist = 60 + Math.random() * 30;
+    return {
+      id: i,
+      x: Math.cos(angle) * dist,
+      y: Math.sin(angle) * dist,
+      size: 4 + Math.random() * 4,
+      delay: Math.random() * 0.15,
+    };
+  });
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute rounded-full"
+          style={{ width: p.size, height: p.size, backgroundColor: color }}
+          initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+          animate={{ x: p.x, y: p.y, opacity: 0, scale: 0.2 }}
+          transition={{ duration: 0.7, delay: p.delay, ease: "easeOut" }}
+        />
+      ))}
+    </div>
+  );
+}
+
 interface PokedexTabProps {
   onStartBattleWithPokemon?: (speciesId: number, level: number) => void;
   onStartCapture?: (speciesId: number) => void;
@@ -81,6 +119,7 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
   const [discoverMessage, setDiscoverMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [battleLevel, setBattleLevel] = useState("5");
   const [activeGen, setActiveGen] = useState<number | null>(null);
+  const [revealingId, setRevealingId] = useState<number | null>(null);
   const [discoverByNumber, setDiscoverByNumber] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("pokerpg-discover-by-number") === "true";
@@ -88,7 +127,10 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
     return false;
   });
   const { team, reserves, addToTeam } = useGameStore();
-  const { mode, activeProfileId, discoveredPokemon, discoverPokemon } = useModeStore();
+  const { mode, activeProfileId, discoveredPokemon, discoverPokemon, pendingPokedexReveal, clearPokedexReveal, triggerPokedexReveal } = useModeStore();
+
+  const cardRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const scrollAreaRef = useRef<HTMLDivElement | null>(null);
 
   // Listen for changes from settings
   useEffect(() => {
@@ -102,6 +144,45 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
   const isTrainerMode = mode === "trainer";
   const discovered = activeProfileId ? (discoveredPokemon[activeProfileId] || []) : [];
 
+  // Handle pending reveal animation
+  useEffect(() => {
+    if (!pendingPokedexReveal || !isTrainerMode) return;
+
+    const pokemonId = pendingPokedexReveal.pokemonId;
+    const targetGen = getGenForPokemon(pokemonId);
+
+    // Switch sub-tab to lista
+    setSubTab("lista");
+    setSearch("");
+
+    // Navigate to the correct generation
+    if (targetGen !== null) {
+      setActiveGen(targetGen);
+    }
+
+    // Start the reveal after a short delay for the gen to render
+    const timer = setTimeout(() => {
+      setRevealingId(pokemonId);
+      playGift();
+
+      // Scroll to the card
+      requestAnimationFrame(() => {
+        const cardEl = cardRefs.current[pokemonId];
+        if (cardEl) {
+          cardEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      });
+
+      // End animation after duration
+      setTimeout(() => {
+        setRevealingId(null);
+        clearPokedexReveal();
+      }, 2200);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [pendingPokedexReveal, isTrainerMode, clearPokedexReveal]);
+
   // Filter pokemon by active generation
   const genRange = activeGen !== null ? GENERATIONS.find((g) => g.id === activeGen) : null;
 
@@ -109,17 +190,18 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
     ? POKEMON.filter((p) => p.id >= genRange.range[0] && p.id <= genRange.range[1])
     : POKEMON;
 
-  const availablePokemon = isTrainerMode
-    ? basePokemon.filter((p) => discovered.includes(p.id))
-    : basePokemon;
-
+  // In trainer mode, show ALL pokemon (discovered + undiscovered)
+  // Search only matches discovered pokemon by name, or any by number
   const filtered = search
-    ? availablePokemon.filter(
-      (p) =>
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.id.toString().includes(search)
+    ? basePokemon.filter(
+      (p) => {
+        const isDiscovered = discovered.includes(p.id);
+        const matchesNumber = p.id.toString().includes(search) || `#${String(p.id).padStart(3, "0")}`.includes(search);
+        const matchesName = isDiscovered && p.name.toLowerCase().includes(search.toLowerCase());
+        return matchesNumber || matchesName;
+      }
     )
-    : availablePokemon;
+    : basePokemon;
 
   const selectedPokemon = selectedId ? POKEMON.find((p) => p.id === selectedId) : null;
   const isInTeam = (id: number) => team.some((t) => t.speciesId === id) || reserves.some((t) => t.speciesId === id);
@@ -127,8 +209,8 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
 
   const handleDiscover = () => {
     const num = parseInt(discoverInput);
-    if (isNaN(num) || num < 1 || num > 275) {
-      setDiscoverMessage({ text: "Numero invalido! Digite entre 1 e 275.", type: "error" });
+    if (isNaN(num) || num < 1 || num > 493) {
+      setDiscoverMessage({ text: "Numero invalido! Digite entre 1 e 493.", type: "error" });
       setTimeout(() => setDiscoverMessage(null), 3000);
       return;
     }
@@ -147,13 +229,10 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
     }
 
     discoverPokemon(num);
-    playGift();
+    triggerPokedexReveal(num);
     setDiscoverMessage({ text: `${pokemon.name} foi adicionado a Pokedex!`, type: "success" });
     setDiscoverInput("");
     setTimeout(() => setDiscoverMessage(null), 3000);
-
-    // Auto-open the modal for the discovered pokemon
-    setSelectedId(num);
   };
 
   // Count discovered per generation
@@ -217,7 +296,7 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
                     onChange={(e) => setDiscoverInput(e.target.value)}
                     className="bg-secondary border-border text-foreground flex-1 h-8 text-sm"
                     min={1}
-                    max={275}
+                    max={493}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleDiscover();
                     }}
@@ -252,7 +331,7 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
             </p>
           </div>
 
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1" ref={scrollAreaRef}>
             {activeGen === null ? (
               /* Generation selection cards */
               <div className="flex flex-col gap-3 p-3">
@@ -349,20 +428,166 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
                       <HelpCircle className="w-8 h-8 text-muted-foreground" />
                     </div>
                     <p className="text-sm text-muted-foreground text-center">
-                      {isTrainerMode
-                        ? "Nenhum Pokemon descoberto nesta geracao."
-                        : "Nenhum Pokemon encontrado."}
+                      Nenhum Pokemon encontrado.
                     </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-3 gap-1 p-1">
                     {filtered.map((pokemon) => {
+                      const isDiscovered = !isTrainerMode || discovered.includes(pokemon.id);
+                      const isRevealing = revealingId === pokemon.id;
                       const inTeam = isInTeam(pokemon.id);
                       const mainType = pokemon.types[0];
                       const mainColor = TYPE_COLORS[mainType];
+
+                      // Undiscovered card
+                      if (!isDiscovered && !isRevealing) {
+                        return (
+                          <div
+                            key={pokemon.id}
+                            ref={(el) => { cardRefs.current[pokemon.id] = el; }}
+                            className="relative flex flex-col items-center justify-center p-4 h-56 rounded-2xl border border-neutral-800 bg-neutral-950/90 overflow-hidden"
+                          >
+                            {/* Badge ID */}
+                            <div className="absolute top-2 bg-neutral-800/60 px-2 py-0.5 rounded-md text-[10px] font-mono text-neutral-500">
+                              #{String(pokemon.id).padStart(3, "0")}
+                            </div>
+
+                            {/* Pokeball silhouette */}
+                            <div className="relative flex items-center justify-center flex-1 w-full">
+                              <div className="absolute w-20 h-20 rounded-full bg-neutral-800/30" />
+                              <svg width="48" height="48" viewBox="0 0 100 100" className="relative z-10 opacity-15">
+                                <circle cx="50" cy="50" r="48" fill="#333" stroke="#222" strokeWidth="3" />
+                                <rect x="2" y="48" width="96" height="4" fill="#222" />
+                                <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#555" />
+                                <circle cx="50" cy="50" r="14" fill="#444" stroke="#222" strokeWidth="3" />
+                                <circle cx="50" cy="50" r="7" fill="#222" />
+                              </svg>
+                              <HelpCircle className="absolute z-20 w-10 h-10 text-neutral-600" />
+                            </div>
+
+                            <div className="flex flex-col gap-1 mt-2 items-center">
+                              <span className="text-sm font-semibold text-neutral-600">???</span>
+                              <div className="flex gap-1 mt-2">
+                                <span className="text-[9px] px-2 rounded-full font-semibold tracking-wide bg-neutral-800 text-neutral-600">
+                                  ???
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Revealing card (animated)
+                      if (isRevealing) {
+                        return (
+                          <div
+                            key={pokemon.id}
+                            ref={(el) => { cardRefs.current[pokemon.id] = el; }}
+                            className="relative flex flex-col items-center p-4 h-56 rounded-2xl border overflow-hidden"
+                            style={{
+                              borderColor: mainColor,
+                              borderWidth: "2px",
+                              boxShadow: `0 0 30px ${mainColor}88, 0 0 60px ${mainColor}44`,
+                            }}
+                          >
+                            {/* White flash overlay */}
+                            <motion.div
+                              className="absolute inset-0 z-40 rounded-2xl"
+                              style={{ backgroundColor: "#fff" }}
+                              initial={{ opacity: 0.9 }}
+                              animate={{ opacity: 0 }}
+                              transition={{ duration: 0.6, delay: 0.1 }}
+                            />
+
+                            {/* Particles */}
+                            <RevealParticles color={mainColor} />
+
+                            {/* Background glow */}
+                            <motion.div
+                              className="absolute inset-0 z-0"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ duration: 0.5 }}
+                              style={{
+                                background: `radial-gradient(circle at center, ${mainColor}30 0%, transparent 70%)`,
+                              }}
+                            />
+
+                            {/* Badge ID */}
+                            <motion.div
+                              className="absolute top-2 z-20 bg-black/40 backdrop-blur px-2 py-0.5 rounded-md text-[10px] font-mono text-white"
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.4 }}
+                            >
+                              #{String(pokemon.id).padStart(3, "0")}
+                            </motion.div>
+
+                            {/* Sprite */}
+                            <div className="relative flex items-center justify-center flex-1 w-full z-10">
+                              <motion.div
+                                className="absolute w-28 h-28 rounded-full blur-2xl"
+                                initial={{ opacity: 0, scale: 0.3 }}
+                                animate={{ opacity: 0.4, scale: 1 }}
+                                transition={{ duration: 0.6, delay: 0.2 }}
+                                style={{
+                                  background: `radial-gradient(circle, ${mainColor} 0%, transparent 70%)`,
+                                }}
+                              />
+                              <div className="absolute w-24 h-24 rounded-full bg-white/10" />
+                              <motion.img
+                                src={getSpriteUrl(pokemon.id) || "/placeholder.svg"}
+                                alt={pokemon.name}
+                                width={60}
+                                height={60}
+                                className="relative z-10 pixelated drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)]"
+                                crossOrigin="anonymous"
+                                initial={{ scale: 0, opacity: 0, rotate: -15 }}
+                                animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                                transition={{
+                                  type: "spring",
+                                  stiffness: 260,
+                                  damping: 15,
+                                  delay: 0.3,
+                                }}
+                              />
+                            </div>
+
+                            {/* Name and types */}
+                            <motion.div
+                              className="flex flex-col gap-1 mt-2 items-center"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.5, duration: 0.3 }}
+                            >
+                              <span className="text-sm font-semibold text-white capitalize mt-1">
+                                {pokemon.name}
+                              </span>
+                              <div className="flex justify-between gap-1 mt-2">
+                                {pokemon.types.map((t) => (
+                                  <span
+                                    key={t}
+                                    className="text-[9px] px-1 rounded-full font-semibold tracking-wide"
+                                    style={{
+                                      backgroundColor: TYPE_COLORS[t],
+                                      color: "#fff",
+                                    }}
+                                  >
+                                    {t.toUpperCase()}
+                                  </span>
+                                ))}
+                              </div>
+                            </motion.div>
+                          </div>
+                        );
+                      }
+
+                      // Normal discovered card
                       return (
                         <button
                           key={pokemon.id}
+                          ref={(el) => { cardRefs.current[pokemon.id] = el as unknown as HTMLDivElement; }}
                           onClick={() => setSelectedId(pokemon.id)}
                           className="relative flex flex-col items-center p-4 h-56 rounded-2xl border transition-all bg-neutral-900/90 overflow-hidden group"
                           style={{
@@ -434,7 +659,7 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
             )}
           </ScrollArea>
 
-          {/* Detail dialog */}
+          {/* Detail dialog - only show for discovered pokemon */}
           <Dialog open={!!selectedPokemon} onOpenChange={() => setSelectedId(null)}>
             {selectedPokemon && (
               <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">

@@ -273,7 +273,15 @@ export default function Page() {
     if (pokemonSpecies) {
       // Auto-discover pokemon in Pokedex when captured
       if (mode === "trainer") {
-        useModeStore.getState().discoverPokemon(species.id);
+        const modeState = useModeStore.getState();
+        const profileId = modeState.activeProfileId;
+        const alreadyDiscovered = profileId ? (modeState.discoveredPokemon[profileId] || []).includes(species.id) : true;
+        modeState.discoverPokemon(species.id);
+        // Trigger reveal animation and switch to pokedex tab only if newly discovered
+        if (!alreadyDiscovered) {
+          modeState.triggerPokedexReveal(species.id);
+          setActiveTab("pokedex");
+        }
       }
       // Add to team (or reserves if team full) with 10 HP as specified
       const uid = addToTeamWithLevel(pokemonSpecies, 1);
@@ -448,7 +456,7 @@ export default function Page() {
       {/* Tab content */}
       <div className="flex-1 overflow-hidden">
         {activeTab === "profile" && <ProfileTab />}
-        {activeTab === "team" && <TeamTab onStartBattle={(uid) => startBattle(uid)} />}
+        {activeTab === "team" && <TeamTab onStartBattle={(uid) => startBattle(uid)} onSwitchToPokedex={() => setActiveTab("pokedex")} />}
         {activeTab === "bag" && <BagTab />}
         {activeTab === "shop" && <ShopTab />}
         {activeTab === "moves" && <MovesDictionaryTab />}

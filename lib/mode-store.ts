@@ -15,6 +15,7 @@ interface ModeState {
   profiles: TrainerProfile[];
   activeProfileId: string | null;
   discoveredPokemon: Record<string, number[]>; // profileId -> pokemon IDs
+  pendingPokedexReveal: { pokemonId: number } | null;
 
   setMode: (mode: GameMode) => void;
   addProfile: (name: string, avatarId: number) => string;
@@ -22,6 +23,8 @@ interface ModeState {
   setActiveProfile: (id: string) => void;
   clearActiveProfile: () => void;
   discoverPokemon: (pokemonId: number) => void;
+  triggerPokedexReveal: (pokemonId: number) => void;
+  clearPokedexReveal: () => void;
   getDiscoveredForProfile: (profileId: string) => number[];
   resetMode: () => void;
 }
@@ -37,6 +40,7 @@ export const useModeStore = create<ModeState>()(
       profiles: [],
       activeProfileId: null,
       discoveredPokemon: {},
+      pendingPokedexReveal: null,
 
       setMode: (mode) => set({ mode }),
 
@@ -85,6 +89,14 @@ export const useModeStore = create<ModeState>()(
         });
       },
 
+      triggerPokedexReveal: (pokemonId) => {
+        set({ pendingPokedexReveal: { pokemonId } });
+      },
+
+      clearPokedexReveal: () => {
+        set({ pendingPokedexReveal: null });
+      },
+
       getDiscoveredForProfile: (profileId) => {
         return get().discoveredPokemon[profileId] || [];
       },
@@ -93,6 +105,11 @@ export const useModeStore = create<ModeState>()(
     }),
     {
       name: "pokemon-rpg-mode",
+      partialize: (state) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { pendingPokedexReveal, ...rest } = state;
+        return rest;
+      },
     }
   )
 );
