@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { POKEMON, EVOLUTIONS, getSpriteUrl, TYPE_COLORS } from "@/lib/pokemon-data";
 import type { PokemonSpecies, PokemonType } from "@/lib/pokemon-data";
 import { Button } from "@/components/ui/button";
-import { useGameStore } from "@/lib/game-store";
+import { useGameStore, BABY_POKEMON_IDS, rollRandomEgg, MAX_EGGS, EGG_TIER_COLORS } from "@/lib/game-store";
+import type { PokemonEgg } from "@/lib/game-store";
 import { playButtonClick, playGift, playBuy } from "@/lib/sounds";
 
 // ─── Regras do Radar ───────────────────────────────────────
@@ -137,6 +138,8 @@ function getRadarPool(): PokemonSpecies[] {
     if (LEGENDARY_IDS.has(p.id)) return false;
     // Excluir evoluções
     if (EVOLVED_IDS.has(p.id)) return false;
+    // Excluir baby Pokemon (vêm apenas de ovos)
+    if (BABY_POKEMON_IDS.has(p.id)) return false;
     // Nocturnos somente à noite
     const isNocturnal = p.types.some((t) => NOCTURNAL_TYPES.has(t));
     if (isNocturnal && !night) return false;
@@ -262,7 +265,9 @@ interface RadarBlip {
   id: string;
   pokemon?: PokemonSpecies;
   giftKit?: GiftKit;
+  egg?: PokemonEgg;
   isGift: boolean;
+  isEgg: boolean;
   angle: number;  // graus
   distance: number; // 0-1 (centro para borda)
   delay: number; // animação
@@ -273,7 +278,7 @@ interface ExplorationRadarProps {
 }
 
 export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
-  const { addMoney, addBagItem } = useGameStore();
+  const { addMoney, addBagItem, addEgg, eggs } = useGameStore();
   const [energy, setEnergy] = useState<RadarEnergy>(loadEnergy);
   const [scanning, setScanning] = useState(false);
   const [blips, setBlips] = useState<RadarBlip[]>([]);
@@ -282,6 +287,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
   const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [recoveryTimer, setRecoveryTimer] = useState<string>("");
   const [claimedGift, setClaimedGift] = useState<GiftKit | null>(null);
+  const [claimedEgg, setClaimedEgg] = useState<PokemonEgg | null>(null);
   const scanInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Recuperação de energia (a cada 5 min) ──
@@ -350,6 +356,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
           id: `gift-${Date.now()}`,
           giftKit: kit,
           isGift: true,
+          isEgg: false,
           angle: Math.random() * 360,
           distance: 0.2 + Math.random() * 0.55,
           delay: 0.2,
@@ -372,6 +379,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
       id: `${p.id}-${Date.now()}-${i}`,
       pokemon: p,
       isGift: false,
+      isEgg: false,
       angle: Math.random() * 360,
       distance: 0.2 + Math.random() * 0.65,
       delay: i * 0.3,
@@ -385,20 +393,38 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
         id: `gift-${Date.now()}`,
         giftKit: kit,
         isGift: true,
+        isEgg: false,
         angle: Math.random() * 360,
         distance: 0.15 + Math.random() * 0.6,
         delay: finalCount * 0.3 + 0.2,
       });
     }
 
+    // Egg chance: ~18% chance per scan (only if not at max eggs)
+    const currentEggCount = useGameStore.getState().eggs.length;
+    if (currentEggCount < MAX_EGGS && Math.random() < 0.18) {
+      const egg = rollRandomEgg();
+      newBlips.push({
+        id: `egg-${Date.now()}`,
+        egg,
+        isGift: false,
+        isEgg: true,
+        angle: Math.random() * 360,
+        distance: 0.2 + Math.random() * 0.55,
+        delay: (finalCount + 1) * 0.3 + 0.1,
+      });
+    }
+
     setBlips(newBlips);
     playGift();
     const giftCount = newBlips.filter(b => b.isGift).length;
-    const pokemonCount = newBlips.filter(b => !b.isGift).length;
+    const eggCount = newBlips.filter(b => b.isEgg).length;
+    const pokemonCount = newBlips.filter(b => !b.isGift && !b.isEgg).length;
     const parts: string[] = [];
     if (pokemonCount > 0) parts.push(`${pokemonCount} Pokemon`);
     if (giftCount > 0) parts.push(`${giftCount} presente${giftCount > 1 ? "s" : ""}`);
-    setScanMessage(parts.length > 0 ? `${parts.join(" e ")} detectado${pokemonCount + giftCount > 1 ? "s" : ""}!` : "Nenhum Pokemon detectado nesta area...");
+    if (eggCount > 0) parts.push(`${eggCount} ovo${eggCount > 1 ? "s" : ""}`);
+    setScanMessage(parts.length > 0 ? `${parts.join(" e ")} detectado${pokemonCount + giftCount + eggCount > 1 ? "s" : ""}!` : "Nenhum Pokemon detectado nesta area...");
     setTimeout(() => setScanMessage(null), 4000);
   }, []);
 
@@ -451,6 +477,17 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
   const handleBlipClick = (blip: RadarBlip) => {
     if (scanning) return;
     playButtonClick();
+    if (blip.isEgg && blip.egg) {
+      // Claim egg
+      const success = addEgg(blip.egg);
+      if (success) {
+        playGift();
+        setClaimedEgg(blip.egg);
+        setBlips((prev) => prev.filter((b) => b.id !== blip.id));
+        setTimeout(() => setClaimedEgg(null), 4000);
+      }
+      return;
+    }
     if (blip.isGift && blip.giftKit) {
       // Claim gift immediately
       blip.giftKit.rewards.forEach((r) => {
@@ -591,7 +628,9 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
             const maxR = center - 16;
             const x = center + Math.cos(rad) * maxR * blip.distance;
             const y = center + Math.sin(rad) * maxR * blip.distance;
-            const color = blip.isGift
+            const color = blip.isEgg
+              ? (EGG_TIER_COLORS[blip.egg?.tier || "green"].bg)
+              : blip.isGift
               ? (blip.giftKit?.color || "#F59E0B")
               : TYPE_COLORS[(blip.pokemon?.types[0] || "normal") as PokemonType] || "#22C55E";
 
@@ -630,11 +669,15 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
                     boxShadow: `0 0 6px ${color}`,
                   }}
                 >
-                  {blip.isGift && (
+                  {blip.isEgg ? (
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
+                      <ellipse cx="12" cy="13" rx="8" ry="10" fill="white" opacity="0.9"/>
+                    </svg>
+                  ) : blip.isGift ? (
                     <svg width="8" height="8" viewBox="0 0 24 24" fill="white">
                       <path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 110-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 100-5C13 2 12 7 12 7z" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                  )}
+                  ) : null}
                 </div>
                 {/* Hover/selected indicator */}
                 {selectedBlip?.id === blip.id && (
@@ -762,6 +805,44 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
                   )}
                 </motion.div>
               ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Painel do ovo coletado */}
+      <AnimatePresence>
+        {claimedEgg && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            className="w-full max-w-sm rounded-xl border-2 p-4 flex flex-col items-center gap-3"
+            style={{
+              borderColor: EGG_TIER_COLORS[claimedEgg.tier].bg,
+              background: `linear-gradient(135deg, rgba(0,0,0,0.7) 0%, ${EGG_TIER_COLORS[claimedEgg.tier].bg}20 100%)`,
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1, rotate: [0, -8, 8, -4, 4, 0] }}
+              transition={{ duration: 0.6 }}
+              className="w-14 h-14 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: `${EGG_TIER_COLORS[claimedEgg.tier].bg}25` }}
+            >
+              <svg width="32" height="32" viewBox="0 0 40 48" fill="none">
+                <ellipse cx="20" cy="26" rx="14" ry="18" fill={EGG_TIER_COLORS[claimedEgg.tier].bg} opacity="0.9"/>
+                <ellipse cx="20" cy="26" rx="14" ry="18" fill="none" stroke="white" strokeWidth="1.5" opacity="0.4"/>
+                <ellipse cx="15" cy="20" rx="3" ry="4" fill="white" opacity="0.25" transform="rotate(-15 15 20)"/>
+              </svg>
+            </motion.div>
+            <div className="text-center">
+              <span className="text-xs font-bold tracking-wider" style={{ color: EGG_TIER_COLORS[claimedEgg.tier].bg }}>
+                OVO ENCONTRADO!
+              </span>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                Ovo {EGG_TIER_COLORS[claimedEgg.tier].label} - Veja na aba Ovos da Pokedex
+              </p>
             </div>
           </motion.div>
         )}

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useGameStore, ATTRIBUTE_INFO, trainerXpForLevel, explorationXpForLevel, getTodayDateStr } from "@/lib/game-store";
+import { useGameStore, ATTRIBUTE_INFO, trainerXpForLevel, explorationXpForLevel, getTodayDateStr, getCurrentWeeklyEvent, getCurrentWeekKey } from "@/lib/game-store";
+import { getPokemon } from "@/lib/pokemon-data";
 import { useModeStore } from "@/lib/mode-store";
 import type { TrainerAttributes } from "@/lib/game-store";
 import { KANTO_BADGE_ICONS, JOHTO_BADGE_ICONS } from "./badge-icons";
@@ -35,6 +36,11 @@ import {
   Crosshair,
   Compass,
   Flame,
+  Target,
+  Gift,
+  CheckCircle2,
+  Circle,
+  Calendar,
 } from "lucide-react";
 import { playBadgeObtained, playBadgeRemoved, playButtonClick } from "@/lib/sounds";
 import { TrainerAvatar } from "@/components/trainer-avatar";
@@ -342,6 +348,121 @@ export function ProfileTab() {
                       </p>
                     </div>
                   )}
+                </div>
+              );
+            })()}
+
+            {/* Weekly Event / Evento Semanal */}
+            {(() => {
+              const event = getCurrentWeeklyEvent();
+              const weekKey = getCurrentWeekKey();
+              const progress = trainer.weeklyEventProgress;
+              const isCurrentWeek = progress?.weekKey === weekKey && progress?.eventId === event.id;
+              const missionProgress = isCurrentWeek ? (progress?.missionProgress ?? {}) : {};
+              const allCompleted = isCurrentWeek ? (progress?.completed ?? false) : false;
+              const rewardClaimed = isCurrentWeek ? (progress?.rewardClaimed ?? false) : false;
+              const rewardPokemon = getPokemon(event.rewardPokemonId);
+              const claimReward = useGameStore.getState().claimWeeklyEventReward;
+
+              return (
+                <div className="rounded-xl overflow-hidden border border-cyan-500/20" style={{ background: "rgba(6,182,212,0.04)" }}>
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-3 pt-3 pb-2">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-cyan-400" />
+                      <span className="text-sm font-bold text-foreground">Evento Semanal</span>
+                    </div>
+                    <span className="text-[10px] text-cyan-400/70 font-mono">{weekKey}</span>
+                  </div>
+
+                  {/* Event title */}
+                  <div className="px-3 pb-2">
+                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background: "rgba(6,182,212,0.08)", border: "1px solid rgba(6,182,212,0.15)" }}>
+                      <Target className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <span className="text-xs font-semibold text-cyan-300">{event.title}</span>
+                    </div>
+                  </div>
+
+                  {/* Missions */}
+                  <div className="px-3 pb-2 flex flex-col gap-1.5">
+                    {event.missions.map((mission) => {
+                      const current = missionProgress[mission.id] ?? 0;
+                      const done = current >= mission.target;
+                      const pct = Math.min(100, (current / mission.target) * 100);
+                      return (
+                        <div key={mission.id} className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            {done ? (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            ) : (
+                              <Circle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                            )}
+                            <span className={`text-[11px] flex-1 ${done ? "text-emerald-400 line-through" : "text-foreground"}`}>
+                              {mission.description}
+                            </span>
+                            <span className="text-[10px] font-mono text-muted-foreground">
+                              {Math.min(current, mission.target)}/{mission.target}
+                            </span>
+                          </div>
+                          <div className="ml-5.5 h-1 bg-background rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{
+                                width: `${pct}%`,
+                                backgroundColor: done ? "#10B981" : "#06B6D4",
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Rewards section */}
+                  <div className="px-3 pb-3">
+                    <div className="flex items-center gap-1 mb-1.5">
+                      <Gift className="w-3 h-3 text-amber-400" />
+                      <span className="text-[10px] font-semibold text-amber-400">Recompensas</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", color: "#F59E0B" }}>
+                        ${event.rewardMoney.toLocaleString("pt-BR")}
+                      </span>
+                      {event.rewardItems.map((item, i) => (
+                        <span key={i} className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(6,182,212,0.12)", border: "1px solid rgba(6,182,212,0.3)", color: "#06B6D4" }}>
+                          {item.itemName} x{item.quantity}
+                        </span>
+                      ))}
+                      {rewardPokemon && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold capitalize" style={{ background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.3)", color: "#A855F7" }}>
+                          {rewardPokemon.name} Nv.{event.rewardPokemonLevel}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Claim button */}
+                    {allCompleted && !rewardClaimed && (
+                      <Button
+                        onClick={() => claimReward()}
+                        className="w-full h-8 text-xs font-bold"
+                        style={{ background: "linear-gradient(90deg, #06B6D4, #A855F7)", color: "#fff" }}
+                      >
+                        <Gift className="w-3.5 h-3.5 mr-1.5" />
+                        Resgatar Recompensas
+                      </Button>
+                    )}
+                    {rewardClaimed && (
+                      <div className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg" style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-[11px] font-semibold text-emerald-400">Recompensas Resgatadas!</span>
+                      </div>
+                    )}
+                    {!allCompleted && (
+                      <p className="text-[9px] text-muted-foreground text-center leading-relaxed">
+                        Complete todas as missoes para desbloquear as recompensas!
+                      </p>
+                    )}
+                  </div>
                 </div>
               );
             })()}

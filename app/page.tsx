@@ -330,15 +330,23 @@ export default function Page() {
       });
       setTimeout(() => setExplorationRewardToast(null), 6000);
 
-      // Register daily streak
+      // Register daily streak — check if already captured today BEFORE registering
+      const lastCaptureBefore = useGameStore.getState().trainer.lastCaptureDate;
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const alreadyCapturedToday = lastCaptureBefore === todayStr;
+
       const streakResult = useGameStore.getState().registerDailyCapture();
-      let legendaryName: string | null = null;
-      if (streakResult.legendaryId) {
-        const leg = getPokemon(streakResult.legendaryId);
-        legendaryName = leg?.name ?? null;
-      }
-      // Show streak toast only if streak changed or milestone was reached
-      if (streakResult.newStreak !== (useGameStore.getState().trainer.dailyStreak - 1) || streakResult.milestoneReached || streakResult.streakBroken) {
+
+      // Track weekly event progress
+      useGameStore.getState().trackWeeklyCapture(species.types, ballsUsed);
+
+      // Show streak toast only once per day (first capture)
+      if (!alreadyCapturedToday) {
+        let legendaryName: string | null = null;
+        if (streakResult.legendaryId) {
+          const leg = getPokemon(streakResult.legendaryId);
+          legendaryName = leg?.name ?? null;
+        }
         setStreakToast({
           streak: streakResult.newStreak,
           broken: streakResult.streakBroken,
