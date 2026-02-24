@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { useGameStore } from "@/lib/game-store";
+import { useModeStore } from "@/lib/mode-store";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Eye, EyeOff, Volume2, VolumeX, Hash, Lock, X } from "lucide-react";
+import { Settings, Eye, EyeOff, Volume2, VolumeX, Hash, Lock, X, Coins, ShieldOff } from "lucide-react";
 import { playButtonClick } from "@/lib/sounds";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 const DISCOVER_SECRET = "dittocujo";
+const ECONOMY_SECRET = "maodevaca";
 
 export function SettingsTab() {
   const { showBattleCards, toggleBattleCards } = useGameStore();
@@ -27,6 +29,12 @@ export function SettingsTab() {
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [passwordError, setPasswordError] = useState(false);
+
+  // Economy lock
+  const { economyLocked, setEconomyLocked } = useModeStore();
+  const [showEconomyPasswordPrompt, setShowEconomyPasswordPrompt] = useState(false);
+  const [economyPasswordInput, setEconomyPasswordInput] = useState("");
+  const [economyPasswordError, setEconomyPasswordError] = useState(false);
 
   const toggleMusic = () => {
     const newVal = !musicMuted;
@@ -61,6 +69,31 @@ export function SettingsTab() {
     } else {
       setPasswordError(true);
       setPasswordInput("");
+    }
+  };
+
+  const handleEconomyToggle = () => {
+    playButtonClick();
+    if (!economyLocked) {
+      // Locking doesn't need password
+      setEconomyLocked(true);
+    } else {
+      // Unlocking requires password
+      setShowEconomyPasswordPrompt(true);
+      setEconomyPasswordInput("");
+      setEconomyPasswordError(false);
+    }
+  };
+
+  const handleEconomyPasswordSubmit = () => {
+    if (economyPasswordInput.toLowerCase().trim() === ECONOMY_SECRET) {
+      setEconomyLocked(false);
+      setShowEconomyPasswordPrompt(false);
+      setEconomyPasswordInput("");
+      setEconomyPasswordError(false);
+    } else {
+      setEconomyPasswordError(true);
+      setEconomyPasswordInput("");
     }
   };
 
@@ -296,6 +329,119 @@ export function SettingsTab() {
                       </Button>
                     </div>
                     {passwordError && (
+                      <p className="text-xs text-red-400 font-medium">
+                        Senha incorreta. Tente novamente.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Economy Lock Toggle */}
+            <div className="bg-secondary/50 rounded-lg p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    {economyLocked ? (
+                      <Lock className="w-4 h-4 text-amber-400" />
+                    ) : (
+                      <Coins className="w-4 h-4 text-accent" />
+                    )}
+                    <h4 className="font-medium text-foreground text-sm">
+                      Bloqueio de Economia
+                    </h4>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {economyLocked
+                      ? "Bloqueado. Adicao manual de dinheiro e itens esta desativada. Use o Radar para encontrar recompensas."
+                      : "Desbloqueado. Adicao manual de dinheiro e itens esta liberada."}
+                  </p>
+                </div>
+                <button
+                  onClick={handleEconomyToggle}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                    !economyLocked
+                      ? "bg-primary border-primary"
+                      : "bg-secondary border-border"
+                  }`}
+                  role="switch"
+                  aria-checked={!economyLocked}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      !economyLocked ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-border/50">
+                <div className="flex items-center gap-2 text-xs">
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      !economyLocked ? "bg-accent" : "bg-amber-400"
+                    }`}
+                  />
+                  <span className="text-muted-foreground">
+                    Status:{" "}
+                    <span className="font-medium text-foreground">
+                      {economyLocked ? "Bloqueado" : "Desbloqueado"}
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Economy Password Prompt */}
+              {showEconomyPasswordPrompt && (
+                <div className="mt-3 pt-3 border-t border-border/50">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-3.5 h-3.5 text-amber-400" />
+                      <span className="text-xs font-medium text-amber-400">
+                        Digite a senha para desbloquear
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        type="password"
+                        placeholder="Senha..."
+                        value={economyPasswordInput}
+                        onChange={(e) => {
+                          setEconomyPasswordInput(e.target.value);
+                          setEconomyPasswordError(false);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleEconomyPasswordSubmit();
+                        }}
+                        className={`bg-background border-border text-foreground flex-1 h-8 text-sm ${
+                          economyPasswordError ? "border-red-500 ring-1 ring-red-500" : ""
+                        }`}
+                        autoFocus
+                      />
+                      <Button
+                        onClick={handleEconomyPasswordSubmit}
+                        disabled={!economyPasswordInput}
+                        size="sm"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 h-8 text-xs"
+                      >
+                        OK
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setShowEconomyPasswordPrompt(false);
+                          setEconomyPasswordInput("");
+                          setEconomyPasswordError(false);
+                        }}
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    {economyPasswordError && (
                       <p className="text-xs text-red-400 font-medium">
                         Senha incorreta. Tente novamente.
                       </p>

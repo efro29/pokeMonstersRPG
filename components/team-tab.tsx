@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/lib/game-store";
+import { useModeStore } from "@/lib/mode-store";
 import {
   getSpriteUrl,
   getMove,
@@ -61,9 +62,10 @@ import { EvolutionAnimation } from "@/components/evolution-animation";
 
 interface TeamTabProps {
   onStartBattle: (uid: string) => void;
+  onSwitchToPokedex?: () => void;
 }
 
-export function TeamTab({ onStartBattle }: TeamTabProps) {
+export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
   const {
     team,
     reserves,
@@ -97,8 +99,22 @@ export function TeamTab({ onStartBattle }: TeamTabProps) {
   );
 
   const handleEvolutionComplete = useCallback(() => {
+    // Discover the evolved pokemon in the pokedex and trigger reveal
+    const evo = pendingEvolution;
+    if (evo) {
+      const modeState = useModeStore.getState();
+      if (modeState.mode === "trainer") {
+        const profileId = modeState.activeProfileId;
+        const alreadyDiscovered = profileId ? (modeState.discoveredPokemon[profileId] || []).includes(evo.toSpeciesId) : true;
+        modeState.discoverPokemon(evo.toSpeciesId);
+        if (!alreadyDiscovered && onSwitchToPokedex) {
+          modeState.triggerPokedexReveal(evo.toSpeciesId);
+          onSwitchToPokedex();
+        }
+      }
+    }
     completeEvolution();
-  }, [completeEvolution]);
+  }, [completeEvolution, pendingEvolution, onSwitchToPokedex]);
 
   // Derive selectedPokemon directly from store state so it's always fresh
   const selectedPokemon = selectedUid

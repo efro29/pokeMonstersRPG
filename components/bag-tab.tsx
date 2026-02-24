@@ -4,6 +4,7 @@ import React from "react";
 
 import { useState } from "react";
 import { useGameStore } from "@/lib/game-store";
+import { useModeStore } from "@/lib/mode-store";
 import { BAG_ITEMS } from "@/lib/pokemon-data";
 import { getSpriteUrl } from "@/lib/pokemon-data";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 export function BagTab() {
   const { bag, team, addBagItem, useBagItem } = useGameStore();
+  const economyLocked = useModeStore((s) => s.economyLocked);
   const [useTarget, setUseTarget] = useState<{
     itemId: string;
     itemName: string;
@@ -48,14 +50,16 @@ export function BagTab() {
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-border flex items-center justify-between">
         <h2 className="font-semibold text-foreground">Bolsa</h2>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setAddItemDialog(true)}
-          className="border-border text-foreground bg-transparent hover:bg-secondary"
-        >
-          <Plus className="w-4 h-4 mr-1" /> Adicionar
-        </Button>
+        {!economyLocked && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setAddItemDialog(true)}
+            className="border-border text-foreground bg-transparent hover:bg-secondary"
+          >
+            <Plus className="w-4 h-4 mr-1" /> Adicionar
+          </Button>
+        )}
       </div>
 
       <ScrollArea className="flex-1">

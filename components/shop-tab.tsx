@@ -3,6 +3,7 @@
 import React from "react";
 import { useState } from "react";
 import { useGameStore, SHOP_ITEMS, type ShopItem } from "@/lib/game-store";
+import { useModeStore } from "@/lib/mode-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -68,6 +69,7 @@ const GIFT_ITEMS = [
 
 export function ShopTab() {
   const { trainer, buyItem, bag, addBagItem } = useGameStore();
+  const economyLocked = useModeStore((s) => s.economyLocked);
   const [buyDialog, setBuyDialog] = useState<ShopItem | null>(null);
   const [qty, setQty] = useState(1);
   const [result, setResult] = useState<"success" | "fail" | null>(null);
@@ -91,6 +93,7 @@ export function ShopTab() {
   };
 
   const handleGift = (itemId: string, giftQty: number) => {
+    if (economyLocked) return;
     addBagItem(itemId, giftQty);
     playGift();
     setGiftFlash(itemId);
@@ -109,15 +112,17 @@ export function ShopTab() {
           <h2 className="font-semibold text-foreground">Loja</h2>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowGifts(true)}
-            className="border-accent/50 text-accent bg-transparent hover:bg-accent/10"
-          >
-            <Gift className="w-4 h-4 mr-1" />
-            <span className="text-xs">Mestre</span>
-          </Button>
+          {!economyLocked && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setShowGifts(true)}
+              className="border-accent/50 text-accent bg-transparent hover:bg-accent/10"
+            >
+              <Gift className="w-4 h-4 mr-1" />
+              <span className="text-xs">Mestre</span>
+            </Button>
+          )}
           <div className="flex items-center gap-1.5 bg-secondary/50 rounded-full px-3 py-1.5">
             <Coins className="w-4 h-4 text-accent" />
             <span className="text-sm font-bold font-mono text-accent">

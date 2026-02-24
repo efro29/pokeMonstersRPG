@@ -78,6 +78,7 @@ export default function Page() {
   }, [mode, activeProfileId, screen]);
 
     const handleAddMoney = () => {
+    if (useModeStore.getState().economyLocked) return;
     const amount = parseInt(moneyAmount);
     if (amount > 0) {
       addMoney(amount);
@@ -273,7 +274,15 @@ export default function Page() {
     if (pokemonSpecies) {
       // Auto-discover pokemon in Pokedex when captured
       if (mode === "trainer") {
-        useModeStore.getState().discoverPokemon(species.id);
+        const modeState = useModeStore.getState();
+        const profileId = modeState.activeProfileId;
+        const alreadyDiscovered = profileId ? (modeState.discoveredPokemon[profileId] || []).includes(species.id) : true;
+        modeState.discoverPokemon(species.id);
+        // Trigger reveal animation and switch to pokedex tab only if newly discovered
+        if (!alreadyDiscovered) {
+          modeState.triggerPokedexReveal(species.id);
+          setActiveTab("pokedex");
+        }
       }
       // Add to team (or reserves if team full) with 10 HP as specified
       const uid = addToTeamWithLevel(pokemonSpecies, 1);
@@ -419,7 +428,8 @@ export default function Page() {
             <span className="text-xs font-bold font-mono text-accent">
               {"$"}{trainer.money.toLocaleString("pt-BR")}
             </span>
-              <Button
+              {!useModeStore.getState().economyLocked && (
+                <Button
                   size="sm"
                   variant="outline"
                   onClick={() => setMoneyDialog(true)}
@@ -427,6 +437,7 @@ export default function Page() {
                 >
                   <Plus className="w-3 h-3" />
                 </Button>
+              )}
           </div>
           <button
             onClick={() => {
@@ -448,7 +459,7 @@ export default function Page() {
       {/* Tab content */}
       <div className="flex-1 overflow-hidden">
         {activeTab === "profile" && <ProfileTab />}
-        {activeTab === "team" && <TeamTab onStartBattle={(uid) => startBattle(uid)} />}
+        {activeTab === "team" && <TeamTab onStartBattle={(uid) => startBattle(uid)} onSwitchToPokedex={() => setActiveTab("pokedex")} />}
         {activeTab === "bag" && <BagTab />}
         {activeTab === "shop" && <ShopTab />}
         {activeTab === "moves" && <MovesDictionaryTab />}

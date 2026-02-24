@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useGameStore, ATTRIBUTE_INFO, trainerXpForLevel } from "@/lib/game-store";
+import { useModeStore } from "@/lib/mode-store";
 import type { TrainerAttributes } from "@/lib/game-store";
 import { KANTO_BADGE_ICONS, JOHTO_BADGE_ICONS } from "./badge-icons";
 import { Input } from "@/components/ui/input";
@@ -33,7 +34,6 @@ import {
   Trophy,
 } from "lucide-react";
 import { playBadgeObtained, playBadgeRemoved, playButtonClick } from "@/lib/sounds";
-import { useModeStore } from "@/lib/mode-store";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 
 const TRAINER_CLASSES = [
@@ -86,7 +86,10 @@ export function ProfileTab() {
     setEditing(false);
   };
 
+  const economyLocked = useModeStore((s) => s.economyLocked);
+
   const handleAddMoney = () => {
+    if (economyLocked) return;
     const amount = parseInt(moneyAmount);
     if (amount > 0) {
       addMoney(amount);

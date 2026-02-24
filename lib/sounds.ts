@@ -198,6 +198,41 @@ export function playGift() {
   setTimeout(() => playTone(1800, 0.15, "sine", 0.1), 200);
 }
 
+export function playPokedexRegister() {
+  // Stage 1: Rising mystery build-up (0-400ms)
+  const riseNotes = [330, 392, 440, 494, 523];
+  riseNotes.forEach((freq, i) => {
+    setTimeout(() => playTone(freq, 0.18, "sine", 0.06 + i * 0.01), i * 80);
+  });
+
+  // Stage 2: Rapid shimmer burst (400-700ms)
+  for (let i = 0; i < 6; i++) {
+    setTimeout(() => {
+      playTone(1200 + i * 100, 0.06, "sine", 0.07);
+    }, 400 + i * 50);
+  }
+
+  // Stage 3: Triumphant fanfare chord (700ms)
+  setTimeout(() => {
+    playTone(784, 0.4, "square", 0.09);  // G5
+    playTone(988, 0.4, "square", 0.07);  // B5
+    playTone(1175, 0.4, "square", 0.06); // D6
+  }, 700);
+
+  // Stage 4: Final ascending resolution (1000ms)
+  setTimeout(() => {
+    playTone(1047, 0.5, "sine", 0.1);  // C6
+    playTone(1319, 0.5, "sine", 0.08); // E6
+    playTone(1568, 0.5, "sine", 0.06); // G6
+  }, 1000);
+
+  // Stage 5: Shimmering tail (1400ms)
+  setTimeout(() => {
+    playTone(2093, 0.3, "sine", 0.04); // C7
+    playTone(2349, 0.3, "sine", 0.03); // D7
+  }, 1400);
+}
+
 export function playLevelUp() {
   // Rising arpeggio
   const notes = [523, 659, 784, 988, 1175];
