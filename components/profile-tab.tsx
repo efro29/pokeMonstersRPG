@@ -36,7 +36,6 @@ import {
   Crosshair,
   Compass,
   Flame,
-  Zap,
 } from "lucide-react";
 import { playBadgeObtained, playBadgeRemoved, playButtonClick } from "@/lib/sounds";
 import { TrainerAvatar } from "@/components/trainer-avatar";
@@ -258,14 +257,6 @@ export function ProfileTab() {
               const nextLegendaryId = STREAK_LEGENDARY_IDS[nextMilestoneLegIdx] ?? null;
               const nextLegendary = nextLegendaryId ? getPokemon(nextLegendaryId) : null;
 
-              // All unlocked legendaries
-              const unlockedLegendaries = unlockedDays.map((day) => {
-                const idx = day / 30 - 1;
-                const id = STREAK_LEGENDARY_IDS[idx];
-                const pokemon = id ? getPokemon(id) : null;
-                return { day, pokemon };
-              });
-
               const streakColor = !streakActive && streak > 0 ? "#EF4444" : streak >= 7 ? "#F97316" : "#F59E0B";
 
               return (
@@ -358,29 +349,6 @@ export function ProfileTab() {
                       <span className="text-[9px] text-muted-foreground font-mono">Marco: {nextMilestone} dias</span>
                     </div>
                   </div>
-
-                  {/* Unlocked legendaries */}
-                  {unlockedLegendaries.length > 0 && (
-                    <div className="px-3 pb-3">
-                      <div className="flex items-center gap-1 mb-1.5">
-                        <Zap className="w-3 h-3 text-amber-400" />
-                        <span className="text-[10px] font-semibold text-amber-400">Lendarios Desbloqueados</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {unlockedLegendaries.map(({ day, pokemon }) => (
-                          <div
-                            key={day}
-                            className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
-                            style={{ background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", color: "#F59E0B" }}
-                          >
-                            <Star className="w-2.5 h-2.5" />
-                            <span className="capitalize">{pokemon?.name ?? `Lendario ${day / 30}`}</span>
-                            <span className="opacity-60">({day}d)</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                   {/* No capture today warning */}
                   {!capturedToday && (
