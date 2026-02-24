@@ -101,6 +101,8 @@ export interface TrainerProfile {
   dailyStreak: number;
   lastCaptureDate: string | null; // ISO date string YYYY-MM-DD
   legendaryUnlockedDays: number[]; // which 30-day milestones were unlocked (30, 60, 90...)
+  // Weekly events
+  weeklyEventProgress: WeeklyEventProgress | null;
 }
 
 /** XP required for a given trainer level */
@@ -250,6 +252,181 @@ export function computeStreakUpdate(
   }
 
   return { newStreak, milestoneReached, legendaryId, streakBroken };
+}
+
+// ---- Weekly Events System ----
+export interface WeeklyMission {
+  id: string;
+  description: string;
+  target: number;
+  type: "catch_type" | "catch_one_ball" | "catch_total" | "catch_unique";
+  pokemonType?: string; // for catch_type missions
+}
+
+export interface WeeklyEvent {
+  id: string;
+  title: string;
+  missions: WeeklyMission[];
+  rewardMoney: number;
+  rewardItems: { itemId: string; itemName: string; quantity: number }[];
+  rewardPokemonId: number; // rare/trade-evo Pokemon reward
+  rewardPokemonLevel: number;
+}
+
+export interface WeeklyEventProgress {
+  eventId: string;
+  weekKey: string; // e.g. "2026-W09"
+  missionProgress: Record<string, number>; // missionId -> current progress
+  completed: boolean;
+  rewardClaimed: boolean;
+}
+
+/** Get the current ISO week key (YYYY-Www) */
+export function getCurrentWeekKey(): string {
+  const d = new Date();
+  const dayOfYear = Math.floor((d.getTime() - new Date(d.getFullYear(), 0, 1).getTime()) / 86400000);
+  const weekNum = Math.ceil((dayOfYear + new Date(d.getFullYear(), 0, 1).getDay() + 1) / 7);
+  return `${d.getFullYear()}-W${String(weekNum).padStart(2, "0")}`;
+}
+
+/** All possible weekly event templates (rotated weekly) */
+const WEEKLY_EVENT_POOL: WeeklyEvent[] = [
+  {
+    id: "bug_hunter",
+    title: "Cacador de Insetos",
+    missions: [
+      { id: "bug_10", description: "Capture 10 Pokemon tipo Inseto", target: 10, type: "catch_type", pokemonType: "bug" },
+      { id: "one_ball_3", description: "Capture 3 Pokemon seguidos com 1 pokebola", target: 3, type: "catch_one_ball" },
+      { id: "catch_5", description: "Capture 5 Pokemon no total", target: 5, type: "catch_total" },
+    ],
+    rewardMoney: 1500,
+    rewardItems: [
+      { itemId: "great-ball", itemName: "Great Ball", quantity: 5 },
+      { itemId: "super-potion", itemName: "Super Pocao", quantity: 3 },
+    ],
+    rewardPokemonId: 123, // Scyther (raro)
+    rewardPokemonLevel: 15,
+  },
+  {
+    id: "water_master",
+    title: "Mestre das Aguas",
+    missions: [
+      { id: "water_8", description: "Capture 8 Pokemon tipo Agua", target: 8, type: "catch_type", pokemonType: "water" },
+      { id: "one_ball_4", description: "Capture 4 Pokemon seguidos com 1 pokebola", target: 4, type: "catch_one_ball" },
+      { id: "catch_6", description: "Capture 6 Pokemon no total", target: 6, type: "catch_total" },
+    ],
+    rewardMoney: 1500,
+    rewardItems: [
+      { itemId: "ultra-ball", itemName: "Ultra Ball", quantity: 3 },
+      { itemId: "potion", itemName: "Pocao", quantity: 5 },
+    ],
+    rewardPokemonId: 131, // Lapras (raro)
+    rewardPokemonLevel: 15,
+  },
+  {
+    id: "fire_fury",
+    title: "Furia do Fogo",
+    missions: [
+      { id: "fire_7", description: "Capture 7 Pokemon tipo Fogo", target: 7, type: "catch_type", pokemonType: "fire" },
+      { id: "one_ball_2", description: "Capture 2 Pokemon seguidos com 1 pokebola", target: 2, type: "catch_one_ball" },
+      { id: "catch_8", description: "Capture 8 Pokemon no total", target: 8, type: "catch_total" },
+    ],
+    rewardMoney: 2000,
+    rewardItems: [
+      { itemId: "great-ball", itemName: "Great Ball", quantity: 4 },
+      { itemId: "rare-candy", itemName: "Rare Candy", quantity: 1 },
+    ],
+    rewardPokemonId: 126, // Magmar (raro)
+    rewardPokemonLevel: 15,
+  },
+  {
+    id: "ghost_whisper",
+    title: "Sussurro Fantasma",
+    missions: [
+      { id: "ghost_5", description: "Capture 5 Pokemon tipo Fantasma", target: 5, type: "catch_type", pokemonType: "ghost" },
+      { id: "one_ball_5", description: "Capture 5 Pokemon seguidos com 1 pokebola", target: 5, type: "catch_one_ball" },
+      { id: "catch_7", description: "Capture 7 Pokemon no total", target: 7, type: "catch_total" },
+    ],
+    rewardMoney: 2000,
+    rewardItems: [
+      { itemId: "ultra-ball", itemName: "Ultra Ball", quantity: 2 },
+      { itemId: "super-potion", itemName: "Super Pocao", quantity: 4 },
+    ],
+    rewardPokemonId: 93, // Haunter (evolui por troca -> Gengar)
+    rewardPokemonLevel: 20,
+  },
+  {
+    id: "rock_solid",
+    title: "Solido como Pedra",
+    missions: [
+      { id: "rock_6", description: "Capture 6 Pokemon tipo Pedra", target: 6, type: "catch_type", pokemonType: "rock" },
+      { id: "one_ball_3b", description: "Capture 3 Pokemon seguidos com 1 pokebola", target: 3, type: "catch_one_ball" },
+      { id: "catch_10", description: "Capture 10 Pokemon no total", target: 10, type: "catch_total" },
+    ],
+    rewardMoney: 1800,
+    rewardItems: [
+      { itemId: "great-ball", itemName: "Great Ball", quantity: 6 },
+      { itemId: "potion", itemName: "Pocao", quantity: 5 },
+    ],
+    rewardPokemonId: 75, // Graveler (evolui por troca -> Golem)
+    rewardPokemonLevel: 20,
+  },
+  {
+    id: "psychic_mind",
+    title: "Mente Psiquica",
+    missions: [
+      { id: "psychic_6", description: "Capture 6 Pokemon tipo Psiquico", target: 6, type: "catch_type", pokemonType: "psychic" },
+      { id: "one_ball_4b", description: "Capture 4 Pokemon seguidos com 1 pokebola", target: 4, type: "catch_one_ball" },
+      { id: "catch_7b", description: "Capture 7 Pokemon no total", target: 7, type: "catch_total" },
+    ],
+    rewardMoney: 2500,
+    rewardItems: [
+      { itemId: "ultra-ball", itemName: "Ultra Ball", quantity: 3 },
+      { itemId: "rare-candy", itemName: "Rare Candy", quantity: 1 },
+    ],
+    rewardPokemonId: 64, // Kadabra (evolui por troca -> Alakazam)
+    rewardPokemonLevel: 20,
+  },
+  {
+    id: "fighting_spirit",
+    title: "Espirito de Luta",
+    missions: [
+      { id: "fighting_5", description: "Capture 5 Pokemon tipo Lutador", target: 5, type: "catch_type", pokemonType: "fighting" },
+      { id: "one_ball_3c", description: "Capture 3 Pokemon seguidos com 1 pokebola", target: 3, type: "catch_one_ball" },
+      { id: "catch_9", description: "Capture 9 Pokemon no total", target: 9, type: "catch_total" },
+    ],
+    rewardMoney: 2000,
+    rewardItems: [
+      { itemId: "great-ball", itemName: "Great Ball", quantity: 5 },
+      { itemId: "super-potion", itemName: "Super Pocao", quantity: 3 },
+    ],
+    rewardPokemonId: 67, // Machoke (evolui por troca -> Machamp)
+    rewardPokemonLevel: 20,
+  },
+  {
+    id: "electric_storm",
+    title: "Tempestade Eletrica",
+    missions: [
+      { id: "electric_7", description: "Capture 7 Pokemon tipo Eletrico", target: 7, type: "catch_type", pokemonType: "electric" },
+      { id: "one_ball_2b", description: "Capture 2 Pokemon seguidos com 1 pokebola", target: 2, type: "catch_one_ball" },
+      { id: "catch_6b", description: "Capture 6 Pokemon no total", target: 6, type: "catch_total" },
+    ],
+    rewardMoney: 1800,
+    rewardItems: [
+      { itemId: "ultra-ball", itemName: "Ultra Ball", quantity: 2 },
+      { itemId: "potion", itemName: "Pocao", quantity: 5 },
+    ],
+    rewardPokemonId: 125, // Electabuzz (raro)
+    rewardPokemonLevel: 15,
+  },
+];
+
+/** Get the current week's event (deterministic rotation based on week number) */
+export function getCurrentWeeklyEvent(): WeeklyEvent {
+  const weekKey = getCurrentWeekKey();
+  const weekNum = parseInt(weekKey.split("-W")[1], 10);
+  const idx = weekNum % WEEKLY_EVENT_POOL.length;
+  return WEEKLY_EVENT_POOL[idx];
 }
 
 /** Compute trainer defense from attributes + level */
@@ -500,6 +677,9 @@ interface GameState {
   addExplorationXp: (amount: number) => ExplorationReward[];
   // Daily streak system
   registerDailyCapture: () => StreakUpdateResult;
+  // Weekly events
+  trackWeeklyCapture: (pokemonTypes: string[], ballsUsed: number) => void;
+  claimWeeklyEventReward: () => boolean;
   // Pokemon attribute modifications
   applyFaintPenaltyToPokemon: (uid: string) => void;
   applyLevelUpBonusToPokemon: (uid: string) => void;
@@ -566,6 +746,7 @@ export const useGameStore = create<GameState>()(
         dailyStreak: 0,
         lastCaptureDate: null,
         legendaryUnlockedDays: [],
+        weeklyEventProgress: null,
       },
       team: [],
       reserves: [],
@@ -1553,6 +1734,101 @@ export const useGameStore = create<GameState>()(
         });
 
         return result;
+      },
+
+      // Weekly events
+      trackWeeklyCapture: (pokemonTypes, ballsUsed) => {
+        const weekKey = getCurrentWeekKey();
+        const event = getCurrentWeeklyEvent();
+        const { trainer } = get();
+        let progress = trainer.weeklyEventProgress;
+
+        // Initialize or reset if different week/event
+        if (!progress || progress.weekKey !== weekKey || progress.eventId !== event.id) {
+          progress = {
+            eventId: event.id,
+            weekKey,
+            missionProgress: {},
+            completed: false,
+            rewardClaimed: false,
+          };
+        }
+
+        if (progress.completed) return;
+
+        const newProgress = { ...progress.missionProgress };
+
+        for (const mission of event.missions) {
+          const current = newProgress[mission.id] ?? 0;
+          if (current >= mission.target) continue;
+
+          if (mission.type === "catch_type" && mission.pokemonType) {
+            if (pokemonTypes.includes(mission.pokemonType)) {
+              newProgress[mission.id] = current + 1;
+            }
+          } else if (mission.type === "catch_one_ball") {
+            if (ballsUsed === 1) {
+              newProgress[mission.id] = current + 1;
+            } else {
+              // Reset — must be consecutive single-ball catches
+              newProgress[mission.id] = 0;
+            }
+          } else if (mission.type === "catch_total") {
+            newProgress[mission.id] = current + 1;
+          }
+        }
+
+        // Check if all missions complete
+        const allDone = event.missions.every(
+          (m) => (newProgress[m.id] ?? 0) >= m.target
+        );
+
+        set({
+          trainer: {
+            ...get().trainer,
+            weeklyEventProgress: {
+              ...progress,
+              missionProgress: newProgress,
+              completed: allDone,
+            },
+          },
+        });
+      },
+
+      claimWeeklyEventReward: () => {
+        const { trainer } = get();
+        const progress = trainer.weeklyEventProgress;
+        if (!progress || !progress.completed || progress.rewardClaimed) return false;
+
+        const event = getCurrentWeeklyEvent();
+        if (event.id !== progress.eventId) return false;
+
+        // Grant money
+        const newMoney = trainer.money + event.rewardMoney;
+
+        // Grant items
+        for (const item of event.rewardItems) {
+          get().addBagItem(item.itemId, item.quantity);
+        }
+
+        // Grant Pokemon reward
+        const rewardPokemon = getPokemon(event.rewardPokemonId);
+        if (rewardPokemon) {
+          get().addToTeamWithLevel(rewardPokemon, event.rewardPokemonLevel);
+        }
+
+        set({
+          trainer: {
+            ...get().trainer,
+            money: newMoney,
+            weeklyEventProgress: {
+              ...progress,
+              rewardClaimed: true,
+            },
+          },
+        });
+
+        return true;
       },
 
       // Pokemon attribute modifications
