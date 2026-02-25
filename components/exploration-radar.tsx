@@ -973,8 +973,6 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
                 loading="lazy"
               />
             </div>
-              )}
-            </div>
 
             {/* Info */}
             <div className="flex flex-col items-center gap-1">
