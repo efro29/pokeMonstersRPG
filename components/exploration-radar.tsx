@@ -7,6 +7,7 @@ import type { PokemonSpecies, PokemonType } from "@/lib/pokemon-data";
 import { Button } from "@/components/ui/button";
 import { useGameStore, BABY_POKEMON_IDS, rollRandomEgg, MAX_EGGS, EGG_TIER_COLORS } from "@/lib/game-store";
 import type { PokemonEgg } from "@/lib/game-store";
+import { useModeStore } from "@/lib/mode-store";
 import { playButtonClick, playGift, playBuy } from "@/lib/sounds";
 
 // ─── Regras do Radar ───────────────────────────────────────
@@ -286,6 +287,7 @@ interface ExplorationRadarProps {
 
 export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
   const { addMoney, addBagItem, addEgg, eggs, bag } = useGameStore();
+  const { activeProfileId, getDiscoveredForProfile } = useModeStore();
   const [energy, setEnergy] = useState<RadarEnergy>(loadEnergy);
   const [scanning, setScanning] = useState(false);
   const [blips, setBlips] = useState<RadarBlip[]>([]);
@@ -300,6 +302,13 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
   // Bateria na bolsa (para mostrar botão de ativar)
   const bagBatteryCount = bag.find((i) => i.itemId === "radar-battery")?.quantity ?? 0;
   const canActivateBattery = bagBatteryCount > 0 && !energy.batteryActive;
+
+  // Check if pokemon is discovered
+  const isDiscovered = (pokemonId: number): boolean => {
+    if (!activeProfileId) return false;
+    const discovered = getDiscoveredForProfile(activeProfileId);
+    return discovered.includes(pokemonId);
+  };
 
   // ── Recuperação de energia (a cada 5 min, apenas no modo normal sem bateria) ──
   useEffect(() => {
@@ -931,35 +940,54 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
                 className="absolute -inset-6 rounded-full blur-2xl opacity-30"
                 style={{ backgroundColor: TYPE_COLORS[selectedBlip.pokemon.types[0] as PokemonType] }}
               />
-              <img
-                src={getSpriteUrl(selectedBlip.pokemon.id)}
-                alt={selectedBlip.pokemon.name}
-                width={80}
-                height={80}
-                className="relative z-10 pixelated drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)]"
-                crossOrigin="anonymous"
-                loading="lazy"
-              />
+              {isDiscovered(selectedBlip.pokemon.id) ? (
+                // Pokemon descoberto - mostrar sprite normal
+                <img
+                  src={getSpriteUrl(selectedBlip.pokemon.id)}
+                  alt={selectedBlip.pokemon.name}
+                  width={80}
+                  height={80}
+                  className="relative z-10 pixelated drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)]"
+                  crossOrigin="anonymous"
+                  loading="lazy"
+                />
+              ) : (
+                // Pokemon não descoberto - mostrar silhueta
+                <div className="relative z-10 w-20 h-20 rounded-lg flex items-center justify-center drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)]" style={{ background: "rgba(0,0,0,0.4)" }}>
+                  <svg width="60" height="60" viewBox="0 0 100 100" className="opacity-60">
+                    <ellipse cx="50" cy="65" rx="30" ry="20" fill="rgba(255,255,255,0.3)" />
+                    <circle cx="50" cy="35" r="20" fill="rgba(255,255,255,0.3)" />
+                    <circle cx="40" cy="28" r="4" fill="rgba(255,255,255,0.4)" />
+                    <circle cx="60" cy="28" r="4" fill="rgba(255,255,255,0.4)" />
+                  </svg>
+                </div>
+              )}
             </div>
 
             {/* Info */}
             <div className="flex flex-col items-center gap-1">
               <span className="text-xs text-muted-foreground font-mono">
-                #{String(selectedBlip.pokemon.id).padStart(3, "0")}
+                {isDiscovered(selectedBlip.pokemon.id) ? `#${String(selectedBlip.pokemon.id).padStart(3, "0")}` : "???"}
               </span>
               <span className="text-base font-bold text-foreground capitalize">
-                {selectedBlip.pokemon.name}
+                {isDiscovered(selectedBlip.pokemon.id) ? selectedBlip.pokemon.name : "Pokemon Desconhecido"}
               </span>
               <div className="flex gap-1.5">
-                {selectedBlip.pokemon.types.map((t) => (
-                  <span
-                    key={t}
-                    className="text-[9px] px-2 py-0.5 rounded-full font-semibold tracking-wide"
-                    style={{ backgroundColor: TYPE_COLORS[t as PokemonType], color: "#fff" }}
-                  >
-                    {t.toUpperCase()}
+                {isDiscovered(selectedBlip.pokemon.id) ? (
+                  selectedBlip.pokemon.types.map((t) => (
+                    <span
+                      key={t}
+                      className="text-[9px] px-2 py-0.5 rounded-full font-semibold tracking-wide"
+                      style={{ backgroundColor: TYPE_COLORS[t as PokemonType], color: "#fff" }}
+                    >
+                      {t.toUpperCase()}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-[9px] px-2 py-0.5 rounded-full font-semibold tracking-wide text-muted-foreground" style={{ background: "rgba(255,255,255,0.08)" }}>
+                    TIPO DESCONHECIDO
                   </span>
-                ))}
+                )}
               </div>
             </div>
 
