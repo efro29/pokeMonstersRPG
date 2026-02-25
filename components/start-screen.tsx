@@ -169,7 +169,7 @@ export function StartScreen({
           className="text-xs text-center mb-10"
           style={{ color: "rgba(255,255,255,0.4)" }}
         >
-          Tabletop RPG Companion App 
+          Tabletop RPG Companion App 2.1
 
         </motion.p>
 
