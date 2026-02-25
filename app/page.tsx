@@ -603,7 +603,7 @@ export default function Page() {
       </header>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-hidden">
+      <div  className="flex-1  overflow-hidden">
         {activeTab === "profile" && <ProfileTab />}
         {activeTab === "team" && <TeamTab onStartBattle={(uid) => startBattle(uid)} onSwitchToPokedex={() => setActiveTab("pokedex")} />}
         {activeTab === "bag" && <BagTab />}
@@ -622,7 +622,7 @@ export default function Page() {
       </div>
 
       {/* Bottom tab bar */}
-        <nav className="relative w-full   ">
+        <nav style={{zIndex:200}} className="relative w-full   ">
             <div
               className="relative items-end bg-[#011a3b] shadow-2xl   overflow-visible"
               style={{

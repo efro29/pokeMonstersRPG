@@ -9,12 +9,18 @@ import { useGameStore, BABY_POKEMON_IDS, rollRandomEgg, MAX_EGGS, EGG_TIER_COLOR
 import type { PokemonEgg } from "@/lib/game-store";
 import { useModeStore } from "@/lib/mode-store";
 import { playButtonClick, playGift, playBuy } from "@/lib/sounds";
+import { ScanIcon } from "lucide-react";
 
 // ─── Regras do Radar ───────────────────────────────────────
 const MAX_ENERGY = 4;
 const BATTERY_ENERGY = 10;
 const ENERGY_RECOVERY_MS = 5 * 60 * 1000; // 5 minutos
-const SCAN_DURATION_MS = 8_000; // 8 segundos (animação visível, mas < 1 min)
+const MIN = 1_000; // 1 segundo
+const MAX = 8_000; // 8 segundos
+
+const SCAN_DURATION_MS = Math.floor(
+  Math.random() * (MAX - MIN + 1)
+) + MIN;
 const MAX_POKEMON_PER_SCAN = 5;
 
 // Legendários / Míticos – nunca aparecem no radar
@@ -372,7 +378,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
           return prev;
         }
         const mins = Math.floor(remaining / 60000);
-        const secs = Math.floor((remaining % 60000) / 1000);
+        const secs = Math.floor((remaining % 60000) / 3000);
         setRecoveryTimer(`${mins}:${String(secs).padStart(2, "0")}`);
         return prev;
       });
@@ -407,11 +413,11 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
         setBlips([giftBlip]);
         playGift();
         setScanMessage("1 presente detectado!");
-        setTimeout(() => setScanMessage(null), 4000);
+        setTimeout(() => setScanMessage(null), 1000);
         return;
       }
       setScanMessage("Nenhum Pokemon detectado nesta area...");
-      setTimeout(() => setScanMessage(null), 5000);
+      setTimeout(() => setScanMessage(null), 1000);
       return;
     }
 
@@ -468,7 +474,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
     if (giftCount > 0) parts.push(`${giftCount} presente${giftCount > 1 ? "s" : ""}`);
     if (eggCount > 0) parts.push(`${eggCount} ovo${eggCount > 1 ? "s" : ""}`);
     setScanMessage(parts.length > 0 ? `${parts.join(" e ")} detectado${pokemonCount + giftCount + eggCount > 1 ? "s" : ""}!` : "Nenhum Pokemon detectado nesta area...");
-    setTimeout(() => setScanMessage(null), 4000);
+    setTimeout(() => setScanMessage(null), 1000);
   }, []);
 
   // ── Iniciar scan ──
@@ -476,7 +482,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
     if (scanning) return;
     if (energy.charges <= 0) {
       setScanMessage("Sem energia! Aguarde a recarga.");
-      setTimeout(() => setScanMessage(null), 3000);
+      setTimeout(() => setScanMessage(null), 1000);
       return;
     }
 
@@ -546,7 +552,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
         playGift();
         setClaimedEgg(blip.egg);
         setBlips((prev) => prev.filter((b) => b.id !== blip.id));
-        setTimeout(() => setClaimedEgg(null), 4000);
+        setTimeout(() => setClaimedEgg(null), 1000);
       }
       return;
     }
@@ -562,7 +568,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
       playBuy();
       setClaimedGift(blip.giftKit);
       setBlips((prev) => prev.filter((b) => b.id !== blip.id));
-      setTimeout(() => setClaimedGift(null), 4000);
+      setTimeout(() => setClaimedGift(null), 1000);
     } else {
       setSelectedBlip(blip);
     }
@@ -585,29 +591,36 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
       {/* Titulo + Energia */}
       <div className="flex items-center justify-between w-full max-w-sm">
         <div className="flex flex-col">
-          <h2 className="text-sm font-bold text-foreground tracking-wide">Radar de Exploracao</h2>
-          <p className="text-[10px] text-muted-foreground">
+          {/* <h2 className="text-sm font-bold text-foreground tracking-wide">Radar de Exploracao</h2> */}
+          {/* <p className="text-[10px] text-muted-foreground">
             {isNightTime() ? "Modo noturno ativo" : "Modo diurno"}
             {" — "}
-            {energy.batteryActive
-              ? <span style={{ color: "#EAB308" }}>{energy.charges}/{BATTERY_ENERGY} (Bateria)</span>
-              : <span>{energy.charges}/{MAX_ENERGY} cargas</span>
-            }
-          </p>
+            
+          </p> */}
         </div>
 
         {/* Bateria com raio */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center">
           {recoveryTimer && !energy.batteryActive && (
-            <span className="text-[10px] text-muted-foreground font-mono">{recoveryTimer}</span>
+            <span style={{paddingRight:5}} className="text-[10px] text-muted-foreground font-mono">{recoveryTimer}</span>
           )}
-          {energy.batteryActive && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(234,179,8,0.15)", color: "#EAB308" }}>
-              ⚡ BATERIA
+          {/* {energy.batteryActive && (
+            <span  className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(234,179,8,0.15)", color: "#EAB308" }}>
+              ⚡SUPER BATERIA
+              
             </span>
-          )}
-          <BatteryIcon charges={energy.charges} max={energy.batteryActive ? BATTERY_ENERGY : MAX_ENERGY} />
+
+          )} */}
+          <BatteryIcon charges={energy.charges} max={energy.batteryActive ? BATTERY_ENERGY : MAX_ENERGY} /> 
+          {energy.batteryActive
+              ? <span style={{ color: "#EAB308",fontSize:10,paddingLeft:2}}>{energy.charges/BATTERY_ENERGY*100}%</span>
+              : <span style={{ color: "#595753",fontSize:10,paddingLeft:2}}>{energy.charges/MAX_ENERGY*100}%</span>
+            }
+  
+ 
+
         </div>
+        
       </div>
 
       {/* Mensagem */}
@@ -617,8 +630,8 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="text-xs font-medium text-center px-3 py-1.5 rounded-lg"
-            style={{ backgroundColor: "rgba(34,197,94,0.15)", color: "#22C55E" }}
+            className="absolute text-xs font-medium text-center px-3 py-1.5 rounded-lg"
+            style={{ backgroundColor: "rgb(0, 3, 1)", color: "#22C55E",top:270,zIndex:77 }}
           >
             {scanMessage}
           </motion.p>
@@ -627,7 +640,8 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
 
       {/* Radar circular */}
       <div
-        className="relative shrink-0"
+      
+        className="z-20 relative shrink-0"
         style={{ width: radarSize, height: radarSize }}
       >
         {/* Fundo do radar */}
@@ -635,7 +649,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
           width={radarSize}
           height={radarSize}
           viewBox={`0 0 ${radarSize} ${radarSize}`}
-          className="absolute inset-0"
+          className="absolute inset-0 "
         >
           {/* Círculos concêntricos */}
           {[0.25, 0.5, 0.75, 1].map((r) => (
@@ -653,8 +667,8 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
           <line x1={center} y1={4} x2={center} y2={radarSize - 4} stroke="rgba(34,197,94,0.1)" strokeWidth={1} />
           <line x1={4} y1={center} x2={radarSize - 4} y2={center} stroke="rgba(34,197,94,0.1)" strokeWidth={1} />
           {/* Ponto central (treinador) */}
-          <circle cx={center} cy={center} r={4} fill="#22C55E" opacity={0.9} />
-          <circle cx={center} cy={center} r={7} fill="none" stroke="#22C55E" strokeWidth={1} opacity={0.4} />
+          <circle cx={center} cy={center} r={4} fill="#1a3c26" opacity={0.9} />
+          <circle cx={center} cy={center} r={7} fill="none" stroke="#102216" strokeWidth={1} opacity={0.4} />
         </svg>
 
         {/* Sweep de scan (linha giratória) */}
@@ -768,14 +782,14 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
         <div
           className="absolute inset-0 rounded-full pointer-events-none"
           style={{
-            border: "2px solid rgba(34,197,94,0.3)",
+            border: "2px solid rgba(118, 255, 6, 0.3)",
             boxShadow: "0 0 20px rgba(34,197,94,0.1), inset 0 0 30px rgba(0,0,0,0.4)",
           }}
         />
       </div>
 
       {/* Progress bar during scan */}
-      {scanning && (
+      {/* {scanning && (
         <div className="w-full max-w-sm">
           <div className="flex items-center justify-between mb-1">
             <span className="text-[10px] text-muted-foreground">Escaneando...</span>
@@ -792,15 +806,18 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
             />
           </div>
         </div>
-      )}
+      )} */}
+
+
 
       {/* Botão de scan */}
-      <Button
+      <div style={{display:"flex",justifyContent:"space-between", gap:8,width:'100%'}}>
+            <Button
         onClick={startScan}
         disabled={scanning || energy.charges <= 0}
-        className="w-full max-w-sm h-12 text-sm font-bold relative overflow-hidden"
+        className="w-full  h-12 text-sm font-bold relative overflow-hidden"
         style={{
-          backgroundColor: scanning ? "rgba(34,197,94,0.15)" : energy.charges > 0 ? "#22C55E" : "rgba(255,255,255,0.08)",
+          backgroundColor: scanning ? "rgba(16, 80, 148, 0.15)" : energy.charges > 0 ? "#22C55E" : "rgba(255,255,255,0.08)",
           color: energy.charges > 0 ? "#fff" : "rgba(255,255,255,0.4)",
         }}
       >
@@ -811,15 +828,42 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             />
-            Escaneando...
+            Escaneando
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <RadarIcon />
-            {energy.charges > 0 ? "Iniciar Scan" : "Sem Energia"}
+                      <RadarIcon/>
+            {energy.charges > 0 ? "Iniciar" : "Sem Energia"}
           </span>
         )}
       </Button>
+
+    
+          <>
+          <Button
+          disabled={    selectedBlip && selectedBlip.pokemon ?false:true}
+            onClick={handleCapture}
+                  className="w-full max-w-sm h-12 text-sm font-bold relative overflow-hidden animate"
+            style={{ backgroundColor:selectedBlip && selectedBlip.pokemon ?"#c88941": "#333645" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 100 100" className="mr-2">
+              <circle cx="50" cy="50" r="48" fill={selectedBlip && selectedBlip.pokemon ?"#EF4444":"#1E293B"} stroke="#1E293B" strokeWidth="3" />
+              <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
+              <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#F1F5F9" />
+              <circle cx="50" cy="50" r="14" fill="#F1F5F9" stroke="#1E293B" strokeWidth="3" />
+              <circle cx="50" cy="50" r="7" fill="#1E293B" />
+            </svg>
+             { selectedBlip && selectedBlip.pokemon ?"Capturar":""}
+          </Button>
+          
+          
+          </>
+    
+     
+
+        
+      </div>
+  
 
       {/* Painel do presente coletado */}
       <AnimatePresence>
@@ -828,10 +872,10 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            className="w-full max-w-sm rounded-xl border-2 p-4 flex flex-col items-center gap-3"
+            className=" w-full max-w-sm rounded-xl border-2 p-4 flex flex-col items-center gap-3"
             style={{
               borderColor: claimedGift.color,
-              background: `linear-gradient(135deg, rgba(0,0,0,0.7) 0%, ${claimedGift.color}20 100%)`,
+              background: `linear-gradient(135deg, rgb(0, 0, 0) 0%, ${claimedGift.color}20 100%)`,
             }}
           >
             {/* Gift icon */}
@@ -895,7 +939,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <rect x="2" y="7" width="16" height="10" rx="2" ry="2" /><line x1="22" y1="11" x2="22" y2="13" /><line x1="10" y1="11" x2="10" y2="13" />
           </svg>
-          Ativar Bateria ({bagBatteryCount} na bolsa) — 10 cargas
+          Ativar Super Bateria ({bagBatteryCount} na bolsa)
         </button>
       )}
       {energy.batteryActive && bagBatteryCount > 0 && (
@@ -950,25 +994,22 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="w-full max-w-sm rounded-xl border p-4 flex flex-col items-center gap-3"
+            className="absolute z-0  w-full max-w-sm rounded-xl  p-4 flex flex-col items-center gap-3"
             style={{
-              borderColor: `${TYPE_COLORS[selectedBlip.pokemon.types[0] as PokemonType]}55`,
-              background: `linear-gradient(135deg, rgba(0,0,0,0.6) 0%, ${TYPE_COLORS[selectedBlip.pokemon.types[0] as PokemonType]}15 100%)`,
-            }}
-          >
+              background: ` ${TYPE_COLORS[selectedBlip.pokemon.types[0] as PokemonType]}15 100%)`, }} >
             {/* Pokemon sprite */}
             <div className="relative">
               <div
-                className="absolute -inset-6 rounded-full blur-2xl opacity-30"
-                style={{ backgroundColor: TYPE_COLORS[selectedBlip.pokemon.types[0] as PokemonType] }}
+                className="absolute -inset-6 rounded-full blur-2xl opacity-60"
+                style={{ backgroundColor: TYPE_COLORS[selectedBlip.pokemon.types[0] as PokemonType] ,top:70}}
               />
               <img
                 src={getSpriteUrl(selectedBlip.pokemon.id)}
                 alt={selectedBlip.pokemon.name}
-                width={80}
-                height={80}
-                className="relative z-10 pixelated drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)]"
-                style={isDiscovered(selectedBlip.pokemon.id) ? {} : { filter: "saturate(0%) brightness(0.2)" }}
+                width={100}
+                height={100}
+                className="relative z-0  pixelated drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)]"
+                style={isDiscovered(selectedBlip.pokemon.id) ? {top:70} : { filter: "saturate(0%) brightness(0.0)" ,top:70}}
                 crossOrigin="anonymous"
                 loading="lazy"
               />
@@ -977,54 +1018,19 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
             {/* Info */}
             <div className="flex flex-col items-center gap-1">
               <span className="text-xs text-muted-foreground font-mono">
-                {isDiscovered(selectedBlip.pokemon.id) ? `#${String(selectedBlip.pokemon.id).padStart(3, "0")}` : "???"}
+                {isDiscovered(selectedBlip.pokemon.id) ? `#${String(selectedBlip.pokemon.id).padStart(3, "0")}` : ""}
               </span>
-              <span className="text-base font-bold text-foreground capitalize">
-                {isDiscovered(selectedBlip.pokemon.id) ? selectedBlip.pokemon.name : "Pokemon Desconhecido"}
+              <span style={{top:8,zIndex:0}} className="absolute text-base font-bold text-foreground capitalize">
+                {isDiscovered(selectedBlip.pokemon.id) ? selectedBlip.pokemon.name : ""}
               </span>
-              <div className="flex gap-1.5">
-                {isDiscovered(selectedBlip.pokemon.id) ? (
-                  selectedBlip.pokemon.types.map((t) => (
-                    <span
-                      key={t}
-                      className="text-[9px] px-2 py-0.5 rounded-full font-semibold tracking-wide"
-                      style={{ backgroundColor: TYPE_COLORS[t as PokemonType], color: "#fff" }}
-                    >
-                      {t.toUpperCase()}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-[9px] px-2 py-0.5 rounded-full font-semibold tracking-wide text-muted-foreground" style={{ background: "rgba(255,255,255,0.08)" }}>
-                    TIPO DESCONHECIDO
-                  </span>
-                )}
-              </div>
+              
+             
             </div>
 
             {/* Botão capturar */}
-            {onStartCapture && (
-              <Button
-                onClick={handleCapture}
-                className="w-full text-white font-bold mt-1"
-                style={{ backgroundColor: "#EF4444" }}
-              >
-                <svg width="16" height="16" viewBox="0 0 100 100" className="mr-2">
-                  <circle cx="50" cy="50" r="48" fill="#EF4444" stroke="#1E293B" strokeWidth="3" />
-                  <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
-                  <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#F1F5F9" />
-                  <circle cx="50" cy="50" r="14" fill="#F1F5F9" stroke="#1E293B" strokeWidth="3" />
-                  <circle cx="50" cy="50" r="7" fill="#1E293B" />
-                </svg>
-                Tentar Capturar
-              </Button>
-            )}
+       
 
-            <button
-              onClick={() => setSelectedBlip(null)}
-              className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Fechar
-            </button>
+       
           </motion.div>
         )}
       </AnimatePresence>
@@ -1058,15 +1064,15 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
 function BatteryIcon({ charges, max, size = 28 }: { charges: number; max: number; size?: number }) {
   const pct = charges / max;
   const barColor = pct > 0.5 ? "#22C55E" : pct > 0.25 ? "#F59E0B" : "#EF4444";
-  const w = size;
+  const w = max == 10?90:size;
   const h = size * 0.55;
 
   return (
     <svg width={w} height={h} viewBox="0 0 40 22" className="shrink-0">
       {/* Corpo da bateria */}
-      <rect x="1" y="3" width="33" height="16" rx="3" ry="3" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground" />
+      <rect x="1" y="3" width={max==10?"80":"33"} height="16" rx="3" ry="3" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground" />
       {/* Terminal da bateria */}
-      <rect x="34" y="7" width="4" height="8" rx="1" fill="currentColor" className="text-muted-foreground" />
+      <rect x={max==10?"80":"34"} y="7" width="4" height="8" rx="1" fill="currentColor" className="text-muted-foreground" />
       {/* Barras de energia */}
       {Array.from({ length: max }).map((_, i) => {
         const barW = 6;
