@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGameStore, ATTRIBUTE_INFO, trainerXpForLevel, explorationXpForLevel, getTodayDateStr, getCurrentWeeklyEvent, getCurrentWeekKey } from "@/lib/game-store";
+import { useGameStore, ATTRIBUTE_INFO, trainerXpForLevel, explorationXpForLevel, getTodayDateStr, getCurrentWeeklyEvent, getCurrentWeekKey, getWeekStartDate } from "@/lib/game-store";
 import { getPokemon } from "@/lib/pokemon-data";
 import { useModeStore } from "@/lib/mode-store";
 import type { TrainerAttributes } from "@/lib/game-store";
@@ -248,13 +248,30 @@ export function ProfileTab() {
               const milestoneProgress = streak % 30;
               const milestonePercent = (milestoneProgress / 30) * 100;
 
-              // Streak broken check
-              let streakActive = true;
-              if (lastDate && lastDate !== today) {
+              // Calculate which day of the week we're on
+              const weekStart = trainer.weekStartDate || getWeekStartDate();
+              const daysIntoCycle: number[] = [];
+              for (let i = 0; i < 7; i++) {
+                const checkDate = new Date(weekStart + "T12:00:00");
+                checkDate.setDate(checkDate.getDate() + i);
+                const checkDateStr = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, "0")}-${String(checkDate.getDate()).padStart(2, "0")}`;
+                daysIntoCycle.push(checkDateStr === lastDate ? 1 : 0);
+              }
+              
+              // Current day of week (0 = Monday, 6 = Sunday)
+              const d = new Date();
+              const dayOfWeek = d.getDay();
+              const currentDayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+              // Check if streak is still active (captured today or yesterday)
+              let streakActive = capturedToday;
+              if (!capturedToday && lastDate) {
                 const last = new Date(lastDate + "T12:00:00");
                 const now = new Date(today + "T12:00:00");
                 const diffDays = Math.round((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
-                if (diffDays > 1) streakActive = false;
+                if (diffDays === 1) {
+                  streakActive = true; // Captured yesterday, streak still alive
+                }
               }
 
               const streakColor = !streakActive && streak > 0 ? "#EF4444" : streak >= 7 ? "#F97316" : "#F59E0B";
@@ -286,13 +303,13 @@ export function ProfileTab() {
                     </div>
                   </div>
 
-                  {/* Streak mini-dots (last 7 days visualization) */}
+                  {/* Streak mini-dots (7 days of week visualization) */}
                   <div className="px-3 pb-2">
                     <div className="flex gap-1.5 items-center">
                       {Array.from({ length: 7 }).map((_, i) => {
-                        const dayNum = streak - (6 - i);
-                        const active = dayNum > 0;
-                        const isToday = i === 6 && capturedToday;
+                        const active = daysIntoCycle[i] === 1;
+                        const isToday = i === currentDayOfWeek && capturedToday;
+                        const streakColor2 = !streakActive && streak > 0 ? "#EF4444" : streak >= 7 ? "#F97316" : "#F59E0B";
                         return (
                           <div
                             key={i}
@@ -303,14 +320,14 @@ export function ProfileTab() {
                               style={{
                                 background: active
                                   ? isToday
-                                    ? `${streakColor}30`
-                                    : `${streakColor}18`
+                                    ? `${streakColor2}30`
+                                    : `${streakColor2}18`
                                   : "rgba(255,255,255,0.04)",
-                                border: `1px solid ${active ? streakColor + "40" : "rgba(255,255,255,0.06)"}`,
+                                border: `1px solid ${active ? streakColor2 + "40" : "rgba(255,255,255,0.06)"}`,
                               }}
                             >
                               {active && (
-                                <Flame className="w-2.5 h-2.5" style={{ color: isToday ? streakColor : streakColor + "80" }} />
+                                <Flame className="w-2.5 h-2.5" style={{ color: isToday ? streakColor2 : streakColor2 + "80" }} />
                               )}
                             </div>
                             <span className="text-[8px] text-muted-foreground font-mono">

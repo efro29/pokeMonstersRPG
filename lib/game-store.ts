@@ -35,7 +35,7 @@ export interface TeamPokemon {
   speciesId: number;
   name: string;
   level: number;
-  type:string[];
+  type: string[];
   xp: number;
   maxHp: number;
   currentHp: number;
@@ -100,6 +100,7 @@ export interface TrainerProfile {
   // Daily streak system
   dailyStreak: number;
   lastCaptureDate: string | null; // ISO date string YYYY-MM-DD
+  weekStartDate: string | null; // ISO date string YYYY-MM-DD - quando a semana atual começou
   legendaryUnlockedDays: number[]; // which 30-day milestones were unlocked (30, 60, 90...)
   // Weekly events
   weeklyEventProgress: WeeklyEventProgress | null;
@@ -209,15 +210,32 @@ export function getTodayDateStr(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/** Returns the Monday of the current week as YYYY-MM-DD */
+export function getWeekStartDate(): string {
+  const d = new Date();
+  // Get current day of week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+  const dayOfWeek = d.getDay();
+  // Calculate days since Monday (0 if today is Monday, 1 if Tuesday, etc.)
+  const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const monday = new Date(d);
+  monday.setDate(monday.getDate() - daysSinceMonday);
+  return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+}
+
 /** Compute streak status given lastCaptureDate and current streak */
 export function computeStreakUpdate(
   currentStreak: number,
   lastCaptureDate: string | null,
+  weekStartDate: string | null,
   legendaryUnlockedDays: number[]
 ): StreakUpdateResult {
   const today = getTodayDateStr();
+  const currentWeekStart = getWeekStartDate();
   let newStreak = currentStreak;
   let streakBroken = false;
+
+  // Check if we're in a new week - if so, reset streak to 0 until they capture today
+  const weekChanged = weekStartDate !== currentWeekStart;
 
   if (!lastCaptureDate) {
     // First ever capture
@@ -225,8 +243,21 @@ export function computeStreakUpdate(
   } else if (lastCaptureDate === today) {
     // Already captured today, no change
     return { newStreak: currentStreak, milestoneReached: null, legendaryId: null, streakBroken: false };
+  } else if (weekChanged) {
+    // New week started - reset to 1 if captured today (which means yesterday was last day of last week)
+    const last = new Date(lastCaptureDate + "T12:00:00");
+    const now = new Date(today + "T12:00:00");
+    const diffDays = Math.round((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) {
+      // Captured yesterday, continuing into new week
+      newStreak = 1;
+    } else {
+      // Gap, reset to 1 (for today)
+      newStreak = 1;
+    }
   } else {
-    // Check if yesterday
+    // Same week - check if consecutive days
     const last = new Date(lastCaptureDate + "T12:00:00");
     const now = new Date(today + "T12:00:00");
     const diffDays = Math.round((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
@@ -234,7 +265,7 @@ export function computeStreakUpdate(
     if (diffDays === 1) {
       newStreak = currentStreak + 1;
     } else {
-      // Streak broken
+      // Streak broken within week
       newStreak = 1;
       streakBroken = true;
     }
@@ -620,6 +651,8 @@ export const SHOP_ITEMS: ShopItem[] = [
   // Rare items
   { id: "rare-candy", name: "Rare Candy", price: 4800, description: "Sobe 1 nivel instantaneamente.", category: "rare" },
   { id: "master-ball", name: "Master Ball", price: 50000, description: "Captura garantida. Rarissima.", category: "rare" },
+  // Radar battery
+  { id: "radar-battery", name: "Bateria do Radar", price: 30000, description: "Carrega o radar com 10 usos. Ao esgotar volta a 4. Acumula na bolsa.", category: "rare" },
 ];
 
 // NPC / Enemy system (master mode)
@@ -864,6 +897,7 @@ export const useGameStore = create<GameState>()(
         explorationLevel: 1,
         dailyStreak: 0,
         lastCaptureDate: null,
+        weekStartDate: null,
         legendaryUnlockedDays: [],
         weeklyEventProgress: null,
       },
@@ -888,20 +922,20 @@ export const useGameStore = create<GameState>()(
         diceRoll: null,
         hitResult: null,
         damageDealt: null,
-  damageBreakdown: null,
+        damageBreakdown: null,
         battleLog: [],
         selectedAttribute: null,
         attributeTestDC: 10,
         attributeTestResult: null,
-  // Card system - finite deck
-  deck: buildDeck(),
-  discardPile: [],
-  cardField: [null, null, null, null, null, null],
-  lastDrawnCard: null,
-  cardTrioEvent: null,
-  cardDrawCount: 0,
-  badLuckPenalty: 0,
-  auraAmplificadaActive: false,
+        // Card system - finite deck
+        deck: buildDeck(),
+        discardPile: [],
+        cardField: [null, null, null, null, null, null],
+        lastDrawnCard: null,
+        cardTrioEvent: null,
+        cardDrawCount: 0,
+        badLuckPenalty: 0,
+        auraAmplificadaActive: false,
         // Card animation
         pokemonAnimationState: {
           isAnimating: false,
@@ -1019,7 +1053,7 @@ export const useGameStore = create<GameState>()(
       },
 
       addToTeam: (species) => {
-  
+
         const { team, reserves } = get();
         const pokemon: TeamPokemon = {
           uid: generateUid(),
@@ -1027,7 +1061,7 @@ export const useGameStore = create<GameState>()(
           name: species.name,
           level: 1,
           xp: 0,
-          type:species.types,
+          type: species.types,
           maxHp: species.baseHp,
           currentHp: species.baseHp,
           moves: species.startingMoves
@@ -1133,15 +1167,15 @@ export const useGameStore = create<GameState>()(
 
       learnMove: (uid, moveId) => {
         const mapLearn = (p: TeamPokemon) => {
-            if (p.uid !== uid) return p;
-            if (p.moves.length >= 4) return p;
-            if (p.moves.some((m) => m.moveId === moveId)) return p;
-            return {
-              ...p,
-              moves: [...p.moves, { moveId, currentPP: 10, maxPP: 10 }],
-              learnableMoves: p.learnableMoves.filter((id) => id !== moveId),
-            };
+          if (p.uid !== uid) return p;
+          if (p.moves.length >= 4) return p;
+          if (p.moves.some((m) => m.moveId === moveId)) return p;
+          return {
+            ...p,
+            moves: [...p.moves, { moveId, currentPP: 10, maxPP: 10 }],
+            learnableMoves: p.learnableMoves.filter((id) => id !== moveId),
           };
+        };
         set({
           team: get().team.map(mapLearn),
           reserves: get().reserves.map(mapLearn),
@@ -1150,13 +1184,13 @@ export const useGameStore = create<GameState>()(
 
       forgetMove: (uid, moveId) => {
         const mapForget = (p: TeamPokemon) => {
-            if (p.uid !== uid) return p;
-            return {
-              ...p,
-              moves: p.moves.filter((m) => m.moveId !== moveId),
-              learnableMoves: [...p.learnableMoves, moveId],
-            };
+          if (p.uid !== uid) return p;
+          return {
+            ...p,
+            moves: p.moves.filter((m) => m.moveId !== moveId),
+            learnableMoves: [...p.learnableMoves, moveId],
           };
+        };
         set({
           team: get().team.map(mapForget),
           reserves: get().reserves.map(mapForget),
@@ -1217,25 +1251,25 @@ export const useGameStore = create<GameState>()(
             newTeam = newTeam.map((p) =>
               p.uid === targetUid
                 ? {
-                    ...p,
-                    moves: p.moves.map((m) =>
-                      m.moveId === moveId
-                        ? { ...m, currentPP: Math.min(m.maxPP, m.currentPP + itemDef.ppRestore!) }
-                        : m
-                    ),
-                  }
+                  ...p,
+                  moves: p.moves.map((m) =>
+                    m.moveId === moveId
+                      ? { ...m, currentPP: Math.min(m.maxPP, m.currentPP + itemDef.ppRestore!) }
+                      : m
+                  ),
+                }
                 : p
             );
           } else {
             newTeam = newTeam.map((p) =>
               p.uid === targetUid
                 ? {
-                    ...p,
-                    moves: p.moves.map((m) => ({
-                      ...m,
-                      currentPP: Math.min(m.maxPP, m.currentPP + itemDef.ppRestore!),
-                    })),
-                  }
+                  ...p,
+                  moves: p.moves.map((m) => ({
+                    ...m,
+                    currentPP: Math.min(m.maxPP, m.currentPP + itemDef.ppRestore!),
+                  })),
+                }
                 : p
             );
           }
@@ -1358,13 +1392,13 @@ export const useGameStore = create<GameState>()(
           team: team.map((p) =>
             p.uid === pokemon.uid
               ? {
-                  ...p,
-                  moves: p.moves.map((m) =>
-                    m.moveId === moveId
-                      ? { ...m, currentPP: m.currentPP - 1 }
-                      : m
-                  ),
-                }
+                ...p,
+                moves: p.moves.map((m) =>
+                  m.moveId === moveId
+                    ? { ...m, currentPP: m.currentPP - 1 }
+                    : m
+                ),
+              }
               : p
           ),
           battle: {
@@ -1511,7 +1545,7 @@ export const useGameStore = create<GameState>()(
             diceRoll: null,
             hitResult: null,
             damageDealt: null,
-  damageBreakdown: null,
+            damageBreakdown: null,
             phase: "menu",
             selectedAttribute: null,
             attributeTestResult: null,
@@ -1534,13 +1568,13 @@ export const useGameStore = create<GameState>()(
         const mapPP = (p: TeamPokemon) =>
           p.uid === uid
             ? {
-                ...p,
-                moves: p.moves.map((m) =>
-                  m.moveId === moveId
-                    ? { ...m, currentPP: Math.min(m.maxPP, m.currentPP + amount) }
-                    : m
-                ),
-              }
+              ...p,
+              moves: p.moves.map((m) =>
+                m.moveId === moveId
+                  ? { ...m, currentPP: Math.min(m.maxPP, m.currentPP + amount) }
+                  : m
+              ),
+            }
             : p;
         set({
           team: get().team.map(mapPP),
@@ -1552,12 +1586,12 @@ export const useGameStore = create<GameState>()(
         const mapAllPP = (p: TeamPokemon) =>
           p.uid === uid
             ? {
-                ...p,
-                moves: p.moves.map((m) => ({
-                  ...m,
-                  currentPP: Math.min(m.maxPP, m.currentPP + amount),
-                })),
-              }
+              ...p,
+              moves: p.moves.map((m) => ({
+                ...m,
+                currentPP: Math.min(m.maxPP, m.currentPP + amount),
+              })),
+            }
             : p;
         set({
           team: get().team.map(mapAllPP),
@@ -1590,16 +1624,16 @@ export const useGameStore = create<GameState>()(
         }
 
         const mapXp = (p: TeamPokemon) =>
-            p.uid === uid
-              ? {
-                  ...p,
-                  xp: newXp,
-                  level: newLevel,
-                  maxHp: p.maxHp + hpGain,
-                  currentHp: Math.min(p.currentHp + hpGain, p.maxHp + hpGain),
-                  customAttributes: levelsGained > 0 ? currentAttrs : p.customAttributes,
-                }
-              : p;
+          p.uid === uid
+            ? {
+              ...p,
+              xp: newXp,
+              level: newLevel,
+              maxHp: p.maxHp + hpGain,
+              currentHp: Math.min(p.currentHp + hpGain, p.maxHp + hpGain),
+              customAttributes: levelsGained > 0 ? currentAttrs : p.customAttributes,
+            }
+            : p;
         set({
           team: team.map(mapXp),
           reserves: reserves.map(mapXp),
@@ -1642,16 +1676,16 @@ export const useGameStore = create<GameState>()(
         }
 
         const mapLevel = (p: TeamPokemon) =>
-            p.uid === uid
-              ? {
-                  ...p,
-                  level,
-                  xp: xpForLevel(level),
-                  maxHp: Math.max(1, p.maxHp + hpChange),
-                  currentHp: Math.max(1, Math.min(p.currentHp + Math.max(0, hpChange), Math.max(1, p.maxHp + hpChange))),
-                  customAttributes: levelDiff > 0 ? currentAttrs : p.customAttributes,
-                }
-              : p;
+          p.uid === uid
+            ? {
+              ...p,
+              level,
+              xp: xpForLevel(level),
+              maxHp: Math.max(1, p.maxHp + hpChange),
+              currentHp: Math.max(1, Math.min(p.currentHp + Math.max(0, hpChange), Math.max(1, p.maxHp + hpChange))),
+              customAttributes: levelDiff > 0 ? currentAttrs : p.customAttributes,
+            }
+            : p;
         set({
           team: team.map(mapLevel),
           reserves: reserves.map(mapLevel),
@@ -1681,28 +1715,28 @@ export const useGameStore = create<GameState>()(
         const species = getPokemon(toSpeciesId);
         if (!species) return;
         const mapEvolve = (p: TeamPokemon) => {
-            if (p.uid !== uid) return p;
-            const hpDiff = species.baseHp - (getPokemon(p.speciesId)?.baseHp || 0);
-            // Add level-based HP bonus
-            const pLevel = p.level ?? 1;
-            const levelBonus = (pLevel - 1) * 3;
-            return {
-              ...p,
-              speciesId: toSpeciesId,
-              name: species.name,
-              maxHp: species.baseHp + levelBonus,
-              currentHp: Math.min(p.currentHp + Math.max(0, hpDiff), species.baseHp + levelBonus),
-              moves: species.startingMoves
-                .filter((id) => getMove(id))
-                .map((id) => {
-                  const existing = p.moves.find((m) => m.moveId === id);
-                  return existing || { moveId: id, currentPP: 10, maxPP: 10 };
-                }),
-              learnableMoves: species.learnableMoves.filter(
-                (id) => !species.startingMoves.includes(id)
-              ),
-            };
+          if (p.uid !== uid) return p;
+          const hpDiff = species.baseHp - (getPokemon(p.speciesId)?.baseHp || 0);
+          // Add level-based HP bonus
+          const pLevel = p.level ?? 1;
+          const levelBonus = (pLevel - 1) * 3;
+          return {
+            ...p,
+            speciesId: toSpeciesId,
+            name: species.name,
+            maxHp: species.baseHp + levelBonus,
+            currentHp: Math.min(p.currentHp + Math.max(0, hpDiff), species.baseHp + levelBonus),
+            moves: species.startingMoves
+              .filter((id) => getMove(id))
+              .map((id) => {
+                const existing = p.moves.find((m) => m.moveId === id);
+                return existing || { moveId: id, currentPP: 10, maxPP: 10 };
+              }),
+            learnableMoves: species.learnableMoves.filter(
+              (id) => !species.startingMoves.includes(id)
+            ),
           };
+        };
         set({
           team: team.map(mapEvolve),
           reserves: reserves.map(mapEvolve),
@@ -1879,9 +1913,10 @@ export const useGameStore = create<GameState>()(
         const { trainer } = get();
         const currentStreak = trainer.dailyStreak ?? 0;
         const lastCaptureDate = trainer.lastCaptureDate ?? null;
+        const weekStartDate = trainer.weekStartDate ?? null;
         const legendaryUnlockedDays = trainer.legendaryUnlockedDays ?? [];
 
-        const result = computeStreakUpdate(currentStreak, lastCaptureDate, legendaryUnlockedDays);
+        const result = computeStreakUpdate(currentStreak, lastCaptureDate, weekStartDate, legendaryUnlockedDays);
 
         const newUnlockedDays = result.milestoneReached
           ? [...legendaryUnlockedDays, result.milestoneReached]
@@ -1892,6 +1927,7 @@ export const useGameStore = create<GameState>()(
             ...get().trainer,
             dailyStreak: result.newStreak,
             lastCaptureDate: getTodayDateStr(),
+            weekStartDate: getWeekStartDate(),
             legendaryUnlockedDays: newUnlockedDays,
           },
         });
@@ -2063,10 +2099,10 @@ export const useGameStore = create<GameState>()(
         if (!pokemon || !battle.selectedAttribute) return;
 
         const attrs = computeAttributes(pokemon.speciesId, pokemon.level);
-   
+
         const attrKey = battle.selectedAttribute;
         const modKey = `${attrKey}Mod` as keyof typeof attrs;
-        const modifier =  attrs[modKey] as number;
+        const modifier = attrs[modKey] as number;
 
         const total = roll + modifier;
         const dc = battle.attributeTestDC;
