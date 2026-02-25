@@ -217,7 +217,7 @@ export function EggsTab() {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Egg className="w-4 h-4 text-amber-400" />
-            <span className="text-sm font-bold text-foreground">Meus Ovos</span>
+            <span className="text-sm font-bold text-foreground">Ovos</span>
           </div>
           <span className="text-[10px] text-muted-foreground font-mono">{eggs.length}/{MAX_EGGS}</span>
         </div>
