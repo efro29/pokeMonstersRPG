@@ -962,22 +962,17 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
                 className="absolute -inset-6 rounded-full blur-2xl opacity-30"
                 style={{ backgroundColor: TYPE_COLORS[selectedBlip.pokemon.types[0] as PokemonType] }}
               />
-              {isDiscovered(selectedBlip.pokemon.id) ? (
-                // Pokemon descoberto - mostrar sprite normal
-                <img
-                  src={getSpriteUrl(selectedBlip.pokemon.id)}
-                  alt={selectedBlip.pokemon.name}
-                  width={80}
-                  height={80}
-                  className="relative z-10 pixelated drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)]"
-                  crossOrigin="anonymous"
-                  loading="lazy"
-                />
-              ) : (
-                // Pokemon não descoberto - mostrar silhueta
-                <div className="relative z-10 w-20 h-20 rounded-lg flex items-center justify-center drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)]" style={{ background: "rgba(0,0,0,0.4)" }}>
-
-                </div>
+              <img
+                src={getSpriteUrl(selectedBlip.pokemon.id)}
+                alt={selectedBlip.pokemon.name}
+                width={80}
+                height={80}
+                className="relative z-10 pixelated drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)]"
+                style={isDiscovered(selectedBlip.pokemon.id) ? {} : { filter: "saturate(0%) brightness(0.2)" }}
+                crossOrigin="anonymous"
+                loading="lazy"
+              />
+            </div>
               )}
             </div>
 
