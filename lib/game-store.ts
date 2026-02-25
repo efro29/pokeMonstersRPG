@@ -652,7 +652,7 @@ export const SHOP_ITEMS: ShopItem[] = [
   { id: "rare-candy", name: "Rare Candy", price: 4800, description: "Sobe 1 nivel instantaneamente.", category: "rare" },
   { id: "master-ball", name: "Master Ball", price: 50000, description: "Captura garantida. Rarissima.", category: "rare" },
   // Radar battery
-  { id: "radar-battery", name: "Bateria do Radar", price: 3500, description: "Concede 10 cargas extras ao radar. Ao esgotar volta a 4.", category: "rare" },
+  { id: "radar-battery", name: "Bateria do Radar", price: 6000, description: "Carrega o radar com 10 usos. Ao esgotar volta a 4. Acumula na bolsa.", category: "rare" },
 ];
 
 // NPC / Enemy system (master mode)

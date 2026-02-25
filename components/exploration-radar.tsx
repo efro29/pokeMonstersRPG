@@ -152,30 +152,18 @@ function getRadarPool(): PokemonSpecies[] {
 interface RadarEnergy {
   charges: number;
   lastUsed: number; // timestamp
-}
-
-function getBagBatteryCount(): number {
-  if (typeof window === "undefined") return 0;
-  try {
-    const raw = localStorage.getItem("pokerpg-storage");
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      const bag: { itemId: string; quantity: number }[] = parsed?.state?.bag ?? [];
-      const battery = bag.find((i) => i.itemId === "radar-battery");
-      return battery?.quantity ?? 0;
-    }
-  } catch { /* ignore */ }
-  return 0;
+  batteryActive: boolean; // true = bateria da bolsa ativa (max 10), false = normal (max 4)
 }
 
 function loadEnergy(): RadarEnergy {
-  if (typeof window === "undefined") return { charges: MAX_ENERGY, lastUsed: 0 };
+  if (typeof window === "undefined") return { charges: MAX_ENERGY, lastUsed: 0, batteryActive: false };
   try {
     const raw = localStorage.getItem("radar-energy");
     if (raw) {
       const data = JSON.parse(raw) as RadarEnergy;
-      // Recuperar cargas offline
-      if (data.charges < MAX_ENERGY && data.lastUsed > 0) {
+      const maxE = data.batteryActive ? BATTERY_ENERGY : MAX_ENERGY;
+      // Recuperar cargas offline (só quando sem bateria ativa, que tem recarga limitada)
+      if (data.charges < maxE && data.lastUsed > 0 && !data.batteryActive) {
         const elapsed = Date.now() - data.lastUsed;
         const recovered = Math.floor(elapsed / ENERGY_RECOVERY_MS);
         if (recovered > 0) {
@@ -186,7 +174,7 @@ function loadEnergy(): RadarEnergy {
       return data;
     }
   } catch { /* ignore */ }
-  return { charges: MAX_ENERGY, lastUsed: 0 };
+  return { charges: MAX_ENERGY, lastUsed: 0, batteryActive: false };
 }
 
 function saveEnergy(e: RadarEnergy) {
@@ -231,6 +219,10 @@ function rollGiftKit(): GiftKit {
         { type: "money", quantity: 2000 },
         { type: "item", itemId: "great-ball", itemName: "Great Ball", quantity: 3 },
         { type: "item", itemId: "revive", itemName: "Revive", quantity: 2 },
+      ]},
+      { rarity: "epico", label: "Kit Epico", color: "#A855F7", rewards: [
+        { type: "money", quantity: 1500 },
+        { type: "item", itemId: "radar-battery", itemName: "Bateria do Radar", quantity: 1 },
       ]},
     ];
     return options[Math.floor(Math.random() * options.length)];
@@ -305,16 +297,16 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
   const [claimedEgg, setClaimedEgg] = useState<PokemonEgg | null>(null);
   const scanInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Calcula max de energia: se tem bateria na bag usa 10, senão 4
-  const batteryCount = bag.find((i) => i.itemId === "radar-battery")?.quantity ?? 0;
-  const hasBattery = batteryCount > 0;
-  const effectiveMaxEnergy = hasBattery ? BATTERY_ENERGY : MAX_ENERGY;
+  // Bateria na bolsa (para mostrar botão de ativar)
+  const bagBatteryCount = bag.find((i) => i.itemId === "radar-battery")?.quantity ?? 0;
+  const canActivateBattery = bagBatteryCount > 0 && !energy.batteryActive;
 
-  // ── Recuperação de energia (a cada 5 min) ──
+  // ── Recuperação de energia (a cada 5 min, apenas no modo normal sem bateria) ──
   useEffect(() => {
     const tick = () => {
       setEnergy((prev) => {
-        if (prev.charges >= effectiveMaxEnergy) return prev;
+        if (prev.batteryActive) return prev; // bateria não regenera, apenas é consumida
+        if (prev.charges >= MAX_ENERGY) return prev;
         const now = Date.now();
         const elapsed = now - prev.lastUsed;
         const recovered = Math.floor(elapsed / ENERGY_RECOVERY_MS);
@@ -339,7 +331,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
   useEffect(() => {
     const id = setInterval(() => {
       setEnergy((prev) => {
-        if (prev.charges >= MAX_ENERGY) {
+        if (prev.batteryActive || prev.charges >= MAX_ENERGY) {
           setRecoveryTimer("");
           return prev;
         }
@@ -460,9 +452,12 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
     playButtonClick();
 
     // Gastar energia
+    const newCharges = energy.charges - 1;
+    const batteryJustDepleted = energy.batteryActive && newCharges <= 0;
     const next: RadarEnergy = {
-      charges: energy.charges - 1,
+      charges: batteryJustDepleted ? MAX_ENERGY : newCharges,
       lastUsed: Date.now(),
+      batteryActive: batteryJustDepleted ? false : energy.batteryActive,
     };
     setEnergy(next);
     saveEnergy(next);
@@ -493,6 +488,22 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
       if (scanInterval.current) clearInterval(scanInterval.current);
     };
   }, []);
+
+  // ── Ativar bateria da bolsa ──
+  const activateBattery = useCallback(() => {
+    if (!canActivateBattery) return;
+    // Consume 1 battery from bag
+    addBagItem("radar-battery", -1);
+    // Set radar to 10 charges in battery mode
+    const next: RadarEnergy = {
+      charges: BATTERY_ENERGY,
+      lastUsed: Date.now(),
+      batteryActive: true,
+    };
+    setEnergy(next);
+    saveEnergy(next);
+    playGift();
+  }, [canActivateBattery, addBagItem]);
 
   const handleBlipClick = (blip: RadarBlip) => {
     if (scanning) return;
@@ -546,16 +557,25 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
           <h2 className="text-sm font-bold text-foreground tracking-wide">Radar de Exploracao</h2>
           <p className="text-[10px] text-muted-foreground">
             {isNightTime() ? "Modo noturno ativo" : "Modo diurno"}
-            {" - "}{energy.charges}/{MAX_ENERGY} cargas
+            {" — "}
+            {energy.batteryActive
+              ? <span style={{ color: "#EAB308" }}>{energy.charges}/{BATTERY_ENERGY} (Bateria)</span>
+              : <span>{energy.charges}/{MAX_ENERGY} cargas</span>
+            }
           </p>
         </div>
 
         {/* Bateria com raio */}
         <div className="flex items-center gap-1.5">
-          {recoveryTimer && (
+          {recoveryTimer && !energy.batteryActive && (
             <span className="text-[10px] text-muted-foreground font-mono">{recoveryTimer}</span>
           )}
-          <BatteryIcon charges={energy.charges} max={MAX_ENERGY} />
+          {energy.batteryActive && (
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(234,179,8,0.15)", color: "#EAB308" }}>
+              ⚡ BATERIA
+            </span>
+          )}
+          <BatteryIcon charges={energy.charges} max={energy.batteryActive ? BATTERY_ENERGY : MAX_ENERGY} />
         </div>
       </div>
 
@@ -829,6 +849,29 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Botão de ativar bateria */}
+      {canActivateBattery && (
+        <button
+          onClick={activateBattery}
+          className="w-full max-w-sm h-9 text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-all"
+          style={{
+            background: "rgba(234,179,8,0.12)",
+            border: "1px solid rgba(234,179,8,0.4)",
+            color: "#EAB308",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="7" width="16" height="10" rx="2" ry="2"/><line x1="22" y1="11" x2="22" y2="13"/><line x1="10" y1="11" x2="10" y2="13"/>
+          </svg>
+          Ativar Bateria ({bagBatteryCount} na bolsa) — 10 cargas
+        </button>
+      )}
+      {energy.batteryActive && bagBatteryCount > 0 && (
+        <p className="text-[10px] text-muted-foreground text-center max-w-sm">
+          Proxima bateria disponivel apos esgotar a atual ({bagBatteryCount} aguardando)
+        </p>
+      )}
 
       {/* Painel do ovo coletado */}
       <AnimatePresence>
