@@ -7,6 +7,7 @@ import type { PokemonSpecies, PokemonType } from "@/lib/pokemon-data";
 import { Button } from "@/components/ui/button";
 import { useGameStore, BABY_POKEMON_IDS, rollRandomEgg, MAX_EGGS, EGG_TIER_COLORS } from "@/lib/game-store";
 import type { PokemonEgg } from "@/lib/game-store";
+import { useModeStore } from "@/lib/mode-store";
 import { playButtonClick, playGift, playBuy } from "@/lib/sounds";
 
 // ─── Regras do Radar ───────────────────────────────────────
@@ -18,28 +19,28 @@ const MAX_POKEMON_PER_SCAN = 5;
 
 // Legendários / Míticos – nunca aparecem no radar
 const LEGENDARY_IDS = new Set([
-// Kanto
-144, 145, 146, 150, 151,
+  // Kanto
+  144, 145, 146, 150, 151,
 
-// Johto
-243, 244, 245, 249, 250, 251,
+  // Johto
+  243, 244, 245, 249, 250, 251,
 
-// Hoenn
-377, 378, 379, // Regis
-380, 381,      // Lati@s
-382, 383, 384, // Weather trio
-385, 386,      // Míticos
+  // Hoenn
+  377, 378, 379, // Regis
+  380, 381,      // Lati@s
+  382, 383, 384, // Weather trio
+  385, 386,      // Míticos
 
-// Sinnoh
-480, 481, 482, // Lake trio
-483, 484, 487, // Dialga, Palkia, Giratina
-485,           // Heatran
-486,           // Regigigas
-488,           // Cresselia
-489, 490,      // Phione, Manaphy
-491,           // Darkrai
-492,           // Shaymin
-493            // Arceus
+  // Sinnoh
+  480, 481, 482, // Lake trio
+  483, 484, 487, // Dialga, Palkia, Giratina
+  485,           // Heatran
+  486,           // Regigigas
+  488,           // Cresselia
+  489, 490,      // Phione, Manaphy
+  491,           // Darkrai
+  492,           // Shaymin
+  493            // Arceus
 ]);
 
 
@@ -206,24 +207,32 @@ function rollGiftKit(): GiftKit {
   if (roll < 0.10) {
     // Epico
     const options: GiftKit[] = [
-      { rarity: "epico", label: "Kit Epico", color: "#A855F7", rewards: [
-        { type: "money", quantity: 3000 },
-        { type: "item", itemId: "ultra-ball", itemName: "Ultra Ball", quantity: 2 },
-        { type: "item", itemId: "hyper-potion", itemName: "Hyper Pocao", quantity: 1 },
-      ]},
-      { rarity: "epico", label: "Kit Epico", color: "#A855F7", rewards: [
-        { type: "money", quantity: 2500 },
-        { type: "item", itemId: "rare-candy", itemName: "Rare Candy", quantity: 1 },
-      ]},
-      { rarity: "epico", label: "Kit Epico", color: "#A855F7", rewards: [
-        { type: "money", quantity: 2000 },
-        { type: "item", itemId: "great-ball", itemName: "Great Ball", quantity: 3 },
-        { type: "item", itemId: "revive", itemName: "Revive", quantity: 2 },
-      ]},
-      { rarity: "epico", label: "Kit Epico", color: "#A855F7", rewards: [
-        { type: "money", quantity: 1500 },
-        { type: "item", itemId: "radar-battery", itemName: "Bateria do Radar", quantity: 1 },
-      ]},
+      {
+        rarity: "epico", label: "Kit Epico", color: "#A855F7", rewards: [
+          { type: "money", quantity: 3000 },
+          { type: "item", itemId: "ultra-ball", itemName: "Ultra Ball", quantity: 2 },
+          { type: "item", itemId: "hyper-potion", itemName: "Hyper Pocao", quantity: 1 },
+        ]
+      },
+      {
+        rarity: "epico", label: "Kit Epico", color: "#A855F7", rewards: [
+          { type: "money", quantity: 2500 },
+          { type: "item", itemId: "rare-candy", itemName: "Rare Candy", quantity: 1 },
+        ]
+      },
+      {
+        rarity: "epico", label: "Kit Epico", color: "#A855F7", rewards: [
+          { type: "money", quantity: 2000 },
+          { type: "item", itemId: "great-ball", itemName: "Great Ball", quantity: 3 },
+          { type: "item", itemId: "revive", itemName: "Revive", quantity: 2 },
+        ]
+      },
+      {
+        rarity: "epico", label: "Kit Epico", color: "#A855F7", rewards: [
+          { type: "money", quantity: 1500 },
+          { type: "item", itemId: "radar-battery", itemName: "Bateria do Radar", quantity: 1 },
+        ]
+      },
     ];
     return options[Math.floor(Math.random() * options.length)];
   }
@@ -231,38 +240,52 @@ function rollGiftKit(): GiftKit {
   if (roll < 0.40) {
     // Raro
     const options: GiftKit[] = [
-      { rarity: "raro", label: "Kit Raro", color: "#3B82F6", rewards: [
-        { type: "money", quantity: 1200 },
-        { type: "item", itemId: "great-ball", itemName: "Great Ball", quantity: 2 },
-      ]},
-      { rarity: "raro", label: "Kit Raro", color: "#3B82F6", rewards: [
-        { type: "money", quantity: 1000 },
-        { type: "item", itemId: "super-potion", itemName: "Super Pocao", quantity: 2 },
-      ]},
-      { rarity: "raro", label: "Kit Raro", color: "#3B82F6", rewards: [
-        { type: "item", itemId: "pokeball", itemName: "Pokeball", quantity: 3 },
-        { type: "item", itemId: "potion", itemName: "Pocao", quantity: 2 },
-        { type: "money", quantity: 800 },
-      ]},
+      {
+        rarity: "raro", label: "Kit Raro", color: "#3B82F6", rewards: [
+          { type: "money", quantity: 1200 },
+          { type: "item", itemId: "great-ball", itemName: "Great Ball", quantity: 2 },
+        ]
+      },
+      {
+        rarity: "raro", label: "Kit Raro", color: "#3B82F6", rewards: [
+          { type: "money", quantity: 1000 },
+          { type: "item", itemId: "super-potion", itemName: "Super Pocao", quantity: 2 },
+        ]
+      },
+      {
+        rarity: "raro", label: "Kit Raro", color: "#3B82F6", rewards: [
+          { type: "item", itemId: "pokeball", itemName: "Pokeball", quantity: 3 },
+          { type: "item", itemId: "potion", itemName: "Pocao", quantity: 2 },
+          { type: "money", quantity: 800 },
+        ]
+      },
     ];
     return options[Math.floor(Math.random() * options.length)];
   }
 
   // Normal
   const options: GiftKit[] = [
-    { rarity: "normal", label: "Kit Normal", color: "#22C55E", rewards: [
-      { type: "money", quantity: 600 },
-    ]},
-    { rarity: "normal", label: "Kit Normal", color: "#22C55E", rewards: [
-      { type: "item", itemId: "pokeball", itemName: "Pokeball", quantity: 1 },
-    ]},
-    { rarity: "normal", label: "Kit Normal", color: "#22C55E", rewards: [
-      { type: "money", quantity: 400 },
-      { type: "item", itemId: "potion", itemName: "Pocao", quantity: 1 },
-    ]},
-    { rarity: "normal", label: "Kit Normal", color: "#22C55E", rewards: [
-      { type: "money", quantity: 300 },
-    ]},
+    {
+      rarity: "normal", label: "Kit Normal", color: "#22C55E", rewards: [
+        { type: "money", quantity: 600 },
+      ]
+    },
+    {
+      rarity: "normal", label: "Kit Normal", color: "#22C55E", rewards: [
+        { type: "item", itemId: "pokeball", itemName: "Pokeball", quantity: 1 },
+      ]
+    },
+    {
+      rarity: "normal", label: "Kit Normal", color: "#22C55E", rewards: [
+        { type: "money", quantity: 400 },
+        { type: "item", itemId: "potion", itemName: "Pocao", quantity: 1 },
+      ]
+    },
+    {
+      rarity: "normal", label: "Kit Normal", color: "#22C55E", rewards: [
+        { type: "money", quantity: 300 },
+      ]
+    },
   ];
   return options[Math.floor(Math.random() * options.length)];
 }
@@ -286,6 +309,7 @@ interface ExplorationRadarProps {
 
 export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
   const { addMoney, addBagItem, addEgg, eggs, bag } = useGameStore();
+  const { activeProfileId, getDiscoveredForProfile } = useModeStore();
   const [energy, setEnergy] = useState<RadarEnergy>(loadEnergy);
   const [scanning, setScanning] = useState(false);
   const [blips, setBlips] = useState<RadarBlip[]>([]);
@@ -300,6 +324,13 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
   // Bateria na bolsa (para mostrar botão de ativar)
   const bagBatteryCount = bag.find((i) => i.itemId === "radar-battery")?.quantity ?? 0;
   const canActivateBattery = bagBatteryCount > 0 && !energy.batteryActive;
+
+  // Check if pokemon is discovered
+  const isDiscovered = (pokemonId: number): boolean => {
+    if (!activeProfileId) return false;
+    const discovered = getDiscoveredForProfile(activeProfileId);
+    return discovered.includes(pokemonId);
+  };
 
   // ── Recuperação de energia (a cada 5 min, apenas no modo normal sem bateria) ──
   useEffect(() => {
@@ -671,8 +702,8 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
             const color = blip.isEgg
               ? (EGG_TIER_COLORS[blip.egg?.tier || "green"].bg)
               : blip.isGift
-              ? (blip.giftKit?.color || "#F59E0B")
-              : TYPE_COLORS[(blip.pokemon?.types[0] || "normal") as PokemonType] || "#22C55E";
+                ? (blip.giftKit?.color || "#F59E0B")
+                : TYPE_COLORS[(blip.pokemon?.types[0] || "normal") as PokemonType] || "#22C55E";
 
             return (
               <motion.button
@@ -711,11 +742,11 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
                 >
                   {blip.isEgg ? (
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
-                      <ellipse cx="12" cy="13" rx="8" ry="10" fill="white" opacity="0.9"/>
+                      <ellipse cx="12" cy="13" rx="8" ry="10" fill="white" opacity="0.9" />
                     </svg>
                   ) : blip.isGift ? (
                     <svg width="8" height="8" viewBox="0 0 24 24" fill="white">
-                      <path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 110-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 100-5C13 2 12 7 12 7z" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 110-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 100-5C13 2 12 7 12 7z" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   ) : null}
                 </div>
@@ -812,7 +843,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
               style={{ backgroundColor: `${claimedGift.color}30` }}
             >
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={claimedGift.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 110-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 100-5C13 2 12 7 12 7z"/>
+                <path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 110-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 100-5C13 2 12 7 12 7z" />
               </svg>
             </motion.div>
 
@@ -862,7 +893,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
           }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2" y="7" width="16" height="10" rx="2" ry="2"/><line x1="22" y1="11" x2="22" y2="13"/><line x1="10" y1="11" x2="10" y2="13"/>
+            <rect x="2" y="7" width="16" height="10" rx="2" ry="2" /><line x1="22" y1="11" x2="22" y2="13" /><line x1="10" y1="11" x2="10" y2="13" />
           </svg>
           Ativar Bateria ({bagBatteryCount} na bolsa) — 10 cargas
         </button>
@@ -894,9 +925,9 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
               style={{ backgroundColor: `${EGG_TIER_COLORS[claimedEgg.tier].bg}25` }}
             >
               <svg width="32" height="32" viewBox="0 0 40 48" fill="none">
-                <ellipse cx="20" cy="26" rx="14" ry="18" fill={EGG_TIER_COLORS[claimedEgg.tier].bg} opacity="0.9"/>
-                <ellipse cx="20" cy="26" rx="14" ry="18" fill="none" stroke="white" strokeWidth="1.5" opacity="0.4"/>
-                <ellipse cx="15" cy="20" rx="3" ry="4" fill="white" opacity="0.25" transform="rotate(-15 15 20)"/>
+                <ellipse cx="20" cy="26" rx="14" ry="18" fill={EGG_TIER_COLORS[claimedEgg.tier].bg} opacity="0.9" />
+                <ellipse cx="20" cy="26" rx="14" ry="18" fill="none" stroke="white" strokeWidth="1.5" opacity="0.4" />
+                <ellipse cx="15" cy="20" rx="3" ry="4" fill="white" opacity="0.25" transform="rotate(-15 15 20)" />
               </svg>
             </motion.div>
             <div className="text-center">
@@ -937,6 +968,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
                 width={80}
                 height={80}
                 className="relative z-10 pixelated drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)]"
+                style={isDiscovered(selectedBlip.pokemon.id) ? {} : { filter: "saturate(0%) brightness(0.2)" }}
                 crossOrigin="anonymous"
                 loading="lazy"
               />
@@ -945,21 +977,27 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
             {/* Info */}
             <div className="flex flex-col items-center gap-1">
               <span className="text-xs text-muted-foreground font-mono">
-                #{String(selectedBlip.pokemon.id).padStart(3, "0")}
+                {isDiscovered(selectedBlip.pokemon.id) ? `#${String(selectedBlip.pokemon.id).padStart(3, "0")}` : "???"}
               </span>
               <span className="text-base font-bold text-foreground capitalize">
-                {selectedBlip.pokemon.name}
+                {isDiscovered(selectedBlip.pokemon.id) ? selectedBlip.pokemon.name : "Pokemon Desconhecido"}
               </span>
               <div className="flex gap-1.5">
-                {selectedBlip.pokemon.types.map((t) => (
-                  <span
-                    key={t}
-                    className="text-[9px] px-2 py-0.5 rounded-full font-semibold tracking-wide"
-                    style={{ backgroundColor: TYPE_COLORS[t as PokemonType], color: "#fff" }}
-                  >
-                    {t.toUpperCase()}
+                {isDiscovered(selectedBlip.pokemon.id) ? (
+                  selectedBlip.pokemon.types.map((t) => (
+                    <span
+                      key={t}
+                      className="text-[9px] px-2 py-0.5 rounded-full font-semibold tracking-wide"
+                      style={{ backgroundColor: TYPE_COLORS[t as PokemonType], color: "#fff" }}
+                    >
+                      {t.toUpperCase()}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-[9px] px-2 py-0.5 rounded-full font-semibold tracking-wide text-muted-foreground" style={{ background: "rgba(255,255,255,0.08)" }}>
+                    TIPO DESCONHECIDO
                   </span>
-                ))}
+                )}
               </div>
             </div>
 
