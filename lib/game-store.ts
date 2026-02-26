@@ -97,6 +97,10 @@ export interface TrainerProfile {
   // Exploration system
   explorationXp: number;
   explorationLevel: number;
+  // Battle system (Skill Tree)
+  battleXp: number;
+  battleLevel: number;
+  battlePoints: number; // PB - Pontos de Batalha para desbloquear golpes na arvore
   // Daily streak system
   dailyStreak: number;
   lastCaptureDate: string | null; // ISO date string YYYY-MM-DD
@@ -117,6 +121,13 @@ export function explorationXpForLevel(level: number): number {
   if (level <= 1) return 0;
   // Slightly easier curve than trainer XP
   return Math.floor(80 * Math.pow(level - 1, 1.4));
+}
+
+/** XP required for a given battle level */
+export function battleXpForLevel(level: number): number {
+  if (level <= 1) return 0;
+  // Battle XP curve - 500 XP for level 2, scales up
+  return Math.floor(500 * Math.pow(level - 1, 1.3));
 }
 
 /** Calculate exploration XP for a capture based on balls used */
