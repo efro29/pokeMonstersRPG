@@ -128,6 +128,27 @@ function PokeballSVG({ color, size = 60 }: { color: string; size?: number }) {
   );
 }
 
+const ATTACK_EFFECT_ICONS: Record<string, { icon: string; color: string }> = {
+  fire: { icon: "🔥", color: "#EF4444" },
+  water: { icon: "💧", color: "#3B82F6" },
+  grass: { icon: "🍃", color: "#22C55E" },
+  electric: { icon: "⚡", color: "#EAB308" },
+  ice: { icon: "❄️", color: "#67E8F9" },
+  fighting: { icon: "👊", color: "#C2410C" },
+  poison: { icon: "☠️", color: "#A855F7" },
+  ground: { icon: "🌍", color: "#92400E" },
+  flying: { icon: "🌪️", color: "#93C5FD" },
+  psychic: { icon: "🔮", color: "#EC4899" },
+  bug: { icon: "🐛", color: "#84CC16" },
+  rock: { icon: "🪨", color: "#78716C" },
+  ghost: { icon: "👻", color: "#7C3AED" },
+  dragon: { icon: "🐉", color: "#6366F1" },
+  dark: { icon: "🌑", color: "#1F2937" },
+  steel: { icon: "🛡️", color: "#9CA3AF" },
+  fairy: { icon: "✨", color: "#F9A8D4" },
+  normal: { icon: "💥", color: "#A8A29E" },
+};
+
 const BALL_DATA: Record<string, { name: string; color: string }> = {
   pokeball: { name: "Pokeball", color: "#EF4444" },
   "great-ball": { name: "Great Ball", color: "#3B82F6" },
@@ -147,6 +168,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
     battle,
     applyOpponentDamage,
     switchBattlePokemon,
+    addXp,
   } = useGameStore();
 
   // ─── Local state ───────────────────────────────────────
@@ -193,6 +215,10 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
   const [enemyHitResult, setEnemyHitResult] = useState<HitResult | null>(null);
   const [turnNumber, setTurnNumber] = useState(1);
   const [ballFlightProgress, setBallFlightProgress] = useState(0);
+  const [xpReward, setXpReward] = useState(0);
+  const [showXpBar, setShowXpBar] = useState(false);
+  const [xpBarProgress, setXpBarProgress] = useState(0);
+  const [attackEffect, setAttackEffect] = useState<{ type: PokemonType | null; side: "player" | "wild" } | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
 
   const addLog = useCallback((msg: string) => {
@@ -276,6 +302,10 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
       setPlayerAttacking(true);
       setTimeout(() => setPlayerAttacking(false), 400);
 
+      // Show type effect on wild pokemon
+      setAttackEffect({ type: move.type as PokemonType, side: "wild" });
+      setTimeout(() => setAttackEffect(null), 800);
+
       // Calc damage
       const pokemonAttrs = computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes);
       const breakdown = calculateBattleDamage(move, hr, pokemonAttrs, 0);
@@ -313,15 +343,26 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
     [selectedMoveId, pokemon, combateBonus, critThreshold, wild, addLog]
   );
 
-  // Check wild fainted after damage
+  // Check wild fainted after damage - award XP
   useEffect(() => {
     if (wild.currentHp <= 0 && phase === "result") {
       setTimeout(() => {
-        addLog(`${wild.name} selvagem desmaiou! Nao pode mais ser capturado.`);
+        const reward = wild.level * 30;
+        setXpReward(reward);
+        addLog(`${wild.name} selvagem desmaiou!`);
+        // Give XP to active pokemon
+        if (pokemon) {
+          addXp(pokemon.uid, reward);
+          addLog(`${pokemon.name} ganhou ${reward} XP!`);
+        }
         setPhase("wild-fainted");
+        // Animate XP bar
+        setShowXpBar(true);
+        setXpBarProgress(0);
+        setTimeout(() => setXpBarProgress(100), 100);
       }, 1200);
     }
-  }, [wild.currentHp, phase, wild.name, addLog]);
+  }, [wild.currentHp, phase, wild.name, wild.level, pokemon, addXp, addLog]);
 
   // ─── Enemy Turn ────────────────────────────────────────
   const executeEnemyTurn = useCallback(() => {
@@ -352,11 +393,15 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
 
     setEnemyMoveUsed(move.name);
 
-    // Wild attack animation - lunge toward player
+    // Wild attack animation - lunge toward player + type effect
     setTimeout(() => {
       setWildAttacking(true);
       playAttack();
-      setTimeout(() => setWildAttacking(false), 400);
+      setAttackEffect({ type: move.type as PokemonType, side: "player" });
+      setTimeout(() => {
+        setWildAttacking(false);
+        setAttackEffect(null);
+      }, 600);
     }, 500);
 
     // Roll D20 for enemy
@@ -724,6 +769,73 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
             </span>
           </div>
 
+          {/* Type Attack Effect Overlay */}
+          <AnimatePresence>
+            {attackEffect && (
+              <motion.div
+                key={`effect-${attackEffect.side}-${Date.now()}`}
+                className="absolute z-30 pointer-events-none flex items-center justify-center"
+                style={
+                  attackEffect.side === "wild"
+                    ? { top: 40, right: 20, width: 100, height: 100 }
+                    : { bottom: 30, left: 20, width: 100, height: 100 }
+                }
+                initial={{ opacity: 0, scale: 0.3 }}
+                animate={{ opacity: 1, scale: 1.2 }}
+                exit={{ opacity: 0, scale: 2 }}
+                transition={{ duration: 0.4 }}
+              >
+                {/* Impact ring */}
+                <motion.div
+                  className="absolute rounded-full border-4"
+                  style={{
+                    borderColor: ATTACK_EFFECT_ICONS[attackEffect.type ?? "normal"]?.color ?? "#A8A29E",
+                    width: 80,
+                    height: 80,
+                  }}
+                  initial={{ scale: 0.2, opacity: 1 }}
+                  animate={{ scale: 1.5, opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                />
+                {/* Type icon burst */}
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <motion.span
+                    key={i}
+                    className="absolute text-2xl"
+                    initial={{
+                      x: 0,
+                      y: 0,
+                      opacity: 1,
+                      scale: 0.5,
+                    }}
+                    animate={{
+                      x: Math.cos((i * 72 * Math.PI) / 180) * 40,
+                      y: Math.sin((i * 72 * Math.PI) / 180) * 40,
+                      opacity: 0,
+                      scale: 1.2,
+                    }}
+                    transition={{ duration: 0.5, delay: i * 0.05 }}
+                  >
+                    {ATTACK_EFFECT_ICONS[attackEffect.type ?? "normal"]?.icon ?? "💥"}
+                  </motion.span>
+                ))}
+                {/* Central flash */}
+                <motion.div
+                  className="absolute rounded-full"
+                  style={{
+                    backgroundColor: ATTACK_EFFECT_ICONS[attackEffect.type ?? "normal"]?.color ?? "#A8A29E",
+                    width: 30,
+                    height: 30,
+                    filter: `blur(8px)`,
+                  }}
+                  initial={{ scale: 0, opacity: 0.9 }}
+                  animate={{ scale: 2, opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Shadow under player pokemon */}
           <div
             className="absolute"
@@ -1066,9 +1178,50 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
           {/* WILD FAINTED */}
           {phase === "wild-fainted" && (
             <div className="flex flex-col items-center py-4 gap-3">
-              <span className="text-lg font-bold text-red-400">{wild.name} selvagem desmaiou!</span>
-              <span className="text-xs text-muted-foreground">Voce nao conseguiu captura-lo.</span>
-              <Button onClick={onClose}>Voltar</Button>
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", damping: 12 }}
+                className="text-center"
+              >
+                <span className="text-lg font-bold text-amber-400">Vitoria!</span>
+                <p className="text-sm text-muted-foreground mt-1">{wild.name} selvagem desmaiou!</p>
+              </motion.div>
+              {showXpBar && pokemon && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="w-full max-w-xs bg-card rounded-lg border border-border p-3"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <img src={getSpriteUrl(pokemon.speciesId)} alt={pokemon.name} className="w-8 h-8" crossOrigin="anonymous" />
+                    <div className="flex-1">
+                      <span className="text-xs font-bold text-foreground">{pokemon.name}</span>
+                      <span className="text-[10px] text-muted-foreground ml-1">Lv.{pokemon.level}</span>
+                    </div>
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: [0, 1.3, 1] }}
+                      transition={{ delay: 0.3, duration: 0.5 }}
+                      className="text-sm font-bold text-emerald-400"
+                    >
+                      +{xpReward} XP
+                    </motion.span>
+                  </div>
+                  <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400"
+                      initial={{ width: "0%" }}
+                      animate={{ width: `${xpBarProgress}%` }}
+                      transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
+                    />
+                  </div>
+                  <p className="text-[9px] text-muted-foreground mt-1 text-center">
+                    XP: {pokemon.xp ?? 0}
+                  </p>
+                </motion.div>
+              )}
+              <Button onClick={onClose} className="mt-2 bg-emerald-600 hover:bg-emerald-500 text-white">Continuar</Button>
             </div>
           )}
 
