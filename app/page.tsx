@@ -170,7 +170,7 @@ export default function Page() {
   // Create audio player ONCE
   useEffect(() => {
     const audio = new Audio();
-    audio.volume = 0.01;
+    audio.volume = 0.4;
     audioRef.current = audio;
 
     // When a home track ends, play another random one (not looped)

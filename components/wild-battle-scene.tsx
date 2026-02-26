@@ -640,7 +640,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
         <div className="relative w-full" style={{ height: 280 }}>
           {/* BG Arena */}
           <img
-            src="/images/arenas/campo.gif"
+            src="/images/arenas/campo3.jpg"
             alt="Arena"
             className="w-full h-full object-fill"
             style={{ imageRendering: "pixelated" }}
@@ -840,10 +840,10 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
           <div
             className="absolute"
             style={{
-              bottom: 12,
-              left: 35,
-              width: 70,
-              height: 16,
+              bottom:40,
+              left: 10,
+              width: 150,
+              height: 30,
               background: "rgba(0,0,0,0.3)",
               borderRadius: "50%",
               filter: "blur(4px)",

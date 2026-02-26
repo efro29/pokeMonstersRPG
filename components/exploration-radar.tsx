@@ -340,61 +340,97 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
   const scanInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Movimentacao dos blips com rastro de patinhas ──
-  useEffect(() => {
-    if (blips.length === 0 || scanning) return;
-    const moveInterval = setInterval(() => {
-      setBlips((prev) =>
-        prev.map((blip) => {
-          // Gifts and eggs don't move
-          if (blip.isGift || blip.isEgg) return blip;
+// ── Movimentacao dos blips com rastro de patinhas ──
+useEffect(() => {
+  if (blips.length === 0 || scanning) return;
 
-          // Occasionally change direction
-          let newVAngle = blip.vAngle;
-          let newVDist = blip.vDist;
-          if (Math.random() < 0.08) {
-            newVAngle = (Math.random() - 0.5) * 4;
-            newVDist = (Math.random() - 0.5) * 0.012;
-          }
+  const moveInterval = setInterval(() => {
+    setBlips((prev) =>
+      prev.map((blip) => {
+        if (blip.isGift || blip.isEgg) return blip;
 
-          let newAngle = blip.angle + newVAngle;
-          let newDist = blip.distance + newVDist;
+        let newVAngle = blip.vAngle;
+        let newVDist = blip.vDist;
 
-          // Bounce off edges
-          if (newDist > 0.85) { newDist = 0.85; newVDist = -Math.abs(newVDist); }
-          if (newDist < 0.12) { newDist = 0.12; newVDist = Math.abs(newVDist); }
+        // Mudança aleatória de direção
+        if (Math.random() < 0.08) {
+          newVAngle = (Math.random() - 0.5) * 8;
+          newVDist = (Math.random() - 0.5) * 0.02;
+        }
 
-          // Calculate current position for paw print (approximate - will use real center in render)
-          const radarSize = 280;
-          const center = radarSize / 2;
-          const rad = (newAngle * Math.PI) / 180;
-          const maxR = center - 16;
-          const px = center + Math.cos(rad) * maxR * newDist;
-          const py = center + Math.sin(rad) * maxR * newDist;
+        const speedMultiplier = 2;
 
-          // Add new paw with actual position
-          const newPaw: PawPrint = {
-            id: `paw-${Date.now()}-${Math.random()}`,
-            x: px,
-            y: py,
-            opacity: 0.7,
-          };
-          const updatedPaws = [...blip.pawPrints, newPaw]
-            .map((p) => ({ ...p, opacity: Math.max(0, p.opacity - 0.06) }))
-            .filter((p) => p.opacity > 0.02);
+        const radarSize = 280;
+        const center = radarSize / 2;
+        const maxR = center - 16;
 
-          return {
-            ...blip,
-            angle: newAngle,
-            distance: newDist,
-            vAngle: newVAngle,
-            vDist: newVDist,
-            pawPrints: updatedPaws,
-          };
-        })
-      );
-    }, 350);
-    return () => clearInterval(moveInterval);
-  }, [blips.length, scanning]);
+        // 📍 POSIÇÃO ATUAL (antes de mover)
+        const currentRad = (blip.angle * Math.PI) / 180;
+        const currentX =
+          center + Math.cos(currentRad) * maxR * blip.distance;
+        const currentY =
+          center + Math.sin(currentRad) * maxR * blip.distance;
+
+        // 🏃 NOVA POSIÇÃO
+        let newAngle = blip.angle + newVAngle * speedMultiplier;
+        let newDist = blip.distance + newVDist * speedMultiplier;
+
+        // Bounce nas bordas
+        if (newDist > 0.85) {
+          newDist = 0.85;
+          newVDist = -Math.abs(newVDist);
+        }
+        if (newDist < 0.12) {
+          newDist = 0.12;
+          newVDist = Math.abs(newVDist);
+        }
+
+        // 📍 NOVA POSIÇÃO CARTESIANA
+        const newRad = (newAngle * Math.PI) / 180;
+        const newX =
+          center + Math.cos(newRad) * maxR * newDist;
+        const newY =
+          center + Math.sin(newRad) * maxR * newDist;
+
+        // 🔄 ÂNGULO REAL DE MOVIMENTO
+        const deltaX = newX - currentX;
+        const deltaY = newY - currentY;
+
+        const movementAngle =
+          (Math.atan2(deltaY, deltaX) * 180) / Math.PI;
+
+        // 🐾 NOVA PATINHA (posição anterior)
+        const newPaw: PawPrint = {
+          id: `paw-${Date.now()}-${Math.random()}`,
+          x: currentX,
+          y: currentY,
+          opacity: 0.7,
+          rotation: movementAngle + 90, 
+          // ajuste para -90 se necessário
+        };
+
+        // 🐾 RASTRO LONGO
+        const updatedPaws = [...blip.pawPrints, newPaw]
+          .map((p) => ({
+            ...p,
+            opacity: Math.max(0, p.opacity - 0.02),
+          }))
+          .filter((p) => p.opacity > 0.005);
+
+        return {
+          ...blip,
+          angle: newAngle,
+          distance: newDist,
+          vAngle: newVAngle,
+          vDist: newVDist,
+          pawPrints: updatedPaws,
+        };
+      })
+    );
+  }, 120);
+
+  return () => clearInterval(moveInterval);
+}, [blips.length, scanning]);
 
   // Bateria na bolsa (para mostrar botão de ativar)
   const bagBatteryCount = bag.find((i) => i.itemId === "radar-battery")?.quantity ?? 0;
@@ -809,7 +845,11 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
         >
           {blips.flatMap((blip) =>
             blip.pawPrints.map((paw) => (
-              <g key={paw.id} opacity={paw.opacity} transform={`translate(${paw.x}, ${paw.y})`}>
+              <g
+                key={paw.id}
+                opacity={paw.opacity}
+                transform={`translate(${paw.x}, ${paw.y}) rotate(${paw.rotation})`}
+              >
                 {/* Small paw - 3 toes + pad */}
                 <circle cx={-2.5} cy={-3} r={1.2} fill="rgba(34,197,94,0.7)" />
                 <circle cx={0} cy={-4} r={1.2} fill="rgba(34,197,94,0.7)" />

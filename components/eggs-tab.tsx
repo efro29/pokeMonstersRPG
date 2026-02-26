@@ -28,9 +28,9 @@ function EggIcon({ tier, size = 64, wobble = false }: { tier: EggTier; size?: nu
       <clipPath id={`egg-clip-${tier}`}>
         <rect x="0" y="30" width="40" height="18" />
       </clipPath>
-      <ellipse cx="20" cy="26" rx="13" ry="17" fill={colors.border} clipPath={`url(#egg-clip-${tier})`} />
+     
       {/* Spots */}
-      <circle cx="14" cy="22" r="2.5" fill="white" opacity="0.2" />
+      <circle cx="14" cy="22" r="2.5" fill="white" opacity="0.1" />
       <circle cx="24" cy="18" r="2" fill="white" opacity="0.15" />
       <circle cx="18" cy="32" r="1.8" fill="white" opacity="0.12" />
       <circle cx="26" cy="28" r="2.2" fill="white" opacity="0.18" />
@@ -261,7 +261,7 @@ export function EggsTab() {
                   )}
 
                   {/* Egg visual */}
-                  <EggIcon tier={egg.tier} size={40} wobble={ready} />
+                  <EggIcon tier={egg.tier} size={90} wobble={ready} />
 
                   {/* Info */}
                   <span className="text-[10px] font-medium text-muted-foreground">???</span>
