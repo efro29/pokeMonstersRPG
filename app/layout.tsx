@@ -1,6 +1,7 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
 import { Press_Start_2P, Inter } from 'next/font/google'
+import { ServiceWorkerRegister } from '@/components/service-worker-register'
 
 import './globals.css'
 
@@ -75,7 +76,10 @@ export default function RootLayout({
         <link rel="preload" href="/images/ico/team.png" as="image" />
                            
       </head>
-      <body className={`${_inter.variable} ${_pixel.variable} font-sans antialiased`}>{children}</body>
+      <body className={`${_inter.variable} ${_pixel.variable} font-sans antialiased`}>
+        <ServiceWorkerRegister />
+        {children}
+      </body>
     </html>
   )
 }
