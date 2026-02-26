@@ -311,9 +311,10 @@ interface RadarBlip {
 
 interface ExplorationRadarProps {
   onStartCapture?: (speciesId: number) => void;
+  onStartWildBattle?: (speciesId: number) => void;
 }
 
-export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
+export function ExplorationRadar({ onStartCapture, onStartWildBattle }: ExplorationRadarProps) {
   const { addMoney, addBagItem, addEgg, eggs, bag } = useGameStore();
   const { activeProfileId, getDiscoveredForProfile } = useModeStore();
   const [energy, setEnergy] = useState<RadarEnergy>(loadEnergy);
@@ -582,6 +583,13 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
     setSelectedBlip(null);
   };
 
+  const handleBattle = () => {
+    if (!selectedBlip || !onStartWildBattle || !selectedBlip.pokemon) return;
+    onStartWildBattle(selectedBlip.pokemon.id);
+    setBlips((prev) => prev.filter((b) => b.id !== selectedBlip.id));
+    setSelectedBlip(null);
+  };
+
   const radarSize = 280;
   const center = radarSize / 2;
 
@@ -841,12 +849,26 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
     
           <>
           <Button
-          disabled={    selectedBlip && selectedBlip.pokemon ?false:true}
+          disabled={!selectedBlip || !selectedBlip.pokemon}
+            onClick={handleBattle}
+                  className="w-full max-w-sm h-12 text-sm font-bold relative overflow-hidden"
+            style={{ backgroundColor: selectedBlip && selectedBlip.pokemon ? "#b91c1c" : "#333645" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+              <path d="M14.5 17.5L3 6V3h3l11.5 11.5" />
+              <path d="M13 19l6-6" />
+              <path d="M16 16l4 4" />
+              <path d="M19 21l2-2" />
+            </svg>
+             { selectedBlip && selectedBlip.pokemon ? "Batalhar" : ""}
+          </Button>
+          <Button
+          disabled={!selectedBlip || !selectedBlip.pokemon}
             onClick={handleCapture}
-                  className="w-full max-w-sm h-12 text-sm font-bold relative overflow-hidden animate"
+                  className="w-full max-w-sm h-12 text-sm font-bold relative overflow-hidden"
             style={{ backgroundColor:selectedBlip && selectedBlip.pokemon ?"#c88941": "#333645" }}
           >
-            <svg width="16" height="16" viewBox="0 0 100 100" className="mr-2">
+            <svg width="16" height="16" viewBox="0 0 100 100" className="mr-1">
               <circle cx="50" cy="50" r="48" fill={selectedBlip && selectedBlip.pokemon ?"#EF4444":"#1E293B"} stroke="#1E293B" strokeWidth="3" />
               <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
               <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#F1F5F9" />
@@ -855,13 +877,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
             </svg>
              { selectedBlip && selectedBlip.pokemon ?"Capturar":""}
           </Button>
-          
-          
           </>
-    
-     
-
-        
       </div>
   
 

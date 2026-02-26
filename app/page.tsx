@@ -24,6 +24,7 @@ import { NpcTab } from "@/components/npc-tab";
 import { MovesDictionaryTab } from "@/components/moves-dictionary-tab";
 import { SettingsTab } from "@/components/settings-tab";
 import { CaptureScene } from "@/components/capture-scene";
+import { WildBattleScene } from "@/components/wild-battle-scene";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 import { getPokemon, POKEMON } from "@/lib/pokemon-data";
 import { calculateExplorationXp } from "@/lib/game-store";
@@ -58,6 +59,7 @@ export default function Page() {
   const [activeTab, setActiveTab] = useState<Tab>("profile");
   const [hasSave, setHasSave] = useState(false);
   const [captureTarget, setCaptureTarget] = useState<number | null>(null);
+  const [wildBattleTarget, setWildBattleTarget] = useState<number | null>(null);
   const [explorationRewardToast, setExplorationRewardToast] = useState<{
     xp: number;
     ballsUsed: number;
@@ -286,6 +288,10 @@ export default function Page() {
     setCaptureTarget(speciesId);
   };
 
+  const handleStartWildBattle = (speciesId: number) => {
+    setWildBattleTarget(speciesId);
+  };
+
   const handleCaptureSuccess = (species: { id: number; name: string; types: string[]; baseHp: number; startingMoves: string[]; learnableMoves: string[] }, ballsUsed: number) => {
     const pokemonSpecies = getPokemon(species.id);
     if (pokemonSpecies) {
@@ -418,6 +424,38 @@ export default function Page() {
     );
   }
   
+
+  // Wild Battle mode
+  if (wildBattleTarget !== null) {
+    const wildSpecies = POKEMON.find((p) => p.id === wildBattleTarget);
+    if (wildSpecies) {
+      const wildLevel = Math.max(1, Math.floor(Math.random() * 8) + 1);
+      return (
+        <main className="flex flex-col h-dvh max-w-md mx-auto bg-background">
+          <WildBattleScene
+            wildPokemon={wildSpecies}
+            wildLevel={wildLevel}
+            onClose={() => {
+              useGameStore.getState().endBattle();
+              setWildBattleTarget(null);
+            }}
+            onCapture={(speciesId, ballsUsed) => {
+              const species = POKEMON.find((p) => p.id === speciesId);
+              if (species) {
+                handleCaptureSuccess(species as any, ballsUsed);
+              }
+              useGameStore.getState().endBattle();
+              setWildBattleTarget(null);
+            }}
+            onFled={() => {
+              useGameStore.getState().endBattle();
+              setWildBattleTarget(null);
+            }}
+          />
+        </main>
+      );
+    }
+  }
 
   // Capture mode
   if (captureTarget !== null) {
@@ -614,6 +652,7 @@ export default function Page() {
           <PokedexTab
             onStartBattleWithPokemon={mode === "master" ? handleStartBattleWithPokemon : undefined}
             onStartCapture={mode === "trainer" ? handleStartCapture : undefined}
+            onStartWildBattle={mode === "trainer" ? handleStartWildBattle : undefined}
           />
         )}
         {activeTab === "npcs" && (
