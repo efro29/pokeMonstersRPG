@@ -607,7 +607,7 @@ function PokemonDetailContent({
   const stoneEvos = EVOLUTION_STONES.filter((stone) =>
     canEvolveByStone(pokemon.speciesId, stone.id)
   );
-const habildade_especial = getBaseAttributes(pokemon.speciesId).especial
+const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
 
   return (
     <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto h-[75vh] overflow-y-auto">
@@ -989,7 +989,7 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial
                       </div>
                       <div className="flex items-center gap-2 mb-1">
 
-                        {attr == 'especial'?  habildade_especial.replace('_',' ') :
+                        {attr == 'especial'?  (habildade_especial ?? '').replace('_',' ') :
                           <div className="flex-1 h-2.5 bg-background rounded-full overflow-hidden">
                           <div
                             className="h-full rounded-full transition-all duration-300"
