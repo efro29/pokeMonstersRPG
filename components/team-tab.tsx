@@ -57,6 +57,8 @@ import {
   GripVertical,
   ArrowDown,
   BookAIcon,
+  Send,
+  Users,
 } from "lucide-react";
 import { EvolutionAnimation } from "@/components/evolution-animation";
 
@@ -85,6 +87,8 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
     useRareCandy,
     pendingEvolution,
     completeEvolution,
+    transferToProfesor,
+    transferAllDuplicates,
   } = useGameStore();
 
 
@@ -572,6 +576,10 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
           learnMove={learnMove}
           forgetMove={forgetMove}
           removeFromTeam={isSelectedInReserves ? removeFromReserves : removeFromTeam}
+          transferToProfesor={transferToProfesor}
+          transferAllDuplicates={transferAllDuplicates}
+          allTeam={team}
+          allReserves={reserves}
           onClose={() => setSelectedUid(null)}
         />}
       </Dialog>
@@ -596,6 +604,10 @@ function PokemonDetailContent({
   learnMove,
   forgetMove,
   removeFromTeam,
+  transferToProfesor,
+  transferAllDuplicates,
+  allTeam,
+  allReserves,
   onClose,
 }: {
   pokemon: NonNullable<ReturnType<typeof useGameStore.getState>["team"][number]>;
@@ -613,6 +625,10 @@ function PokemonDetailContent({
   learnMove: (uid: string, moveId: string) => void;
   forgetMove: (uid: string, moveId: string) => void;
   removeFromTeam: (uid: string) => void;
+  transferToProfesor: (uid: string) => { xpGained: number; recipientName: string | null };
+  transferAllDuplicates: (speciesId: number, keepUid: string) => { count: number; totalXp: number };
+  allTeam: ReturnType<typeof useGameStore.getState>["team"];
+  allReserves: ReturnType<typeof useGameStore.getState>["reserves"];
   onClose: () => void;
 }) {
   const level = pokemon.level ?? 1;
@@ -626,6 +642,14 @@ function PokemonDetailContent({
     canEvolveByStone(pokemon.speciesId, stone.id)
   );
 const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
+
+  // Count duplicates of same species across team + reserves (excluding self)
+  const duplicateCount = [...allTeam, ...allReserves].filter(
+    (p) => p.speciesId === pokemon.speciesId && p.uid !== pokemon.uid
+  ).length;
+  const estimatedXp = [...allTeam, ...allReserves]
+    .filter((p) => p.speciesId === pokemon.speciesId && p.uid !== pokemon.uid)
+    .reduce((sum, p) => sum + (p.level ?? 1) * 25, 0);
 
   return (
     <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto h-[75vh] overflow-y-auto">
@@ -727,6 +751,34 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
               </div>
             </div>
 
+            {/* Duplicates panel */}
+            {duplicateCount > 0 && (
+              <div className="w-full rounded-lg border border-amber-700/30 bg-amber-900/20 p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="w-4 h-4 text-amber-400" />
+                  <span className="text-sm font-medium text-amber-300">
+                    {duplicateCount} duplicata{duplicateCount > 1 ? 's' : ''} encontrada{duplicateCount > 1 ? 's' : ''}
+                  </span>
+                </div>
+                <p className="text-xs text-amber-200/70 mb-2">
+                  Envie ao Professor e ganhe <span className="font-bold text-amber-300">+{estimatedXp} XP</span> para {pokemon.name}!
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const result = transferAllDuplicates(pokemon.speciesId, pokemon.uid);
+                    if (result.count > 0) {
+                      alert(`${result.count} Pokemon transferido${result.count > 1 ? 's' : ''}! ${pokemon.name} ganhou ${result.totalXp} XP!`);
+                    }
+                  }}
+                  className="w-full bg-amber-600 text-white hover:bg-amber-700 text-xs"
+                >
+                  <Send className="w-3 h-3 mr-1" />
+                  Enviar excesso ao Professor
+                </Button>
+              </div>
+            )}
+
             {/* Add XP */}
             <div className="w-full flex flex-col gap-2">
          
@@ -811,13 +863,16 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
             <Button
               variant="destructive"
               onClick={() => {
-                removeFromTeam(pokemon.uid);
+                const result = transferToProfesor(pokemon.uid);
+                if (result.xpGained > 0 && result.recipientName) {
+                  alert(`${pokemon.name} transferido! ${result.recipientName} ganhou ${result.xpGained} XP!`);
+                }
                 onClose();
               }}
               className="w-full"
             >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Remover da Equipe
+              <Send className="w-4 h-4 mr-2" />
+              Transferir para o Professor
             </Button>
           </div>
         </TabsContent>
