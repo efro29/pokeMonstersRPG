@@ -950,7 +950,7 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
           {(() => {
             const attrs = computeAttributes(pokemon.speciesId, level, pokemon.customAttributes);
 
-            const habildade_especial = getBaseAttributes(pokemon.speciesId).especial
+            const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
 
 
             const attrKeys: (keyof PokemonBaseAttributes)[] = ["velocidade", "felicidade", "resistencia", "acrobacia","especial"];
