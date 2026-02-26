@@ -18,6 +18,16 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'Pokemon RPG Companion',
   description: 'Companion app for tabletop Pokemon RPG with D20 mechanics',
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon.jpg',
+    apple: '/favicon.jpg',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Pokemon RPG Companion',
+  },
 }
 
 export default function RootLayout({
@@ -28,6 +38,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Pokemon RPG" />
         {/* Preload critical battle images so they render instantly */}
         <link rel="preload" href="/images/arenas/campo.gif" as="image" />
         <link rel="preload" href="/images/arenas/campo1.gif" as="image" />
