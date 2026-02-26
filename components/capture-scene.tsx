@@ -45,15 +45,71 @@ function getCaptureDC(baseHp: number, ballId: string): number {
   return Math.max(2, baseDC - (ballReduction[ballId] ?? 0));
 }
 
-// ─── Pokeball SVG component ────────────────────────────────
+// ─── Pokeball SVG component (Enhanced with glossy shine, beveled edge, and shadow) ────────────────────────────────
 function PokeballSVG({ color, size = 60, center = false }: { color: string; size?: number; center?: boolean }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] ${center ? "" : ""}`}>
-      <circle cx="50" cy="50" r="48" fill={color} stroke="#1E293B" strokeWidth="3" />
-      <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
-      <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#F1F5F9" />
-      <circle cx="50" cy="50" r="14" fill="#F1F5F9" stroke="#1E293B" strokeWidth="3" />
-      <circle cx="50" cy="50" r="7" fill="#1E293B" />
+    <svg width={size} height={size} viewBox="0 0 100 100" className={`drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]`}>
+      {/* Outer Shadow/Depth */}
+      <defs>
+        <radialGradient id="shine" cx="35%" cy="35%">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.8" />
+          <stop offset="40%" stopColor="#FFFFFF" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="shadowGradient" cx="50%" cy="50%">
+          <stop offset="0%" stopColor="#000000" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="topGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor={color} stopOpacity="1" />
+          <stop offset="50%" stopColor={color} stopOpacity="0.95" />
+        </linearGradient>
+      </defs>
+
+      {/* Main sphere with gradient for 3D effect */}
+      <circle cx="50" cy="50" r="48" fill="url(#shadowGradient)" />
+      
+      {/* Top red/colored half */}
+      <circle cx="50" cy="50" r="48" fill="url(#topGradient)" />
+      
+      {/* Beveled edge with darker outline */}
+      <circle cx="50" cy="50" r="48" fill="none" stroke="#0F172A" strokeWidth="2.5" opacity="0.9" />
+      
+      {/* Middle divider line (thicker, raised appearance) */}
+      <line x1="2" y1="50" x2="98" y2="50" stroke="#1E293B" strokeWidth="3.5" />
+      
+      {/* Raised edge highlight on divider */}
+      <line x1="2" y1="49" x2="98" y2="49" stroke="#FFFFFF" strokeWidth="1" opacity="0.4" />
+      
+      {/* Bottom white half with subtle gradient */}
+      <path d="M 2 50 A 48 48 0 0 0 98 50 L 98 50 A 48 48 0 0 1 2 50" fill="#F1F5F9" />
+      
+      {/* Glossy shine overlay on top half */}
+      <ellipse cx="35" cy="28" rx="20" ry="18" fill="url(#shine)" opacity="0.7" />
+      
+      {/* Center button white circle with gradient and shine */}
+      <defs>
+        <radialGradient id="buttonShine" cx="35%" cy="35%">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="1" />
+          <stop offset="60%" stopColor="#F1F5F9" stopOpacity="1" />
+          <stop offset="100%" stopColor="#E2E8F0" stopOpacity="1" />
+        </radialGradient>
+      </defs>
+      
+      {/* Button outer ring (metallic look) */}
+      <circle cx="50" cy="50" r="14" fill="#E2E8F0" />
+      <circle cx="50" cy="50" r="14" fill="none" stroke="#CBD5E1" strokeWidth="1.5" />
+      <circle cx="50" cy="50" r="14" fill="none" stroke="#F1F5F9" strokeWidth="0.5" opacity="0.6" />
+      
+      {/* Button with glossy gradient */}
+      <circle cx="50" cy="50" r="11" fill="url(#buttonShine)" />
+      
+      {/* Button center dot (darker) */}
+      <circle cx="50" cy="50" r="6" fill="#0F172A" />
+      <circle cx="50" cy="50" r="5" fill="#1E293B" />
+      
+      {/* Shine on center button */}
+      <circle cx="48" cy="48" r="2.5" fill="#FFFFFF" opacity="0.8" />
     </svg>
   );
 }
@@ -479,65 +535,81 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
               </motion.div>
             ) : phase === "captured" ? (
               // Captured celebration
+            <motion.div
+              key="captured"
+              className="flex flex-col items-center gap-4"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
+            >
+              {/* Bright radial glow background */}
               <motion.div
-                key="captured"
-                className="flex flex-col items-center gap-4"
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
-              >
-                {/* Sparkle particles */}
-                {[...Array(12)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-2 h-2 rounded-full"
-                    style={{ backgroundColor: i % 2 === 0 ? mainColor : "#FFD700" }}
-                    initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
-                    animate={{
-                      x: Math.cos((i / 12) * Math.PI * 2) * 90,
-                      y: Math.sin((i / 12) * Math.PI * 2) * 90,
-                      opacity: 0,
-                      scale: 0,
-                    }}
-                    transition={{ duration: 1.2, delay: 0.4, ease: "easeOut" }}
-                  />
-                ))}
-                {/* Star sparkles */}
-                {[...Array(6)].map((_, i) => (
-                  <motion.div
-                    key={`star-${i}`}
-                    className="absolute text-yellow-400"
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{
-                      opacity: [0, 1, 0],
-                      scale: [0, 1.2, 0],
-                      x: Math.cos((i / 6) * Math.PI * 2) * 60,
-                      y: Math.sin((i / 6) * Math.PI * 2) * 60,
-                    }}
-                    transition={{ duration: 0.8, delay: 0.6 + i * 0.1 }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                  </motion.div>
-                ))}
-                <img
-                  src={getSpriteUrl(pokemon.id)}
-                  alt={pokemon.name}
-                  width={120}
-                  height={120}
-                  className="pixelated drop-shadow-[0_6px_12px_rgba(0,0,0,0.4)]"
-                  crossOrigin="anonymous"
+                className="absolute inset-0 rounded-full blur-3xl"
+                style={{
+                  width: 200,
+                  height: 200,
+                  backgroundColor: mainColor,
+                  left: "50%",
+                  top: "50%",
+                  transform: "translate(-50%, -50%)",
+                  zIndex: -1,
+                }}
+                animate={{ opacity: [0.4, 0.2, 0.4] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
+              
+              {/* Sparkle particles */}
+              {[...Array(12)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-2 h-2 rounded-full"
+                  style={{ backgroundColor: i % 2 === 0 ? mainColor : "#FFD700" }}
+                  initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+                  animate={{
+                    x: Math.cos((i / 12) * Math.PI * 2) * 90,
+                    y: Math.sin((i / 12) * Math.PI * 2) * 90,
+                    opacity: 0,
+                    scale: 0,
+                  }}
+                  transition={{ duration: 1.2, delay: 0.4, ease: "easeOut" }}
                 />
-                <motion.p
-                  className="text-lg font-bold text-foreground text-center"
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.6 }}
+              ))}
+              {/* Star sparkles */}
+              {[...Array(6)].map((_, i) => (
+                <motion.div
+                  key={`star-${i}`}
+                  className="absolute text-yellow-400"
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{
+                    opacity: [0, 1, 0],
+                    scale: [0, 1.2, 0],
+                    x: Math.cos((i / 6) * Math.PI * 2) * 60,
+                    y: Math.sin((i / 6) * Math.PI * 2) * 60,
+                  }}
+                  transition={{ duration: 0.8, delay: 0.6 + i * 0.1 }}
                 >
-                  {pokemon.name} foi capturado!
-                </motion.p>
-              </motion.div>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                </motion.div>
+              ))}
+              <img
+                src={getSpriteUrl(pokemon.id)}
+                alt={pokemon.name}
+                width={120}
+                height={120}
+                className="pixelated drop-shadow-[0_8px_20px_rgba(0,0,0,0.6)] relative z-10"
+                crossOrigin="anonymous"
+              />
+              <motion.p
+                className="text-lg font-bold text-foreground text-center relative z-10"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.6 }}
+              >
+                {pokemon.name} foi capturado!
+              </motion.p>
+            </motion.div>
             ) : phase !== "hit" && phase !== "shaking" ? (
               // Normal pokemon display with idle bob
               <motion.div
@@ -629,8 +701,11 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
                 transform: `scale(${pos.scale}) rotate(${ballFlight.progress * 360}deg)`,
                 opacity: pos.opacity,
                 transition: "none",
+                filter: `drop-shadow(0 ${6 + ballFlight.progress * 4}px ${20 + ballFlight.progress * 8}px rgba(0,0,0,0.7))`,
               }}
             >
+              {/* Glow aura during flight */}
+              <div className="absolute -inset-3 rounded-full blur-xl opacity-60" style={{ backgroundColor: ballData.color }} />
               <PokeballSVG color={ballData.color} size={56} />
             </div>
           );
@@ -655,6 +730,13 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
               exit={{ opacity: 0, transition: { duration: 0.1 } }}
               transition={{ type: "spring", stiffness: 200, damping: 15 }}
             >
+              {/* Pulsing glow when ready */}
+              <motion.div 
+                className="absolute -inset-4 rounded-full blur-2xl opacity-40" 
+                style={{ backgroundColor: ballData.color }}
+                animate={{ opacity: isDragging ? 0 : [0.3, 0.6, 0.3] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+              />
               <PokeballSVG color={ballData.color} size={64} />
               {!isDragging && (
                 <motion.p
@@ -727,27 +809,35 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
                     const bd = POKEBALL_TYPES[item.itemId];
                     if (!bd) return null;
                     return (
-                      <button
+                      <motion.button
                         key={item.itemId}
                         onClick={() => handleSelectBall(item.itemId)}
-                        className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-secondary transition-all active:scale-95"
+                        className="flex items-center gap-4 p-4 rounded-xl border-2 bg-card hover:bg-secondary transition-all active:scale-95 cursor-pointer group"
+                        style={{ borderColor: `${bd.color}40` }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                       >
-                        <PokeballSVG color={bd.color} size={44} />
+                        {/* Glow background on hover */}
+                        <div 
+                          className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-30 transition-opacity blur-lg -z-10"
+                          style={{ backgroundColor: bd.color }}
+                        />
+                        <PokeballSVG color={bd.color} size={48} />
                         <div className="flex flex-col items-start flex-1">
-                          <span className="text-sm font-semibold text-foreground">{bd.name}</span>
+                          <span className="text-sm font-bold text-foreground">{bd.name}</span>
                           <span className="text-[10px] text-muted-foreground">
                             {item.itemId === "master-ball"
-                              ? "Captura garantida"
+                              ? "✨ Captura garantida"
                               : `Multiplicador: x${bd.multiplier}`}
                           </span>
                         </div>
                         <span
-                          className="text-sm font-bold font-mono px-2.5 py-1 rounded-lg"
-                          style={{ backgroundColor: `${bd.color}20`, color: bd.color }}
+                          className="text-sm font-bold font-mono px-3 py-1.5 rounded-lg font-semibold"
+                          style={{ backgroundColor: `${bd.color}30`, color: bd.color }}
                         >
                           x{item.quantity}
                         </span>
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>
