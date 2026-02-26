@@ -295,6 +295,11 @@ export default function Page() {
   };
 
   const handleCaptureSuccess = (species: { id: number; name: string; types: string[]; baseHp: number; startingMoves: string[]; learnableMoves: string[] }, ballsUsed: number) => {
+    handleCaptureSuccessWithLevel(species, ballsUsed, 1);
+  };
+
+  // Handler for wild battle captures - preserves the level of the wild Pokemon
+  const handleCaptureSuccessWithLevel = (species: { id: number; name: string; types: string[]; baseHp: number; startingMoves: string[]; learnableMoves: string[] }, ballsUsed: number, level: number) => {
     const pokemonSpecies = getPokemon(species.id);
     if (pokemonSpecies) {
       // Auto-discover pokemon in Pokedex when captured
@@ -309,13 +314,15 @@ export default function Page() {
           setActiveTab("pokedex");
         }
       }
-      // Add to team (or reserves if team full) with 10 HP as specified
-      const uid = addToTeamWithLevel(pokemonSpecies, 1);
+      // Add to team (or reserves if team full) with the captured level
+      const uid = addToTeamWithLevel(pokemonSpecies, level);
       if (uid) {
-        // Set HP to 10 as per capture rules
+        // Calculate HP based on level (baseHp + level * 3 as per wild pokemon formula)
+        const baseHp = pokemonSpecies.baseHp || 40;
+        const maxHp = baseHp + level * 3;
         const state = useGameStore.getState();
         const mapHp = (p: typeof state.team[number]) =>
-          p.uid === uid ? { ...p, maxHp: 10, currentHp: 10 } : p;
+          p.uid === uid ? { ...p, maxHp: maxHp, currentHp: maxHp } : p;
         useGameStore.setState({
           team: state.team.map(mapHp),
           reserves: state.reserves.map(mapHp),
@@ -440,10 +447,10 @@ export default function Page() {
               useGameStore.getState().endBattle();
               setWildBattleTarget(null);
             }}
-            onCapture={(speciesId, ballsUsed) => {
+            onCapture={(speciesId, ballsUsed, level) => {
               const species = POKEMON.find((p) => p.id === speciesId);
               if (species) {
-                handleCaptureSuccess(species as any, ballsUsed);
+                handleCaptureSuccessWithLevel(species as any, ballsUsed, level);
               }
               useGameStore.getState().endBattle();
               setWildBattleTarget(null);

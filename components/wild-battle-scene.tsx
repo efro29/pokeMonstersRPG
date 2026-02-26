@@ -93,7 +93,7 @@ interface Props {
   wildPokemon: PokemonSpecies;
   wildLevel: number;
   onClose: () => void;
-  onCapture: (speciesId: number, ballsUsed: number) => void;
+  onCapture: (speciesId: number, ballsUsed: number, level: number) => void;
   onFled: () => void;
 }
 
@@ -169,6 +169,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
     applyOpponentDamage,
     switchBattlePokemon,
     addXp,
+    addPokemonBattleHistory,
   } = useGameStore();
 
   // ─── Local state ───────────────────────────────────────
@@ -350,10 +351,17 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
         const reward = wild.level * 30;
         setXpReward(reward);
         addLog(`${wild.name} selvagem desmaiou!`);
-        // Give XP to active pokemon
+        // Give XP to active pokemon and register victory in battle history
         if (pokemon) {
           addXp(pokemon.uid, reward);
           addLog(`${pokemon.name} ganhou ${reward} XP!`);
+          // Register victory in pokemon's battle history
+          addPokemonBattleHistory(pokemon.uid, {
+            type: "victory",
+            date: new Date().toISOString(),
+            xpGained: reward,
+            opponentName: `${wild.name} selvagem Lv.${wild.level}`,
+          });
         }
         setPhase("wild-fainted");
         // Animate XP bar
@@ -362,7 +370,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
         setTimeout(() => setXpBarProgress(100), 100);
       }, 1200);
     }
-  }, [wild.currentHp, phase, wild.name, wild.level, pokemon, addXp, addLog]);
+  }, [wild.currentHp, phase, wild.name, wild.level, pokemon, addXp, addLog, addPokemonBattleHistory]);
 
   // ─── Enemy Turn ────────────────────────────────────────
   const executeEnemyTurn = useCallback(() => {
@@ -443,6 +451,12 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
         const currentTeam = useGameStore.getState().team;
         const activePoke = currentTeam.find((p) => p.uid === battle.activePokemonUid);
         if (activePoke && activePoke.currentHp <= 0) {
+          // Register faint in pokemon's battle history
+          addPokemonBattleHistory(activePoke.uid, {
+            type: "faint",
+            date: new Date().toISOString(),
+            opponentName: `${wild.name} selvagem Lv.${wild.level}`,
+          });
           const nextAlive = currentTeam.find((p) => p.currentHp > 0);
           if (!nextAlive) {
             addLog("Todos os seus Pokemon desmaiaram!");
@@ -1129,7 +1143,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
                 <span className="text-lg font-bold text-amber-400">{wild.name} foi capturado!</span>
               </motion.div>
               <Button
-                onClick={() => onCapture(wild.speciesId, ballsUsed)}
+                onClick={() => onCapture(wild.speciesId, ballsUsed, wild.level)}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white"
               >
                 Continuar
