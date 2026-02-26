@@ -290,7 +290,36 @@ export default function Page() {
   };
 
   const handleStartWildBattle = (speciesId: number) => {
-    wildLevelRef.current = Math.max(1, Math.floor(Math.random() * 8) + 1);
+    // Get the highest level Pokemon in the main team
+    const currentTeam = useGameStore.getState().team;
+    const highestTeamLevel = currentTeam.length > 0 
+      ? Math.max(...currentTeam.map(p => p.level)) 
+      : 5;
+    
+    // Get exploration level (default to 1)
+    const explorationLevel = trainer.explorationLevel ?? 1;
+    
+    // Calculate base level range based on both factors
+    // Higher exploration level = chance for higher level wild Pokemon
+    // Higher team level = wild Pokemon scale with your team
+    const baseLevel = Math.max(1, Math.floor(highestTeamLevel * 0.6)); // 60% of highest team level as minimum
+    const levelBonus = Math.floor(explorationLevel / 3); // +1 max level per 3 exploration levels
+    
+    // Level range: baseLevel to (highestTeamLevel + levelBonus)
+    const minLevel = Math.max(1, baseLevel - 2);
+    const maxLevel = Math.min(100, highestTeamLevel + levelBonus + 2);
+    
+    // Weighted random: higher chance for levels closer to team level
+    // But exploration level increases chance of higher levels
+    const roll = Math.random();
+    const explorationBonus = Math.min(0.5, explorationLevel * 0.03); // Up to 50% bonus toward higher levels
+    const adjustedRoll = Math.min(1, roll + explorationBonus * Math.random());
+    
+    // Calculate final level with weighted distribution
+    const levelRange = maxLevel - minLevel;
+    const wildLevel = Math.floor(minLevel + adjustedRoll * levelRange);
+    
+    wildLevelRef.current = Math.max(1, Math.min(100, wildLevel));
     setWildBattleTarget(speciesId);
   };
 
