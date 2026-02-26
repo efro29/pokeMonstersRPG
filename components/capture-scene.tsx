@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/lib/game-store";
 import { getBattleSpriteUrl, getSpriteUrl, TYPE_COLORS } from "@/lib/pokemon-data";
@@ -47,69 +47,89 @@ function getCaptureDC(baseHp: number, ballId: string): number {
 
 // ─── Pokeball SVG component (Enhanced with glossy shine, beveled edge, and shadow) ────────────────────────────────
 function PokeballSVG({ color, size = 60, center = false }: { color: string; size?: number; center?: boolean }) {
+  // Generate unique IDs for gradients to avoid conflicts when multiple pokeballs are rendered
+  const id = React.useId().replace(/:/g, '');
+  
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" className={`drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]`}>
-      {/* Outer Shadow/Depth */}
       <defs>
-        <radialGradient id="shine" cx="35%" cy="35%">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.8" />
-          <stop offset="40%" stopColor="#FFFFFF" stopOpacity="0.2" />
+        {/* Shine gradient for top half */}
+        <radialGradient id={`shine-${id}`} cx="30%" cy="30%">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
+          <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.3" />
           <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
         </radialGradient>
-        <radialGradient id="shadowGradient" cx="50%" cy="50%">
-          <stop offset="0%" stopColor="#000000" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#000000" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient id="topGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor={color} stopOpacity="1" />
-          <stop offset="50%" stopColor={color} stopOpacity="0.95" />
+        
+        {/* Top half gradient (colored) */}
+        <linearGradient id={`topGradient-${id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor={color} />
+          <stop offset="70%" stopColor={color} />
+          <stop offset="100%" stopColor={color} stopOpacity="0.85" />
         </linearGradient>
+        
+        {/* Bottom half gradient (white) */}
+        <linearGradient id={`bottomGradient-${id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#E8E8E8" />
+          <stop offset="30%" stopColor="#FFFFFF" />
+          <stop offset="100%" stopColor="#F0F0F0" />
+        </linearGradient>
+        
+        {/* Button shine gradient */}
+        <radialGradient id={`buttonShine-${id}`} cx="35%" cy="35%">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="50%" stopColor="#F5F5F5" />
+          <stop offset="100%" stopColor="#E0E0E0" />
+        </radialGradient>
       </defs>
 
-      {/* Main sphere with gradient for 3D effect */}
-      <circle cx="50" cy="50" r="48" fill="url(#shadowGradient)" />
+      {/* Bottom white half - drawn first (behind) */}
+      <path 
+        d="M 2 50 A 48 48 0 0 1 98 50 L 98 50 A 48 48 0 0 1 2 50 Z" 
+        fill={`url(#bottomGradient-${id})`}
+      />
+      <path 
+        d="M 2 50 A 48 48 0 0 1 98 50" 
+        fill={`url(#bottomGradient-${id})`}
+      />
+      {/* Full bottom semicircle */}
+      <circle cx="50" cy="50" r="48" fill={`url(#bottomGradient-${id})`} clipPath="inset(50% 0 0 0)" />
       
-      {/* Top red/colored half */}
-      <circle cx="50" cy="50" r="48" fill="url(#topGradient)" />
+      {/* Top colored half */}
+      <path 
+        d="M 2 50 A 48 48 0 0 1 98 50 A 48 48 0 0 1 2 50" 
+        fill={`url(#topGradient-${id})`}
+        transform="scale(1, -1) translate(0, -100)"
+      />
       
-      {/* Beveled edge with darker outline */}
-      <circle cx="50" cy="50" r="48" fill="none" stroke="#0F172A" strokeWidth="2.5" opacity="0.9" />
+      {/* Outer border ring */}
+      <circle cx="50" cy="50" r="48" fill="none" stroke="#1a1a1a" strokeWidth="3" />
       
-      {/* Middle divider line (thicker, raised appearance) */}
-      <line x1="2" y1="50" x2="98" y2="50" stroke="#1E293B" strokeWidth="3.5" />
+      {/* Middle black band/divider */}
+      <rect x="2" y="46" width="96" height="8" fill="#1a1a1a" />
       
-      {/* Raised edge highlight on divider */}
-      <line x1="2" y1="49" x2="98" y2="49" stroke="#FFFFFF" strokeWidth="1" opacity="0.4" />
-      
-      {/* Bottom white half with subtle gradient */}
-      <path d="M 2 50 A 48 48 0 0 0 98 50 L 98 50 A 48 48 0 0 1 2 50" fill="#F1F5F9" />
+      {/* Highlight line on divider (metallic effect) */}
+      <line x1="2" y1="47" x2="98" y2="47" stroke="#444" strokeWidth="1" />
+      <line x1="2" y1="53" x2="98" y2="53" stroke="#000" strokeWidth="0.5" />
       
       {/* Glossy shine overlay on top half */}
-      <ellipse cx="35" cy="28" rx="20" ry="18" fill="url(#shine)" opacity="0.7" />
+      <ellipse cx="32" cy="25" rx="22" ry="16" fill={`url(#shine-${id})`} />
       
-      {/* Center button white circle with gradient and shine */}
-      <defs>
-        <radialGradient id="buttonShine" cx="35%" cy="35%">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="1" />
-          <stop offset="60%" stopColor="#F1F5F9" stopOpacity="1" />
-          <stop offset="100%" stopColor="#E2E8F0" stopOpacity="1" />
-        </radialGradient>
-      </defs>
+      {/* Center button outer ring (dark border) */}
+      <circle cx="50" cy="50" r="16" fill="#1a1a1a" />
       
-      {/* Button outer ring (metallic look) */}
-      <circle cx="50" cy="50" r="14" fill="#E2E8F0" />
-      <circle cx="50" cy="50" r="14" fill="none" stroke="#CBD5E1" strokeWidth="1.5" />
-      <circle cx="50" cy="50" r="14" fill="none" stroke="#F1F5F9" strokeWidth="0.5" opacity="0.6" />
+      {/* Center button white area */}
+      <circle cx="50" cy="50" r="13" fill={`url(#buttonShine-${id})`} />
       
-      {/* Button with glossy gradient */}
-      <circle cx="50" cy="50" r="11" fill="url(#buttonShine)" />
+      {/* Center button inner border */}
+      <circle cx="50" cy="50" r="13" fill="none" stroke="#ccc" strokeWidth="1" />
       
-      {/* Button center dot (darker) */}
-      <circle cx="50" cy="50" r="6" fill="#0F172A" />
-      <circle cx="50" cy="50" r="5" fill="#1E293B" />
+      {/* Center button dark core */}
+      <circle cx="50" cy="50" r="7" fill="#2a2a2a" />
+      <circle cx="50" cy="50" r="5.5" fill="#1a1a1a" />
       
-      {/* Shine on center button */}
-      <circle cx="48" cy="48" r="2.5" fill="#FFFFFF" opacity="0.8" />
+      {/* Shine highlight on button */}
+      <circle cx="47" cy="47" r="3" fill="#FFFFFF" opacity="0.9" />
+      <circle cx="48.5" cy="48.5" r="1.5" fill="#FFFFFF" opacity="0.6" />
     </svg>
   );
 }
