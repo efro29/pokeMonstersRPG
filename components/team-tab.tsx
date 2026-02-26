@@ -1299,7 +1299,7 @@ import {
   SkillNode, 
   SkillTree 
 } from "@/lib/skill-tree-data";
-import { POKEMON, getSpriteUrl } from "@/lib/pokemon-data";
+import { POKEMON } from "@/lib/pokemon-data";
 
 function SkillTreeTab({ pokemon }: { pokemon: TeamPokemon }) {
   const { trainer, unlockPokemonSkill, learnMove } = useGameStore();
