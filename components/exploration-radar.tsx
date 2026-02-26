@@ -23,20 +23,18 @@ const SCAN_DURATION_MS = Math.floor(
 ) + MIN;
 const MAX_POKEMON_PER_SCAN = 5;
 
-// Legendários / Míticos – nunca aparecem no radar
+// ─── Categorias de Pokemon que NAO aparecem no radar ───────
+// Legendarios / Miticos / Deuses - somente em metas ofensivas
 const LEGENDARY_IDS = new Set([
   // Kanto
   144, 145, 146, 150, 151,
-
   // Johto
   243, 244, 245, 249, 250, 251,
-
   // Hoenn
   377, 378, 379, // Regis
   380, 381,      // Lati@s
   382, 383, 384, // Weather trio
-  385, 386,      // Míticos
-
+  385, 386,      // Miticos
   // Sinnoh
   480, 481, 482, // Lake trio
   483, 484, 487, // Dialga, Palkia, Giratina
@@ -49,20 +47,177 @@ const LEGENDARY_IDS = new Set([
   493            // Arceus
 ]);
 
+// Fosseis - somente em metas ofensivas
+const FOSSIL_IDS = new Set([
+  // Kanto
+  138, 139,      // Omanyte, Omastar
+  140, 141,      // Kabuto, Kabutops
+  142,           // Aerodactyl
+  // Johto (nenhum fossil novo)
+  // Hoenn
+  345, 346,      // Lileep, Cradily
+  347, 348,      // Anorith, Armaldo
+  // Sinnoh
+  408, 409,      // Cranidos, Rampardos
+  410, 411,      // Shieldon, Bastiodon
+]);
 
-// IDs que são resultado de evolução (o campo "to" de EVOLUTIONS)
+// Raros especiais - somente em metas ofensivas
+const RARE_SPECIAL_IDS = new Set([
+  132,           // Ditto
+  201,           // Unown
+  352,           // Kecleon
+]);
+
+// IDs que sao resultado de evolucao (o campo "to" de EVOLUTIONS)
 const EVOLVED_IDS = new Set(EVOLUTIONS.map((e) => e.to));
 
-// Pokemon noturnos (Ghost, Dark) – só aparecem entre 18h e 6h
+// Pokemon noturnos (Ghost, Dark) - so aparecem entre 18h e 6h
 const NOCTURNAL_TYPES: Set<string> = new Set(["ghost", "dark"]);
 
-// Gerações com ranges para cálculo de dificuldade
+// Tipos afetados pelo clima
+const WATER_TYPES: Set<string> = new Set(["water"]);
+const FIRE_TYPES: Set<string> = new Set(["fire"]);
+
+// Geracoes com ranges para calculo de dificuldade
 const GEN_RANGES: [number, number][] = [
   [1, 151],   // G1 Kanto
   [152, 251], // G2 Johto
   [252, 386], // G3 Hoenn (completa)
   [387, 493], // G4
 ];
+
+// ─── Estado do clima ───────────────────────────────────────
+type WeatherCondition = "clear" | "rain" | "clouds" | "thunderstorm" | "snow" | "unknown";
+
+interface WeatherState {
+  condition: WeatherCondition;
+  description: string;
+  temperature: number;
+  city: string;
+  lastUpdated: number;
+}
+
+let cachedWeather: WeatherState | null = null;
+
+// Buscar clima real da regiao do jogador
+async function fetchWeather(): Promise<WeatherState> {
+  // Usar cache se atualizado nos ultimos 10 minutos
+  if (cachedWeather && Date.now() - cachedWeather.lastUpdated < 10 * 60 * 1000) {
+    return cachedWeather;
+  }
+
+  try {
+    // Obter localizacao do usuario
+    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Geolocation not supported"));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+    });
+
+    const { latitude, longitude } = position.coords;
+
+    // Buscar clima da API Open-Meteo (gratuita, sem API key)
+    const response = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&timezone=auto`
+    );
+    
+    if (!response.ok) throw new Error("Weather API error");
+    
+    const data = await response.json();
+    const weatherCode = data.current.weather_code;
+    const temp = data.current.temperature_2m;
+
+    // Mapear codigo WMO para condicao
+    let condition: WeatherCondition = "unknown";
+    let description = "Desconhecido";
+
+    if (weatherCode === 0 || weatherCode === 1) {
+      condition = "clear";
+      description = "Ensolarado";
+    } else if (weatherCode >= 2 && weatherCode <= 3) {
+      condition = "clouds";
+      description = "Nublado";
+    } else if (weatherCode >= 51 && weatherCode <= 67) {
+      condition = "rain";
+      description = "Chuva";
+    } else if (weatherCode >= 80 && weatherCode <= 82) {
+      condition = "rain";
+      description = "Chuva";
+    } else if (weatherCode >= 95 && weatherCode <= 99) {
+      condition = "thunderstorm";
+      description = "Tempestade";
+    } else if (weatherCode >= 71 && weatherCode <= 77) {
+      condition = "snow";
+      description = "Neve";
+    } else if (weatherCode >= 85 && weatherCode <= 86) {
+      condition = "snow";
+      description = "Neve";
+    } else {
+      condition = "clouds";
+      description = "Nublado";
+    }
+
+    // Buscar nome da cidade via reverse geocoding
+    let city = "Sua regiao";
+    try {
+      const geoResponse = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+      );
+      if (geoResponse.ok) {
+        const geoData = await geoResponse.json();
+        city = geoData.address?.city || geoData.address?.town || geoData.address?.village || "Sua regiao";
+      }
+    } catch {
+      // Ignorar erro de geocoding
+    }
+
+    cachedWeather = {
+      condition,
+      description,
+      temperature: Math.round(temp),
+      city,
+      lastUpdated: Date.now(),
+    };
+
+    return cachedWeather;
+  } catch {
+    // Fallback: clima aleatorio baseado na hora
+    const hour = new Date().getHours();
+    let condition: WeatherCondition = "clear";
+    let description = "Ensolarado";
+
+    // Simular clima baseado na hora (fallback)
+    if (hour >= 6 && hour < 18) {
+      const roll = Math.random();
+      if (roll < 0.6) {
+        condition = "clear";
+        description = "Ensolarado";
+      } else if (roll < 0.85) {
+        condition = "clouds";
+        description = "Nublado";
+      } else {
+        condition = "rain";
+        description = "Chuva";
+      }
+    } else {
+      condition = "clouds";
+      description = "Noite nublada";
+    }
+
+    cachedWeather = {
+      condition,
+      description,
+      temperature: 22,
+      city: "Sua regiao",
+      lastUpdated: Date.now(),
+    };
+
+    return cachedWeather;
+  }
+}
 
 function isNightTime(): boolean {
   const h = new Date().getHours();
@@ -138,21 +293,124 @@ function weightedRandomSelect(pool: PokemonSpecies[], count: number): PokemonSpe
   return selected;
 }
 
-/** Filtra Pokemon que podem aparecer no radar */
-function getRadarPool(): PokemonSpecies[] {
+/** 
+ * Filtra Pokemon que podem aparecer no radar
+ * Regras:
+ * 1. Somente Pokemon no nivel 1 de evolucao (nao evoluidos)
+ * 2. Pokemon noturnos (Ghost, Dark) somente a noite
+ * 3. Baby Pokemon somente nos ovos do radar
+ * 4. Raros, deuses, lendarios, fosseis - somente em metas ofensivas
+ * 5. Evolucoes nao aparecem no radar
+ * 6. Chuva aumenta chances de aquaticos
+ * 7. Sol aumenta chances de fogo
+ * 8. Agua e fogo sao dificeis de encontrar fora das condicoes ideais
+ */
+function getRadarPool(weather: WeatherState): PokemonSpecies[] {
   const night = isNightTime();
+  const isRaining = weather.condition === "rain" || weather.condition === "thunderstorm";
+  const isSunny = weather.condition === "clear";
+  
   return POKEMON.filter((p) => {
-    // Excluir lendários
+    // 1. Excluir lendarios/miticos/deuses (somente em metas ofensivas)
     if (LEGENDARY_IDS.has(p.id)) return false;
-    // Excluir evoluções
+    
+    // 2. Excluir fosseis (somente em metas ofensivas)
+    if (FOSSIL_IDS.has(p.id)) return false;
+    
+    // 3. Excluir raros especiais (somente em metas ofensivas)
+    if (RARE_SPECIAL_IDS.has(p.id)) return false;
+    
+    // 4. Excluir evolucoes (somente nivel 1 de evolucao aparece)
     if (EVOLVED_IDS.has(p.id)) return false;
-    // Excluir baby Pokemon (vêm apenas de ovos)
+    
+    // 5. Excluir baby Pokemon (somente nos ovos do radar)
     if (BABY_POKEMON_IDS.has(p.id)) return false;
-    // Nocturnos somente à noite
+    
+    // 6. Nocturnos (Ghost, Dark) somente a noite
     const isNocturnal = p.types.some((t) => NOCTURNAL_TYPES.has(t));
     if (isNocturnal && !night) return false;
+    
+    // 7. Tipo Agua - dificil sem chuva (80% de chance de ser filtrado)
+    const isWaterType = p.types.some((t) => WATER_TYPES.has(t));
+    if (isWaterType && !isRaining) {
+      if (Math.random() > 0.20) return false; // 80% chance de nao aparecer
+    }
+    
+    // 8. Tipo Fogo - dificil sem sol (80% de chance de ser filtrado)
+    const isFireType = p.types.some((t) => FIRE_TYPES.has(t));
+    if (isFireType && !isSunny) {
+      if (Math.random() > 0.20) return false; // 80% chance de nao aparecer
+    }
+    
     return true;
   });
+}
+
+/**
+ * Ajusta os pesos de spawn baseado no clima
+ * - Chuva: Pokemon de agua tem peso 3x maior
+ * - Sol: Pokemon de fogo tem peso 3x maior
+ */
+function getWeatherAdjustedWeight(p: PokemonSpecies, weather: WeatherState): number {
+  let baseWeight = getSpawnWeight(p);
+  
+  const isRaining = weather.condition === "rain" || weather.condition === "thunderstorm";
+  const isSunny = weather.condition === "clear";
+  
+  const isWaterType = p.types.some((t) => WATER_TYPES.has(t));
+  const isFireType = p.types.some((t) => FIRE_TYPES.has(t));
+  
+  // Clima de chuva: agua 3x mais comum
+  if (isRaining && isWaterType) {
+    baseWeight *= 3;
+  }
+  
+  // Clima ensolarado: fogo 3x mais comum
+  if (isSunny && isFireType) {
+    baseWeight *= 3;
+  }
+  
+  return baseWeight;
+}
+
+/**
+ * Selecao ponderada com ajuste de clima
+ */
+function weatherWeightedRandomSelect(pool: PokemonSpecies[], count: number, weather: WeatherState): PokemonSpecies[] {
+  if (pool.length === 0 || count === 0) return [];
+
+  const weights = pool.map((p) => getWeatherAdjustedWeight(p, weather));
+  const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+
+  const selected: PokemonSpecies[] = [];
+  const usedIndices = new Set<number>();
+
+  for (let i = 0; i < count && usedIndices.size < pool.length; i++) {
+    let roll = Math.random() * totalWeight;
+    let picked = -1;
+
+    for (let j = 0; j < pool.length; j++) {
+      if (usedIndices.has(j)) continue;
+      roll -= weights[j];
+      if (roll <= 0) {
+        picked = j;
+        break;
+      }
+    }
+
+    // Fallback caso rounding cause problemas
+    if (picked === -1) {
+      for (let j = 0; j < pool.length; j++) {
+        if (!usedIndices.has(j)) { picked = j; break; }
+      }
+    }
+    if (picked === -1) break;
+
+    usedIndices.add(picked);
+    selected.push(pool[picked]);
+  }
+
+  return selected;
 }
 
 // ─── Persistência da energia do radar ───────────────────────
@@ -338,6 +596,25 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
   const [claimedGift, setClaimedGift] = useState<GiftKit | null>(null);
   const [claimedEgg, setClaimedEgg] = useState<PokemonEgg | null>(null);
   const scanInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  
+  // Estado do clima
+  const [weather, setWeather] = useState<WeatherState>({
+    condition: "unknown",
+    description: "Carregando...",
+    temperature: 0,
+    city: "",
+    lastUpdated: 0,
+  });
+  
+  // Carregar clima ao montar componente
+  useEffect(() => {
+    fetchWeather().then(setWeather);
+    // Atualizar clima a cada 10 minutos
+    const weatherInterval = setInterval(() => {
+      fetchWeather().then(setWeather);
+    }, 10 * 60 * 1000);
+    return () => clearInterval(weatherInterval);
+  }, []);
 
   // ── Movimentacao dos blips com rastro de patinhas ──
 // ── Movimentacao dos blips com rastro de patinhas ──
@@ -496,7 +773,9 @@ useEffect(() => {
     setScanning(false);
     setScanProgress(1);
 
-    const pool = getRadarPool();
+    // Usar clima atual para filtrar e ponderar Pokemon
+    const pool = getRadarPool(weather);
+    
     // Distribuicao ponderada: 0 possivel, 1-2 normal, 3 pode acontecer, 4 raro, 5 muito raro
     const spawnRoll = Math.random();
     let finalCount: number;
@@ -535,8 +814,8 @@ useEffect(() => {
       return;
     }
 
-    // Seleção ponderada: Pokemon de número baixo na geração aparecem mais
-    const selected = weightedRandomSelect(pool, finalCount);
+    // Selecao ponderada com ajuste de clima
+    const selected = weatherWeightedRandomSelect(pool, finalCount, weather);
 
     const newBlips: RadarBlip[] = selected.map((p, i) => ({
       id: `${p.id}-${Date.now()}-${i}`,
@@ -598,7 +877,7 @@ useEffect(() => {
     if (eggCount > 0) parts.push(`${eggCount} ovo${eggCount > 1 ? "s" : ""}`);
     setScanMessage(parts.length > 0 ? `${parts.join(" e ")} detectado${pokemonCount + giftCount + eggCount > 1 ? "s" : ""}!` : "Nenhum Pokemon detectado nesta area...");
     setTimeout(() => setScanMessage(null), 1000);
-  }, []);
+  }, [weather]);
 
   // ── Iniciar scan ──
   const startScan = useCallback(() => {
@@ -718,15 +997,45 @@ useEffect(() => {
   return (
     <div className="flex flex-col items-center h-full overflow-auto py-4 px-3 gap-4">
 
-      {/* Titulo + Energia */}
+      {/* Titulo + Energia + Clima */}
       <div className="flex items-center justify-between w-full max-w-sm">
-        <div className="flex flex-col">
-          {/* <h2 className="text-sm font-bold text-foreground tracking-wide">Radar de Exploracao</h2> */}
-          {/* <p className="text-[10px] text-muted-foreground">
-            {isNightTime() ? "Modo noturno ativo" : "Modo diurno"}
-            {" — "}
-            
-          </p> */}
+        {/* Indicador de clima */}
+        <div className="flex items-center gap-2 px-2 py-1 rounded-lg" style={{ background: "rgba(0,0,0,0.3)" }}>
+          <span className="text-base">
+            {weather.condition === "clear" && "☀️"}
+            {weather.condition === "rain" && "🌧️"}
+            {weather.condition === "thunderstorm" && "⛈️"}
+            {weather.condition === "clouds" && "☁️"}
+            {weather.condition === "snow" && "❄️"}
+            {weather.condition === "unknown" && "🌡️"}
+          </span>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-medium text-foreground leading-tight">
+              {weather.description}
+            </span>
+            <span className="text-[9px] text-muted-foreground leading-tight">
+              {weather.city && `${weather.city} `}
+              {weather.temperature > 0 && `${weather.temperature}°C`}
+            </span>
+          </div>
+          {/* Bonus indicator */}
+          <div className="flex flex-col gap-0.5">
+            {(weather.condition === "rain" || weather.condition === "thunderstorm") && (
+              <span className="text-[8px] px-1 py-0.5 rounded font-bold" style={{ background: "rgba(59,130,246,0.3)", color: "#60A5FA" }}>
+                +Agua
+              </span>
+            )}
+            {weather.condition === "clear" && (
+              <span className="text-[8px] px-1 py-0.5 rounded font-bold" style={{ background: "rgba(239,68,68,0.3)", color: "#F87171" }}>
+                +Fogo
+              </span>
+            )}
+            {isNightTime() && (
+              <span className="text-[8px] px-1 py-0.5 rounded font-bold" style={{ background: "rgba(139,92,246,0.3)", color: "#A78BFA" }}>
+                +Noturno
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Bateria com raio */}
@@ -734,21 +1043,11 @@ useEffect(() => {
           {recoveryTimer && !energy.batteryActive && (
             <span style={{paddingRight:5}} className="text-[10px] text-muted-foreground font-mono">{recoveryTimer}</span>
           )}
-          {/* {energy.batteryActive && (
-            <span  className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "rgba(234,179,8,0.15)", color: "#EAB308" }}>
-              ⚡SUPER BATERIA
-              
-            </span>
-
-          )} */}
           <BatteryIcon charges={energy.charges} max={energy.batteryActive ? BATTERY_ENERGY : MAX_ENERGY} /> 
           {energy.batteryActive
               ? <span style={{ color: "#EAB308",fontSize:10,paddingLeft:2}}>{energy.charges/BATTERY_ENERGY*100}%</span>
               : <span style={{ color: "#595753",fontSize:10,paddingLeft:2}}>{energy.charges/MAX_ENERGY*100}%</span>
             }
-  
- 
-
         </div>
         
       </div>
