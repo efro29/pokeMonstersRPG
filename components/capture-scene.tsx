@@ -46,90 +46,73 @@ function getCaptureDC(baseHp: number, ballId: string): number {
 }
 
 // ─── Pokeball SVG component (Enhanced with glossy shine, beveled edge, and shadow) ────────────────────────────────
-function PokeballSVG({ color, size = 60, center = false }: { color: string; size?: number; center?: boolean }) {
+function PokeballSVG({ color, size = 60 }: { color: string; size?: number; center?: boolean }) {
   // Generate unique IDs for gradients to avoid conflicts when multiple pokeballs are rendered
   const id = React.useId().replace(/:/g, '');
   
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={`drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]`}>
+    <svg width={size} height={size} viewBox="0 0 100 100" className="drop-shadow-[0_6px_12px_rgba(0,0,0,0.5)]">
       <defs>
-        {/* Shine gradient for top half */}
+        {/* Clip paths for top and bottom halves */}
+        <clipPath id={`topHalf-${id}`}>
+          <rect x="0" y="0" width="100" height="50" />
+        </clipPath>
+        <clipPath id={`bottomHalf-${id}`}>
+          <rect x="0" y="50" width="100" height="50" />
+        </clipPath>
+        
+        {/* Shine gradient for glossy effect */}
         <radialGradient id={`shine-${id}`} cx="30%" cy="30%">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
-          <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.3" />
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
+          <stop offset="40%" stopColor="#FFFFFF" stopOpacity="0.4" />
           <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
         </radialGradient>
         
-        {/* Top half gradient (colored) */}
-        <linearGradient id={`topGradient-${id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor={color} />
-          <stop offset="70%" stopColor={color} />
-          <stop offset="100%" stopColor={color} stopOpacity="0.85" />
-        </linearGradient>
-        
-        {/* Bottom half gradient (white) */}
-        <linearGradient id={`bottomGradient-${id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#E8E8E8" />
-          <stop offset="30%" stopColor="#FFFFFF" />
-          <stop offset="100%" stopColor="#F0F0F0" />
-        </linearGradient>
-        
         {/* Button shine gradient */}
-        <radialGradient id={`buttonShine-${id}`} cx="35%" cy="35%">
+        <radialGradient id={`buttonShine-${id}`} cx="30%" cy="30%">
           <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="50%" stopColor="#F5F5F5" />
-          <stop offset="100%" stopColor="#E0E0E0" />
+          <stop offset="60%" stopColor="#F0F0F0" />
+          <stop offset="100%" stopColor="#D0D0D0" />
         </radialGradient>
       </defs>
 
-      {/* Bottom white half - drawn first (behind) */}
-      <path 
-        d="M 2 50 A 48 48 0 0 1 98 50 L 98 50 A 48 48 0 0 1 2 50 Z" 
-        fill={`url(#bottomGradient-${id})`}
-      />
-      <path 
-        d="M 2 50 A 48 48 0 0 1 98 50" 
-        fill={`url(#bottomGradient-${id})`}
-      />
-      {/* Full bottom semicircle */}
-      <circle cx="50" cy="50" r="48" fill={`url(#bottomGradient-${id})`} clipPath="inset(50% 0 0 0)" />
-      
-      {/* Top colored half */}
-      <path 
-        d="M 2 50 A 48 48 0 0 1 98 50 A 48 48 0 0 1 2 50" 
-        fill={`url(#topGradient-${id})`}
-        transform="scale(1, -1) translate(0, -100)"
+      {/* TOP HALF - Colored (red, blue, etc.) */}
+      <circle 
+        cx="50" cy="50" r="46" 
+        fill={color}
+        clipPath={`url(#topHalf-${id})`}
       />
       
-      {/* Outer border ring */}
-      <circle cx="50" cy="50" r="48" fill="none" stroke="#1a1a1a" strokeWidth="3" />
+      {/* BOTTOM HALF - White */}
+      <circle 
+        cx="50" cy="50" r="46" 
+        fill="#FFFFFF"
+        clipPath={`url(#bottomHalf-${id})`}
+      />
+      
+      {/* Outer dark border */}
+      <circle cx="50" cy="50" r="46" fill="none" stroke="#222222" strokeWidth="4" />
       
       {/* Middle black band/divider */}
-      <rect x="2" y="46" width="96" height="8" fill="#1a1a1a" />
+      <rect x="4" y="46" width="92" height="8" fill="#222222" />
       
-      {/* Highlight line on divider (metallic effect) */}
-      <line x1="2" y1="47" x2="98" y2="47" stroke="#444" strokeWidth="1" />
-      <line x1="2" y1="53" x2="98" y2="53" stroke="#000" strokeWidth="0.5" />
+      {/* Metallic highlight on band */}
+      <line x1="4" y1="47" x2="96" y2="47" stroke="#555555" strokeWidth="1" />
       
-      {/* Glossy shine overlay on top half */}
-      <ellipse cx="32" cy="25" rx="22" ry="16" fill={`url(#shine-${id})`} />
+      {/* Glossy shine on top half */}
+      <ellipse cx="30" cy="24" rx="20" ry="14" fill={`url(#shine-${id})`} />
       
-      {/* Center button outer ring (dark border) */}
-      <circle cx="50" cy="50" r="16" fill="#1a1a1a" />
+      {/* Center button - outer dark ring */}
+      <circle cx="50" cy="50" r="14" fill="#222222" />
       
-      {/* Center button white area */}
-      <circle cx="50" cy="50" r="13" fill={`url(#buttonShine-${id})`} />
+      {/* Center button - white area with shine */}
+      <circle cx="50" cy="50" r="11" fill={`url(#buttonShine-${id})`} />
       
-      {/* Center button inner border */}
-      <circle cx="50" cy="50" r="13" fill="none" stroke="#ccc" strokeWidth="1" />
+      {/* Center button - inner dark circle */}
+      <circle cx="50" cy="50" r="6" fill="#333333" />
       
-      {/* Center button dark core */}
-      <circle cx="50" cy="50" r="7" fill="#2a2a2a" />
-      <circle cx="50" cy="50" r="5.5" fill="#1a1a1a" />
-      
-      {/* Shine highlight on button */}
-      <circle cx="47" cy="47" r="3" fill="#FFFFFF" opacity="0.9" />
-      <circle cx="48.5" cy="48.5" r="1.5" fill="#FFFFFF" opacity="0.6" />
+      {/* Button highlight */}
+      <circle cx="47" cy="47" r="2.5" fill="#FFFFFF" opacity="0.9" />
     </svg>
   );
 }
@@ -404,7 +387,7 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
     [isDragging, phase, selectedBall, consumeBall, dragOffset]
   );
 
-  // ─── Helpers ──────────────────────────────────────────────
+  // ─── Helpers ─────────────────────���────────────────────────
   const handleSelectBall = (ballId: string) => {
     setSelectedBall(ballId);
     setPhase("ready");
