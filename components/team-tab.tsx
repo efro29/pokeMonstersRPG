@@ -253,9 +253,12 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
           background: isFainted?"linear-gradient(135deg, #6d6969, #000000, #403f3f)":"linear-gradient(135deg, #1852e6, #09bfcf, #030240)",
         }}
       >
-        <button
+        <div
+          role="button"
+          tabIndex={0}
           onClick={() => setSelectedUid(pokemon.uid)}
-          className={`w-full rounded-[4px] p-1.5 flex flex-col h-full
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedUid(pokemon.uid) }}
+          className={`w-full rounded-[4px] p-1.5 flex flex-col h-full cursor-pointer
         
               ${ isFainted ? "bg-gradient-to-b from-[#4b4b4b] via-[#2e2e2e] to-[#1a1a1a]" : " bg-gradient-to-b from-[#1e3a8a] to-[#0f172a] border " }
          ${ isFainted ? "border-red-800 " : "border-neutral-700 " }
@@ -353,7 +356,7 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
               </Button>
             </div>
           </div>
-        </button>
+        </div>
       </div>
     );
   };
@@ -376,9 +379,12 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
     background: "linear-gradient(135deg, #e02d2d, #1e0000, #180101)",
   }}
 >
-  <button
+  <div
+    role="button"
+    tabIndex={0}
     onClick={() => setSelectedUid(pokemon.uid)}
-    className={`w-full rounded-[4px]  p-1.5 flex flex-col h-full
+    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedUid(pokemon.uid) }}
+    className={`w-full rounded-[4px] p-1.5 flex flex-col h-full cursor-pointer
     bg-gradient-to-b from-[#2b2b2b] to-[#161616] border transition-all
     ${isFainted ? "border-red-800 opacity-60" : "border-neutral-700"}`}
   >
@@ -467,7 +473,7 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
         </Button>
       </div>
     </div>
-  </button>
+  </div>
 </div>
     );
   };
