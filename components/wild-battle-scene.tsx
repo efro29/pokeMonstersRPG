@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useGameStore, PA_CONFIG } from "@/lib/game-store";
-import type { PAActionType } from "@/lib/game-store";
+import { useGameStore } from "@/lib/game-store";
 import {
   getSpriteUrl,
   getBattleSpriteUrl,
@@ -19,9 +18,7 @@ import {
 import type { PokemonType, HitResult, PokemonSpecies, Move } from "@/lib/pokemon-data";
 import { D20Dice } from "./d20-dice";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
-import { BattleCards } from "./battle-cards";
 import { BattleParticles } from "./battle-particles";
 import { kantoPokemonSizes } from "@/lib/kantoPokemonSizes";
 import {
@@ -31,7 +28,6 @@ import {
   Heart,
   Shield,
   Zap,
-  SkipForward,
   RefreshCw,
   CircleDot,
   Flame,
@@ -75,6 +71,7 @@ type WildPhase =
   | "enemy-result"
   | "bag"
   | "pokeball-select"
+  | "ball-throw"
   | "shaking"
   | "captured"
   | "escaped"
@@ -101,6 +98,10 @@ interface Props {
 }
 
 // ─── Helpers ───────────────────────────────────────────────
+function getBackSpriteUrl(id: number): string {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/back/${id}.gif`;
+}
+
 function getCaptureDC(baseHp: number, ballId: string, hpPercent: number): number {
   const baseDC = Math.min(18, Math.max(13, Math.floor(6 + baseHp / 15)));
   const ballReduction: Record<string, number> = {
@@ -115,17 +116,16 @@ function getCaptureDC(baseHp: number, ballId: string, hpPercent: number): number
   return Math.max(2, dc);
 }
 
-function rollDiceString(diceStr: string): { rolls: number[]; sum: number } {
-  const match = diceStr.match(/(\d+)d(\d+)(?:\+(\d+))?/);
-  if (!match) return { rolls: [], sum: 0 };
-  const count = parseInt(match[1]);
-  const sides = parseInt(match[2]);
-  const bonus = parseInt(match[3] || "0");
-  const rolls: number[] = [];
-  for (let i = 0; i < count; i++) {
-    rolls.push(Math.floor(Math.random() * sides) + 1);
-  }
-  return { rolls, sum: rolls.reduce((a, b) => a + b, 0) + bonus };
+function PokeballSVG({ color, size = 60 }: { color: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" className="drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+      <circle cx="50" cy="50" r="48" fill={color} stroke="#1E293B" strokeWidth="3" />
+      <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
+      <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#F1F5F9" />
+      <circle cx="50" cy="50" r="14" fill="#F1F5F9" stroke="#1E293B" strokeWidth="3" />
+      <circle cx="50" cy="50" r="7" fill="#1E293B" />
+    </svg>
+  );
 }
 
 const BALL_DATA: Record<string, { name: string; color: string }> = {
@@ -135,26 +135,15 @@ const BALL_DATA: Record<string, { name: string; color: string }> = {
   "master-ball": { name: "Master Ball", color: "#8B5CF6" },
 };
 
-const ENERGY_ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
-  fire: Flame, water: Droplets, grass: Leaf, electric: Zap,
-  ice: Snowflake, rock: Mountain, psychic: Brain, ghost: Ghost,
-  dragon: Star, normal: Circle, flying: Wind, fighting: Sword,
-  poison: Skull, ground: Footprints, bug: Bug, dark: Shield, steel: Cog,
-};
-
 // ─── Component ─────────────────────────────────────────────
 export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, onFled }: Props) {
   const {
     team,
     bag,
     trainer,
-    showBattleCards,
     startBattle,
     endBattle,
-    spendPA,
-    endTurn,
     useBagItem,
-    addBattleLog,
     battle,
     applyOpponentDamage,
     switchBattlePokemon,
@@ -190,6 +179,10 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
   );
   const [showPlayerParticles, setShowPlayerParticles] = useState(false);
   const [showWildParticles, setShowWildParticles] = useState(false);
+  const [playerAttacking, setPlayerAttacking] = useState(false);
+  const [wildAttacking, setWildAttacking] = useState(false);
+  const [wildShake, setWildShake] = useState(false);
+  const [playerShake, setPlayerShake] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
   const [showBagDialog, setShowBagDialog] = useState(false);
   const [ballsUsed, setBallsUsed] = useState(0);
@@ -198,9 +191,8 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
   const [enemyMoveUsed, setEnemyMoveUsed] = useState<string | null>(null);
   const [enemyDamage, setEnemyDamage] = useState<number | null>(null);
   const [enemyHitResult, setEnemyHitResult] = useState<HitResult | null>(null);
-  const pa = battle.pa ?? PA_CONFIG.startingPA;
-  const maxPa = battle.maxPa ?? PA_CONFIG.maxPA;
-  const turnNumber = battle.turnNumber ?? 1;
+  const [turnNumber, setTurnNumber] = useState(1);
+  const [ballFlightProgress, setBallFlightProgress] = useState(0);
   const logRef = useRef<HTMLDivElement>(null);
 
   const addLog = useCallback((msg: string) => {
@@ -213,7 +205,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
     }
   }, [battleLog]);
 
-  // Init battle in store to use BattleCards
+  // Init battle in store for switch/damage tracking
   const initRef = useRef(false);
   useEffect(() => {
     if (!initRef.current && team.length > 0) {
@@ -223,9 +215,6 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
         startBattle(firstAlive.uid);
       }
     }
-    return () => {
-      // Cleanup: end battle on unmount
-    };
   }, [team, startBattle]);
 
   const trainerAttrs = trainer.attributes || { combate: 0, afinidade: 0, sorte: 0, furtividade: 0, percepcao: 0, carisma: 0 };
@@ -250,21 +239,8 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
     (item) => ["pokeball", "great-ball", "ultra-ball", "master-ball"].includes(item.itemId) && item.quantity > 0
   );
 
-  // ─── PA helpers ────────────────────────────────────────
-  const localSpendPA = useCallback(
-    (actionType: string): boolean => {
-      return spendPA(actionType as any);
-    },
-    [spendPA]
-  );
-
   // ─── Player Attack ────────────────────────────────────
   const handleAttackSelect = (moveId: string) => {
-    const moveDef = getMove(moveId);
-    const usesCards = moveDef && showBattleCards && (moveDef.energy_cost ?? 0) > 0;
-    if (!usesCards) {
-      if (!localSpendPA("attack")) return;
-    }
     setSelectedMoveId(moveId);
     setPhase("rolling");
     setIsRolling(true);
@@ -296,6 +272,10 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
       else if (hr === "miss") playMiss();
       else if (hr === "critical-miss") playCriticalMiss();
 
+      // Attack animation - player lunges forward
+      setPlayerAttacking(true);
+      setTimeout(() => setPlayerAttacking(false), 400);
+
       // Calc damage
       const pokemonAttrs = computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes);
       const breakdown = calculateBattleDamage(move, hr, pokemonAttrs, 0);
@@ -307,13 +287,22 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
         const wildAttrs = computeAttributes(wild.speciesId, wild.level);
         const defReduction = Math.floor(wildAttrs.defesa / 3);
         const finalDmg = Math.max(1, dmg - defReduction);
-        setWild((prev) => ({
-          ...prev,
-          currentHp: Math.max(0, prev.currentHp - finalDmg),
-        }));
-        setShowWildParticles(true);
-        playDamageReceived();
-        setTimeout(() => setShowWildParticles(false), 600);
+
+        // Hit animation on wild pokemon
+        setTimeout(() => {
+          setWildShake(true);
+          setShowWildParticles(true);
+          playDamageReceived();
+          setWild((prev) => ({
+            ...prev,
+            currentHp: Math.max(0, prev.currentHp - finalDmg),
+          }));
+          setTimeout(() => {
+            setWildShake(false);
+            setShowWildParticles(false);
+          }, 600);
+        }, 300);
+
         addLog(`${pokemon.name} usou ${move.name}! Rolou ${roll} - ${getHitResultLabel(hr)}! ${finalDmg} de dano!`);
       } else {
         addLog(`${pokemon.name} usou ${move.name}! Rolou ${roll} - ${getHitResultLabel(hr)}! Errou!`);
@@ -363,6 +352,13 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
 
     setEnemyMoveUsed(move.name);
 
+    // Wild attack animation - lunge toward player
+    setTimeout(() => {
+      setWildAttacking(true);
+      playAttack();
+      setTimeout(() => setWildAttacking(false), 400);
+    }, 500);
+
     // Roll D20 for enemy
     const enemyRoll = Math.floor(Math.random() * 20) + 1;
     let eHr: HitResult;
@@ -380,10 +376,15 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
 
     setTimeout(() => {
       if (rawDmg > 0 && pokemon) {
-        applyOpponentDamage(rawDmg);
+        // Hit animation on player pokemon
+        setPlayerShake(true);
         setShowPlayerParticles(true);
         playDamageReceived();
-        setTimeout(() => setShowPlayerParticles(false), 600);
+        applyOpponentDamage(rawDmg);
+        setTimeout(() => {
+          setPlayerShake(false);
+          setShowPlayerParticles(false);
+        }, 600);
         setEnemyDamage(rawDmg);
         addLog(`${wild.name} selvagem usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}! ${rawDmg} de dano bruto!`);
       } else {
@@ -394,11 +395,9 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
       setPhase("enemy-result");
 
       setTimeout(() => {
-        // Check if player fainted
         const currentTeam = useGameStore.getState().team;
         const activePoke = currentTeam.find((p) => p.uid === battle.activePokemonUid);
         if (activePoke && activePoke.currentHp <= 0) {
-          // Try to switch to next alive
           const nextAlive = currentTeam.find((p) => p.currentHp > 0);
           if (!nextAlive) {
             addLog("Todos os seus Pokemon desmaiaram!");
@@ -408,13 +407,12 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
             setPhase("switch");
           }
         } else {
-          // New turn
-            endTurn();
-            setPhase("menu");
+          setTurnNumber((t) => t + 1);
+          setPhase("menu");
         }
       }, 1500);
     }, 1000);
-  }, [wild, pokemon, battle.activePokemonUid, applyOpponentDamage, addLog, endTurn]);
+  }, [wild, pokemon, battle.activePokemonUid, applyOpponentDamage, addLog]);
 
   // ─── End Turn (pass) ──────────────────────────────────
   const handleEndTurn = () => {
@@ -428,7 +426,6 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
     if (uid === battle.activePokemonUid) return;
     const target = team.find((p) => p.uid === uid);
     if (!target || target.currentHp <= 0) return;
-    if (phase !== "switch" && !localSpendPA("switchPokemon")) return;
     setIsSwitching(true);
     playSendPokemon();
     addLog(`Trocou para ${target.name}!`);
@@ -436,7 +433,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
       switchBattlePokemon(uid);
       setIsSwitching(false);
       if (phase === "switch") {
-        endTurn();
+        setTurnNumber((t) => t + 1);
         setPhase("menu");
       } else {
         setPhase("menu");
@@ -446,7 +443,6 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
 
   // ─── Bag Use ──────────────────────────────────────────
   const handleUseBagItem = (itemId: string) => {
-    if (!localSpendPA("item")) return;
     const def = BAG_ITEMS.find((d) => d.id === itemId);
     if (def && pokemon) {
       useBagItem(itemId, pokemon.uid);
@@ -454,12 +450,11 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
       playHeal();
     }
     setShowBagDialog(false);
-    setPhase("menu");
+    executeEnemyTurn();
   };
 
   // ─── Pokeball ─────────────────────────────────────────
   const handleThrowBall = (ballId: string) => {
-    if (!localSpendPA("attack")) return;
     if (wild.currentHp <= 0) {
       addLog("O Pokemon selvagem desmaiou! Nao pode ser capturado.");
       setPhase("wild-fainted");
@@ -476,42 +471,53 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
     useGameStore.setState({ bag: newBag });
 
     playPokeball();
-    setPhase("shaking");
-    setShakeCount(0);
 
-    // Capture calc
-    const hpPct = (wild.currentHp / wild.maxHp) * 100;
-    const dc = getCaptureDC(wildPokemon.baseHp || 40, ballId, hpPct);
-    const d20 = Math.floor(Math.random() * 20) + 1;
-    const total = d20 + sorteBonus;
-    const success = ballId === "master-ball" || (d20 !== 1 && (d20 === 20 || total >= dc));
+    // Ball flight animation
+    setPhase("ball-throw");
+    setBallFlightProgress(0);
+    let progress = 0;
+    const flightInterval = setInterval(() => {
+      progress += 0.04;
+      setBallFlightProgress(Math.min(progress, 1));
+      if (progress >= 1) {
+        clearInterval(flightInterval);
+        // After flight completes, start shaking
+        setPhase("shaking");
+        setShakeCount(0);
 
-    addLog(`Lancou ${BALL_DATA[ballId]?.name ?? "Pokebola"}! D20: ${d20} + Sorte: ${sorteBonus} = ${total} vs DC ${dc}`);
+        // Capture calc
+        const hpPct = (wild.currentHp / wild.maxHp) * 100;
+        const dc = getCaptureDC(wildPokemon.baseHp || 40, ballId, hpPct);
+        const d20 = Math.floor(Math.random() * 20) + 1;
+        const total = d20 + sorteBonus;
+        const success = ballId === "master-ball" || (d20 !== 1 && (d20 === 20 || total >= dc));
 
-    // Shake animation
-    const totalShakes = success ? 3 : Math.floor(Math.random() * 3);
-    let current = 0;
-    const shakeInterval = setInterval(() => {
-      current++;
-      setShakeCount(current);
-      if (current >= (success ? 3 : totalShakes)) {
-        clearInterval(shakeInterval);
-        setTimeout(() => {
-          if (success) {
-            addLog(`${wild.name} foi capturado!`);
-            setPhase("captured");
-          } else {
-            addLog(`${wild.name} escapou!`);
-            setPhase("escaped");
-            setShakeCount(0);
-            // After escape, enemy may attack
+        addLog(`Lancou ${BALL_DATA[ballId]?.name ?? "Pokebola"}! D20: ${d20} + Sorte: ${sorteBonus} = ${total} vs DC ${dc}`);
+
+        const totalShakes = success ? 3 : Math.floor(Math.random() * 3);
+        let current = 0;
+        const shakeInterval = setInterval(() => {
+          current++;
+          setShakeCount(current);
+          if (current >= (success ? 3 : totalShakes)) {
+            clearInterval(shakeInterval);
             setTimeout(() => {
-              executeEnemyTurn();
-            }, 1000);
+              if (success) {
+                addLog(`${wild.name} foi capturado!`);
+                setPhase("captured");
+              } else {
+                addLog(`${wild.name} escapou!`);
+                setPhase("escaped");
+                setShakeCount(0);
+                setTimeout(() => {
+                  executeEnemyTurn();
+                }, 1000);
+              }
+            }, 500);
           }
-        }, 500);
+        }, 600);
       }
-    }, 600);
+    }, 25);
   };
 
   // ─── Flee ─────────────────────────────────────────────
@@ -527,7 +533,6 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
       setPhase("wild-fainted");
       return;
     }
-    // After player acts, enemy attacks
     executeEnemyTurn();
   };
 
@@ -539,6 +544,22 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
       </div>
     );
   }
+
+  // Ball flight arc position
+  const getBallArcPos = () => {
+    const t = ballFlightProgress;
+    // Start from bottom-left (player position), arc to top-right (wild position)
+    const startX = 80;
+    const startY = 220;
+    const endX = 280;
+    const endY = 60;
+    const x = startX + (endX - startX) * t;
+    const arcHeight = -120;
+    const y = startY + (endY - startY) * t + arcHeight * Math.sin(t * Math.PI);
+    const scale = 1 - t * 0.3;
+    const rotation = t * 720;
+    return { x, y, scale, rotation };
+  };
 
   // ─── RENDER ───────────────────────────────────────────
   return (
@@ -555,26 +576,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
           </div>
         </div>
 
-        {/* PA Orbs */}
-        <div className="flex items-center gap-0.5 bg-blue-500/10 rounded-sm">
-          {Array.from({ length: maxPa }).map((_, i) => (
-            <motion.img
-              src="/images/PA.png"
-              key={i}
-              initial={false}
-              animate={{
-                scale: i < pa ? 1 : 0.65,
-                opacity: i < pa ? 1 : 0.2,
-              }}
-              transition={{ type: "spring", stiffness: 400, damping: 20 }}
-              className={`w-6 h-6 rounded-full border-[1.5px] ${
-                i < pa
-                  ? "bg-amber-400/30 shadow-[0_0_4px_rgba(251,191,36,0.5)]"
-                  : "bg-transparent border-gray-600"
-              }`}
-            />
-          ))}
-        </div>
+        <span className="text-[10px] font-bold text-amber-400">Batalha Selvagem</span>
 
         <div className="flex items-center gap-1">
           <Button
@@ -583,7 +585,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
             disabled={phase !== "menu" && phase !== "attack-select"}
             className="h-7 px-2 text-[9px] font-bold bg-amber-500/90 hover:bg-amber-500 text-black gap-0.5"
           >
-            <SkipForward className="w-3 h-3" />
+            Passar
           </Button>
         </div>
       </nav>
@@ -595,15 +597,15 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
           <img
             src="/images/arenas/campo.gif"
             alt="Arena"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-fill"
             style={{ imageRendering: "pixelated" }}
             crossOrigin="anonymous"
           />
 
-          {/* Wild Pokemon (top right) */}
-          <div className="absolute flex flex-col items-center" style={{ top: 20, right: 20 }}>
+          {/* Wild Pokemon (top right - front sprite) */}
+          <div className="absolute flex flex-col items-center" style={{ top: 15, right: 15 }}>
             {/* Wild HP bar */}
-            <div className="flex items-center gap-1 mb-1 bg-black/60 rounded px-2 py-0.5">
+            <div className="flex items-center gap-1 mb-1 bg-black/70 rounded-lg px-2 py-0.5 backdrop-blur-sm">
               <span className="text-[9px] font-bold text-white">{wild.name}</span>
               <span className="text-[8px] text-gray-300">Lv.{wild.level}</span>
             </div>
@@ -615,11 +617,23 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
                 transition={{ duration: 0.3 }}
               />
             </div>
-            <span className="text-[8px] text-white/70">
+            <span className="text-[8px] text-white/80 font-mono bg-black/40 rounded px-1">
               {wild.currentHp}/{wild.maxHp}
             </span>
             <div className="relative mt-1">
               {showWildParticles && <BattleParticles effectType="damage" isAnimating={true} />}
+              {/* Flash overlay on hit */}
+              <AnimatePresence>
+                {wildShake && (
+                  <motion.div
+                    className="absolute inset-0 bg-white rounded-full z-10"
+                    initial={{ opacity: 0.8 }}
+                    animate={{ opacity: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                )}
+              </AnimatePresence>
               <motion.img
                 src={getBattleSpriteUrl(wild.speciesId)}
                 alt={wild.name}
@@ -631,46 +645,69 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
                   (e.target as HTMLImageElement).src = getSpriteUrl(wild.speciesId);
                 }}
                 animate={
-                  phase === "shaking"
-                    ? { x: [0, -5, 5, -5, 0], transition: { duration: 0.4, repeat: Infinity } }
+                  wildShake
+                    ? { x: [0, -8, 8, -6, 6, -3, 3, 0], opacity: [1, 0.5, 1, 0.5, 1] }
+                    : wildAttacking
+                    ? { x: [0, -30, -30, 0], transition: { duration: 0.4 } }
+                    : phase === "shaking" || phase === "ball-throw"
+                    ? { opacity: 0.3, scale: 0.5, transition: { duration: 0.3 } }
                     : wild.currentHp <= 0
-                    ? { opacity: 0.3, y: 15 }
-                    : { opacity: 1, y: 0 }
+                    ? { opacity: 0.3, y: 15, rotate: -20 }
+                    : { opacity: 1, y: [0, -3, 0], transition: { duration: 2, repeat: Infinity } }
                 }
+                transition={{ duration: 0.3 }}
               />
             </div>
           </div>
 
-          {/* Player Pokemon (bottom left) */}
-          <div className="absolute flex flex-col items-center" style={{ bottom: 15, left: 20 }}>
+          {/* Player Pokemon (bottom left - BACK sprite) */}
+          <div className="absolute flex flex-col items-center" style={{ bottom: 10, left: 15 }}>
             <div className="relative">
               {showPlayerParticles && <BattleParticles effectType="damage" isAnimating={true} />}
+              {/* Flash overlay on hit */}
+              <AnimatePresence>
+                {playerShake && (
+                  <motion.div
+                    className="absolute inset-0 bg-white rounded-full z-10"
+                    initial={{ opacity: 0.8 }}
+                    animate={{ opacity: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                )}
+              </AnimatePresence>
               <motion.img
-                src={getBattleSpriteUrl(pokemon.speciesId)}
+                src={getBackSpriteUrl(pokemon.speciesId)}
                 alt={pokemon.name}
-                width={playerSize.width}
-                height={playerSize.height}
+                width={Math.round(playerSize.width * 1.3)}
+                height={Math.round(playerSize.height * 1.3)}
                 style={{
                   imageRendering: "auto",
-                  minWidth: 60,
-                  minHeight: 60,
-                  transform: "scaleX(-1)",
+                  minWidth: 70,
+                  minHeight: 70,
                 }}
                 crossOrigin="anonymous"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = getSpriteUrl(pokemon.speciesId);
+                  // Fallback: flipped front sprite
+                  const img = e.target as HTMLImageElement;
+                  img.src = getBattleSpriteUrl(pokemon.speciesId);
+                  img.style.transform = "scaleX(-1)";
                 }}
                 animate={
-                  isSwitching
-                    ? { opacity: 0, scale: 0.5 }
+                  playerShake
+                    ? { x: [0, 6, -6, 4, -4, 2, -2, 0], opacity: [1, 0.5, 1, 0.5, 1] }
+                    : playerAttacking
+                    ? { x: [0, 40, 40, 0], y: [0, -10, -10, 0], transition: { duration: 0.4 } }
+                    : isSwitching
+                    ? { opacity: 0, scale: 0.3 }
                     : isFainted
-                    ? { opacity: 0.3, y: 15 }
+                    ? { opacity: 0.3, y: 15, rotate: 20 }
                     : { opacity: 1, y: 0, scale: 1 }
                 }
               />
             </div>
             {/* Player HP */}
-            <div className="flex items-center gap-1 mt-1 bg-black/60 rounded px-2 py-0.5">
+            <div className="flex items-center gap-1 mt-1 bg-black/70 rounded-lg px-2 py-0.5 backdrop-blur-sm">
               <span className="text-[9px] font-bold text-white">{pokemon.name}</span>
               <span className="text-[8px] text-gray-300">Lv.{pokemon.level}</span>
             </div>
@@ -682,25 +719,94 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
                 transition={{ duration: 0.3 }}
               />
             </div>
-            <span className="text-[8px] text-white/70">
+            <span className="text-[8px] text-white/80 font-mono bg-black/40 rounded px-1 mt-0.5">
               {pokemon.currentHp}/{pokemon.maxHp}
             </span>
           </div>
 
-          {/* Pokeball shaking overlay */}
-          {phase === "shaking" && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <motion.div
-                animate={{
-                  rotate: shakeCount > 0 ? [0, -20, 20, -20, 0] : 0,
-                  scale: [1, 1.1, 1],
-                }}
-                transition={{ duration: 0.5 }}
-                className="text-4xl"
-              >
-                <img src="/images/items/pokeball.png" alt="Pokeball" className="w-12 h-12" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-              </motion.div>
-            </div>
+          {/* Shadow under player pokemon */}
+          <div
+            className="absolute"
+            style={{
+              bottom: 12,
+              left: 35,
+              width: 70,
+              height: 16,
+              background: "rgba(0,0,0,0.3)",
+              borderRadius: "50%",
+              filter: "blur(4px)",
+              pointerEvents: "none",
+            }}
+          />
+          {/* Shadow under wild pokemon */}
+          <div
+            className="absolute"
+            style={{
+              top: 145,
+              right: 30,
+              width: 60,
+              height: 14,
+              background: "rgba(0,0,0,0.3)",
+              borderRadius: "50%",
+              filter: "blur(4px)",
+              pointerEvents: "none",
+            }}
+          />
+
+          {/* Ball throw animation */}
+          <AnimatePresence>
+            {phase === "ball-throw" && selectedBall && (() => {
+              const pos = getBallArcPos();
+              return (
+                <motion.div
+                  key="ball-flight"
+                  className="absolute z-40 pointer-events-none"
+                  style={{
+                    left: pos.x - 20,
+                    top: pos.y - 20,
+                    transform: `scale(${pos.scale}) rotate(${pos.rotation}deg)`,
+                  }}
+                  initial={{ opacity: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                >
+                  <PokeballSVG color={BALL_DATA[selectedBall]?.color ?? "#EF4444"} size={40} />
+                </motion.div>
+              );
+            })()}
+          </AnimatePresence>
+
+          {/* Pokeball shaking on wild pokemon */}
+          {phase === "shaking" && selectedBall && (
+            <motion.div
+              className="absolute z-40 flex flex-col items-center"
+              style={{ top: 70, right: 35 }}
+              initial={{ scale: 0.3, opacity: 0 }}
+              animate={{
+                scale: 1,
+                opacity: 1,
+                rotate: [0, -20, 20, -20, 20, 0],
+              }}
+              transition={{
+                rotate: { duration: 0.6, repeat: Infinity, repeatDelay: 0.3 },
+                scale: { type: "spring", stiffness: 300, damping: 15 },
+              }}
+            >
+              <PokeballSVG color={BALL_DATA[selectedBall]?.color ?? "#EF4444"} size={48} />
+              <div className="flex gap-1.5 mt-2">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="w-2 h-2 rounded-full"
+                    style={{
+                      backgroundColor: i < shakeCount ? BALL_DATA[selectedBall]?.color ?? "#EF4444" : "rgba(255,255,255,0.15)",
+                      boxShadow: i < shakeCount ? `0 0 6px ${BALL_DATA[selectedBall]?.color ?? "#EF4444"}` : "none",
+                    }}
+                    animate={i < shakeCount ? { scale: [1, 1.4, 1] } : {}}
+                    transition={{ duration: 0.3 }}
+                  />
+                ))}
+              </div>
+            </motion.div>
           )}
         </div>
 
@@ -737,18 +843,6 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
             );
           })}
         </div>
-
-        {/* Battle Cards area */}
-        {showBattleCards && (phase === "menu" || phase === "attack-select") && (
-          <div className="px-3 py-1 bg-black/10">
-            <div className="flex items-center gap-3 mb-1">
-              <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/50" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Cartas</span>
-              <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/50" />
-            </div>
-            <BattleCards />
-          </div>
-        )}
 
         {/* Action Panel */}
         <div className="px-3 py-2">
@@ -833,7 +927,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
                   {getHitResultLabel(hitResult)}
                 </span>
                 {diceRoll !== null && (
-                  <span className="text-xs text-muted-foreground">D20: {diceRoll}</span>
+                  <span className="text-xs text-muted-foreground">D20: {diceRoll}{combateBonus > 0 ? ` +${combateBonus}` : ""}</span>
                 )}
               </div>
               {damageDealt !== null && damageDealt > 0 && (
@@ -886,6 +980,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
                       className="h-12 font-bold text-white flex items-center gap-2"
                       style={{ backgroundColor: bd.color }}
                     >
+                      <PokeballSVG color={bd.color} size={20} />
                       <span className="text-sm">{bd.name}</span>
                       <span className="text-xs opacity-75">x{item.quantity}</span>
                     </Button>
@@ -895,10 +990,12 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
             </div>
           )}
 
-          {/* SHAKING */}
-          {phase === "shaking" && (
+          {/* BALL THROW / SHAKING */}
+          {(phase === "ball-throw" || phase === "shaking") && (
             <div className="flex flex-col items-center py-4">
-              <span className="text-sm text-muted-foreground animate-pulse">Balancando... {shakeCount}/3</span>
+              <span className="text-sm text-muted-foreground animate-pulse">
+                {phase === "ball-throw" ? "Lancando pokebola..." : `Balancando... ${shakeCount}/3`}
+              </span>
             </div>
           )}
 
@@ -911,6 +1008,12 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
                 transition={{ type: "spring", damping: 10 }}
                 className="text-center"
               >
+                <img
+                  src={getSpriteUrl(wild.speciesId)}
+                  alt={wild.name}
+                  className="w-16 h-16 mx-auto mb-2"
+                  crossOrigin="anonymous"
+                />
                 <span className="text-lg font-bold text-amber-400">{wild.name} foi capturado!</span>
               </motion.div>
               <Button
@@ -952,7 +1055,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
                     </Button>
                   ))}
               </div>
-              {phase === "switch" && !team.some((p) => p.currentHp > 0 && p.uid !== battle.activePokemonUid) && (
+              {!team.some((p) => p.currentHp > 0 && p.uid !== battle.activePokemonUid) && (
                 <Button onClick={onClose} variant="destructive" className="w-full mt-2">
                   Sem Pokemon - Sair
                 </Button>
