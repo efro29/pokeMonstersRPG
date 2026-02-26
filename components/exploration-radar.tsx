@@ -363,16 +363,24 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
           if (newDist > 0.85) { newDist = 0.85; newVDist = -Math.abs(newVDist); }
           if (newDist < 0.12) { newDist = 0.12; newVDist = Math.abs(newVDist); }
 
-          // Add new paw (position will be calculated in render)
+          // Calculate current position for paw print (approximate - will use real center in render)
+          const radarSize = 280;
+          const center = radarSize / 2;
+          const rad = (newAngle * Math.PI) / 180;
+          const maxR = center - 16;
+          const px = center + Math.cos(rad) * maxR * newDist;
+          const py = center + Math.sin(rad) * maxR * newDist;
+
+          // Add new paw with actual position
           const newPaw: PawPrint = {
             id: `paw-${Date.now()}-${Math.random()}`,
-            x: 0, // Will be calculated in render
-            y: 0, // Will be calculated in render
-            opacity: 0.6,
+            x: px,
+            y: py,
+            opacity: 0.7,
           };
           const updatedPaws = [...blip.pawPrints, newPaw]
-            .map((p) => ({ ...p, opacity: p.opacity - 0.08 }))
-            .filter((p) => p.opacity > 0);
+            .map((p) => ({ ...p, opacity: Math.max(0, p.opacity - 0.06) }))
+            .filter((p) => p.opacity > 0.02);
 
           return {
             ...blip,
@@ -799,24 +807,17 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
           height={radarSize}
           viewBox={`0 0 ${radarSize} ${radarSize}`}
         >
-          {blips.flatMap((blip) => {
-            const rad = (blip.angle * Math.PI) / 180;
-            const maxR = center - 16;
-            return blip.pawPrints.map((paw) => {
-              // Recalculate paw position based on blip's current angle/distance
-              const px = center + Math.cos(rad) * maxR * blip.distance;
-              const py = center + Math.sin(rad) * maxR * blip.distance;
-              return (
-                <g key={paw.id} opacity={paw.opacity} transform={`translate(${px}, ${py})`}>
-                  {/* Small paw - 3 toes + pad */}
-                  <circle cx={-2.5} cy={-3} r={1.2} fill="rgba(34,197,94,0.7)" />
-                  <circle cx={0} cy={-4} r={1.2} fill="rgba(34,197,94,0.7)" />
-                  <circle cx={2.5} cy={-3} r={1.2} fill="rgba(34,197,94,0.7)" />
-                  <ellipse cx={0} cy={0} rx={2.5} ry={2} fill="rgba(34,197,94,0.6)" />
-                </g>
-              );
-            });
-          })}
+          {blips.flatMap((blip) =>
+            blip.pawPrints.map((paw) => (
+              <g key={paw.id} opacity={paw.opacity} transform={`translate(${paw.x}, ${paw.y})`}>
+                {/* Small paw - 3 toes + pad */}
+                <circle cx={-2.5} cy={-3} r={1.2} fill="rgba(34,197,94,0.7)" />
+                <circle cx={0} cy={-4} r={1.2} fill="rgba(34,197,94,0.7)" />
+                <circle cx={2.5} cy={-3} r={1.2} fill="rgba(34,197,94,0.7)" />
+                <ellipse cx={0} cy={0} rx={2.5} ry={2} fill="rgba(34,197,94,0.6)" />
+              </g>
+            ))
+          )}
         </svg>
 
         {/* Blips (pontos de pokemon) */}
