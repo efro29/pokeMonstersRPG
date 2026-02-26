@@ -999,8 +999,8 @@ useEffect(() => {
 
       {/* Titulo + Energia + Clima */}
       <div className="flex items-center justify-between w-full max-w-sm">
-        {/* Indicador de clima */}
-        <div className="flex items-center gap-2 px-2 py-1 rounded-lg" style={{ background: "rgba(0,0,0,0.3)" }}>
+        {/* Indicador de clima e localizacao */}
+        <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background: "rgba(0,0,0,0.3)" }}>
           <span className="text-base">
             {weather.condition === "clear" && "☀️"}
             {weather.condition === "rain" && "🌧️"}
@@ -1010,12 +1010,13 @@ useEffect(() => {
             {weather.condition === "unknown" && "🌡️"}
           </span>
           <div className="flex flex-col">
-            <span className="text-[10px] font-medium text-foreground leading-tight">
-              {weather.description}
+            {/* Nome da cidade em destaque */}
+            <span className="text-[11px] font-bold text-foreground leading-tight">
+              {weather.city || "Localizando..."}
             </span>
             <span className="text-[9px] text-muted-foreground leading-tight">
-              {weather.city && `${weather.city} `}
-              {weather.temperature > 0 && `${weather.temperature}°C`}
+              {weather.description}
+              {weather.temperature > 0 && ` - ${weather.temperature}°C`}
             </span>
           </div>
           {/* Bonus indicator */}
