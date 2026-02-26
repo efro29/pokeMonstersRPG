@@ -109,11 +109,12 @@ function RevealParticles({ color }: { color: string }) {
 interface PokedexTabProps {
   onStartBattleWithPokemon?: (speciesId: number, level: number) => void;
   onStartCapture?: (speciesId: number) => void;
+  onStartWildBattle?: (speciesId: number) => void;
 }
 
 type PokedexSubTab = "lista" | "radar" | "ovos";
 
-export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: PokedexTabProps = {}) {
+export function PokedexTab({ onStartBattleWithPokemon, onStartCapture, onStartWildBattle }: PokedexTabProps = {}) {
   const [subTab, setSubTab] = useState<PokedexSubTab>("lista");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -284,7 +285,7 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture }: Pokedex
         </div>
       ) : /* Radar tab */
       isTrainerMode && subTab === "radar" ? (
-        <ExplorationRadar onStartCapture={onStartCapture} />
+        <ExplorationRadar onStartCapture={onStartCapture} onStartWildBattle={onStartWildBattle} />
       ) : (
         <>
           {/* Header area */}

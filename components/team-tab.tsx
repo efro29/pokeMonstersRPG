@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useGameStore } from "@/lib/game-store";
 import { useModeStore } from "@/lib/mode-store";
 import {
@@ -651,6 +651,14 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
     .filter((p) => p.speciesId === pokemon.speciesId && p.uid !== pokemon.uid)
     .reduce((sum, p) => sum + (p.level ?? 1) * 25, 0);
 
+  const [transferResult, setTransferResult] = useState<{
+    pokemonName: string;
+    recipientName: string;
+    xpGained: number;
+    count?: number;
+  } | null>(null);
+  const [xpBarAnimProgress, setXpBarAnimProgress] = useState(0);
+
   return (
     <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto h-[75vh] overflow-y-auto">
       <DialogHeader>
@@ -768,7 +776,14 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                   onClick={() => {
                     const result = transferAllDuplicates(pokemon.speciesId, pokemon.uid);
                     if (result.count > 0) {
-                      alert(`${result.count} Pokemon transferido${result.count > 1 ? 's' : ''}! ${pokemon.name} ganhou ${result.totalXp} XP!`);
+                      setTransferResult({
+                        pokemonName: pokemon.name,
+                        recipientName: pokemon.name,
+                        xpGained: result.totalXp,
+                        count: result.count,
+                      });
+                      setXpBarAnimProgress(0);
+                      setTimeout(() => setXpBarAnimProgress(100), 100);
                     }
                   }}
                   className="w-full bg-amber-600 text-white hover:bg-amber-700 text-xs"
@@ -865,9 +880,17 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
               onClick={() => {
                 const result = transferToProfesor(pokemon.uid);
                 if (result.xpGained > 0 && result.recipientName) {
-                  alert(`${pokemon.name} transferido! ${result.recipientName} ganhou ${result.xpGained} XP!`);
+                  setTransferResult({
+                    pokemonName: pokemon.name,
+                    recipientName: result.recipientName,
+                    xpGained: result.xpGained,
+                  });
+                  setXpBarAnimProgress(0);
+                  setTimeout(() => setXpBarAnimProgress(100), 100);
+                  setTimeout(() => onClose(), 3000);
+                } else {
+                  onClose();
                 }
-                onClose();
               }}
               className="w-full"
             >
@@ -1293,6 +1316,84 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Transfer XP Animation Overlay */}
+      <AnimatePresence>
+        {transferResult && (
+          <motion.div
+            key="transfer-overlay"
+            className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center rounded-lg"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="flex flex-col items-center gap-3 p-6 max-w-xs"
+              initial={{ scale: 0.8, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              transition={{ type: "spring", damping: 15 }}
+            >
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", damping: 10, delay: 0.2 }}
+              >
+                <Send className="w-10 h-10 text-amber-400" />
+              </motion.div>
+              <motion.p
+                className="text-sm text-center text-foreground font-bold"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                {transferResult.count
+                  ? `${transferResult.count} Pokemon transferido${transferResult.count > 1 ? 's' : ''}!`
+                  : `${transferResult.pokemonName} transferido!`}
+              </motion.p>
+              <motion.div
+                className="w-full bg-card rounded-lg border border-border p-3"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-foreground">{transferResult.recipientName}</span>
+                  <motion.span
+                    className="text-sm font-bold text-emerald-400"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: [0, 1.4, 1] }}
+                    transition={{ delay: 0.8, duration: 0.5 }}
+                  >
+                    +{transferResult.xpGained} XP
+                  </motion.span>
+                </div>
+                <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400"
+                    initial={{ width: "0%" }}
+                    animate={{ width: `${xpBarAnimProgress}%` }}
+                    transition={{ duration: 1.5, ease: "easeOut", delay: 0.8 }}
+                  />
+                </div>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 2 }}
+              >
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setTransferResult(null)}
+                  className="text-xs"
+                >
+                  Fechar
+                </Button>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </DialogContent>
   );
 }

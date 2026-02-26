@@ -297,6 +297,13 @@ function rollGiftKit(): GiftKit {
 }
 
 // ─── Tipos de ponto no radar ────────────────────────────────
+interface PawPrint {
+  id: string;
+  x: number;
+  y: number;
+  opacity: number;
+}
+
 interface RadarBlip {
   id: string;
   pokemon?: PokemonSpecies;
@@ -307,13 +314,18 @@ interface RadarBlip {
   angle: number;  // graus
   distance: number; // 0-1 (centro para borda)
   delay: number; // animação
+  // Movement
+  vAngle: number; // velocidade angular (graus/tick)
+  vDist: number;  // velocidade radial (/tick)
+  pawPrints: PawPrint[];
 }
 
 interface ExplorationRadarProps {
   onStartCapture?: (speciesId: number) => void;
+  onStartWildBattle?: (speciesId: number) => void;
 }
 
-export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
+export function ExplorationRadar({ onStartCapture, onStartWildBattle }: ExplorationRadarProps) {
   const { addMoney, addBagItem, addEgg, eggs, bag } = useGameStore();
   const { activeProfileId, getDiscoveredForProfile } = useModeStore();
   const [energy, setEnergy] = useState<RadarEnergy>(loadEnergy);
@@ -326,6 +338,63 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
   const [claimedGift, setClaimedGift] = useState<GiftKit | null>(null);
   const [claimedEgg, setClaimedEgg] = useState<PokemonEgg | null>(null);
   const scanInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ── Movimentacao dos blips com rastro de patinhas ──
+  useEffect(() => {
+    if (blips.length === 0 || scanning) return;
+    const moveInterval = setInterval(() => {
+      setBlips((prev) =>
+        prev.map((blip) => {
+          // Gifts and eggs don't move
+          if (blip.isGift || blip.isEgg) return blip;
+
+          // Occasionally change direction
+          let newVAngle = blip.vAngle;
+          let newVDist = blip.vDist;
+          if (Math.random() < 0.08) {
+            newVAngle = (Math.random() - 0.5) * 4;
+            newVDist = (Math.random() - 0.5) * 0.012;
+          }
+
+          let newAngle = blip.angle + newVAngle;
+          let newDist = blip.distance + newVDist;
+
+          // Bounce off edges
+          if (newDist > 0.85) { newDist = 0.85; newVDist = -Math.abs(newVDist); }
+          if (newDist < 0.12) { newDist = 0.12; newVDist = Math.abs(newVDist); }
+
+          // Calculate current position for paw print (approximate - will use real center in render)
+          const radarSize = 280;
+          const center = radarSize / 2;
+          const rad = (newAngle * Math.PI) / 180;
+          const maxR = center - 16;
+          const px = center + Math.cos(rad) * maxR * newDist;
+          const py = center + Math.sin(rad) * maxR * newDist;
+
+          // Add new paw with actual position
+          const newPaw: PawPrint = {
+            id: `paw-${Date.now()}-${Math.random()}`,
+            x: px,
+            y: py,
+            opacity: 0.7,
+          };
+          const updatedPaws = [...blip.pawPrints, newPaw]
+            .map((p) => ({ ...p, opacity: Math.max(0, p.opacity - 0.06) }))
+            .filter((p) => p.opacity > 0.02);
+
+          return {
+            ...blip,
+            angle: newAngle,
+            distance: newDist,
+            vAngle: newVAngle,
+            vDist: newVDist,
+            pawPrints: updatedPaws,
+          };
+        })
+      );
+    }, 350);
+    return () => clearInterval(moveInterval);
+  }, [blips.length, scanning]);
 
   // Bateria na bolsa (para mostrar botão de ativar)
   const bagBatteryCount = bag.find((i) => i.itemId === "radar-battery")?.quantity ?? 0;
@@ -392,9 +461,15 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
     setScanProgress(1);
 
     const pool = getRadarPool();
-    // 0 a 5 pokemon, com chance de 0
-    const count = Math.floor(Math.random() * (MAX_POKEMON_PER_SCAN + 2)) - 1; // -1 to 6, clamped
-    const finalCount = Math.max(0, Math.min(MAX_POKEMON_PER_SCAN, count));
+    // Distribuicao ponderada: 0 possivel, 1-2 normal, 3 pode acontecer, 4 raro, 5 muito raro
+    const spawnRoll = Math.random();
+    let finalCount: number;
+    if (spawnRoll < 0.08) finalCount = 0;       // 8%  - nenhum
+    else if (spawnRoll < 0.38) finalCount = 1;   // 30% - normal
+    else if (spawnRoll < 0.70) finalCount = 2;   // 32% - normal
+    else if (spawnRoll < 0.88) finalCount = 3;   // 18% - pode acontecer
+    else if (spawnRoll < 0.97) finalCount = 4;   // 9%  - raro
+    else finalCount = 5;                          // 3%  - muito raro
 
     if (finalCount === 0) {
       // Even with no pokemon, can still find a gift box
@@ -409,6 +484,9 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
           angle: Math.random() * 360,
           distance: 0.2 + Math.random() * 0.55,
           delay: 0.2,
+          vAngle: 0,
+          vDist: 0,
+          pawPrints: [],
         };
         setBlips([giftBlip]);
         playGift();
@@ -432,6 +510,9 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
       angle: Math.random() * 360,
       distance: 0.2 + Math.random() * 0.65,
       delay: i * 0.3,
+      vAngle: (Math.random() - 0.5) * 3,   // -1.5 a +1.5 graus/tick
+      vDist: (Math.random() - 0.5) * 0.008, // radial drift
+      pawPrints: [],
     }));
 
     // Gift box chance: ~40% chance per scan (independent of pokemon count)
@@ -446,6 +527,9 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
         angle: Math.random() * 360,
         distance: 0.15 + Math.random() * 0.6,
         delay: finalCount * 0.3 + 0.2,
+        vAngle: 0,
+        vDist: 0,
+        pawPrints: [],
       });
     }
 
@@ -461,6 +545,9 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
         angle: Math.random() * 360,
         distance: 0.2 + Math.random() * 0.55,
         delay: (finalCount + 1) * 0.3 + 0.1,
+        vAngle: 0,
+        vDist: 0,
+        pawPrints: [],
       });
     }
 
@@ -578,6 +665,13 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
     if (!selectedBlip || !onStartCapture || !selectedBlip.pokemon) return;
     onStartCapture(selectedBlip.pokemon.id);
     // Remove from blips
+    setBlips((prev) => prev.filter((b) => b.id !== selectedBlip.id));
+    setSelectedBlip(null);
+  };
+
+  const handleBattle = () => {
+    if (!selectedBlip || !onStartWildBattle || !selectedBlip.pokemon) return;
+    onStartWildBattle(selectedBlip.pokemon.id);
     setBlips((prev) => prev.filter((b) => b.id !== selectedBlip.id));
     setSelectedBlip(null);
   };
@@ -706,6 +800,26 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
           </motion.div>
         )}
 
+        {/* Paw prints trail */}
+        <svg
+          className="absolute inset-0 pointer-events-none z-[5]"
+          width={radarSize}
+          height={radarSize}
+          viewBox={`0 0 ${radarSize} ${radarSize}`}
+        >
+          {blips.flatMap((blip) =>
+            blip.pawPrints.map((paw) => (
+              <g key={paw.id} opacity={paw.opacity} transform={`translate(${paw.x}, ${paw.y})`}>
+                {/* Small paw - 3 toes + pad */}
+                <circle cx={-2.5} cy={-3} r={1.2} fill="rgba(34,197,94,0.7)" />
+                <circle cx={0} cy={-4} r={1.2} fill="rgba(34,197,94,0.7)" />
+                <circle cx={2.5} cy={-3} r={1.2} fill="rgba(34,197,94,0.7)" />
+                <ellipse cx={0} cy={0} rx={2.5} ry={2} fill="rgba(34,197,94,0.6)" />
+              </g>
+            ))
+          )}
+        </svg>
+
         {/* Blips (pontos de pokemon) */}
         <AnimatePresence>
           {blips.map((blip) => {
@@ -723,13 +837,11 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
               <motion.button
                 key={blip.id}
                 initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
+                animate={{ scale: 1, opacity: 1, left: x - 12, top: y - 12 }}
                 exit={{ scale: 0, opacity: 0 }}
-                transition={{ delay: blip.delay, type: "spring", stiffness: 300, damping: 20 }}
+                transition={{ delay: blip.delay, type: "spring", stiffness: 300, damping: 20, left: { duration: 0.35, ease: "easeOut", delay: 0 }, top: { duration: 0.35, ease: "easeOut", delay: 0 } }}
                 className="absolute z-10 group"
                 style={{
-                  left: x - 12,
-                  top: y - 12,
                   width: 24,
                   height: 24,
                 }}
@@ -841,12 +953,26 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
     
           <>
           <Button
-          disabled={    selectedBlip && selectedBlip.pokemon ?false:true}
+          disabled={!selectedBlip || !selectedBlip.pokemon}
+            onClick={handleBattle}
+                  className="w-full max-w-sm h-12 text-sm font-bold relative overflow-hidden"
+            style={{ backgroundColor: selectedBlip && selectedBlip.pokemon ? "#b91c1c" : "#333645" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+              <path d="M14.5 17.5L3 6V3h3l11.5 11.5" />
+              <path d="M13 19l6-6" />
+              <path d="M16 16l4 4" />
+              <path d="M19 21l2-2" />
+            </svg>
+             { selectedBlip && selectedBlip.pokemon ? "Batalhar" : ""}
+          </Button>
+          <Button
+          disabled={!selectedBlip || !selectedBlip.pokemon}
             onClick={handleCapture}
-                  className="w-full max-w-sm h-12 text-sm font-bold relative overflow-hidden animate"
+                  className="w-full max-w-sm h-12 text-sm font-bold relative overflow-hidden"
             style={{ backgroundColor:selectedBlip && selectedBlip.pokemon ?"#c88941": "#333645" }}
           >
-            <svg width="16" height="16" viewBox="0 0 100 100" className="mr-2">
+            <svg width="16" height="16" viewBox="0 0 100 100" className="mr-1">
               <circle cx="50" cy="50" r="48" fill={selectedBlip && selectedBlip.pokemon ?"#EF4444":"#1E293B"} stroke="#1E293B" strokeWidth="3" />
               <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
               <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#F1F5F9" />
@@ -855,13 +981,7 @@ export function ExplorationRadar({ onStartCapture }: ExplorationRadarProps) {
             </svg>
              { selectedBlip && selectedBlip.pokemon ?"Capturar":""}
           </Button>
-          
-          
           </>
-    
-     
-
-        
       </div>
   
 
