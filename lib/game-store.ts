@@ -1506,9 +1506,10 @@ export const useGameStore = create<GameState>()(
         const pokemonAttrs = activePokemon
           ? computeAttributes(activePokemon.speciesId, activePokemon.level, activePokemon.customAttributes)
           : computeAttributes(1, 5); // fallback
+        const attackerLevel = activePokemon?.level || 5;
 
-        // Calculate dice-based damage with full breakdown
-        const breakdown = calculateBattleDamage(move, hitResult, pokemonAttrs, 0);
+        // Calculate dice-based damage with full breakdown (level scaling applied)
+        const breakdown = calculateBattleDamage(move, hitResult, pokemonAttrs, 0, attackerLevel);
         // damageDealt = the raw total before target defense (target defense is applied on applyOpponentDamage)
         const damageDealt = breakdown.rawTotal;
 

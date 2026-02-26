@@ -93,7 +93,7 @@ interface Props {
   wildPokemon: PokemonSpecies;
   wildLevel: number;
   onClose: () => void;
-  onCapture: (speciesId: number, ballsUsed: number) => void;
+  onCapture: (speciesId: number, ballsUsed: number, level: number) => void;
   onFled: () => void;
 }
 
@@ -169,6 +169,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
     applyOpponentDamage,
     switchBattlePokemon,
     addXp,
+    addPokemonBattleHistory,
   } = useGameStore();
 
   // ─── Local state ───────────────────────────────────────
@@ -267,6 +268,28 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
 
   // ─── Player Attack ────────────────────────────────────
   const handleAttackSelect = (moveId: string) => {
+    // Check if pokemon has PP for the move
+    const moveData = pokemon?.moves.find((m) => m.moveId === moveId);
+    if (!moveData || moveData.currentPP <= 0) {
+      addLog(`${pokemon?.name} nao tem PP para usar esse golpe!`);
+      return;
+    }
+    
+    // Consume 1 PP from the player's pokemon
+    const { team: currentTeam } = useGameStore.getState();
+    useGameStore.setState({
+      team: currentTeam.map((p) =>
+        p.uid === pokemon?.uid
+          ? {
+              ...p,
+              moves: p.moves.map((m) =>
+                m.moveId === moveId ? { ...m, currentPP: m.currentPP - 1 } : m
+              ),
+            }
+          : p
+      ),
+    });
+    
     setSelectedMoveId(moveId);
     setPhase("rolling");
     setIsRolling(true);
@@ -306,17 +329,15 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
       setAttackEffect({ type: move.type as PokemonType, side: "wild" });
       setTimeout(() => setAttackEffect(null), 800);
 
-      // Calc damage
+      // Calc damage with level scaling
       const pokemonAttrs = computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes);
-      const breakdown = calculateBattleDamage(move, hr, pokemonAttrs, 0);
-      const dmg = breakdown.rawTotal;
-      setDamageDealt(dmg);
+      const wildAttrs = computeAttributes(wild.speciesId, wild.level);
+      const breakdown = calculateBattleDamage(move, hr, pokemonAttrs, wildAttrs.defesa, pokemon.level, wild.level);
+      const finalDmg = breakdown.finalDamage;
+      setDamageDealt(finalDmg);
 
       // Apply damage to wild pokemon
-      if (dmg > 0) {
-        const wildAttrs = computeAttributes(wild.speciesId, wild.level);
-        const defReduction = Math.floor(wildAttrs.defesa / 3);
-        const finalDmg = Math.max(1, dmg - defReduction);
+      if (finalDmg > 0) {
 
         // Hit animation on wild pokemon
         setTimeout(() => {
@@ -350,10 +371,17 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
         const reward = wild.level * 30;
         setXpReward(reward);
         addLog(`${wild.name} selvagem desmaiou!`);
-        // Give XP to active pokemon
+        // Give XP to active pokemon and register victory in battle history
         if (pokemon) {
           addXp(pokemon.uid, reward);
           addLog(`${pokemon.name} ganhou ${reward} XP!`);
+          // Register victory in pokemon's battle history
+          addPokemonBattleHistory(pokemon.uid, {
+            type: "victory",
+            date: new Date().toISOString(),
+            xpGained: reward,
+            opponentName: `${wild.name} selvagem Lv.${wild.level}`,
+          });
         }
         setPhase("wild-fainted");
         // Animate XP bar
@@ -362,7 +390,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
         setTimeout(() => setXpBarProgress(100), 100);
       }, 1200);
     }
-  }, [wild.currentHp, phase, wild.name, wild.level, pokemon, addXp, addLog]);
+  }, [wild.currentHp, phase, wild.name, wild.level, pokemon, addXp, addLog, addPokemonBattleHistory]);
 
   // ─── Enemy Turn ────────────────────────────────────────
   const executeEnemyTurn = useCallback(() => {
@@ -415,23 +443,25 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
 
     setEnemyHitResult(eHr);
 
+    // Calculate damage with level scaling (wild attacking player)
     const wildAttrs = computeAttributes(wild.speciesId, wild.level);
-    const breakdown = calculateBattleDamage(move, eHr, wildAttrs, 0);
-    const rawDmg = breakdown.rawTotal;
+    const pokemonAttrs = pokemon ? computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes) : wildAttrs;
+    const breakdown = calculateBattleDamage(move, eHr, wildAttrs, pokemonAttrs.defesa, wild.level, pokemon?.level || 5);
+    const finalDmg = breakdown.finalDamage;
 
     setTimeout(() => {
-      if (rawDmg > 0 && pokemon) {
+      if (finalDmg > 0 && pokemon) {
         // Hit animation on player pokemon
         setPlayerShake(true);
         setShowPlayerParticles(true);
         playDamageReceived();
-        applyOpponentDamage(rawDmg);
+        applyOpponentDamage(finalDmg);
         setTimeout(() => {
           setPlayerShake(false);
           setShowPlayerParticles(false);
         }, 600);
-        setEnemyDamage(rawDmg);
-        addLog(`${wild.name} selvagem usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}! ${rawDmg} de dano bruto!`);
+        setEnemyDamage(finalDmg);
+        addLog(`${wild.name} selvagem usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}! ${finalDmg} de dano!`);
       } else {
         setEnemyDamage(0);
         addLog(`${wild.name} selvagem usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}! Errou!`);
@@ -443,6 +473,12 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
         const currentTeam = useGameStore.getState().team;
         const activePoke = currentTeam.find((p) => p.uid === battle.activePokemonUid);
         if (activePoke && activePoke.currentHp <= 0) {
+          // Register faint in pokemon's battle history
+          addPokemonBattleHistory(activePoke.uid, {
+            type: "faint",
+            date: new Date().toISOString(),
+            opponentName: `${wild.name} selvagem Lv.${wild.level}`,
+          });
           const nextAlive = currentTeam.find((p) => p.currentHp > 0);
           if (!nextAlive) {
             addLog("Todos os seus Pokemon desmaiaram!");
@@ -1129,7 +1165,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
                 <span className="text-lg font-bold text-amber-400">{wild.name} foi capturado!</span>
               </motion.div>
               <Button
-                onClick={() => onCapture(wild.speciesId, ballsUsed)}
+                onClick={() => onCapture(wild.speciesId, ballsUsed, wild.level)}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white"
               >
                 Continuar

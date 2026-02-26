@@ -4,13 +4,14 @@ import { useState } from "react";
 import { useGameStore } from "@/lib/game-store";
 import { useModeStore } from "@/lib/mode-store";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Eye, EyeOff, Volume2, VolumeX, Hash, Lock, X, Coins, ShieldOff } from "lucide-react";
+import { Settings, Eye, EyeOff, Volume2, VolumeX, Hash, Lock, X, Coins, ShieldOff, Zap } from "lucide-react";
 import { playButtonClick } from "@/lib/sounds";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 const DISCOVER_SECRET = "dittocujo";
 const ECONOMY_SECRET = "maodevaca";
+const XP_SECRET = "maximo";
 
 export function SettingsTab() {
   const { showBattleCards, toggleBattleCards } = useGameStore();
@@ -31,10 +32,15 @@ export function SettingsTab() {
   const [passwordError, setPasswordError] = useState(false);
 
   // Economy lock
-  const { economyLocked, setEconomyLocked } = useModeStore();
+  const { economyLocked, setEconomyLocked, xpLocked, setXpLocked } = useModeStore();
   const [showEconomyPasswordPrompt, setShowEconomyPasswordPrompt] = useState(false);
   const [economyPasswordInput, setEconomyPasswordInput] = useState("");
   const [economyPasswordError, setEconomyPasswordError] = useState(false);
+
+  // XP lock
+  const [showXpPasswordPrompt, setShowXpPasswordPrompt] = useState(false);
+  const [xpPasswordInput, setXpPasswordInput] = useState("");
+  const [xpPasswordError, setXpPasswordError] = useState(false);
 
   const toggleMusic = () => {
     const newVal = !musicMuted;
@@ -94,6 +100,31 @@ export function SettingsTab() {
     } else {
       setEconomyPasswordError(true);
       setEconomyPasswordInput("");
+    }
+  };
+
+  const handleXpToggle = () => {
+    playButtonClick();
+    if (!xpLocked) {
+      // Locking doesn't need password
+      setXpLocked(true);
+    } else {
+      // Unlocking requires password
+      setShowXpPasswordPrompt(true);
+      setXpPasswordInput("");
+      setXpPasswordError(false);
+    }
+  };
+
+  const handleXpPasswordSubmit = () => {
+    if (xpPasswordInput.toLowerCase().trim() === XP_SECRET) {
+      setXpLocked(false);
+      setShowXpPasswordPrompt(false);
+      setXpPasswordInput("");
+      setXpPasswordError(false);
+    } else {
+      setXpPasswordError(true);
+      setXpPasswordInput("");
     }
   };
 
@@ -442,6 +473,119 @@ export function SettingsTab() {
                       </Button>
                     </div>
                     {economyPasswordError && (
+                      <p className="text-xs text-red-400 font-medium">
+                        Senha incorreta. Tente novamente.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* XP Lock Toggle */}
+            <div className="bg-secondary/50 rounded-lg p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    {xpLocked ? (
+                      <Lock className="w-4 h-4 text-amber-400" />
+                    ) : (
+                      <Zap className="w-4 h-4 text-accent" />
+                    )}
+                    <h4 className="font-medium text-foreground text-sm">
+                      Bloqueio de XP
+                    </h4>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {xpLocked
+                      ? "Bloqueado. Adicao manual de XP esta desativada. Ganhe XP atraves de batalhas."
+                      : "Desbloqueado. Adicao manual de XP esta liberada."}
+                  </p>
+                </div>
+                <button
+                  onClick={handleXpToggle}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                    !xpLocked
+                      ? "bg-primary border-primary"
+                      : "bg-secondary border-border"
+                  }`}
+                  role="switch"
+                  aria-checked={!xpLocked}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      !xpLocked ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-border/50">
+                <div className="flex items-center gap-2 text-xs">
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      !xpLocked ? "bg-accent" : "bg-amber-400"
+                    }`}
+                  />
+                  <span className="text-muted-foreground">
+                    Status:{" "}
+                    <span className="font-medium text-foreground">
+                      {xpLocked ? "Bloqueado" : "Desbloqueado"}
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              {/* XP Password Prompt */}
+              {showXpPasswordPrompt && (
+                <div className="mt-3 pt-3 border-t border-border/50">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-3.5 h-3.5 text-amber-400" />
+                      <span className="text-xs font-medium text-amber-400">
+                        Digite a senha para desbloquear
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        type="password"
+                        placeholder="Senha..."
+                        value={xpPasswordInput}
+                        onChange={(e) => {
+                          setXpPasswordInput(e.target.value);
+                          setXpPasswordError(false);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleXpPasswordSubmit();
+                        }}
+                        className={`bg-background border-border text-foreground flex-1 h-8 text-sm ${
+                          xpPasswordError ? "border-red-500 ring-1 ring-red-500" : ""
+                        }`}
+                        autoFocus
+                      />
+                      <Button
+                        onClick={handleXpPasswordSubmit}
+                        disabled={!xpPasswordInput}
+                        size="sm"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 h-8 text-xs"
+                      >
+                        OK
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setShowXpPasswordPrompt(false);
+                          setXpPasswordInput("");
+                          setXpPasswordError(false);
+                        }}
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    {xpPasswordError && (
                       <p className="text-xs text-red-400 font-medium">
                         Senha incorreta. Tente novamente.
                       </p>

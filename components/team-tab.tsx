@@ -581,6 +581,7 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
           allTeam={team}
           allReserves={reserves}
           onClose={() => setSelectedUid(null)}
+          xpLocked={useModeStore.getState().xpLocked}
         />}
       </Dialog>
     </div>
@@ -598,6 +599,7 @@ function PokemonDetailContent({
   setLevelInput,
   addXp,
   setLevel,
+  xpLocked,
   evolvePokemon,
   useStone,
   evolveByTrade,
@@ -619,6 +621,7 @@ function PokemonDetailContent({
   setLevelInput: (v: string) => void;
   addXp: (uid: string, amount: number) => void;
   setLevel: (uid: string, level: number) => void;
+  xpLocked: boolean;
   evolvePokemon: (uid: string, toSpeciesId: number) => void;
   useStone: (uid: string, stoneId: string) => boolean;
   evolveByTrade: (uid: string) => boolean;
@@ -796,7 +799,13 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
 
             {/* Add XP */}
             <div className="w-full flex flex-col gap-2">
-         
+              {xpLocked && (
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-2 mb-1">
+                  <p className="text-xs text-amber-400 text-center">
+                    Adicao de XP bloqueada. Desbloqueie nas Configuracoes.
+                  </p>
+                </div>
+              )}
               <div className="flex gap-2">
                 {[50, 100, 250, 500].map((val) => (
                   <Button
@@ -804,7 +813,8 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                     size="sm"
                     variant="outline"
                     onClick={() => addXp(pokemon.uid, val)}
-                    className="flex-1 text-xs border-border text-foreground bg-transparent hover:bg-secondary"
+                    disabled={xpLocked}
+                    className="flex-1 text-xs border-border text-foreground bg-transparent hover:bg-secondary disabled:opacity-50"
                   >
                     +{val}
                   </Button>
@@ -816,7 +826,8 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                   placeholder="XP personalizado"
                   value={xpInput}
                   onChange={(e) => setXpInput(e.target.value)}
-                  className="bg-secondary border-border text-foreground text-sm"
+                  disabled={xpLocked}
+                  className="bg-secondary border-border text-foreground text-sm disabled:opacity-50"
                 />
                 <Button
                   size="sm"
@@ -827,7 +838,8 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                       setXpInput("");
                     }
                   }}
-                  className="bg-accent text-accent-foreground hover:bg-accent/90"
+                  disabled={xpLocked}
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
@@ -843,7 +855,8 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                   placeholder="Definir Nivel: Ex 60"
                   value={levelInput}
                   onChange={(e) => setLevelInput(e.target.value)}
-                  className="bg-secondary border-border text-foreground text-sm"
+                  disabled={xpLocked}
+                  className="bg-secondary border-border text-foreground text-sm disabled:opacity-50"
                   min={1}
                   max={100}
                 />
@@ -856,7 +869,8 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                       setLevelInput("");
                     }
                   }}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  disabled={xpLocked}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
                   <ArrowUp className="w-4 h-4" />
                 </Button>
