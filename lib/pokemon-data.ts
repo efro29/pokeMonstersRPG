@@ -2146,20 +2146,28 @@ export interface DamageBreakdown {
 }
 
 /**
- * Calculate full RPG battle damage with dice rolls, attribute bonuses, hit multipliers, and defense.
+ * Calculate full RPG battle damage with dice rolls, attribute bonuses, hit multipliers, level scaling, and defense.
  * 
- * Formula: finalDamage = max(1, ((diceRoll + attrBonus) * hitMultiplier) - defenseReduction)
+ * Formula: finalDamage = max(1, ((diceRoll + attrBonus + levelBonus) * hitMultiplier * typeMultiplier) - defenseReduction)
  * 
  * - diceRoll: roll the move's damage_dice (e.g. "2d8" -> roll 2d8)
  * - attrBonus: attacker's attribute modifier (acrobaciaMod for physical, felicidadeMod for special)
+ * - levelBonus: floor(attackerLevel / 5) - adds bonus damage based on attacker's level
  * - hitMultiplier: from D20 hit result (0 for miss, 1 for hit, 1.5 for strong, 2 for critical)
+ * - typeMultiplier: 1.5 for super effective (STAB), calculated externally
  * - defenseReduction: floor(targetDefesa / 3)
+ * 
+ * Level difference scaling:
+ * - Each level grants +1 base damage per 5 levels
+ * - Higher level attackers deal significantly more damage
  */
 export function calculateBattleDamage(
   move: Move,
   hitResult: HitResult,
   attackerAttrs: PokemonComputedAttributes,
-  targetDefesa: number
+  targetDefesa: number,
+  attackerLevel?: number,
+  targetLevel?: number
 ): DamageBreakdown {
   const isStatus = move.damage_type === "status";
   const multiplier = getDamageMultiplier(hitResult);
@@ -2196,11 +2204,29 @@ export function calculateBattleDamage(
     scalingAttr = "Felicidade";
   }
 
-  // Calculate raw total before defense
-  const rawTotal = Math.floor((diceTotal + attrBonus) * multiplier);
+  // Level-based damage bonus: +1 damage per 5 levels of the attacker
+  const levelBonus = attackerLevel ? Math.floor(attackerLevel / 5) : 0;
+  
+  // Level difference multiplier: higher level attackers deal more damage
+  // +10% damage per level difference (capped at +100% / -50%)
+  let levelDiffMultiplier = 1.0;
+  if (attackerLevel && targetLevel) {
+    const levelDiff = attackerLevel - targetLevel;
+    if (levelDiff > 0) {
+      // Attacker is higher level: +10% per level, max +100%
+      levelDiffMultiplier = Math.min(2.0, 1.0 + (levelDiff * 0.10));
+    } else if (levelDiff < 0) {
+      // Attacker is lower level: -5% per level, min 50%
+      levelDiffMultiplier = Math.max(0.5, 1.0 + (levelDiff * 0.05));
+    }
+  }
 
-  // Defense reduction
-  const defenseReduction = Math.floor(targetDefesa / 3);
+  // Calculate raw total before defense (with level bonus and level diff multiplier)
+  const rawTotal = Math.floor((diceTotal + attrBonus + levelBonus) * multiplier * levelDiffMultiplier);
+
+  // Defense reduction (reduced effectiveness against higher level attackers)
+  const defenseEffectiveness = levelDiffMultiplier > 1.0 ? Math.max(0.5, 2.0 - levelDiffMultiplier) : 1.0;
+  const defenseReduction = Math.floor((targetDefesa / 3) * defenseEffectiveness);
 
   // Final damage (min 1 if hit, 0 if miss)
   const isMiss = hitResult === "miss" || hitResult === "critical-miss";
@@ -2210,7 +2236,9 @@ export function calculateBattleDamage(
   const formulaParts: string[] = [];
   formulaParts.push(`${move.damage_dice} [${rolls.join("+")}=${diceTotal}]`);
   if (attrBonus > 0) formulaParts.push(`+${attrBonus} ${scalingAttr}`);
+  if (levelBonus > 0) formulaParts.push(`+${levelBonus} Lv`);
   if (multiplier !== 1) formulaParts.push(`x${multiplier}`);
+  if (levelDiffMultiplier !== 1.0) formulaParts.push(`x${levelDiffMultiplier.toFixed(1)} NvDif`);
   formulaParts.push(`= ${rawTotal}`);
   if (!isMiss && defenseReduction > 0) formulaParts.push(`- ${defenseReduction} DEF = ${finalDamage}`);
 

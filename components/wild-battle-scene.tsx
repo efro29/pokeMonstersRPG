@@ -268,6 +268,28 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
 
   // ─── Player Attack ────────────────────────────────────
   const handleAttackSelect = (moveId: string) => {
+    // Check if pokemon has PP for the move
+    const moveData = pokemon?.moves.find((m) => m.moveId === moveId);
+    if (!moveData || moveData.currentPP <= 0) {
+      addLog(`${pokemon?.name} nao tem PP para usar esse golpe!`);
+      return;
+    }
+    
+    // Consume 1 PP from the player's pokemon
+    const { team: currentTeam } = useGameStore.getState();
+    useGameStore.setState({
+      team: currentTeam.map((p) =>
+        p.uid === pokemon?.uid
+          ? {
+              ...p,
+              moves: p.moves.map((m) =>
+                m.moveId === moveId ? { ...m, currentPP: m.currentPP - 1 } : m
+              ),
+            }
+          : p
+      ),
+    });
+    
     setSelectedMoveId(moveId);
     setPhase("rolling");
     setIsRolling(true);
@@ -307,17 +329,15 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
       setAttackEffect({ type: move.type as PokemonType, side: "wild" });
       setTimeout(() => setAttackEffect(null), 800);
 
-      // Calc damage
+      // Calc damage with level scaling
       const pokemonAttrs = computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes);
-      const breakdown = calculateBattleDamage(move, hr, pokemonAttrs, 0);
-      const dmg = breakdown.rawTotal;
-      setDamageDealt(dmg);
+      const wildAttrs = computeAttributes(wild.speciesId, wild.level);
+      const breakdown = calculateBattleDamage(move, hr, pokemonAttrs, wildAttrs.defesa, pokemon.level, wild.level);
+      const finalDmg = breakdown.finalDamage;
+      setDamageDealt(finalDmg);
 
       // Apply damage to wild pokemon
-      if (dmg > 0) {
-        const wildAttrs = computeAttributes(wild.speciesId, wild.level);
-        const defReduction = Math.floor(wildAttrs.defesa / 3);
-        const finalDmg = Math.max(1, dmg - defReduction);
+      if (finalDmg > 0) {
 
         // Hit animation on wild pokemon
         setTimeout(() => {
@@ -423,23 +443,25 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
 
     setEnemyHitResult(eHr);
 
+    // Calculate damage with level scaling (wild attacking player)
     const wildAttrs = computeAttributes(wild.speciesId, wild.level);
-    const breakdown = calculateBattleDamage(move, eHr, wildAttrs, 0);
-    const rawDmg = breakdown.rawTotal;
+    const pokemonAttrs = pokemon ? computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes) : wildAttrs;
+    const breakdown = calculateBattleDamage(move, eHr, wildAttrs, pokemonAttrs.defesa, wild.level, pokemon?.level || 5);
+    const finalDmg = breakdown.finalDamage;
 
     setTimeout(() => {
-      if (rawDmg > 0 && pokemon) {
+      if (finalDmg > 0 && pokemon) {
         // Hit animation on player pokemon
         setPlayerShake(true);
         setShowPlayerParticles(true);
         playDamageReceived();
-        applyOpponentDamage(rawDmg);
+        applyOpponentDamage(finalDmg);
         setTimeout(() => {
           setPlayerShake(false);
           setShowPlayerParticles(false);
         }, 600);
-        setEnemyDamage(rawDmg);
-        addLog(`${wild.name} selvagem usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}! ${rawDmg} de dano bruto!`);
+        setEnemyDamage(finalDmg);
+        addLog(`${wild.name} selvagem usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}! ${finalDmg} de dano!`);
       } else {
         setEnemyDamage(0);
         addLog(`${wild.name} selvagem usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}! Errou!`);

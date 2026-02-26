@@ -17,6 +17,7 @@ interface ModeState {
   discoveredPokemon: Record<string, number[]>; // profileId -> pokemon IDs
   pendingPokedexReveal: { pokemonId: number } | null;
   economyLocked: boolean; // blocks manual addMoney / addBagItem when true
+  xpLocked: boolean; // blocks manual XP addition when true
 
   setMode: (mode: GameMode) => void;
   addProfile: (name: string, avatarId: number) => string;
@@ -27,6 +28,7 @@ interface ModeState {
   triggerPokedexReveal: (pokemonId: number) => void;
   clearPokedexReveal: () => void;
   setEconomyLocked: (locked: boolean) => void;
+  setXpLocked: (locked: boolean) => void;
   getDiscoveredForProfile: (profileId: string) => number[];
   resetMode: () => void;
 }
@@ -44,6 +46,7 @@ export const useModeStore = create<ModeState>()(
       discoveredPokemon: {},
       pendingPokedexReveal: null,
       economyLocked: true,
+      xpLocked: true,
 
       setMode: (mode) => set({ mode }),
 
@@ -102,6 +105,10 @@ export const useModeStore = create<ModeState>()(
 
       setEconomyLocked: (locked) => {
         set({ economyLocked: locked });
+      },
+
+      setXpLocked: (locked) => {
+        set({ xpLocked: locked });
       },
 
       getDiscoveredForProfile: (profileId) => {
