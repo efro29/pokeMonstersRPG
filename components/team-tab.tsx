@@ -60,6 +60,8 @@ import {
   BookAIcon,
   Send,
   Users,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import { EvolutionAnimation } from "@/components/evolution-animation";
 
@@ -1435,7 +1437,6 @@ import {
   SkillTree 
 } from "@/lib/skill-tree-data";
 import { POKEMON } from "@/lib/pokemon-data";
-import { Lock, Unlock } from "lucide-react";
 
 function SkillTreeTab({ pokemon }: { pokemon: TeamPokemon }) {
   const { trainer, unlockPokemonSkill, learnMove } = useGameStore();
