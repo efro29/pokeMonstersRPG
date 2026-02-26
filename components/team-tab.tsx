@@ -1435,7 +1435,7 @@ import {
   SkillTree 
 } from "@/lib/skill-tree-data";
 import { POKEMON } from "@/lib/pokemon-data";
-import { Lock, Unlock, Swords, Star } from "lucide-react";
+import { Lock, Unlock } from "lucide-react";
 
 function SkillTreeTab({ pokemon }: { pokemon: TeamPokemon }) {
   const { trainer, unlockPokemonSkill, learnMove } = useGameStore();
