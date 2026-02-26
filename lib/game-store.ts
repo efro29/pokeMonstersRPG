@@ -44,6 +44,8 @@ export interface TeamPokemon {
   /** Override base attributes (modified by faint penalties and level-up bonuses) */
   customAttributes?: PokemonBaseAttributes;
   battleHistory?: BattleHistoryEntry[];
+  /** Skill tree: unlocked skill node IDs */
+  unlockedSkills?: string[];
 }
 
 export interface BagItem {
@@ -840,6 +842,10 @@ interface GameState {
   recalcTrainerStats: () => void;
   // Exploration system
   addExplorationXp: (amount: number) => ExplorationReward[];
+  // Battle system (Skill Tree)
+  addBattleXp: (amount: number) => { leveledUp: boolean; newLevel: number; pointsGained: number };
+  addBattlePoints: (amount: number) => void;
+  unlockPokemonSkill: (uid: string, skillId: string, cost: number) => boolean;
   // Daily streak system
   registerDailyCapture: () => StreakUpdateResult;
   // Weekly events
@@ -908,6 +914,9 @@ export const useGameStore = create<GameState>()(
         battleHistory: [],
         explorationXp: 0,
         explorationLevel: 1,
+        battleXp: 0,
+        battleLevel: 1,
+        battlePoints: 1,
         dailyStreak: 0,
         lastCaptureDate: null,
         weekStartDate: null,
@@ -1970,6 +1979,71 @@ export const useGameStore = create<GameState>()(
         });
 
         return allRewards;
+      },
+
+      // Battle system (Skill Tree)
+      addBattleXp: (amount) => {
+        const { trainer } = get();
+        const currentXp = trainer.battleXp ?? 0;
+        const currentLevel = trainer.battleLevel ?? 1;
+        let newXp = currentXp + amount;
+        let newLevel = currentLevel;
+        let pointsGained = 0;
+
+        // Check for level ups
+        while (newXp >= battleXpForLevel(newLevel + 1) && newLevel < 100) {
+          newLevel++;
+          pointsGained++; // +1 PB per level
+        }
+
+        set({
+          trainer: {
+            ...get().trainer,
+            battleXp: newXp,
+            battleLevel: newLevel,
+            battlePoints: (trainer.battlePoints ?? 0) + pointsGained,
+          },
+        });
+
+        return {
+          leveledUp: pointsGained > 0,
+          newLevel,
+          pointsGained,
+        };
+      },
+
+      addBattlePoints: (amount) => {
+        const { trainer } = get();
+        set({
+          trainer: {
+            ...get().trainer,
+            battlePoints: (trainer.battlePoints ?? 0) + amount,
+          },
+        });
+      },
+
+      unlockPokemonSkill: (uid, skillId, cost) => {
+        const { trainer, team, reserves } = get();
+        const currentPoints = trainer.battlePoints ?? 0;
+
+        // Check if player has enough battle points
+        if (currentPoints < cost) return false;
+
+        // Find pokemon in team or reserves
+        const updatePokemon = (p: TeamPokemon) => {
+          if (p.uid !== uid) return p;
+          const unlockedSkills = p.unlockedSkills ?? [];
+          if (unlockedSkills.includes(skillId)) return p; // Already unlocked
+          return { ...p, unlockedSkills: [...unlockedSkills, skillId] };
+        };
+
+        set({
+          trainer: { ...trainer, battlePoints: currentPoints - cost },
+          team: team.map(updatePokemon),
+          reserves: reserves.map(updatePokemon),
+        });
+
+        return true;
       },
 
       // Daily streak system

@@ -18,6 +18,7 @@ import {
   POKEMON_ATTRIBUTE_INFO,
 } from "@/lib/pokemon-data";
 import { PokemonType, PokemonBaseAttributes,getBaseAttributes } from "@/lib/pokemon-data";
+import { SkillTreeModal } from "@/components/skill-tree-modal";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -689,13 +690,20 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
           >
             Golpes
           </TabsTrigger>
-          <TabsTrigger
-                    style={{fontSize:9}}
-            value="learn"
-            className="flex-1  data-[state=active]:bg-card"
-          >
-            Aprender
-          </TabsTrigger>
+<TabsTrigger
+  style={{fontSize:9}}
+  value="learn"
+  className="flex-1  data-[state=active]:bg-card"
+  >
+Aprender
+  </TabsTrigger>
+  <TabsTrigger
+  style={{fontSize:9}}
+  value="skilltree"
+  className="flex-1  data-[state=active]:bg-card"
+  >
+Arvore
+  </TabsTrigger>
           <TabsTrigger
                     style={{fontSize:9}}
             value="attrs"
@@ -1035,6 +1043,11 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
               </p>
             )}
           </div>
+        </TabsContent>
+
+        {/* Skill Tree Tab */}
+        <TabsContent value="skilltree" className="mt-3">
+          <SkillTreeTab pokemon={pokemon} />
         </TabsContent>
 
         {/* Attributes Tab */}
@@ -1409,5 +1422,147 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
         )}
       </AnimatePresence>
     </DialogContent>
+  );
+}
+
+// ─── Skill Tree Tab Component ───────────────────────────────────────────────
+import { TeamPokemon, battleXpForLevel } from "@/lib/game-store";
+import { 
+  getSkillTree, 
+  generateDefaultSkillTree, 
+  canUnlockSkill, 
+  SkillNode, 
+  SkillTree 
+} from "@/lib/skill-tree-data";
+import { POKEMON } from "@/lib/pokemon-data";
+import { Lock, Unlock, Swords, Star } from "lucide-react";
+
+function SkillTreeTab({ pokemon }: { pokemon: TeamPokemon }) {
+  const { trainer, unlockPokemonSkill, learnMove } = useGameStore();
+  const [selectedSkill, setSelectedSkill] = useState<SkillNode | null>(null);
+
+  // Get or generate skill tree
+  const skillTree: SkillTree = (() => {
+    const existing = getSkillTree(pokemon.speciesId);
+    if (existing) return existing;
+    const species = POKEMON.find((p) => p.id === pokemon.speciesId);
+    if (!species) return { speciesId: pokemon.speciesId, swordPath: [], shieldPath: [] };
+    return generateDefaultSkillTree(pokemon.speciesId, species.startingMoves, species.learnableMoves);
+  })();
+
+  const battleLevel = trainer.battleLevel ?? 1;
+  const battlePoints = trainer.battlePoints ?? 0;
+  const battleXp = trainer.battleXp ?? 0;
+  const nextLevelXp = battleXpForLevel(battleLevel + 1);
+  const unlockedSkills = pokemon.unlockedSkills ?? [];
+
+  const handleUnlockSkill = (skill: SkillNode) => {
+    const result = canUnlockSkill(skill, pokemon.level, unlockedSkills, battlePoints);
+    if (!result.canUnlock) return;
+    const success = unlockPokemonSkill(pokemon.uid, skill.id, skill.pbCost);
+    if (success && skill.moveId) {
+      learnMove(pokemon.uid, skill.moveId);
+    }
+    setSelectedSkill(null);
+  };
+
+  const renderSkillNode = (skill: SkillNode, isLast: boolean) => {
+    const isUnlocked = unlockedSkills.includes(skill.id);
+    const checkResult = canUnlockSkill(skill, pokemon.level, unlockedSkills, battlePoints);
+    const canUnlock = checkResult.canUnlock;
+    const move = skill.moveId ? getMove(skill.moveId) : null;
+
+    return (
+      <div key={skill.id} className="flex items-center gap-2">
+        <button
+          className={`relative flex items-center gap-2 px-3 py-2 rounded-lg border transition-all w-full ${
+            isUnlocked
+              ? "bg-accent/20 border-accent text-accent"
+              : canUnlock
+                ? "bg-primary/10 border-primary/50 hover:border-primary cursor-pointer"
+                : "bg-secondary/30 border-border/50 text-muted-foreground cursor-not-allowed"
+          }`}
+          onClick={() => !isUnlocked && setSelectedSkill(skill)}
+        >
+          <div className="w-5 h-5 flex items-center justify-center">
+            {isUnlocked ? <Unlock className="w-3 h-3 text-accent" /> : <Lock className="w-3 h-3" />}
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-xs font-medium">{skill.name}</p>
+            <p className="text-[9px] text-muted-foreground">Lv.{skill.levelRequired} | {skill.pbCost} PB</p>
+          </div>
+          {skill.isPassive && <Star className="w-3 h-3 text-yellow-400" />}
+        </button>
+        {!isLast && <div className="w-4 h-0.5 bg-border" />}
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Battle Stats Header */}
+      <div className="flex items-center justify-between bg-secondary/50 rounded-lg p-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Battle Lv:</span>
+          <span className="text-sm font-bold text-primary">{battleLevel}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">PB:</span>
+          <span className="text-sm font-bold text-accent">{battlePoints}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">XP:</span>
+          <span className="text-sm font-mono">{battleXp}/{nextLevelXp}</span>
+        </div>
+      </div>
+
+      {/* Sword Path */}
+      <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Swords className="w-4 h-4 text-red-400" />
+          <span className="text-xs font-bold text-red-400">SWORD PATH</span>
+        </div>
+        <div className="flex flex-col gap-1">
+          {skillTree.swordPath.slice(0, 5).map((skill, i) => 
+            renderSkillNode(skill, i === Math.min(4, skillTree.swordPath.length - 1))
+          )}
+        </div>
+      </div>
+
+      {/* Shield Path */}
+      <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Shield className="w-4 h-4 text-green-400" />
+          <span className="text-xs font-bold text-green-400">SHIELD PATH</span>
+        </div>
+        <div className="flex flex-col gap-1">
+          {skillTree.shieldPath.slice(0, 5).map((skill, i) => 
+            renderSkillNode(skill, i === Math.min(4, skillTree.shieldPath.length - 1))
+          )}
+        </div>
+      </div>
+
+      {/* Skill Detail Popup */}
+      {selectedSkill && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setSelectedSkill(null)}>
+          <div className="bg-background border border-border rounded-xl p-4 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
+            <h4 className="text-sm font-bold mb-2">{selectedSkill.name}</h4>
+            <p className="text-xs text-muted-foreground mb-3">{selectedSkill.description}</p>
+            <div className="flex justify-between text-xs mb-3">
+              <span>Custo: <b className="text-primary">{selectedSkill.pbCost} PB</b></span>
+              <span>Nivel: <b className={pokemon.level >= selectedSkill.levelRequired ? "text-accent" : "text-destructive"}>{selectedSkill.levelRequired}</b></span>
+            </div>
+            {(() => {
+              const result = canUnlockSkill(selectedSkill, pokemon.level, unlockedSkills, battlePoints);
+              return (
+                <Button className="w-full" size="sm" disabled={!result.canUnlock} onClick={() => handleUnlockSkill(selectedSkill)}>
+                  {result.canUnlock ? "Desbloquear" : result.reason}
+                </Button>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
