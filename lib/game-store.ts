@@ -785,6 +785,8 @@ interface GameState {
   addToTeam: (species: PokemonSpecies) => void;
   addToTeamWithLevel: (species: PokemonSpecies, level: number) => string;
   removeFromTeam: (uid: string) => void;
+  transferToProfesor: (uid: string) => { xpGained: number; recipientName: string | null };
+  transferAllDuplicates: (speciesId: number, keepUid: string) => { count: number; totalXp: number };
   reorderTeam: (fromIndex: number, toIndex: number) => void;
   // Reserves management
   moveToReserves: (uid: string) => void;
@@ -1104,6 +1106,56 @@ export const useGameStore = create<GameState>()(
 
       removeFromTeam: (uid) => {
         set({ team: get().team.filter((p) => p.uid !== uid) });
+      },
+
+      transferToProfesor: (uid) => {
+        const { team, reserves } = get();
+        const pokemon = team.find((p) => p.uid === uid) || reserves.find((p) => p.uid === uid);
+        if (!pokemon) return { xpGained: 0, recipientName: null };
+
+        const xpGained = (pokemon.level ?? 1) * 25;
+        const speciesId = pokemon.speciesId;
+
+        // Find a duplicate of the same species in the main team (not the one being transferred)
+        const recipient = team.find((p) => p.speciesId === speciesId && p.uid !== uid);
+
+        // Remove the pokemon from wherever it is
+        set({
+          team: team.filter((p) => p.uid !== uid),
+          reserves: reserves.filter((p) => p.uid !== uid),
+        });
+
+        // Give XP to the recipient if found
+        if (recipient) {
+          get().addXp(recipient.uid, xpGained);
+          return { xpGained, recipientName: recipient.name };
+        }
+
+        return { xpGained: 0, recipientName: null };
+      },
+
+      transferAllDuplicates: (speciesId, keepUid) => {
+        const { team, reserves } = get();
+        const allPokemon = [...team, ...reserves];
+        const duplicates = allPokemon.filter(
+          (p) => p.speciesId === speciesId && p.uid !== keepUid
+        );
+
+        if (duplicates.length === 0) return { count: 0, totalXp: 0 };
+
+        const totalXp = duplicates.reduce((sum, p) => sum + (p.level ?? 1) * 25, 0);
+        const dupUids = new Set(duplicates.map((p) => p.uid));
+
+        // Remove all duplicates
+        set({
+          team: team.filter((p) => !dupUids.has(p.uid)),
+          reserves: reserves.filter((p) => !dupUids.has(p.uid)),
+        });
+
+        // Give accumulated XP to the kept pokemon
+        get().addXp(keepUid, totalXp);
+
+        return { count: duplicates.length, totalXp };
       },
 
       reorderTeam: (fromIndex, toIndex) => {
