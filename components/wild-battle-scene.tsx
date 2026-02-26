@@ -198,9 +198,9 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
   const [enemyMoveUsed, setEnemyMoveUsed] = useState<string | null>(null);
   const [enemyDamage, setEnemyDamage] = useState<number | null>(null);
   const [enemyHitResult, setEnemyHitResult] = useState<HitResult | null>(null);
-  const [turnNumber, setTurnNumber] = useState(1);
-  const [pa, setPa] = useState(PA_CONFIG.startingPA);
-  const maxPa = PA_CONFIG.maxPA;
+  const pa = battle.pa ?? PA_CONFIG.startingPA;
+  const maxPa = battle.maxPa ?? PA_CONFIG.maxPA;
+  const turnNumber = battle.turnNumber ?? 1;
   const logRef = useRef<HTMLDivElement>(null);
 
   const addLog = useCallback((msg: string) => {
@@ -252,12 +252,10 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
 
   // ─── PA helpers ────────────────────────────────────────
   const localSpendPA = useCallback(
-    (cost: number): boolean => {
-      if (pa < cost) return false;
-      setPa((prev) => prev - cost);
-      return true;
+    (actionType: string): boolean => {
+      return spendPA(actionType as any);
     },
-    [pa]
+    [spendPA]
   );
 
   // ─── Player Attack ────────────────────────────────────
@@ -265,7 +263,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
     const moveDef = getMove(moveId);
     const usesCards = moveDef && showBattleCards && (moveDef.energy_cost ?? 0) > 0;
     if (!usesCards) {
-      if (!localSpendPA(1)) return;
+      if (!localSpendPA("attack")) return;
     }
     setSelectedMoveId(moveId);
     setPhase("rolling");
@@ -411,13 +409,12 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
           }
         } else {
           // New turn
-          setTurnNumber((t) => t + 1);
-          setPa(PA_CONFIG.startingPA);
-          setPhase("menu");
+            endTurn();
+            setPhase("menu");
         }
       }, 1500);
     }, 1000);
-  }, [wild, pokemon, battle.activePokemonUid, applyOpponentDamage, addLog]);
+  }, [wild, pokemon, battle.activePokemonUid, applyOpponentDamage, addLog, endTurn]);
 
   // ─── End Turn (pass) ──────────────────────────────────
   const handleEndTurn = () => {
@@ -431,7 +428,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
     if (uid === battle.activePokemonUid) return;
     const target = team.find((p) => p.uid === uid);
     if (!target || target.currentHp <= 0) return;
-    if (phase !== "switch" && !localSpendPA(1)) return;
+    if (phase !== "switch" && !localSpendPA("switchPokemon")) return;
     setIsSwitching(true);
     playSendPokemon();
     addLog(`Trocou para ${target.name}!`);
@@ -439,8 +436,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
       switchBattlePokemon(uid);
       setIsSwitching(false);
       if (phase === "switch") {
-        setTurnNumber((t) => t + 1);
-        setPa(PA_CONFIG.startingPA);
+        endTurn();
         setPhase("menu");
       } else {
         setPhase("menu");
@@ -450,7 +446,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
 
   // ─── Bag Use ──────────────────────────────────────────
   const handleUseBagItem = (itemId: string) => {
-    if (!localSpendPA(1)) return;
+    if (!localSpendPA("item")) return;
     const def = BAG_ITEMS.find((d) => d.id === itemId);
     if (def && pokemon) {
       useBagItem(itemId, pokemon.uid);
@@ -463,7 +459,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
 
   // ─── Pokeball ─────────────────────────────────────────
   const handleThrowBall = (ballId: string) => {
-    if (!localSpendPA(1)) return;
+    if (!localSpendPA("attack")) return;
     if (wild.currentHp <= 0) {
       addLog("O Pokemon selvagem desmaiou! Nao pode ser capturado.");
       setPhase("wild-fainted");
@@ -825,7 +821,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
           {/* ROLLING */}
           {phase === "rolling" && (
             <div className="flex flex-col items-center py-4">
-              <D20Dice isRolling={isRolling} onResult={handleDiceResult} combateBonus={combateBonus} />
+              <D20Dice rolling={isRolling} onResult={handleDiceResult} />
             </div>
           )}
 

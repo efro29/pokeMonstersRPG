@@ -60,6 +60,7 @@ export default function Page() {
   const [hasSave, setHasSave] = useState(false);
   const [captureTarget, setCaptureTarget] = useState<number | null>(null);
   const [wildBattleTarget, setWildBattleTarget] = useState<number | null>(null);
+  const wildLevelRef = useRef<number>(1);
   const [explorationRewardToast, setExplorationRewardToast] = useState<{
     xp: number;
     ballsUsed: number;
@@ -289,6 +290,7 @@ export default function Page() {
   };
 
   const handleStartWildBattle = (speciesId: number) => {
+    wildLevelRef.current = Math.max(1, Math.floor(Math.random() * 8) + 1);
     setWildBattleTarget(speciesId);
   };
 
@@ -429,12 +431,11 @@ export default function Page() {
   if (wildBattleTarget !== null) {
     const wildSpecies = POKEMON.find((p) => p.id === wildBattleTarget);
     if (wildSpecies) {
-      const wildLevel = Math.max(1, Math.floor(Math.random() * 8) + 1);
       return (
         <main className="flex flex-col h-dvh max-w-md mx-auto bg-background">
           <WildBattleScene
             wildPokemon={wildSpecies}
-            wildLevel={wildLevel}
+            wildLevel={wildLevelRef.current}
             onClose={() => {
               useGameStore.getState().endBattle();
               setWildBattleTarget(null);
