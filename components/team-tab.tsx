@@ -342,18 +342,23 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
 
             {/* FOOTER */}
             <div className="flex justify-end pt-[2px]">
-              <Button
-                size="sm"
-                variant="ghost"
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={(e) => {
                   e.stopPropagation()
                   moveToReserves(pokemon.uid)
                 }}
-                   className="h-5 w-full px-1.5 bg-gray-600 text-white hover:bg-red-700 text-[8px]"
-            
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation()
+                    moveToReserves(pokemon.uid)
+                  }
+                }}
+                className="h-5 w-full px-1.5 bg-gray-600 text-white hover:bg-red-700 text-[8px] rounded cursor-pointer inline-flex items-center justify-center font-medium"
               >
-                       Reserva
-              </Button>
+                Reserva
+              </div>
             </div>
           </div>
         </div>
@@ -458,19 +463,26 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
         </div>
       {/* FOOTER BUTTON */}
       <div className="flex justify-end pt-[2px]">
-        <Button
-          size="sm"
+        <div
+          role="button"
+          tabIndex={0}
+          aria-disabled={team.length >= 6}
           style={{backgroundColor:team.length >= 6?"gray":'green'}}
-          disabled={team.length >= 6}
           onClick={(e) => {
             e.stopPropagation()
-            moveToTeam(pokemon.uid)
+            if (team.length < 6) moveToTeam(pokemon.uid)
           }}
-          className="h-5 w-full px-1.5  text-white hover:bg-green-700 text-[7px]"
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && team.length < 6) {
+              e.stopPropagation()
+              moveToTeam(pokemon.uid)
+            }
+          }}
+          className={`h-5 w-full px-1.5 text-white text-[7px] rounded inline-flex items-center justify-center font-medium ${team.length >= 6 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-green-700'}`}
           title="Promover para Equipe"
         >
           Promover
-        </Button>
+        </div>
       </div>
     </div>
   </div>
