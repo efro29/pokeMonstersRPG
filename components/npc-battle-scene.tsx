@@ -526,7 +526,15 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
 
   // ─── Continue after result ────────────────────────────
   const handleContinueAfterResult = () => {
-    if (npc && npc.currentHp <= 0) return;
+    // If NPC fainted, the useEffect will handle phase transition
+    if (npc && npc.currentHp <= 0) {
+      // Force check victory condition
+      const remainingNpc = npcTeam.filter((p) => p.currentHp > 0);
+      if (remainingNpc.length === 0) {
+        setPhase("victory");
+      }
+      return;
+    }
     executeEnemyTurn();
   };
 
@@ -781,8 +789,7 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
               >
                 <D20Dice
                   onResult={handleDiceResult}
-                  combateBonus={combateBonus}
-                  isRolling={isRolling}
+                  rolling={isRolling}
                 />
               </motion.div>
             )}
