@@ -24,7 +24,7 @@ import { NpcTab } from "@/components/npc-tab";
 import { MovesDictionaryTab } from "@/components/moves-dictionary-tab";
 import { SettingsTab } from "@/components/settings-tab";
 import { ChallengesTab } from "@/components/challenges-tab";
-import { CardDuelScene } from "@/components/card-duel-scene";
+import { NpcBattleScene } from "@/components/npc-battle-scene";
 import type { NpcChallenge } from "@/components/challenges-tab";
 import { CaptureScene } from "@/components/capture-scene";
 import { WildBattleScene } from "@/components/wild-battle-scene";
@@ -467,11 +467,11 @@ export default function Page() {
   }
   
 
-  // Card Duel mode
+  // NPC Battle mode
   if (duelChallenge !== null) {
     return (
       <main className="flex flex-col h-dvh max-w-md mx-auto bg-background">
-        <CardDuelScene
+        <NpcBattleScene
           challenge={duelChallenge}
           onEnd={(won) => {
             // Remove the challenge from localStorage after completion
@@ -480,7 +480,6 @@ export default function Page() {
               try {
                 const challenges = JSON.parse(stored);
                 const filtered = challenges.filter((c: NpcChallenge) => c.id !== duelChallenge.id);
-                // Add a new challenge to replace the completed one
                 localStorage.setItem("pokemon-rpg-challenges", JSON.stringify(filtered));
               } catch {
                 // ignore

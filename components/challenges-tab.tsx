@@ -58,7 +58,7 @@ export interface NpcChallenge {
   id: string;
   npcName: string;
   message: string;
-  npcTeam: { speciesId: number; level: number; currentHp: number; maxHp: number }[];
+  team: { speciesId: number; level: number }[];
   difficulty: "easy" | "medium" | "hard";
   xpReward: number;
   moneyReward: number;
@@ -71,7 +71,7 @@ interface ChallengesTabProps {
 }
 
 // Generate a random NPC team
-function generateNpcTeam(difficulty: "easy" | "medium" | "hard", trainerLevel: number): NpcChallenge["npcTeam"] {
+function generateNpcTeam(difficulty: "easy" | "medium" | "hard", trainerLevel: number): NpcChallenge["team"] {
   const teamSize = difficulty === "easy" ? 2 : difficulty === "medium" ? 3 : 4;
   const levelRange = difficulty === "easy" 
     ? { min: Math.max(1, trainerLevel - 5), max: trainerLevel }
@@ -79,20 +79,16 @@ function generateNpcTeam(difficulty: "easy" | "medium" | "hard", trainerLevel: n
     ? { min: trainerLevel, max: trainerLevel + 5 }
     : { min: trainerLevel + 3, max: trainerLevel + 10 };
 
-  const team: NpcChallenge["npcTeam"] = [];
+  const team: NpcChallenge["team"] = [];
   const availablePokemon = POKEMON.filter(p => p.id <= 151); // Only Kanto for now
   
   for (let i = 0; i < teamSize; i++) {
     const randomPokemon = availablePokemon[Math.floor(Math.random() * availablePokemon.length)];
     const level = Math.min(100, Math.max(1, Math.floor(Math.random() * (levelRange.max - levelRange.min + 1)) + levelRange.min));
-    const baseHp = randomPokemon.baseHp || 40;
-    const maxHp = baseHp + level * 3;
     
     team.push({
       speciesId: randomPokemon.id,
       level,
-      currentHp: maxHp,
-      maxHp,
     });
   }
   
@@ -122,7 +118,7 @@ function generateChallenge(trainerLevel: number): NpcChallenge {
     id: `challenge-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     npcName: NPC_NAMES[Math.floor(Math.random() * NPC_NAMES.length)],
     message: CHALLENGE_MESSAGES[Math.floor(Math.random() * CHALLENGE_MESSAGES.length)],
-    npcTeam: generateNpcTeam(difficulty, trainerLevel),
+    team: generateNpcTeam(difficulty, trainerLevel),
     difficulty,
     xpReward: xpMultiplier + Math.floor(trainerLevel * (xpMultiplier / 10)),
     moneyReward: moneyMultiplier + Math.floor(trainerLevel * (moneyMultiplier / 20)),
@@ -359,7 +355,7 @@ export function ChallengesTab({ onStartDuel }: ChallengesTabProps) {
                           ${challenge.moneyReward}
                         </span>
                         <span className="text-[10px] text-muted-foreground">
-                          {challenge.npcTeam.length} Pokemon
+                          {challenge.team.length} Pokemon
                         </span>
                       </div>
                     </div>
@@ -411,7 +407,7 @@ export function ChallengesTab({ onStartDuel }: ChallengesTabProps) {
                 Equipe do {selectedChallenge.npcName}:
               </span>
               <div className="flex flex-wrap gap-2">
-                {selectedChallenge.npcTeam.map((pokemon, idx) => {
+                {selectedChallenge.team.map((pokemon, idx) => {
                   const species = getPokemon(pokemon.speciesId);
                   return (
                     <div

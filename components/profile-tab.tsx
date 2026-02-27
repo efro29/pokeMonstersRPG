@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGameStore, ATTRIBUTE_INFO, trainerXpForLevel, explorationXpForLevel, getTodayDateStr, getCurrentWeeklyEvent, getCurrentWeekKey, getWeekStartDate } from "@/lib/game-store";
+import { useGameStore, ATTRIBUTE_INFO, trainerXpForLevel, explorationXpForLevel, battleXpForLevel, getTodayDateStr, getCurrentWeeklyEvent, getCurrentWeekKey, getWeekStartDate } from "@/lib/game-store";
 import { getPokemon } from "@/lib/pokemon-data";
 import { useModeStore } from "@/lib/mode-store";
 import type { TrainerAttributes } from "@/lib/game-store";

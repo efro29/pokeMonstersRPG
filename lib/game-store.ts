@@ -24,10 +24,15 @@ export interface BattleHistoryEntry {
 
 export interface TrainerBattleHistoryEntry {
   id: string;
-  type: "team-victory";
+  type: "team-victory" | "npc-battle";
   date: string;
   xpPerPokemon?: number;
-  teamSnapshot: string[]; // pokemon names at time of victory
+  teamSnapshot?: string[]; // pokemon names at time of victory
+  // NPC battle fields
+  won?: boolean;
+  opponentName?: string;
+  xpGained?: number;
+  moneyGained?: number;
 }
 
 export interface TeamPokemon {
