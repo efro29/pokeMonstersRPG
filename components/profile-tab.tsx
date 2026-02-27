@@ -41,7 +41,6 @@ import {
   CheckCircle2,
   Circle,
   Calendar,
-  Swords,
 } from "lucide-react";
 import { playBadgeObtained, playBadgeRemoved, playButtonClick } from "@/lib/sounds";
 import { TrainerAvatar } from "@/components/trainer-avatar";
