@@ -206,15 +206,17 @@ export function canUnlockSkill(
 }
 
 /**
- * Get all unlocked skills for a Pokemon (including default starting moves)
+ * Get all unlocked skills for a Pokemon (including default starting moves,
+ * excluding any that were manually disabled via disabledDefaultSkills).
  */
 export function getUnlockedSkills(
   skillTree: SkillTree,
-  manuallyUnlocked: string[]
+  manuallyUnlocked: string[],
+  disabledDefaultSkills: string[] = []
 ): string[] {
   const defaultUnlocked = [
     ...skillTree.swordPath.filter(s => s.isUnlockedByDefault).map(s => s.id),
     ...skillTree.shieldPath.filter(s => s.isUnlockedByDefault).map(s => s.id),
-  ];
+  ].filter(id => !disabledDefaultSkills.includes(id));
   return [...new Set([...defaultUnlocked, ...manuallyUnlocked])];
 }

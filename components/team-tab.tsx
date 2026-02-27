@@ -17,7 +17,7 @@ import {
   computeAttributes,
   POKEMON_ATTRIBUTE_INFO,
 } from "@/lib/pokemon-data";
-import { PokemonType, PokemonBaseAttributes,getBaseAttributes } from "@/lib/pokemon-data";
+import { PokemonType, PokemonBaseAttributes, getBaseAttributes } from "@/lib/pokemon-data";
 import { SkillTreeModal } from "@/components/skill-tree-modal";
 
 import { Button } from "@/components/ui/button";
@@ -96,7 +96,7 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
 
 
 
-      
+
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [xpInput, setXpInput] = useState("");
   const [levelInput, setLevelInput] = useState("");
@@ -201,30 +201,29 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
       return (
         <div
           key={`empty-${slotIndex}`}
-          className={`flex flex-col items-center justify-center rounded-lg border-1 transition-all ${
-            dragOverIndex === slotIndex
-              ? "border-primary/60 bg-primary/5"
-              : "border-border/40 bg-card/20"
-          }`}
+          className={`flex flex-col items-center justify-center rounded-lg border-1 transition-all ${dragOverIndex === slotIndex
+            ? "border-primary/60 bg-primary/5"
+            : "border-border/40 bg-card/20"
+            }`}
           style={{ height: 150 }}
           onDragOver={(e) => handleDragOver(e, slotIndex)}
           onDrop={() => handleDrop(slotIndex)}
         >
-      
-      <span className="text-[9px] text-muted-foreground/30 font-mono">
-      <svg
-          width="60"
-          height="60"
-          viewBox="0 0 100 100"
-        >
-          <circle cx="50" cy="50" r="48" fill="#08080a" stroke="#1E293B" strokeWidth="4" />
-          <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
-          <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#606264" />
-          <circle cx="50" cy="50" r="14" fill="#3c3d3d" stroke="#1E293B" strokeWidth="3" />
-          <circle cx="50" cy="50" r="6" fill="#1E293B" />
-        </svg>
-                    
-                    </span>
+
+          <span className="text-[9px] text-muted-foreground/30 font-mono">
+            <svg
+              width="60"
+              height="60"
+              viewBox="0 0 100 100"
+            >
+              <circle cx="50" cy="50" r="48" fill="#08080a" stroke="#1E293B" strokeWidth="4" />
+              <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
+              <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#606264" />
+              <circle cx="50" cy="50" r="14" fill="#3c3d3d" stroke="#1E293B" strokeWidth="3" />
+              <circle cx="50" cy="50" r="6" fill="#1E293B" />
+            </svg>
+
+          </span>
         </div>
       );
     }
@@ -249,15 +248,13 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
         onDragOver={(e) => handleDragOver(e, slotIndex)}
         onDrop={() => handleDrop(slotIndex)}
         onDragEnd={handleDragEnd}
-        className={`relativew-full rounded-[4px] p-[2px] transition-all duration-200 ${
-          isDragging ? "opacity-40 scale-95" : ""
-        } ${
-          isDragOver
+        className={`relativew-full rounded-[4px] p-[2px] transition-all duration-200 ${isDragging ? "opacity-40 scale-95" : ""
+          } ${isDragOver
             ? "ring-2 ring-primary/60 ring-offset-1 ring-offset-background"
             : ""
-        }`}
+          }`}
         style={{
-          background: isFainted?"linear-gradient(135deg, #6d6969, #000000, #403f3f)":"linear-gradient(135deg, #1852e6, #09bfcf, #030240)",
+          background: isFainted ? "linear-gradient(135deg, #6d6969, #000000, #403f3f)" : "linear-gradient(135deg, #1852e6, #09bfcf, #030240)",
         }}
       >
         <div
@@ -267,8 +264,8 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedUid(pokemon.uid) }}
           className={`w-full rounded-[4px] p-1.5 flex flex-col h-full cursor-pointer
         
-              ${ isFainted ? "bg-gradient-to-b from-[#4b4b4b] via-[#2e2e2e] to-[#1a1a1a]" : " bg-gradient-to-b from-[#1e3a8a] to-[#0f172a] border " }
-         ${ isFainted ? "border-red-800 " : "border-neutral-700 " }
+              ${isFainted ? "bg-gradient-to-b from-[#4b4b4b] via-[#2e2e2e] to-[#1a1a1a]" : " bg-gradient-to-b from-[#1e3a8a] to-[#0f172a] border "}
+         ${isFainted ? "border-red-800 " : "border-neutral-700 "}
          
          `}
         >
@@ -301,16 +298,16 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
           {/* ART AREA */}
           <div className={`relative flex justify-center items-center my-1.5 h-[56px]
           
-            ${ isFainted ? "bg-gradient-to-b from-[#3a3a3a] via-[#262626] to-[#141414]" : " bg-gradient-to-b from-[#1e2f5a] via-[#162447] to-[#0f1a33] " }
+            ${isFainted ? "bg-gradient-to-b from-[#3a3a3a] via-[#262626] to-[#141414]" : " bg-gradient-to-b from-[#1e2f5a] via-[#162447] to-[#0f1a33] "}
           rounded `}>
             <img
               src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
               alt={pokemon.name}
-              className={`pixelated h-[48px]  ${isFainted?'grayscale':''}` }
+              className={`pixelated h-[48px]  ${isFainted ? 'grayscale' : ''}`}
               crossOrigin="anonymous"
             />
-                <span className="absolute top-1 left-1 text-[7px] font-mono text-neutral-500">
-                  Lv{level}
+            <span className="absolute top-1 left-1 text-[7px] font-mono text-neutral-500">
+              Lv{level}
             </span>
 
           </div>
@@ -331,10 +328,10 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
                 />
               </div>
             </div>
-               <div className="text-[7px] font-mono text-neutral-400 leading-none">
-        {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
-      </div>
-            
+            <div className="text-[7px] font-mono text-neutral-400 leading-none">
+              {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
+            </div>
+
 
             {/* XP */}
             <div className="flex items-center gap-[3px]">
@@ -376,124 +373,124 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
   const renderReserveCard = (pokemon: typeof team[number]) => {
     const species = getPokemon(pokemon.speciesId);
     const level = pokemon.level ?? 1;
-        const xp = pokemon.xp ?? 0;
-     const xpNeeded = xpForLevel(level + 1);
+    const xp = pokemon.xp ?? 0;
+    const xpNeeded = xpForLevel(level + 1);
     const hpPercent = pokemon.maxHp > 0 ? (Math.round(pokemon.currentHp) / pokemon.maxHp) * 100 : 0;
     const hpColor = hpPercent > 50 ? "#22C55E" : hpPercent > 25 ? "#F59E0B" : "#EF4444";
     const isFainted = pokemon.currentHp <= 0;
     const xpPercent = xpNeeded > 0 ? Math.min(100, (xp / xpNeeded) * 100) : 0;
 
     return (
-<div
-  key={pokemon.uid}
-  className="relative w-[108px] rounded-[4px] p-[2px] transition-all duration-200"
-  style={{
-    background: "linear-gradient(135deg, #e02d2d, #1e0000, #180101)",
-  }}
->
-  <div
-    role="button"
-    tabIndex={0}
-    onClick={() => setSelectedUid(pokemon.uid)}
-    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedUid(pokemon.uid) }}
-    className={`w-full rounded-[4px] p-1.5 flex flex-col h-full cursor-pointer
-    bg-gradient-to-b from-[#2b2b2b] to-[#161616] border transition-all
-    ${isFainted ? "border-red-800 opacity-60" : "border-neutral-700"}`}
-  >
-    {/* HEADER */}
-    <div className="flex justify-between items-start border-b border-neutral-700 pb-[2px]">
-      <div className="min-w-0">
-        <div className="text-[9px] font-bold text-neutral-100 truncate leading-none">
-          {pokemon.name}
-        </div>
-      </div>
-
-              {species && (
-                <div className="flex gap-[2px] mt-[1px]">
-                  {species.types.map((t) => (
-                    <span
-                      key={t}
-                      className="text-[6px] px-[2px] rounded-[2px] text-white"
-                      style={{ backgroundColor: 'gray' }}
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              )}
-    </div>
-
-    {/* ART AREA */}
-        <div className="relative flex justify-center items-center my-1.5 h-[56px] bg-gradient-to-b from-neutral-800 to-neutral-900 rounded  border-neutral-700">
-      <img
-        src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
-        alt={pokemon.name}
-        className="pixelated h-[48px] select-none pointer-events-none grayscale"
-        crossOrigin="anonymous"
-        draggable={false}
-      />
-
-      <span className="absolute top-1 left-1 text-[7px] font-mono text-neutral-500">
-        Lv{level}
-      </span>
-    </div>
-
-    {/* STATUS */}
-    <div className="flex flex-col gap-[3px] mt-auto">
-
-      {/* HP */}
-      <div className="flex items-center gap-[3px]">
-        <Heart className="w-2.5 h-2.5 text-gray-500" />
-        <div className="flex-1 h-[6px] bg-neutral-800 rounded-full overflow-hidden border border-neutral-700">
-          <div
-            className="h-full transition-all duration-300"
-            style={{
-              width: `${hpPercent}%`,
-              backgroundColor: 'gray',
-            }}
-          />
-        </div>
-      </div>
-
-      <div className="text-[7px] font-mono text-neutral-400 leading-none">
-        {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
-      </div>
-        {/* XP */}
-        <div className="flex items-center gap-[3px]">
-          <Star className="w-2.5 h-2.5 text-gray-500" />
-          <div className="flex-1 h-[6px] bg-neutral-800 rounded-full overflow-hidden border border-neutral-700">
-            <div
-              className="h-full bg-gray-500 transition-all duration-300"
-              style={{ width: `${xpPercent}%` }}
-            />
-          </div>
-        </div>
-      {/* FOOTER BUTTON */}
-      <div className="flex justify-end pt-[2px]">
+      <div
+        key={pokemon.uid}
+        className="relative w-[108px] rounded-[4px] p-[2px] transition-all duration-200"
+        style={{
+          background: "linear-gradient(135deg, #e02d2d, #1e0000, #180101)",
+        }}
+      >
         <div
           role="button"
           tabIndex={0}
-          aria-disabled={team.length >= 6}
-          style={{backgroundColor:team.length >= 6?"gray":'green'}}
-          onClick={(e) => {
-            e.stopPropagation()
-            if (team.length < 6) moveToTeam(pokemon.uid)
-          }}
-          onKeyDown={(e) => {
-            if ((e.key === 'Enter' || e.key === ' ') && team.length < 6) {
-              e.stopPropagation()
-              moveToTeam(pokemon.uid)
-            }
-          }}
-          className={`h-5 w-full px-1.5 text-white text-[7px] rounded inline-flex items-center justify-center font-medium ${team.length >= 6 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-green-700'}`}
-          title="Promover para Equipe"
+          onClick={() => setSelectedUid(pokemon.uid)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedUid(pokemon.uid) }}
+          className={`w-full rounded-[4px] p-1.5 flex flex-col h-full cursor-pointer
+    bg-gradient-to-b from-[#2b2b2b] to-[#161616] border transition-all
+    ${isFainted ? "border-red-800 opacity-60" : "border-neutral-700"}`}
         >
-          Promover
+          {/* HEADER */}
+          <div className="flex justify-between items-start border-b border-neutral-700 pb-[2px]">
+            <div className="min-w-0">
+              <div className="text-[9px] font-bold text-neutral-100 truncate leading-none">
+                {pokemon.name}
+              </div>
+            </div>
+
+            {species && (
+              <div className="flex gap-[2px] mt-[1px]">
+                {species.types.map((t) => (
+                  <span
+                    key={t}
+                    className="text-[6px] px-[2px] rounded-[2px] text-white"
+                    style={{ backgroundColor: 'gray' }}
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ART AREA */}
+          <div className="relative flex justify-center items-center my-1.5 h-[56px] bg-gradient-to-b from-neutral-800 to-neutral-900 rounded  border-neutral-700">
+            <img
+              src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
+              alt={pokemon.name}
+              className="pixelated h-[48px] select-none pointer-events-none grayscale"
+              crossOrigin="anonymous"
+              draggable={false}
+            />
+
+            <span className="absolute top-1 left-1 text-[7px] font-mono text-neutral-500">
+              Lv{level}
+            </span>
+          </div>
+
+          {/* STATUS */}
+          <div className="flex flex-col gap-[3px] mt-auto">
+
+            {/* HP */}
+            <div className="flex items-center gap-[3px]">
+              <Heart className="w-2.5 h-2.5 text-gray-500" />
+              <div className="flex-1 h-[6px] bg-neutral-800 rounded-full overflow-hidden border border-neutral-700">
+                <div
+                  className="h-full transition-all duration-300"
+                  style={{
+                    width: `${hpPercent}%`,
+                    backgroundColor: 'gray',
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="text-[7px] font-mono text-neutral-400 leading-none">
+              {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
+            </div>
+            {/* XP */}
+            <div className="flex items-center gap-[3px]">
+              <Star className="w-2.5 h-2.5 text-gray-500" />
+              <div className="flex-1 h-[6px] bg-neutral-800 rounded-full overflow-hidden border border-neutral-700">
+                <div
+                  className="h-full bg-gray-500 transition-all duration-300"
+                  style={{ width: `${xpPercent}%` }}
+                />
+              </div>
+            </div>
+            {/* FOOTER BUTTON */}
+            <div className="flex justify-end pt-[2px]">
+              <div
+                role="button"
+                tabIndex={0}
+                aria-disabled={team.length >= 6}
+                style={{ backgroundColor: team.length >= 6 ? "gray" : 'green' }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (team.length < 6) moveToTeam(pokemon.uid)
+                }}
+                onKeyDown={(e) => {
+                  if ((e.key === 'Enter' || e.key === ' ') && team.length < 6) {
+                    e.stopPropagation()
+                    moveToTeam(pokemon.uid)
+                  }
+                }}
+                className={`h-5 w-full px-1.5 text-white text-[7px] rounded inline-flex items-center justify-center font-medium ${team.length >= 6 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-green-700'}`}
+                title="Promover para Equipe"
+              >
+                Promover
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
-</div>
     );
   };
 
@@ -647,7 +644,7 @@ function PokemonDetailContent({
   const stoneEvos = EVOLUTION_STONES.filter((stone) =>
     canEvolveByStone(pokemon.speciesId, stone.id)
   );
-const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
+  const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
 
   // Count duplicates of same species across team + reserves (excluding self)
   const duplicateCount = [...allTeam, ...allReserves].filter(
@@ -876,12 +873,12 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
 
 // ─── Skill Tree Tab Component ───────────────────────────────────────────────
 import { TeamPokemon, battleXpForLevel } from "@/lib/game-store";
-import { 
-  generateSkillTree, 
-  canUnlockSkill, 
+import {
+  generateSkillTree,
+  canUnlockSkill,
   getUnlockedSkills,
-  SkillNode, 
-  SkillTree 
+  SkillNode,
+  SkillTree
 } from "@/lib/skill-tree-data";
 import { POKEMON } from "@/lib/pokemon-data";
 
@@ -966,11 +963,10 @@ function HexNode({
 }
 
 function SkillTreeTab({ pokemon }: { pokemon: TeamPokemon }) {
-  const { trainer, unlockPokemonSkill, learnMove } = useGameStore();
-  const [selectedSkill, setSelectedSkill] = useState<SkillNode | null>(null);
+  const { trainer, unlockPokemonSkill, lockPokemonSkill, learnMove, forgetMove } = useGameStore();
 
   const species = POKEMON.find((p) => p.id === pokemon.speciesId);
-  const skillTree: SkillTree = species 
+  const skillTree: SkillTree = species
     ? generateSkillTree(pokemon.speciesId, species.startingMoves, species.learnableMoves)
     : { speciesId: pokemon.speciesId, swordPath: [], shieldPath: [] };
 
@@ -980,17 +976,21 @@ function SkillTreeTab({ pokemon }: { pokemon: TeamPokemon }) {
   const nextLevelXp = battleXpForLevel(battleLevel + 1);
   const unlockedSkills = getUnlockedSkills(skillTree, pokemon.unlockedSkills ?? []);
 
-  const handleUnlock = (skill: SkillNode) => {
-    if (skill.isUnlockedByDefault) return;
-    const result = canUnlockSkill(skill, pokemon.level, unlockedSkills, battlePoints);
-    if (!result.canUnlock) return;
-    const success = unlockPokemonSkill(pokemon.uid, skill.id, skill.pbCost);
-    if (success && skill.moveId) learnMove(pokemon.uid, skill.moveId);
-    setSelectedSkill(null);
-  };
+  // Has any non-default skill unlocked (allows unlocking starting moves toggle)
+  const hasNonDefaultUnlocked = unlockedSkills.some(
+    (id) => ![...skillTree.swordPath, ...skillTree.shieldPath].find((s) => s.id === id && s.isUnlockedByDefault)
+  );
 
-  const sw = skillTree.swordPath;
-  const sh = skillTree.shieldPath;
+  const handleToggle = (skill: SkillNode) => {
+    const isUnlocked = skill.isUnlockedByDefault
+      ? !unlockedSkills.includes(`${skill.id}_disabled`) // track disabled state for default moves
+      : unlockedSkills.includes(skill.id);
+
+    // Starting move: only disable if has other unlocked skills
+    if (skill.isUnlockedByDefault) {
+      // We just leave starting moves always on for now — handled below with canDisable
+      return;
+    }
 
 const nodePositions = {
   // Lado SWORD (Vermelho)
