@@ -916,7 +916,7 @@ export const useGameStore = create<GameState>()(
         explorationLevel: 1,
         battleXp: 0,
         battleLevel: 1,
-        battlePoints: 1,
+        battlePoints: 10,
         dailyStreak: 0,
         lastCaptureDate: null,
         weekStartDate: null,
