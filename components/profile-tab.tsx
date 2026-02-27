@@ -41,6 +41,7 @@ import {
   CheckCircle2,
   Circle,
   Calendar,
+  Swords,
 } from "lucide-react";
 import { playBadgeObtained, playBadgeRemoved, playButtonClick } from "@/lib/sounds";
 import { TrainerAvatar } from "@/components/trainer-avatar";
@@ -231,6 +232,58 @@ export function ProfileTab() {
               })()}
               <p className="text-[9px] text-muted-foreground mt-1.5 leading-relaxed">
                 Ganhe XP capturando Pokemon no radar. Bonus por capturar com menos pokebolas!
+              </p>
+            </div>
+
+            {/* Battle Level / Nivel de Batalha */}
+            <div className="bg-card/80 rounded-xl p-3 border border-border/50">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Swords className="w-4 h-4 text-red-400" />
+                  <span className="text-sm font-medium text-foreground">Duelista Nivel {trainer.battleLevel ?? 1}</span>
+                </div>
+                <span className="text-[10px] text-red-400 font-mono font-bold">
+                  Nv.{trainer.battleLevel ?? 1}
+                </span>
+              </div>
+              {/* Battle XP Progress Bar */}
+              {(() => {
+                const currentLevel = trainer.battleLevel ?? 1;
+                const currentXp = trainer.battleXp ?? 0;
+                const xpCurrent = battleXpForLevel(currentLevel);
+                const xpNext = battleXpForLevel(currentLevel + 1);
+                const xpInLevel = currentXp - xpCurrent;
+                const xpNeeded = xpNext - xpCurrent;
+                const xpPercent = xpNeeded > 0 ? Math.min(100, (xpInLevel / xpNeeded) * 100) : 100;
+                return (
+                  <>
+                    <div className="flex-1 h-2.5 bg-background rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${xpPercent}%`, backgroundColor: "#EF4444" }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        XP: {currentXp.toLocaleString("pt-BR")}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        Proximo: {xpNext.toLocaleString("pt-BR")}
+                      </span>
+                    </div>
+                  </>
+                );
+              })()}
+              <div className="flex justify-between mt-1.5">
+                <span className="text-[9px] text-green-400 font-mono">
+                  Vitorias: {trainer.battleWins ?? 0}
+                </span>
+                <span className="text-[9px] text-red-400 font-mono">
+                  Derrotas: {trainer.battleLosses ?? 0}
+                </span>
+              </div>
+              <p className="text-[9px] text-muted-foreground mt-1.5 leading-relaxed">
+                Ganhe XP vencendo duelos contra treinadores NPC!
               </p>
             </div>
 
