@@ -104,6 +104,11 @@ export interface TrainerProfile {
   legendaryUnlockedDays: number[]; // which 30-day milestones were unlocked (30, 60, 90...)
   // Weekly events
   weeklyEventProgress: WeeklyEventProgress | null;
+  // Battle system
+  battleXp: number;
+  battleLevel: number;
+  battleWins: number;
+  battleLosses: number;
 }
 
 /** XP required for a given trainer level */
@@ -117,6 +122,13 @@ export function explorationXpForLevel(level: number): number {
   if (level <= 1) return 0;
   // Slightly easier curve than trainer XP
   return Math.floor(80 * Math.pow(level - 1, 1.4));
+}
+
+/** XP required for a given battle level */
+export function battleXpForLevel(level: number): number {
+  if (level <= 1) return 0;
+  // Similar curve to exploration
+  return Math.floor(100 * Math.pow(level - 1, 1.5));
 }
 
 /** Calculate exploration XP for a capture based on balls used */
@@ -829,6 +841,9 @@ interface GameState {
   recalcTrainerStats: () => void;
   // Exploration system
   addExplorationXp: (amount: number) => ExplorationReward[];
+  // Battle system
+  addBattleXp: (amount: number) => { newLevel: number; levelsGained: number };
+  recordBattleResult: (won: boolean, xpGained: number) => void;
   // Daily streak system
   registerDailyCapture: () => StreakUpdateResult;
   // Weekly events
@@ -902,6 +917,10 @@ export const useGameStore = create<GameState>()(
         weekStartDate: null,
         legendaryUnlockedDays: [],
         weeklyEventProgress: null,
+        battleXp: 0,
+        battleLevel: 1,
+        battleWins: 0,
+        battleLosses: 0,
       },
       team: [],
       reserves: [],
@@ -1959,6 +1978,49 @@ export const useGameStore = create<GameState>()(
         });
 
         return allRewards;
+      },
+
+      // Battle system
+      addBattleXp: (amount) => {
+        const { trainer } = get();
+        const currentXp = trainer.battleXp ?? 0;
+        const currentLevel = trainer.battleLevel ?? 1;
+        let newXp = currentXp + amount;
+        let newLevel = currentLevel;
+        let levelsGained = 0;
+
+        while (newXp >= battleXpForLevel(newLevel + 1) && newLevel < 100) {
+          newLevel++;
+          levelsGained++;
+        }
+
+        set({
+          trainer: {
+            ...get().trainer,
+            battleXp: newXp,
+            battleLevel: newLevel,
+          },
+        });
+
+        return { newLevel, levelsGained };
+      },
+
+      recordBattleResult: (won, xpGained) => {
+        const { trainer } = get();
+        const currentWins = trainer.battleWins ?? 0;
+        const currentLosses = trainer.battleLosses ?? 0;
+
+        set({
+          trainer: {
+            ...get().trainer,
+            battleWins: won ? currentWins + 1 : currentWins,
+            battleLosses: won ? currentLosses : currentLosses + 1,
+          },
+        });
+
+        if (xpGained > 0) {
+          get().addBattleXp(xpGained);
+        }
       },
 
       // Daily streak system

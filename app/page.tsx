@@ -23,6 +23,9 @@ import { ShopTab } from "@/components/shop-tab";
 import { NpcTab } from "@/components/npc-tab";
 import { MovesDictionaryTab } from "@/components/moves-dictionary-tab";
 import { SettingsTab } from "@/components/settings-tab";
+import { ChallengesTab } from "@/components/challenges-tab";
+import { CardDuelScene } from "@/components/card-duel-scene";
+import type { NpcChallenge } from "@/components/challenges-tab";
 import { CaptureScene } from "@/components/capture-scene";
 import { WildBattleScene } from "@/components/wild-battle-scene";
 import { TrainerAvatar } from "@/components/trainer-avatar";
@@ -44,7 +47,7 @@ import {
   SettingsIcon,
 } from "@/components/game-icons";
 import { Button } from "@/components/ui/button";
-type Tab = "team" | "bag" | "pokedex" | "profile" | "shop" | "npcs" | "moves" | "settings";
+type Tab = "team" | "bag" | "pokedex" | "profile" | "shop" | "npcs" | "challenges" | "settings";
 type Screen = "loading" | "mode-select" | "profile-select" | "start" | "game";
 
 export default function Page() {
@@ -59,6 +62,7 @@ export default function Page() {
   const [activeTab, setActiveTab] = useState<Tab>("profile");
   const [hasSave, setHasSave] = useState(false);
   const [captureTarget, setCaptureTarget] = useState<number | null>(null);
+  const [duelChallenge, setDuelChallenge] = useState<NpcChallenge | null>(null);
   const [wildBattleTarget, setWildBattleTarget] = useState<number | null>(null);
   const wildLevelRef = useRef<number>(1);
   const [explorationRewardToast, setExplorationRewardToast] = useState<{
@@ -463,6 +467,32 @@ export default function Page() {
   }
   
 
+  // Card Duel mode
+  if (duelChallenge !== null) {
+    return (
+      <main className="flex flex-col h-dvh max-w-md mx-auto bg-background">
+        <CardDuelScene
+          challenge={duelChallenge}
+          onEnd={(won) => {
+            // Remove the challenge from localStorage after completion
+            const stored = localStorage.getItem("pokemon-rpg-challenges");
+            if (stored) {
+              try {
+                const challenges = JSON.parse(stored);
+                const filtered = challenges.filter((c: NpcChallenge) => c.id !== duelChallenge.id);
+                // Add a new challenge to replace the completed one
+                localStorage.setItem("pokemon-rpg-challenges", JSON.stringify(filtered));
+              } catch {
+                // ignore
+              }
+            }
+            setDuelChallenge(null);
+          }}
+        />
+      </main>
+    );
+  }
+
   // Wild Battle mode
   if (wildBattleTarget !== null) {
     const wildSpecies = POKEMON.find((p) => p.id === wildBattleTarget);
@@ -683,7 +713,7 @@ export default function Page() {
         {activeTab === "team" && <TeamTab onStartBattle={(uid) => startBattle(uid)} onSwitchToPokedex={() => setActiveTab("pokedex")} />}
         {activeTab === "bag" && <BagTab />}
         {activeTab === "shop" && <ShopTab />}
-        {activeTab === "moves" && <MovesDictionaryTab />}
+        {activeTab === "challenges" && <ChallengesTab onStartDuel={(challenge) => setDuelChallenge(challenge)} />}
         {activeTab === "settings" && <SettingsTab />}
         {activeTab === "pokedex" && (
           <PokedexTab
@@ -715,7 +745,7 @@ export default function Page() {
             { id: "shop", label: "Loja", icon: ShopIcon },
             { id: "team", label: "Equipe", icon: TeamIcon },
             { id: "profile", label: "Perfil", icon: ProfileIcon },
-            { id: "moves", label: "Golpes", icon: MovesIcon },
+            { id: "challenges", label: "Duelos", icon: MovesIcon },
             { id: "pokedex", label: "Pokedex", icon: PokedexIcon },
             { id: "settings", label: "Config", icon: SettingsIcon },
         ]).map(({ id, label, icon: Icon }) => {
