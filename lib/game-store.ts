@@ -46,8 +46,6 @@ export interface TeamPokemon {
   battleHistory?: BattleHistoryEntry[];
   /** Skill tree: unlocked skill node IDs */
   unlockedSkills?: string[];
-  /** Skill tree: default starting skills that were manually disabled */
-  disabledDefaultSkills?: string[];
 }
 
 export interface BagItem {
@@ -848,8 +846,6 @@ interface GameState {
   addBattleXp: (amount: number) => { leveledUp: boolean; newLevel: number; pointsGained: number };
   addBattlePoints: (amount: number) => void;
   unlockPokemonSkill: (uid: string, skillId: string, cost: number) => boolean;
-  lockPokemonSkill: (uid: string, skillId: string, refund: number) => boolean;
-  toggleDefaultSkill: (uid: string, skillId: string, moveId: string) => void;
   // Daily streak system
   registerDailyCapture: () => StreakUpdateResult;
   // Weekly events
@@ -2043,26 +2039,6 @@ export const useGameStore = create<GameState>()(
 
         set({
           trainer: { ...trainer, battlePoints: currentPoints - cost },
-          team: team.map(updatePokemon),
-          reserves: reserves.map(updatePokemon),
-        });
-
-        return true;
-      },
-
-      lockPokemonSkill: (uid, skillId, refund) => {
-        const { trainer, team, reserves } = get();
-
-        // Find pokemon and remove skill
-        const updatePokemon = (p: TeamPokemon) => {
-          if (p.uid !== uid) return p;
-          const unlockedSkills = p.unlockedSkills ?? [];
-          if (!unlockedSkills.includes(skillId)) return p; // Not unlocked
-          return { ...p, unlockedSkills: unlockedSkills.filter(s => s !== skillId) };
-        };
-
-        set({
-          trainer: { ...trainer, battlePoints: (trainer.battlePoints ?? 0) + refund },
           team: team.map(updatePokemon),
           reserves: reserves.map(updatePokemon),
         });
