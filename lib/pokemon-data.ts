@@ -23,6 +23,57 @@ export const TYPE_COLORS: Record<PokemonType, string> = {
   steel: "#B8B8D0",
 };
 
+// Type effectiveness chart (attack type -> defender type -> multiplier)
+// 2 = super effective, 0.5 = not very effective, 0 = no effect
+export const TYPE_EFFECTIVENESS: Record<PokemonType, Partial<Record<PokemonType, number>>> = {
+  normal: { rock: 0.5, ghost: 0, steel: 0.5 },
+  fire: { fire: 0.5, water: 0.5, grass: 2, ice: 2, bug: 2, rock: 0.5, dragon: 0.5, steel: 2 },
+  water: { fire: 2, water: 0.5, grass: 0.5, ground: 2, rock: 2, dragon: 0.5 },
+  grass: { fire: 0.5, water: 2, grass: 0.5, poison: 0.5, ground: 2, flying: 0.5, bug: 0.5, rock: 2, dragon: 0.5, steel: 0.5 },
+  electric: { water: 2, grass: 0.5, electric: 0.5, ground: 0, flying: 2, dragon: 0.5 },
+  ice: { fire: 0.5, water: 0.5, grass: 2, ice: 0.5, ground: 2, flying: 2, dragon: 2, steel: 0.5 },
+  fighting: { normal: 2, ice: 2, poison: 0.5, flying: 0.5, psychic: 0.5, bug: 0.5, rock: 2, ghost: 0, dark: 2, steel: 2 },
+  poison: { grass: 2, poison: 0.5, ground: 0.5, rock: 0.5, ghost: 0.5, steel: 0 },
+  ground: { fire: 2, electric: 2, grass: 0.5, poison: 2, flying: 0, bug: 0.5, rock: 2, steel: 2 },
+  flying: { grass: 2, electric: 0.5, fighting: 2, bug: 2, rock: 0.5, steel: 0.5 },
+  psychic: { fighting: 2, poison: 2, psychic: 0.5, dark: 0, steel: 0.5 },
+  bug: { fire: 0.5, grass: 2, fighting: 0.5, poison: 0.5, flying: 0.5, psychic: 2, ghost: 0.5, dark: 2, steel: 0.5 },
+  rock: { fire: 2, ice: 2, fighting: 0.5, ground: 0.5, flying: 2, bug: 2, steel: 0.5 },
+  ghost: { normal: 0, psychic: 2, ghost: 2, dark: 0.5 },
+  dragon: { dragon: 2, steel: 0.5 },
+  dark: { fighting: 0.5, psychic: 2, ghost: 2, dark: 0.5 },
+  steel: { fire: 0.5, water: 0.5, electric: 0.5, ice: 2, rock: 2, steel: 0.5 },
+};
+
+/**
+ * Get type effectiveness multiplier for an attack against a defender
+ * @param attackType The type of the attacking move
+ * @param defenderTypes The types of the defending Pokemon
+ * @returns Multiplier (4, 2, 1, 0.5, 0.25, or 0)
+ */
+export function getTypeEffectiveness(attackType: PokemonType, defenderTypes: PokemonType[]): number {
+  let multiplier = 1;
+  for (const defType of defenderTypes) {
+    const effectiveness = TYPE_EFFECTIVENESS[attackType]?.[defType];
+    if (effectiveness !== undefined) {
+      multiplier *= effectiveness;
+    }
+  }
+  return multiplier;
+}
+
+/**
+ * Get effectiveness label in Portuguese
+ */
+export function getTypeEffectivenessLabel(multiplier: number): string | null {
+  if (multiplier === 0) return "Nao afeta...";
+  if (multiplier === 0.25) return "Muito pouco efetivo";
+  if (multiplier === 0.5) return "Pouco efetivo";
+  if (multiplier === 2) return "Super efetivo!";
+  if (multiplier === 4) return "Extremamente efetivo!";
+  return null;
+}
+
 export type MoveRange = "melee" | "short" | "medium" | "long" | "area";
 
 export const MOVE_RANGE_INFO: Record<MoveRange, { label: string; labelPt: string; tiles: number; description: string }> = {
@@ -2143,6 +2194,8 @@ export interface DamageBreakdown {
   finalDamage: number;           // max(1, rawTotal - defenseReduction) for hits, 0 for miss
   isStatus: boolean;             // true for moves with power=0
   formula: string;               // human-readable formula string
+  typeEffectiveness: number;     // 0, 0.25, 0.5, 1, 2, or 4
+  typeEffectivenessLabel: string | null; // "Super efetivo!", "Pouco efetivo", etc.
 }
 
 /**
@@ -2167,27 +2220,30 @@ export function calculateBattleDamage(
   attackerAttrs: PokemonComputedAttributes,
   targetDefesa: number,
   attackerLevel?: number,
-  targetLevel?: number
-): DamageBreakdown {
+  targetLevel?: number,
+  targetTypes?: PokemonType[]
+  ): DamageBreakdown {
   const isStatus = move.damage_type === "status";
   const multiplier = getDamageMultiplier(hitResult);
 
   if (isStatus || !move.damage_dice) {
-    return {
-      moveName: move.name,
-      diceString: null,
-      diceRolls: [],
-      diceTotal: 0,
-      scalingAttr: null,
-      attrBonus: 0,
-      hitMultiplierLabel: getHitMultiplierLabel(hitResult),
-      hitMultiplier: multiplier,
-      defenseReduction: 0,
-      rawTotal: 0,
-      finalDamage: 0,
-      isStatus: true,
-      formula: "Status - sem dano",
-    };
+  return {
+  moveName: move.name,
+  diceString: null,
+  diceRolls: [],
+  diceTotal: 0,
+  scalingAttr: null,
+  attrBonus: 0,
+  hitMultiplierLabel: getHitMultiplierLabel(hitResult),
+  hitMultiplier: multiplier,
+  defenseReduction: 0,
+  rawTotal: 0,
+  finalDamage: 0,
+  isStatus: true,
+  formula: "Status - sem dano",
+  typeEffectiveness: 1,
+  typeEffectivenessLabel: null,
+  };
   }
 
   // Roll dice
@@ -2211,18 +2267,22 @@ export function calculateBattleDamage(
   // +10% damage per level difference (capped at +100% / -50%)
   let levelDiffMultiplier = 1.0;
   if (attackerLevel && targetLevel) {
-    const levelDiff = attackerLevel - targetLevel;
-    if (levelDiff > 0) {
-      // Attacker is higher level: +10% per level, max +100%
-      levelDiffMultiplier = Math.min(2.0, 1.0 + (levelDiff * 0.10));
-    } else if (levelDiff < 0) {
-      // Attacker is lower level: -5% per level, min 50%
-      levelDiffMultiplier = Math.max(0.5, 1.0 + (levelDiff * 0.05));
-    }
+  const levelDiff = attackerLevel - targetLevel;
+  if (levelDiff > 0) {
+  // Attacker is higher level: +10% per level, max +100%
+  levelDiffMultiplier = Math.min(2.0, 1.0 + (levelDiff * 0.10));
+  } else if (levelDiff < 0) {
+  // Attacker is lower level: -5% per level, min 50%
+  levelDiffMultiplier = Math.max(0.5, 1.0 + (levelDiff * 0.05));
   }
-
-  // Calculate raw total before defense (with level bonus and level diff multiplier)
-  const rawTotal = Math.floor((diceTotal + attrBonus + levelBonus) * multiplier * levelDiffMultiplier);
+  }
+  
+  // Type effectiveness multiplier
+  const typeEffectiveness = targetTypes ? getTypeEffectiveness(move.type as PokemonType, targetTypes) : 1;
+  const typeEffectivenessLabel = getTypeEffectivenessLabel(typeEffectiveness);
+  
+  // Calculate raw total before defense (with level bonus, level diff multiplier, and type effectiveness)
+  const rawTotal = Math.floor((diceTotal + attrBonus + levelBonus) * multiplier * levelDiffMultiplier * typeEffectiveness);
 
   // Defense reduction (reduced effectiveness against higher level attackers)
   const defenseEffectiveness = levelDiffMultiplier > 1.0 ? Math.max(0.5, 2.0 - levelDiffMultiplier) : 1.0;
@@ -2239,6 +2299,7 @@ export function calculateBattleDamage(
   if (levelBonus > 0) formulaParts.push(`+${levelBonus} Lv`);
   if (multiplier !== 1) formulaParts.push(`x${multiplier}`);
   if (levelDiffMultiplier !== 1.0) formulaParts.push(`x${levelDiffMultiplier.toFixed(1)} NvDif`);
+  if (typeEffectiveness !== 1) formulaParts.push(`x${typeEffectiveness} Tipo`);
   formulaParts.push(`= ${rawTotal}`);
   if (!isMiss && defenseReduction > 0) formulaParts.push(`- ${defenseReduction} DEF = ${finalDamage}`);
 
@@ -2256,6 +2317,8 @@ export function calculateBattleDamage(
     finalDamage,
     isStatus: false,
     formula: formulaParts.join(" "),
+    typeEffectiveness,
+    typeEffectivenessLabel,
   };
 }
 

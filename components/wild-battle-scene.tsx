@@ -332,7 +332,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
       // Calc damage with level scaling
       const pokemonAttrs = computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes);
       const wildAttrs = computeAttributes(wild.speciesId, wild.level);
-      const breakdown = calculateBattleDamage(move, hr, pokemonAttrs, wildAttrs.defesa, pokemon.level, wild.level);
+      const breakdown = calculateBattleDamage(move, hr, pokemonAttrs, wildAttrs.defesa, pokemon.level, wild.level, wild.types);
       const finalDmg = breakdown.finalDamage;
       setDamageDealt(finalDmg);
 
@@ -354,7 +354,8 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
           }, 600);
         }, 300);
 
-        addLog(`${pokemon.name} usou ${move.name}! Rolou ${roll} - ${getHitResultLabel(hr)}! ${finalDmg} de dano!`);
+        const typeMsg = breakdown.typeEffectivenessLabel ? ` ${breakdown.typeEffectivenessLabel}` : "";
+        addLog(`${pokemon.name} usou ${move.name}! Rolou ${roll} - ${getHitResultLabel(hr)}!${typeMsg} ${finalDmg} de dano!`);
       } else {
         addLog(`${pokemon.name} usou ${move.name}! Rolou ${roll} - ${getHitResultLabel(hr)}! Errou!`);
       }
@@ -446,7 +447,8 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
     // Calculate damage with level scaling (wild attacking player)
     const wildAttrs = computeAttributes(wild.speciesId, wild.level);
     const pokemonAttrs = pokemon ? computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes) : wildAttrs;
-    const breakdown = calculateBattleDamage(move, eHr, wildAttrs, pokemonAttrs.defesa, wild.level, pokemon?.level || 5);
+    const playerTypes = pokemon ? getPokemon(pokemon.speciesId)?.types || [] : [];
+    const breakdown = calculateBattleDamage(move, eHr, wildAttrs, pokemonAttrs.defesa, wild.level, pokemon?.level || 5, playerTypes);
     const finalDmg = breakdown.finalDamage;
 
     setTimeout(() => {
@@ -461,7 +463,8 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
           setShowPlayerParticles(false);
         }, 600);
         setEnemyDamage(finalDmg);
-        addLog(`${wild.name} selvagem usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}! ${finalDmg} de dano!`);
+        const typeMsg = breakdown.typeEffectivenessLabel ? ` ${breakdown.typeEffectivenessLabel}` : "";
+        addLog(`${wild.name} selvagem usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}!${typeMsg} ${finalDmg} de dano!`);
       } else {
         setEnemyDamage(0);
         addLog(`${wild.name} selvagem usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}! Errou!`);

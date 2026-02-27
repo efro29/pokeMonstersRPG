@@ -60,6 +60,7 @@ import {
   playHeal,
   playSendPokemon,
   playVictoryFanfare,
+  playFlee,
 } from "@/lib/sounds";
 import type { NpcChallenge } from "./challenges-tab";
 
@@ -314,7 +315,7 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
 
       const pokemonAttrs = computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes);
       const npcAttrs = computeAttributes(npc.speciesId, npc.level);
-      const breakdown = calculateBattleDamage(move, hr, pokemonAttrs, npcAttrs.defesa, pokemon.level, npc.level);
+      const breakdown = calculateBattleDamage(move, hr, pokemonAttrs, npcAttrs.defesa, pokemon.level, npc.level, npc.types);
       const finalDmg = breakdown.finalDamage;
       setDamageDealt(finalDmg);
 
@@ -334,7 +335,8 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
           }, 600);
         }, 300);
 
-        addLog(`${pokemon.name} usou ${move.name}! Rolou ${roll} - ${getHitResultLabel(hr)}! ${finalDmg} de dano!`);
+        const typeMsg = breakdown.typeEffectivenessLabel ? ` ${breakdown.typeEffectivenessLabel}` : "";
+        addLog(`${pokemon.name} usou ${move.name}! Rolou ${roll} - ${getHitResultLabel(hr)}!${typeMsg} ${finalDmg} de dano!`);
       } else {
         addLog(`${pokemon.name} usou ${move.name}! Rolou ${roll} - ${getHitResultLabel(hr)}! Errou!`);
       }
@@ -438,7 +440,8 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
 
     const npcAttrs = computeAttributes(npc.speciesId, npc.level);
     const pokemonAttrs = pokemon ? computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes) : npcAttrs;
-    const breakdown = calculateBattleDamage(move, eHr, npcAttrs, pokemonAttrs.defesa, npc.level, pokemon?.level || 5);
+    const playerTypes = pokemon ? getPokemon(pokemon.speciesId)?.types || [] : [];
+    const breakdown = calculateBattleDamage(move, eHr, npcAttrs, pokemonAttrs.defesa, npc.level, pokemon?.level || 5, playerTypes);
     const finalDmg = breakdown.finalDamage;
 
     setTimeout(() => {
@@ -452,7 +455,8 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
           setShowPlayerParticles(false);
         }, 600);
         setEnemyDamage(finalDmg);
-        addLog(`${npc.name} usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}! ${finalDmg} de dano!`);
+        const typeMsg = breakdown.typeEffectivenessLabel ? ` ${breakdown.typeEffectivenessLabel}` : "";
+        addLog(`${npc.name} usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}!${typeMsg} ${finalDmg} de dano!`);
       } else {
         setEnemyDamage(0);
         addLog(`${npc.name} usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}! Errou!`);
@@ -485,7 +489,25 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
     }, 1000);
   }, [npc, pokemon, battle.activePokemonUid, applyOpponentDamage, addLog, activeNpcIndex, addPokemonBattleHistory, challenge.npcName]);
 
-  // ─── End Turn ──────────────────────────────────────────
+  // ─── Flee ─────────────────────────────────────────────
+  const handleFlee = () => {
+    playFlee();
+    addLog("Voce desistiu da batalha!");
+    // Record loss
+    recordBattleResult(false, 0);
+    addTrainerBattleHistory({
+      id: `npc-battle-${Date.now()}`,
+      type: "npc-battle",
+      date: new Date().toISOString(),
+      won: false,
+      opponentName: challenge.npcName,
+      xpGained: 0,
+      moneyGained: 0,
+    });
+    onEnd(false);
+  };
+
+  // ─── End Turn ─────────────────────────────────────────
   const handleEndTurn = () => {
     playButtonClick();
     addLog(`--- Fim do Turno ${turnNumber} ---`);
@@ -584,15 +606,18 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Top nav */}
-      <nav className="flex items-center justify-between px-2 py-1.5 bg-card border-b border-border gap-1">
-        <div className="flex items-center gap-1.5">
-          <div className="flex items-center gap-1 bg-secondary/50 rounded px-1.5 py-0.5">
-            <RefreshCw className="w-3 h-3 text-muted-foreground" />
-            <span className="text-[10px] font-bold text-muted-foreground">Turno: {turnNumber}</span>
-          </div>
-        </div>
-
-        <span className="text-[10px] font-bold text-red-400">vs {challenge.npcName}</span>
+  <nav className="flex items-center justify-between px-2 py-1.5 bg-card border-b border-border gap-1">
+  <div className="flex items-center gap-1.5">
+  <Button onClick={handleFlee} variant="ghost" size="sm" className="h-7 w-7 p-0" title="Desistir">
+    <ChevronLeft className="w-4 h-4" />
+  </Button>
+  <div className="flex items-center gap-1 bg-secondary/50 rounded px-1.5 py-0.5">
+  <RefreshCw className="w-3 h-3 text-muted-foreground" />
+  <span className="text-[10px] font-bold text-muted-foreground">Turno: {turnNumber}</span>
+  </div>
+  </div>
+  
+  <span className="text-[10px] font-bold text-red-400">vs {challenge.npcName}</span>
 
         <div className="flex items-center gap-1">
           {/* Pokemon count indicators */}
@@ -629,7 +654,7 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
 
           {/* NPC Pokemon (top right - front sprite) */}
           {npc && (
-            <div className="absolute flex flex-col items-center" style={{ top: 15, right: 15 }}>
+            <div className="absolute flex flex-col items-center" style={{ top: npcSize.top ?? 15, right: 15 }}>
               <div className="flex items-center gap-1 mb-1 bg-black/70 rounded-lg px-2 py-0.5 backdrop-blur-sm">
                 <span className="text-[9px] font-bold text-white">{npc.name}</span>
                 <span className="text-[8px] text-gray-300">Lv.{npc.level}</span>
