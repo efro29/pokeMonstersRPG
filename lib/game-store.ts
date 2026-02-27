@@ -46,8 +46,6 @@ export interface TeamPokemon {
   battleHistory?: BattleHistoryEntry[];
   /** Skill tree: unlocked skill node IDs */
   unlockedSkills?: string[];
-  /** Skill tree: default starting skills that were manually disabled */
-  disabledDefaultSkills?: string[];
 }
 
 export interface BagItem {
@@ -849,7 +847,6 @@ interface GameState {
   addBattlePoints: (amount: number) => void;
   unlockPokemonSkill: (uid: string, skillId: string, cost: number) => boolean;
   lockPokemonSkill: (uid: string, skillId: string, refund: number) => boolean;
-  toggleDefaultSkill: (uid: string, skillId: string, moveId: string) => void;
   // Daily streak system
   registerDailyCapture: () => StreakUpdateResult;
   // Weekly events

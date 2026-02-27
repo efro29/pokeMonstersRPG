@@ -173,71 +173,57 @@ export function SkillTreeModal({ pokemon, onClose }: SkillTreeModalProps) {
           </div>
         </div>
 
-      {/* Main Content */}
-      <ScrollArea className="h-[520px] bg-gradient-to-b from-black via-background to-black">
-        <div className="p-6">
-          <div className="grid grid-cols-3 gap-6 min-h-[480px]">
+        {/* Main Content */}
+        <ScrollArea className="h-[500px]">
+          <div className="p-4">
+            <div className="flex gap-4">
+              {/* Sword Path (Left) */}
+              <div className="flex-1 bg-red-500/5 border border-red-500/20 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-red-500/20">
+                  <Swords className="w-5 h-5 text-red-400" />
+                  <h3 className="text-sm font-bold text-red-400">SWORD PATH</h3>
+                  <span className="text-[10px] text-red-400/70">(ATTACK & OFFENSE)</span>
+                </div>
 
-            {/* SWORD PATH */}
-            <div className="relative bg-red-950/60 border border-red-700/40 rounded-2xl p-5 shadow-xl">
-              <div className="flex items-center gap-2 mb-6 pb-3 border-b border-red-700/40">
-                <Swords className="w-5 h-5 text-red-400" />
-                <h3 className="text-sm font-bold text-red-400 tracking-wide">
-                  SWORD PATH
-                </h3>
-                <span className="text-[10px] text-red-400/60">
-                  (ATTACK & OFFENSE)
-                </span>
+                <div className="flex flex-col items-center gap-1">
+                  {skillTree.swordPath.map((skill, index) => 
+                    renderSkillNode(skill, index === skillTree.swordPath.length - 1)
+                  )}
+                </div>
               </div>
 
-              <div className="flex flex-col items-center gap-4 relative">
-                {skillTree.swordPath.map((skill, index) =>
-                  renderSkillNode(skill, index === skillTree.swordPath.length - 1)
-                )}
-              </div>
-            </div>
-
-            {/* CENTER - POKEMON */}
-            <div className="flex flex-col items-center justify-center relative">
-              <div className="absolute inset-y-0 left-1/2 w-px bg-gradient-to-b from-transparent via-border to-transparent" />
-
-              <img
-                src={getSpriteUrl(pokemon.speciesId)}
-                alt={pokemon.name}
-                className="w-40 h-40 drop-shadow-[0_0_25px_rgba(255,255,255,0.2)] hover:scale-105 transition-all duration-300"
-                crossOrigin="anonymous"
-              />
-
-              <p className="text-lg font-bold text-foreground mt-3 tracking-wide">
-                {pokemon.name}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Lv. {pokemon.level}
-              </p>
-            </div>
-
-            {/* SHIELD PATH */}
-            <div className="relative bg-blue-950/60 border border-blue-700/40 rounded-2xl p-5 shadow-xl">
-              <div className="flex items-center gap-2 mb-6 pb-3 border-b border-blue-700/40">
-                <Shield className="w-5 h-5 text-blue-400" />
-                <h3 className="text-sm font-bold text-blue-400 tracking-wide">
-                  SHIELD PATH
-                </h3>
-                <span className="text-[10px] text-blue-400/60">
-                  (DEFENSE, STATUS, UTILITY)
-                </span>
+              {/* Pokemon Sprite (Center) */}
+              <div className="flex flex-col items-center justify-center px-4">
+                <img
+                  src={getSpriteUrl(pokemon.speciesId)}
+                  alt={pokemon.name}
+                  width={120}
+                  height={120}
+                  className="pixelated drop-shadow-lg"
+                  crossOrigin="anonymous"
+                />
+                <p className="text-sm font-bold text-foreground mt-2">{pokemon.name}</p>
+                <p className="text-xs text-muted-foreground">Lv. {pokemon.level}</p>
               </div>
 
-              <div className="flex flex-col items-center gap-4 relative">
-                {skillTree.shieldPath.map((skill, index) =>
-                  renderSkillNode(skill, index === skillTree.shieldPath.length - 1)
-                )}
+              {/* Shield Path (Right) */}
+              <div className="flex-1 bg-green-500/5 border border-green-500/20 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-green-500/20">
+                  <Shield className="w-5 h-5 text-green-400" />
+                  <h3 className="text-sm font-bold text-green-400">SHIELD PATH</h3>
+                  <span className="text-[10px] text-green-400/70">(DEFENSE, STATUS, UTILITY)</span>
+                </div>
+
+                <div className="flex flex-col items-center gap-1">
+                  {skillTree.shieldPath.map((skill, index) => 
+                    renderSkillNode(skill, index === skillTree.shieldPath.length - 1)
+                  )}
+                </div>
               </div>
             </div>
-
           </div>
-        </div>
-      </ScrollArea>
+        </ScrollArea>
+
         {/* Skill Detail Modal */}
         <AnimatePresence>
           {selectedSkill && (
