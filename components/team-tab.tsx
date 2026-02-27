@@ -18,7 +18,6 @@ import {
   POKEMON_ATTRIBUTE_INFO,
 } from "@/lib/pokemon-data";
 import { PokemonType, PokemonBaseAttributes,getBaseAttributes } from "@/lib/pokemon-data";
-import { SkillTreeModal } from "@/components/skill-tree-modal";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,8 +59,6 @@ import {
   BookAIcon,
   Send,
   Users,
-  Lock,
-  Unlock,
 } from "lucide-react";
 import { EvolutionAnimation } from "@/components/evolution-animation";
 
@@ -686,12 +683,19 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
           Info
           </TabsTrigger>
           <TabsTrigger
-  style={{fontSize:9}}
-  value="skilltree"
-  className="flex-1  data-[state=active]:bg-card"
-  >
-Habilidades
-  </TabsTrigger>
+                    style={{fontSize:9}}
+            value="moves"
+            className="flex-1  data-[state=active]:bg-card"
+          >
+            Golpes
+          </TabsTrigger>
+          <TabsTrigger
+                    style={{fontSize:9}}
+            value="learn"
+            className="flex-1  data-[state=active]:bg-card"
+          >
+            Aprender
+          </TabsTrigger>
           <TabsTrigger
                     style={{fontSize:9}}
             value="attrs"
@@ -910,9 +914,127 @@ Habilidades
           </div>
         </TabsContent>
 
-        {/* Skill Tree Tab - Arvore de Habilidades */}
-        <TabsContent value="skilltree" className="mt-3">
-          <SkillTreeTab pokemon={pokemon} />
+        {/* Moves Tab */}
+        <TabsContent value="moves" className="mt-3">
+          <div className="flex flex-col gap-2">
+            {pokemon.moves.map((m) => {
+              const moveDef = getMove(m.moveId);
+              if (!moveDef) return null;
+              return (
+                <div
+                  key={m.moveId}
+                  className="flex items-center justify-between bg-secondary rounded-lg p-2"
+                >
+                  <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="text-[8px] px-1 py-0.5 rounded text-white"
+                        style={{
+                          backgroundColor:
+                            TYPE_COLORS[moveDef.type as PokemonType],
+                        }}
+                      >
+                        {moveDef.type.toUpperCase()}
+                      </span>
+                      <span className="text-sm font-medium text-foreground">
+                        {moveDef.name}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">
+                      {moveDef.description}
+                    </span>
+                    <div className="flex gap-2 text-[10px] text-muted-foreground">
+                      {moveDef.power > 0 && (
+                        <span>PWR: {moveDef.power}</span>
+                      )}
+                      <span>
+                        D20 {">="} {moveDef.accuracy}
+                      </span>
+                      <span>
+                        PP: {m.currentPP}/{m.maxPP}
+                      </span>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => forgetMove(pokemon.uid, m.moveId)}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              );
+            })}
+            {pokemon.moves.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhum golpe. Va em Aprender para adicionar.
+              </p>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Learn Tab */}
+        <TabsContent value="learn" className="mt-3">
+          <div className="flex flex-col gap-2">
+            {pokemon.learnableMoves.map((mId) => {
+              const moveDef = getMove(mId);
+              if (!moveDef) return null;
+              const canLearn = pokemon.moves.length < 4;
+              return (
+                <div
+                  key={mId}
+                  className="flex items-center justify-between bg-secondary rounded-lg p-2"
+                >
+                  <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="text-[8px] px-1 py-0.5 rounded text-white"
+                        style={{
+                          backgroundColor:
+                            TYPE_COLORS[moveDef.type as PokemonType],
+                        }}
+                      >
+                        {moveDef.type.toUpperCase()}
+                      </span>
+                      <span className="text-sm font-medium text-foreground">
+                        {moveDef.name}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">
+                      {moveDef.description}
+                    </span>
+                    <div className="flex gap-2 text-[10px] text-muted-foreground">
+                      {moveDef.power > 0 && (
+                        <span>PWR: {moveDef.power}</span>
+                      )}
+                      <span>
+                        D20 {">="} {moveDef.accuracy}
+                      </span>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={!canLearn}
+                    onClick={() => learnMove(pokemon.uid, mId)}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              );
+            })}
+            {pokemon.learnableMoves.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhum golpe disponivel para aprender.
+              </p>
+            )}
+            {pokemon.moves.length >= 4 && (
+              <p className="text-xs text-accent text-center">
+                Maximo 4 golpes. Esqueca um para aprender outro.
+              </p>
+            )}
+          </div>
         </TabsContent>
 
         {/* Attributes Tab */}
@@ -1287,266 +1409,5 @@ Habilidades
         )}
       </AnimatePresence>
     </DialogContent>
-  );
-}
-
-// ─── Skill Tree Tab Component ───────────────────────────────────────────────
-import { TeamPokemon, battleXpForLevel } from "@/lib/game-store";
-import { 
-  generateSkillTree, 
-  canUnlockSkill, 
-  getUnlockedSkills,
-  SkillNode, 
-  SkillTree 
-} from "@/lib/skill-tree-data";
-import { POKEMON } from "@/lib/pokemon-data";
-
-// Small hexagon node (28px)
-function HexNode({ 
-  skill, 
-  isUnlocked, 
-  canUnlockIt, 
-  isSword,
-  onClick 
-}: { 
-  skill: SkillNode; 
-  isUnlocked: boolean; 
-  canUnlockIt: boolean;
-  isSword: boolean;
-  onClick: () => void;
-}) {
-  const color = isSword ? "#ef4444" : "#22c55e";
-  const darkColor = isSword ? "#7f1d1d" : "#14532d";
-  
-  return (
-    <button onClick={onClick} className="flex flex-col items-center group">
-      <div 
-        className="w-7 h-7 flex items-center justify-center transition-transform group-hover:scale-110"
-        style={{
-          clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
-          background: isUnlocked 
-            ? `linear-gradient(135deg, ${color}, ${darkColor})` 
-            : canUnlockIt ? "#3f3f46" : "#27272a",
-          boxShadow: isUnlocked ? `0 0 8px ${color}` : "none",
-        }}
-      >
-        {isUnlocked ? (
-          <Unlock className="w-3 h-3 text-white" />
-        ) : (
-          <Lock className="w-3 h-3 text-zinc-500" />
-        )}
-      </div>
-      <span className={`text-[7px] font-bold mt-0.5 max-w-[50px] text-center leading-tight truncate ${isUnlocked ? "text-white" : "text-zinc-500"}`}>
-        {skill.name}
-      </span>
-      <span className="text-[6px] text-zinc-600">Lv{skill.levelRequired} {skill.pbCost}PB</span>
-    </button>
-  );
-}
-
-function SkillTreeTab({ pokemon }: { pokemon: TeamPokemon }) {
-  const { trainer, unlockPokemonSkill, learnMove } = useGameStore();
-  const [selectedSkill, setSelectedSkill] = useState<SkillNode | null>(null);
-
-  const species = POKEMON.find((p) => p.id === pokemon.speciesId);
-  const skillTree: SkillTree = species 
-    ? generateSkillTree(pokemon.speciesId, species.startingMoves, species.learnableMoves)
-    : { speciesId: pokemon.speciesId, swordPath: [], shieldPath: [] };
-
-  const battleLevel = trainer.battleLevel ?? 1;
-  const battlePoints = trainer.battlePoints ?? 0;
-  const battleXp = trainer.battleXp ?? 0;
-  const nextLevelXp = battleXpForLevel(battleLevel + 1);
-  const unlockedSkills = getUnlockedSkills(skillTree, pokemon.unlockedSkills ?? []);
-
-  const handleUnlock = (skill: SkillNode) => {
-    if (skill.isUnlockedByDefault) return;
-    const result = canUnlockSkill(skill, pokemon.level, unlockedSkills, battlePoints);
-    if (!result.canUnlock) return;
-    const success = unlockPokemonSkill(pokemon.uid, skill.id, skill.pbCost);
-    if (success && skill.moveId) learnMove(pokemon.uid, skill.moveId);
-    setSelectedSkill(null);
-  };
-
-  const sw = skillTree.swordPath;
-  const sh = skillTree.shieldPath;
-
-  // Positions for nodes (percentage based)
-  const nodePositions = {
-    // SWORD PATH (left side) - x positions
-    s0: { x: 25, y: 8 },   // Starting (top)
-    s1: { x: 25, y: 22 },  // Second tier
-    s2: { x: 12, y: 36 },  // Branch left
-    s3: { x: 38, y: 36 },  // Branch right
-    s4: { x: 12, y: 50 },  // Third left
-    s5: { x: 38, y: 50 },  // Third right
-    s6: { x: 25, y: 64 },  // Final (converge)
-    // SHIELD PATH (right side)
-    h0: { x: 75, y: 8 },
-    h1: { x: 75, y: 22 },
-    h2: { x: 62, y: 36 },
-    h3: { x: 88, y: 36 },
-    h4: { x: 62, y: 50 },
-    h5: { x: 88, y: 50 },
-    h6: { x: 75, y: 64 },
-  };
-
-  const renderNode = (skill: SkillNode | undefined, pos: {x: number, y: number}, isSword: boolean) => {
-    if (!skill) return null;
-    const isUnlocked = skill.isUnlockedByDefault || unlockedSkills.includes(skill.id);
-    const canUnlockIt = canUnlockSkill(skill, pokemon.level, unlockedSkills, battlePoints).canUnlock;
-    return (
-      <div className="absolute" style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: "translate(-50%, -50%)" }}>
-        <HexNode skill={skill} isUnlocked={isUnlocked} canUnlockIt={canUnlockIt} isSword={isSword} onClick={() => setSelectedSkill(skill)} />
-      </div>
-    );
-  };
-
-  // Generate SVG lines between nodes
-  const makeLine = (from: {x: number, y: number}, to: {x: number, y: number}, color: string) => (
-    <line x1={`${from.x}%`} y1={`${from.y + 4}%`} x2={`${to.x}%`} y2={`${to.y - 4}%`} stroke={color} strokeWidth="2" strokeOpacity="0.5" />
-  );
-
-  return (
-    <div className="flex flex-col gap-1 -mx-2">
-      {/* Header */}
-      <div className="flex text-center">
-        <div className="flex-1 py-1 bg-gradient-to-r from-red-900/60 to-transparent">
-          <span className="text-[8px] font-bold text-red-400">SWORD PATH</span>
-        </div>
-        <div className="flex-1 py-1 bg-gradient-to-l from-green-900/60 to-transparent">
-          <span className="text-[8px] font-bold text-green-400">SHIELD PATH</span>
-        </div>
-      </div>
-
-      {/* Tree Area */}
-      <div className="relative h-[320px] bg-gradient-to-r from-red-950/20 via-zinc-900 to-green-950/20 overflow-hidden">
-        {/* Connection Lines */}
-        <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 0 }}>
-          {/* Sword lines */}
-          {sw[0] && sw[1] && makeLine(nodePositions.s0, nodePositions.s1, "#ef4444")}
-          {sw[1] && sw[2] && makeLine(nodePositions.s1, nodePositions.s2, "#ef4444")}
-          {sw[1] && sw[3] && makeLine(nodePositions.s1, nodePositions.s3, "#ef4444")}
-          {sw[2] && sw[4] && makeLine(nodePositions.s2, nodePositions.s4, "#ef4444")}
-          {sw[3] && sw[5] && makeLine(nodePositions.s3, nodePositions.s5, "#ef4444")}
-          {sw[4] && sw[6] && makeLine(nodePositions.s4, nodePositions.s6, "#ef4444")}
-          {sw[5] && sw[6] && makeLine(nodePositions.s5, nodePositions.s6, "#ef4444")}
-          {/* Shield lines */}
-          {sh[0] && sh[1] && makeLine(nodePositions.h0, nodePositions.h1, "#22c55e")}
-          {sh[1] && sh[2] && makeLine(nodePositions.h1, nodePositions.h2, "#22c55e")}
-          {sh[1] && sh[3] && makeLine(nodePositions.h1, nodePositions.h3, "#22c55e")}
-          {sh[2] && sh[4] && makeLine(nodePositions.h2, nodePositions.h4, "#22c55e")}
-          {sh[3] && sh[5] && makeLine(nodePositions.h3, nodePositions.h5, "#22c55e")}
-          {sh[4] && sh[6] && makeLine(nodePositions.h4, nodePositions.h6, "#22c55e")}
-          {sh[5] && sh[6] && makeLine(nodePositions.h5, nodePositions.h6, "#22c55e")}
-        </svg>
-
-        {/* Pokemon Center */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-          <img src={getSpriteUrl(pokemon.speciesId)} alt={pokemon.name} width={64} height={64} className="pixelated drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]" crossOrigin="anonymous" />
-        </div>
-
-        {/* Sword Nodes */}
-        {renderNode(sw[0], nodePositions.s0, true)}
-        {renderNode(sw[1], nodePositions.s1, true)}
-        {renderNode(sw[2], nodePositions.s2, true)}
-        {renderNode(sw[3], nodePositions.s3, true)}
-        {renderNode(sw[4], nodePositions.s4, true)}
-        {renderNode(sw[5], nodePositions.s5, true)}
-        {renderNode(sw[6], nodePositions.s6, true)}
-
-        {/* Shield Nodes */}
-        {renderNode(sh[0], nodePositions.h0, false)}
-        {renderNode(sh[1], nodePositions.h1, false)}
-        {renderNode(sh[2], nodePositions.h2, false)}
-        {renderNode(sh[3], nodePositions.h3, false)}
-        {renderNode(sh[4], nodePositions.h4, false)}
-        {renderNode(sh[5], nodePositions.h5, false)}
-        {renderNode(sh[6], nodePositions.h6, false)}
-      </div>
-
-      {/* Footer Stats */}
-      <div className="flex items-center justify-center gap-3 py-1.5 bg-zinc-900/80 rounded mx-2">
-        <div className="text-center">
-          <span className="text-[7px] text-zinc-500">XP</span>
-          <span className="text-[9px] font-bold text-green-400 block">{battleXp}/{nextLevelXp}</span>
-        </div>
-        <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
-          <span className="text-[10px] font-bold text-white">{battleLevel}</span>
-        </div>
-        <div className="w-6 h-6 bg-red-600 flex items-center justify-center" style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }}>
-          <span className="text-[10px] font-bold text-white">{battlePoints}</span>
-        </div>
-      </div>
-
-      {/* Popup */}
-      {selectedSkill && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setSelectedSkill(null)}>
-          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 w-full max-w-[280px]" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 flex items-center justify-center" style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", background: (selectedSkill.isUnlockedByDefault || unlockedSkills.includes(selectedSkill.id)) ? (selectedSkill.path === "sword" ? "#ef4444" : "#22c55e") : "#3f3f46" }}>
-                {(selectedSkill.isUnlockedByDefault || unlockedSkills.includes(selectedSkill.id)) ? <Unlock className="w-4 h-4 text-white" /> : <Lock className="w-4 h-4 text-zinc-400" />}
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-white">{selectedSkill.name}</h4>
-                <p className="text-[9px] text-zinc-400">{selectedSkill.path === "sword" ? "Ataque" : "Status"}</p>
-              </div>
-            </div>
-            
-            <p className="text-xs text-zinc-300 mb-3">{selectedSkill.description}</p>
-            
-            {selectedSkill.isUnlockedByDefault && (
-              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-2 mb-3">
-                <span className="text-[10px] text-green-400 font-medium">Golpe Inicial - Ja desbloqueado!</span>
-              </div>
-            )}
-            
-            <div className="flex justify-between text-xs mb-4 bg-zinc-800 rounded-lg p-2">
-              <div className="text-center">
-                <span className="text-zinc-400 block text-[9px]">Custo</span>
-                <span className="text-red-400 font-bold">{selectedSkill.pbCost} PB</span>
-              </div>
-              <div className="text-center">
-                <span className="text-zinc-400 block text-[9px]">Nivel Req.</span>
-                <span className={pokemon.level >= selectedSkill.levelRequired ? "text-green-400 font-bold" : "text-red-400 font-bold"}>
-                  {selectedSkill.levelRequired}
-                </span>
-              </div>
-              <div className="text-center">
-                <span className="text-zinc-400 block text-[9px]">Seu Nivel</span>
-                <span className="text-blue-400 font-bold">{pokemon.level}</span>
-              </div>
-            </div>
-            
-            {(() => {
-              const isAlreadyUnlocked = selectedSkill.isUnlockedByDefault || unlockedSkills.includes(selectedSkill.id);
-              if (isAlreadyUnlocked) {
-                return (
-                  <Button className="w-full bg-green-600" size="sm" disabled>
-                    <Unlock className="w-4 h-4 mr-2" /> Desbloqueado
-                  </Button>
-                );
-              }
-              
-              const result = canUnlockSkill(selectedSkill, pokemon.level, unlockedSkills, battlePoints);
-              return (
-                <Button 
-                  className={`w-full ${result.canUnlock ? "bg-primary" : "bg-zinc-700"}`} 
-                  size="sm" 
-                  disabled={!result.canUnlock} 
-                  onClick={() => handleUnlock(selectedSkill)}
-                >
-                  {result.canUnlock ? (
-                    <>Desbloquear ({selectedSkill.pbCost} PB)</>
-                  ) : (
-                    <><Lock className="w-4 h-4 mr-2" /> {result.reason}</>
-                  )}
-                </Button>
-              );
-            })()}
-          </motion.div>
-        </div>
-      )}
-    </div>
   );
 }
