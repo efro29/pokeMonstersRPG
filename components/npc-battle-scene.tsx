@@ -185,10 +185,6 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
   const [diceRoll, setDiceRoll] = useState<number | null>(null);
   const [hitResult, setHitResult] = useState<HitResult | null>(null);
   const [damageDealt, setDamageDealt] = useState<number | null>(null);
-  const [battleLog, setBattleLog] = useState<string[]>([
-    `${challenge.npcName} quer batalhar!`,
-    `"${challenge.message}"`,
-  ]);
   const [showPlayerParticles, setShowPlayerParticles] = useState(false);
   const [showNpcParticles, setShowNpcParticles] = useState(false);
   const [playerAttacking, setPlayerAttacking] = useState(false);
@@ -203,17 +199,6 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
   const [turnNumber, setTurnNumber] = useState(1);
   const [totalXpGained, setTotalXpGained] = useState(0);
   const [attackEffect, setAttackEffect] = useState<{ type: PokemonType | null; side: "player" | "npc" } | null>(null);
-  const logRef = useRef<HTMLDivElement>(null);
-
-  const addLog = useCallback((msg: string) => {
-    setBattleLog((prev) => [...prev, msg]);
-  }, []);
-
-  useEffect(() => {
-    if (logRef.current) {
-      logRef.current.scrollTop = logRef.current.scrollHeight;
-    }
-  }, [battleLog]);
 
   // Init battle in store
   const initRef = useRef(false);
@@ -226,13 +211,11 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
         // Start intro animation
         setTimeout(() => {
           playSendPokemon();
-          addLog(`${challenge.npcName} enviou ${npcTeam[0].name}!`);
-          addLog(`Va, ${firstAlive.name}!`);
           setPhase("menu");
         }, 1500);
       }
     }
-  }, [team, startBattle, challenge.npcName, npcTeam, addLog]);
+  }, [team, startBattle, challenge.npcName, npcTeam]);
 
   const trainerAttrs = trainer.attributes || { combate: 0, afinidade: 0, sorte: 0, furtividade: 0, percepcao: 0, carisma: 0 };
   const combateBonus = Math.floor(trainerAttrs.combate / 2);
@@ -259,7 +242,6 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
   const handleAttackSelect = (moveId: string) => {
     const moveData = pokemon?.moves.find((m) => m.moveId === moveId);
     if (!moveData || moveData.currentPP <= 0) {
-      addLog(`${pokemon?.name} nao tem PP para usar esse golpe!`);
       return;
     }
 
@@ -337,14 +319,12 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
         }, 300);
 
         const typeMsg = breakdown.typeEffectivenessLabel ? ` ${breakdown.typeEffectivenessLabel}` : "";
-        addLog(`${pokemon.name} usou ${move.name}! Rolou ${roll} - ${getHitResultLabel(hr)}!${typeMsg} ${finalDmg} de dano!`);
       } else {
-        addLog(`${pokemon.name} usou ${move.name}! Rolou ${roll} - ${getHitResultLabel(hr)}! Errou!`);
       }
 
       setPhase("result");
     },
-    [selectedMoveId, pokemon, combateBonus, critThreshold, npc, activeNpcIndex, addLog]
+    [selectedMoveId, pokemon, combateBonus, critThreshold, npc, activeNpcIndex]
   );
 
   // Check NPC pokemon fainted
@@ -353,11 +333,9 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
       setTimeout(() => {
         const reward = npc.level * 35;
         setTotalXpGained((prev) => prev + reward);
-        addLog(`${npc.name} do oponente desmaiou!`);
 
         if (pokemon) {
           addXp(pokemon.uid, reward);
-          addLog(`${pokemon.name} ganhou ${reward} XP!`);
           addPokemonBattleHistory(pokemon.uid, {
             type: "victory",
             date: new Date().toISOString(),
@@ -374,9 +352,8 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
         } else {
           setPhase("npc-switch");
           setTimeout(() => {
-            setActiveNpcIndex(nextNpcIndex);
-            playSendPokemon();
-            addLog(`${challenge.npcName} enviou ${npcTeam[nextNpcIndex].name}!`);
+        setActiveNpcIndex(nextNpcIndex);
+          playSendPokemon();
             setTimeout(() => setPhase("menu"), 1000);
           }, 1000);
         }
@@ -389,12 +366,11 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
     if (!npc || npc.currentHp <= 0) return;
     setPhase("enemy-turn");
 
-    const availableMoves = npc.moves.filter((m) => m.currentPP > 0);
-    if (availableMoves.length === 0) {
-      addLog(`${npc.name} nao tem mais movimentos!`);
-      setTimeout(() => setPhase("menu"), 1000);
-      return;
-    }
+  const availableMoves = npc.moves.filter((m) => m.currentPP > 0);
+  if (availableMoves.length === 0) {
+    setTimeout(() => setPhase("menu"), 1000);
+    return;
+  }
 
     const chosen = availableMoves[Math.floor(Math.random() * availableMoves.length)];
     const move = getMove(chosen.moveId);
@@ -457,10 +433,8 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
         }, 600);
         setEnemyDamage(finalDmg);
         const typeMsg = breakdown.typeEffectivenessLabel ? ` ${breakdown.typeEffectivenessLabel}` : "";
-        addLog(`${npc.name} usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}!${typeMsg} ${finalDmg} de dano!`);
       } else {
         setEnemyDamage(0);
-        addLog(`${npc.name} usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}! Errou!`);
       }
 
       setPhase("enemy-result");
