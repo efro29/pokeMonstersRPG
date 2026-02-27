@@ -882,41 +882,8 @@ import {
 } from "@/lib/skill-tree-data";
 import { POKEMON } from "@/lib/pokemon-data";
 
-// Compact hexagon node
-function HexNode({
-  skill, isUnlocked, canUnlockIt, isSword, onClick
-}: {
-  skill: SkillNode; isUnlocked: boolean; canUnlockIt: boolean; isSword: boolean; onClick: () => void;
-}) {
-  const color = isSword ? "#ef4444" : "#3b82f6";
-
-  return (
-    <button onClick={onClick} className="flex flex-col items-center group p-0.5">
-      <div
-        className="w-8 h-9 flex items-center justify-center transition-transform group-hover:scale-105"
-        style={{
-          clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
-          background: isUnlocked ? color : canUnlockIt ? "#3f3f46" : "#27272a",
-          boxShadow: isUnlocked ? `0 0 6px ${color}` : "none",
-        }}
-      >
-        {isUnlocked ? (
-          <Unlock className="w-3 h-3 text-white" />
-        ) : (
-          <Lock className={`w-3 h-3 ${canUnlockIt ? "text-zinc-400" : "text-zinc-700"}`} />
-        )}
-      </div>
-      <span className={`text-[7px] font-bold mt-0.5 max-w-[45px] text-center leading-tight truncate ${isUnlocked ? "text-white" : "text-zinc-500"}`}>
-        {skill.name}
-      </span>
-      <span className="text-[6px] text-zinc-600">{skill.pbCost}PB</span>
-    </button>
-  );
-}
-
 function SkillTreeTab({ pokemon }: { pokemon: TeamPokemon }) {
   const { trainer, unlockPokemonSkill, lockPokemonSkill, learnMove, forgetMove } = useGameStore();
-  const [selectedSkill, setSelectedSkill] = useState<SkillNode | null>(null);
 
   const species = POKEMON.find((p) => p.id === pokemon.speciesId);
   const skillTree: SkillTree = species
@@ -929,181 +896,145 @@ function SkillTreeTab({ pokemon }: { pokemon: TeamPokemon }) {
   const nextLevelXp = battleXpForLevel(battleLevel + 1);
   const unlockedSkills = getUnlockedSkills(skillTree, pokemon.unlockedSkills ?? []);
 
-  const handleUnlock = (skill: SkillNode) => {
-    if (skill.isUnlockedByDefault) return;
-    const result = canUnlockSkill(skill, pokemon.level, unlockedSkills, battlePoints);
-    if (!result.canUnlock) return;
-    const success = unlockPokemonSkill(pokemon.uid, skill.id, skill.pbCost);
-    if (success && skill.moveId) learnMove(pokemon.uid, skill.moveId);
-    setSelectedSkill(null);
+  // Has any non-default skill unlocked (allows unlocking starting moves toggle)
+  const hasNonDefaultUnlocked = unlockedSkills.some(
+    (id) => ![...skillTree.swordPath, ...skillTree.shieldPath].find((s) => s.id === id && s.isUnlockedByDefault)
+  );
+
+  const handleToggle = (skill: SkillNode) => {
+    const isUnlocked = skill.isUnlockedByDefault
+      ? !unlockedSkills.includes(`${skill.id}_disabled`) // track disabled state for default moves
+      : unlockedSkills.includes(skill.id);
+
+    // Starting move: only disable if has other unlocked skills
+    if (skill.isUnlockedByDefault) {
+      // We just leave starting moves always on for now — handled below with canDisable
+      return;
+    }
+
+    if (isUnlocked) {
+      // Lock: refund PB and forget move
+      lockPokemonSkill(pokemon.uid, skill.id, skill.pbCost);
+      if (skill.moveId) forgetMove(pokemon.uid, skill.moveId);
+    } else {
+      const result = canUnlockSkill(skill, pokemon.level, unlockedSkills, battlePoints);
+      if (!result.canUnlock) return;
+      const success = unlockPokemonSkill(pokemon.uid, skill.id, skill.pbCost);
+      if (success && skill.moveId) learnMove(pokemon.uid, skill.moveId);
+    }
   };
 
-  const handleLock = (skill: SkillNode) => {
-    if (skill.isUnlockedByDefault) return;
-    lockPokemonSkill(pokemon.uid, skill.id, skill.pbCost);
-    if (skill.moveId) forgetMove(pokemon.uid, skill.moveId);
-    setSelectedSkill(null);
+  const renderPath = (nodes: SkillNode[], isSword: boolean) => {
+    const color = isSword ? "#ef4444" : "#3b82f6";
+    const dimColor = isSword ? "#7f1d1d" : "#1e3a5f";
+
+    return (
+      <div className="grid grid-cols-3 gap-x-1 gap-y-2">
+        {nodes.map((skill) => {
+          const isUnlocked = skill.isUnlockedByDefault || unlockedSkills.includes(skill.id);
+          const { canUnlock: canUnlockIt } = canUnlockSkill(skill, pokemon.level, unlockedSkills, battlePoints);
+          // Ready = meets level req, has PB, not yet unlocked
+          const isReadyToUnlock = !isUnlocked && pokemon.level >= skill.levelRequired && battlePoints >= skill.pbCost;
+
+          return (
+            <button
+              key={skill.id}
+              onClick={() => handleToggle(skill)}
+              disabled={skill.isUnlockedByDefault}
+              className="flex flex-col items-center gap-0.5 p-0.5 rounded transition-all active:scale-95 disabled:cursor-default"
+            >
+              {/* Hexagon */}
+              <div className="relative">
+                <div
+                  className="w-7 h-8 flex items-center justify-center transition-all"
+                  style={{
+                    clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+                    background: isUnlocked ? color : isReadyToUnlock ? dimColor : "#1c1c1e",
+                    boxShadow: isUnlocked ? `0 0 7px ${color}88` : isReadyToUnlock ? `0 0 5px ${dimColor}` : "none",
+                    border: `1.5px solid ${isUnlocked ? color : isReadyToUnlock ? color + "66" : "#3f3f46"}`,
+                    outline: "none",
+                  }}
+                >
+                  {isUnlocked ? (
+                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                  ) : (
+                    <Lock className={`w-2.5 h-2.5 ${isReadyToUnlock ? "text-zinc-300" : "text-zinc-700"}`} />
+                  )}
+                </div>
+                {/* Pulsing ring for ready-to-unlock */}
+                {isReadyToUnlock && (
+                  <span className="absolute inset-0 rounded-full animate-ping"
+                    style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", background: color + "33" }}
+                  />
+                )}
+              </div>
+
+              {/* Name */}
+              <span className={`text-[7px] font-semibold text-center leading-tight w-full px-0.5 truncate ${
+                isUnlocked ? "text-zinc-100" : isReadyToUnlock ? "text-zinc-300" : "text-zinc-600"
+              }`}>
+                {skill.name}
+              </span>
+
+              {/* Cost / level */}
+              <span className={`text-[6px] leading-none ${isReadyToUnlock && !isUnlocked ? "text-yellow-400 font-bold" : "text-zinc-700"}`}>
+                {skill.isUnlockedByDefault ? "inicial" : `Lv${skill.levelRequired} · ${skill.pbCost}PB`}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    );
   };
 
   const sw = skillTree.swordPath;
   const sh = skillTree.shieldPath;
 
-  const renderNode = (skill: SkillNode | undefined, isSword: boolean) => {
-    if (!skill) return null;
-    const isUnlocked = skill.isUnlockedByDefault || unlockedSkills.includes(skill.id);
-    const { canUnlock: canUnlockIt } = canUnlockSkill(skill, pokemon.level, unlockedSkills, battlePoints);
-
-    return (
-      <HexNode
-        skill={skill}
-        isUnlocked={isUnlocked}
-        canUnlockIt={canUnlockIt}
-        isSword={isSword}
-        onClick={() => setSelectedSkill(skill)}
-      />
-    );
-  };
-
   return (
-    <div className="flex flex-col bg-zinc-950 text-zinc-100 overflow-hidden select-none -mx-2">
+    <div className="flex flex-col bg-zinc-950 text-zinc-100 -mx-2 overflow-hidden">
 
-      {/* Header Stats */}
-      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-zinc-900 border-b border-zinc-800">
-        <div className="flex items-center gap-2">
-          <span className="text-[8px] text-zinc-500">XP</span>
-          <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-            <div className="h-full bg-green-500" style={{ width: `${(battleXp / nextLevelXp) * 100}%` }} />
+      {/* Stats row */}
+      <div className="flex items-center gap-3 px-3 py-1.5 bg-zinc-900/90 border-b border-zinc-800">
+        {/* XP bar */}
+        <div className="flex items-center gap-1.5 flex-1">
+          <span className="text-[7px] text-zinc-600 shrink-0">XP</span>
+          <div className="flex-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
+            <div className="h-full bg-green-500 transition-all" style={{ width: `${Math.min(100, (battleXp / nextLevelXp) * 100)}%` }} />
           </div>
+          <span className="text-[7px] text-zinc-600 shrink-0">{battleLevel}</span>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center">
-            <span className="text-[9px] font-bold text-white">{battleLevel}</span>
-          </div>
-          <span className="text-[7px] text-zinc-500">LV</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-5 h-5 bg-red-600 flex items-center justify-center" style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }}>
-            <span className="text-[9px] font-bold text-white">{battlePoints}</span>
+        {/* PB */}
+        <div className="flex items-center gap-1 shrink-0">
+          <div
+            className="w-5 h-5 flex items-center justify-center"
+            style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", background: "#ef4444" }}
+          >
+            <span className="text-[9px] font-bold text-white leading-none">{battlePoints}</span>
           </div>
           <span className="text-[7px] text-zinc-500">PB</span>
         </div>
       </div>
 
-      {/* Path Headers */}
-      <div className="flex text-center border-b border-zinc-800">
-        <div className="flex-1 py-1.5 bg-red-950/30">
-          <span className="text-[8px] font-bold text-red-400">SWORD</span>
+      {/* Path headers */}
+      <div className="flex border-b border-zinc-800">
+        <div className="flex-1 text-center py-1 bg-red-950/20">
+          <span className="text-[8px] font-bold text-red-500 tracking-widest">SWORD</span>
         </div>
-        <div className="flex-1 py-1.5 bg-blue-950/30">
-          <span className="text-[8px] font-bold text-blue-400">SHIELD</span>
-        </div>
-      </div>
-
-      {/* Skills Grid */}
-      <div className="flex flex-1 overflow-y-auto">
-        {/* Sword Path */}
-        <div className="flex-1 p-2 border-r border-zinc-800 bg-gradient-to-b from-red-950/20 to-transparent">
-          <div className="grid grid-cols-3 gap-1">
-            {sw.map((skill) => (
-              <div key={skill.id} className="flex justify-center">
-                {renderNode(skill, true)}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Shield Path */}
-        <div className="flex-1 p-2 bg-gradient-to-b from-blue-950/20 to-transparent">
-          <div className="grid grid-cols-3 gap-1">
-            {sh.map((skill) => (
-              <div key={skill.id} className="flex justify-center">
-                {renderNode(skill, false)}
-              </div>
-            ))}
-          </div>
+        <div className="w-px bg-zinc-800" />
+        <div className="flex-1 text-center py-1 bg-blue-950/20">
+          <span className="text-[8px] font-bold text-blue-500 tracking-widest">SHIELD</span>
         </div>
       </div>
 
-
-
-      {/* Compact Popup */}
-      {selectedSkill && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3" onClick={() => setSelectedSkill(null)}>
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 w-full max-w-[260px]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center gap-2 mb-2">
-              <div
-                className="w-8 h-8 flex items-center justify-center flex-shrink-0"
-                style={{
-                  clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
-                  background: (selectedSkill.isUnlockedByDefault || unlockedSkills.includes(selectedSkill.id))
-                    ? (selectedSkill.path === "sword" ? "#ef4444" : "#3b82f6")
-                    : "#27272a"
-                }}
-              >
-                {(selectedSkill.isUnlockedByDefault || unlockedSkills.includes(selectedSkill.id)) ?
-                  <Unlock className="w-3.5 h-3.5 text-white" /> : <Lock className="w-3.5 h-3.5 text-zinc-500" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="text-xs font-bold text-white truncate">{selectedSkill.name}</h4>
-                <div className="flex items-center gap-2 text-[9px]">
-                  <span className={selectedSkill.path === "sword" ? "text-red-400" : "text-blue-400"}>
-                    {selectedSkill.path === "sword" ? "Ataque" : "Status"}
-                  </span>
-                  <span className="text-zinc-500">Lv.{selectedSkill.levelRequired}</span>
-                  <span className="text-yellow-500 font-bold">{selectedSkill.pbCost}PB</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Description */}
-            <p className="text-[10px] text-zinc-400 mb-3 line-clamp-2">{selectedSkill.description}</p>
-
-            {/* Actions */}
-            {(() => {
-              const isAlreadyUnlocked = selectedSkill.isUnlockedByDefault || unlockedSkills.includes(selectedSkill.id);
-              const canReset = !selectedSkill.isUnlockedByDefault && isAlreadyUnlocked;
-
-              if (selectedSkill.isUnlockedByDefault) {
-                return (
-                  <button className="w-full py-2 bg-zinc-800 rounded text-zinc-500 text-[10px] font-bold" disabled>
-                    Golpe Inicial
-                  </button>
-                );
-              }
-
-              if (canReset) {
-                return (
-                  <button
-                    className="w-full py-2 bg-red-600 hover:bg-red-700 rounded text-white text-[10px] font-bold flex items-center justify-center gap-1"
-                    onClick={() => handleLock(selectedSkill)}
-                  >
-                    Resetar (+{selectedSkill.pbCost} PB)
-                  </button>
-                );
-              }
-
-              const result = canUnlockSkill(selectedSkill, pokemon.level, unlockedSkills, battlePoints);
-              return (
-                <button
-                  className={`w-full py-2 rounded text-[10px] font-bold flex items-center justify-center gap-1 ${
-                    result.canUnlock ? "bg-green-600 hover:bg-green-700 text-white" : "bg-zinc-800 text-zinc-500"
-                  }`}
-                  disabled={!result.canUnlock}
-                  onClick={() => handleUnlock(selectedSkill)}
-                >
-                  {result.canUnlock ? `Desbloquear (${selectedSkill.pbCost} PB)` : result.reason}
-                </button>
-              );
-            })()}
-          </motion.div>
+      {/* Grid */}
+      <div className="flex overflow-y-auto">
+        <div className="flex-1 p-2 border-r border-zinc-800/60">
+          {renderPath(sw, true)}
         </div>
-      )}
+        <div className="flex-1 p-2">
+          {renderPath(sh, false)}
+        </div>
+      </div>
     </div>
   );
 }
