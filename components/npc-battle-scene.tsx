@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useGameStore, battleXpForLevel } from "@/lib/game-store";
+import { TrainerAvatar } from "@/components/trainer-avatar";
 import {
   getSpriteUrl,
   getBattleSpriteUrl,
@@ -640,6 +641,32 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
         </div>
       </nav>
 
+      {/* NPC Info Header */}
+      <div className="flex items-center justify-between px-3 py-2 bg-red-900/30 border-b border-red-700/50">
+        <div className="flex items-center gap-2">
+          <div className="w-12 h-12 rounded-lg overflow-hidden border-2 border-red-500 bg-black/40 flex items-center justify-center">
+            <span className="text-[24px]">👲</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-bold text-white truncate">{challenge.npcName}</div>
+            <div className="text-[11px] text-red-300">Treinador Rival</div>
+          </div>
+        </div>
+        {/* NPC Pokeballs */}
+        <div className="flex items-center gap-1 bg-black/50 rounded-lg px-2 py-1">
+          {npcTeam.map((p, i) => (
+            <div
+              key={i}
+              className="w-5 h-5 rounded-full border border-red-500/50 flex items-center justify-center"
+              style={{ backgroundColor: p.currentHp > 0 ? "#ef4444" : "#666" }}
+              title={`${p.name} ${p.currentHp > 0 ? "ativo" : "derrotado"}`}
+            >
+              <div className="w-4 h-4 rounded-full border border-red-700/50" style={{ backgroundColor: p.currentHp > 0 ? "#ff6666" : "#555" }} />
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Arena */}
       <div className="relative flex-1 overflow-hidden">
         <div className="relative w-full" style={{ height: 280 }}>
@@ -1078,6 +1105,33 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Player Info Footer */}
+      <div className="flex items-center justify-between px-3 py-2 bg-blue-900/30 border-t border-blue-700/50">
+        {/* Player Pokeballs */}
+        <div className="flex items-center gap-1 bg-black/50 rounded-lg px-2 py-1">
+          {team.map((p, i) => (
+            <div
+              key={i}
+              className="w-5 h-5 rounded-full border border-blue-500/50 flex items-center justify-center"
+              style={{ backgroundColor: p.currentHp > 0 ? "#3b82f6" : "#666" }}
+              title={`${p.name} ${p.currentHp > 0 ? "ativo" : "derrotado"}`}
+            >
+              <div className="w-4 h-4 rounded-full border border-blue-700/50" style={{ backgroundColor: p.currentHp > 0 ? "#60a5fa" : "#555" }} />
+            </div>
+          ))}
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <div className="text-sm font-bold text-white truncate text-right">{trainer.name}</div>
+            <div className="text-[11px] text-blue-300 text-right">Lv. {trainer.battleLevel ?? 1}</div>
+          </div>
+          <div className="w-12 h-12 rounded-lg overflow-hidden border-2 border-blue-500 bg-black/40 flex items-center justify-center">
+            <TrainerAvatar avatarId={trainer.avatarId} size={48} />
+          </div>
+        </div>
       </div>
     </div>
   );

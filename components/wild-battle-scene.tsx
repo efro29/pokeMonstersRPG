@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useGameStore } from "@/lib/game-store";
+import { TrainerAvatar } from "@/components/trainer-avatar";
 import {
   getSpriteUrl,
   getBattleSpriteUrl,
@@ -645,7 +646,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
     return { x, y, scale, rotation };
   };
 
-  // ─── RENDER ───────────────────────────────────────────
+  // ─── RENDER ───────────────────────────���───────────────
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Top nav */}
@@ -673,6 +674,29 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
           </Button>
         </div>
       </nav>
+
+      {/* Wild Pokemon Info Header */}
+      <div className="flex items-center justify-between px-3 py-2 bg-amber-900/30 border-b border-amber-700/50">
+        <div className="flex items-center gap-2">
+          <div className="w-12 h-12 rounded-lg overflow-hidden border-2 border-amber-500 bg-black/40 flex items-center justify-center">
+            <span className="text-[24px]">🐾</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-bold text-white truncate">{wild.name} Selvagem</div>
+            <div className="text-[11px] text-amber-300">Pokemon Encontrado</div>
+          </div>
+        </div>
+        {/* Wild Pokemon Status (single) */}
+        <div className="flex items-center gap-1 bg-black/50 rounded-lg px-2 py-1">
+          <div
+            className="w-6 h-6 rounded-full border-2 border-amber-500/50 flex items-center justify-center"
+            style={{ backgroundColor: wild.currentHp > 0 ? "#f59e0b" : "#666" }}
+            title={`${wild.name} ${wild.currentHp > 0 ? "ativo" : "derrotado"}`}
+          >
+            <div className="w-5 h-5 rounded-full border border-amber-700/50" style={{ backgroundColor: wild.currentHp > 0 ? "#fbbf24" : "#555" }} />
+          </div>
+        </div>
+      </div>
 
       {/* Arena */}
       <div className="relative flex-1 overflow-hidden">
@@ -1324,6 +1348,33 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
               {log}
             </p>
           ))}
+        </div>
+      </div>
+
+      {/* Player Info Footer */}
+      <div className="flex items-center justify-between px-3 py-2 bg-blue-900/30 border-t border-blue-700/50">
+        {/* Player Pokeballs */}
+        <div className="flex items-center gap-1 bg-black/50 rounded-lg px-2 py-1">
+          {team.map((p, i) => (
+            <div
+              key={i}
+              className="w-5 h-5 rounded-full border border-blue-500/50 flex items-center justify-center"
+              style={{ backgroundColor: p.currentHp > 0 ? "#3b82f6" : "#666" }}
+              title={`${p.name} ${p.currentHp > 0 ? "ativo" : "derrotado"}`}
+            >
+              <div className="w-4 h-4 rounded-full border border-blue-700/50" style={{ backgroundColor: p.currentHp > 0 ? "#60a5fa" : "#555" }} />
+            </div>
+          ))}
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <div className="text-sm font-bold text-white truncate text-right">{trainer.name}</div>
+            <div className="text-[11px] text-blue-300 text-right">Treinador</div>
+          </div>
+          <div className="w-12 h-12 rounded-lg overflow-hidden border-2 border-blue-500 bg-black/40 flex items-center justify-center">
+            <TrainerAvatar avatarId={trainer.avatarId} size={48} />
+          </div>
         </div>
       </div>
     </div>
