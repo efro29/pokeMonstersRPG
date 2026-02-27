@@ -663,211 +663,211 @@ function PokemonDetailContent({
   const [xpBarAnimProgress, setXpBarAnimProgress] = useState(0);
 
   return (
-    <DialogContent className="bg-zinc-950 border-zinc-800 text-zinc-100 max-w-sm mx-auto h-[85vh] overflow-hidden flex flex-col p-0 gap-0 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+<DialogContent className="bg-zinc-950 border-zinc-800 text-zinc-100 max-w-sm mx-auto h-[85vh] overflow-hidden flex flex-col p-0 gap-0 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+  
+  {/* Header Decorativo Estilo Terminal */}
+  <div className="bg-zinc-900/50 border-b border-zinc-800 p-3 flex justify-between items-center">
+    <div className="flex items-center gap-2">
+      <div className="w-2 h-2 bg-red-500 animate-pulse rounded-full" />
+      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">System Trace: {pokemon.name}</span>
+    </div>
+  </div>
 
-      {/* Header Decorativo Estilo Terminal */}
-      <div className="bg-zinc-900/50 border-b border-zinc-800 p-3 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-red-500 animate-pulse rounded-full" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">System Trace: {pokemon.name}</span>
-        </div>
-      </div>
+  <Tabs defaultValue="skills" className="flex-1 flex flex-col overflow-hidden">
+    {/* Seleção de Abas Estilo Terminal */}
+    <TabsList className="grid grid-cols-2 bg-zinc-900 rounded-none border-b border-zinc-800 h-10 p-0">
+      <TabsTrigger value="skills" className="rounded-none text-[9px] font-black uppercase tracking-widest data-[state=active]:bg-zinc-800 data-[state=active]:text-emerald-400">Skill Tree</TabsTrigger>
+      <TabsTrigger value="info" className="rounded-none text-[9px] font-black uppercase tracking-widest data-[state=active]:bg-zinc-800 data-[state=active]:text-emerald-400">Management</TabsTrigger>
+    </TabsList>
 
-      <Tabs defaultValue="skills" className="flex-1 flex flex-col overflow-hidden">
-        {/* Seleção de Abas Estilo Terminal */}
-        <TabsList className="grid grid-cols-2 bg-zinc-900 rounded-none border-b border-zinc-800 h-10 p-0">
-          <TabsTrigger value="skills" className="rounded-none text-[9px] font-black uppercase tracking-widest data-[state=active]:bg-zinc-800 data-[state=active]:text-emerald-400">Skill Tree</TabsTrigger>
-          <TabsTrigger value="info" className="rounded-none text-[9px] font-black uppercase tracking-widest data-[state=active]:bg-zinc-800 data-[state=active]:text-emerald-400">Management</TabsTrigger>
-        </TabsList>
+    {/* ABA 1: ÁRVORE DE HABILIDADES */}
+    <TabsContent value="skills" className="flex-1 m-0 overflow-y-auto custom-scrollbar">
+      <SkillTreeTab pokemon={pokemon} />
+    </TabsContent>
 
-        {/* ABA 1: ÁRVORE DE HABILIDADES */}
-        <TabsContent value="skills" className="flex-1 m-0 overflow-y-auto custom-scrollbar">
-          <SkillTreeTab pokemon={pokemon} />
-        </TabsContent>
-
-        {/* ABA 2: GERENCIAMENTO (XP, LVL, DUPLICATAS) */}
-        <TabsContent value="info" className="flex-1 m-0 overflow-y-auto p-4 space-y-6 custom-scrollbar">
-          <div className="space-y-4">
-
-            {/* ================= DUPLICATES PANEL ================= */}
-            {duplicateCount > 0 && (
-              <div className="relative group overflow-hidden rounded-sm border border-amber-500/30 bg-amber-500/5 p-4 transition-all">
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-500/10 to-transparent h-1/2 w-full -translate-y-full group-hover:animate-[scan_2s_linear_infinite]" />
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-amber-500/20 rounded-sm">
-                    <Users className="w-4 h-4 text-amber-500" />
-                  </div>
-                  <span className="text-[11px] font-black text-amber-500 uppercase tracking-wider">
-                    {duplicateCount} Duplicata{duplicateCount > 1 ? 's' : ''} Detectada
-                  </span>
-                </div>
-                <p className="text-[10px] text-zinc-400 mb-4">
-                  Otimização disponível: Converta para ganhar <span className="text-amber-400 font-bold">+{estimatedXp} XP</span>.
-                </p>
-                <Button
-                  onClick={() => {
-                    const result = transferAllDuplicates(pokemon.speciesId, pokemon.uid);
-                    if (result.count > 0) {
-                      setTransferResult({
-                        pokemonName: pokemon.name,
-                        recipientName: pokemon.name,
-                        xpGained: result.totalXp,
-                        count: result.count,
-                      });
-                      setXpBarAnimProgress(100);
-                    }
-                  }}
-                  className="w-full bg-amber-600/20 border border-amber-600/50 text-amber-500 hover:bg-amber-600 hover:text-white text-[10px] font-black uppercase h-9"
-                >
-                  <Send className="w-3 h-3 mr-2" /> Executar Transferência
-                </Button>
+    {/* ABA 2: GERENCIAMENTO (XP, LVL, DUPLICATAS) */}
+    <TabsContent value="info" className="flex-1 m-0 overflow-y-auto p-4 space-y-6 custom-scrollbar">
+      <div className="space-y-4">
+        
+        {/* ================= DUPLICATES PANEL ================= */}
+        {duplicateCount > 0 && (
+          <div className="relative group overflow-hidden rounded-sm border border-amber-500/30 bg-amber-500/5 p-4 transition-all">
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-500/10 to-transparent h-1/2 w-full -translate-y-full group-hover:animate-[scan_2s_linear_infinite]" />
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-amber-500/20 rounded-sm">
+                <Users className="w-4 h-4 text-amber-500" />
               </div>
-            )}
-
-            {/* ================= XP MANAGEMENT ================= */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="h-[1px] flex-1 bg-zinc-800" />
-                <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">XP Injection</span>
-                <div className="h-[1px] flex-1 bg-zinc-800" />
-              </div>
-
-              {xpLocked && (
-                <div className="bg-red-500/10 border border-red-500/30 p-2 text-center">
-                  <p className="text-[9px] text-red-400 font-bold uppercase">Manual Override Locked</p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-4 gap-2">
-                {[50, 100, 250, 500].map((val) => (
-                  <button
-                    key={val}
-                    onClick={() => addXp(pokemon.uid, val)}
-                    disabled={xpLocked}
-                    className="py-2 text-[10px] font-black border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-emerald-500 hover:text-emerald-400 disabled:opacity-20 uppercase"
-                  >
-                    +{val}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  placeholder="CUSTOM XP"
-                  value={xpInput}
-                  onChange={(e) => setXpInput(e.target.value)}
-                  disabled={xpLocked}
-                  className="h-10 bg-zinc-900 border-zinc-800 text-zinc-100 text-[10px] font-bold"
-                />
-                <Button
-                  onClick={() => {
-                    const val = parseInt(xpInput);
-                    if (val > 0) { addXp(pokemon.uid, val); setXpInput(""); }
-                  }}
-                  disabled={xpLocked}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-black font-black px-4"
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
+              <span className="text-[11px] font-black text-amber-500 uppercase tracking-wider">
+                {duplicateCount} Duplicata{duplicateCount > 1 ? 's' : ''} Detectada
+              </span>
             </div>
+            <p className="text-[10px] text-zinc-400 mb-4">
+              Otimização disponível: Converta para ganhar <span className="text-amber-400 font-bold">+{estimatedXp} XP</span>.
+            </p>
+            <Button
+              onClick={() => {
+                const result = transferAllDuplicates(pokemon.speciesId, pokemon.uid);
+                if (result.count > 0) {
+                  setTransferResult({
+                    pokemonName: pokemon.name,
+                    recipientName: pokemon.name,
+                    xpGained: result.totalXp,
+                    count: result.count,
+                  });
+                  setXpBarAnimProgress(100);
+                }
+              }}
+              className="w-full bg-amber-600/20 border border-amber-600/50 text-amber-500 hover:bg-amber-600 hover:text-white text-[10px] font-black uppercase h-9"
+            >
+              <Send className="w-3 h-3 mr-2" /> Executar Transferência
+            </Button>
+          </div>
+        )}
 
-            {/* ================= LEVEL & SPECIALS ================= */}
-            <div className="space-y-3 pt-2">
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  placeholder="SET LEVEL"
-                  value={levelInput}
-                  onChange={(e) => setLevelInput(e.target.value)}
-                  disabled={xpLocked}
-                  className="h-10 bg-zinc-900 border-zinc-800 text-[10px] font-bold"
-                />
-                <Button
-                  onClick={() => {
-                    const val = parseInt(levelInput);
-                    if (val >= 1 && val <= 100) { setLevel(pokemon.uid, val); setLevelInput(""); }
-                  }}
-                  disabled={xpLocked}
-                  className="bg-blue-600 hover:bg-blue-500 text-white font-black px-4"
-                >
-                  <ArrowUp className="w-4 h-4" />
-                </Button>
-              </div>
+        {/* ================= XP MANAGEMENT ================= */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="h-[1px] flex-1 bg-zinc-800" />
+            <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">XP Injection</span>
+            <div className="h-[1px] flex-1 bg-zinc-800" />
+          </div>
 
-              {hasRareCandy && (
-                <button
-                  onClick={() => useRareCandy(pokemon.uid)}
-                  className="w-full py-3 border border-emerald-500/50 bg-emerald-500/5 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-emerald-500/20"
-                >
-                  <Sparkles className="w-3 h-3 animate-pulse" /> Utilizar Rare Candy
-                </button>
-              )}
+          {xpLocked && (
+            <div className="bg-red-500/10 border border-red-500/30 p-2 text-center">
+              <p className="text-[9px] text-red-400 font-bold uppercase">Manual Override Locked</p>
+            </div>
+          )}
 
+          <div className="grid grid-cols-4 gap-2">
+            {[50, 100, 250, 500].map((val) => (
               <button
-                onClick={() => {
-                  const result = transferToProfesor(pokemon.uid);
-                  if (result.xpGained > 0 && result.recipientName) {
-                    setTransferResult({ pokemonName: pokemon.name, recipientName: result.recipientName, xpGained: result.xpGained });
-                    setXpBarAnimProgress(100);
-                  } else { onClose(); }
-                }}
-                className="w-full py-3 bg-zinc-900 border border-zinc-800 text-red-500/70 text-[10px] font-black uppercase tracking-widest hover:text-red-500"
+                key={val}
+                onClick={() => addXp(pokemon.uid, val)}
+                disabled={xpLocked}
+                className="py-2 text-[10px] font-black border border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-emerald-500 hover:text-emerald-400 disabled:opacity-20 uppercase"
               >
-                Transferir ao Professor
+                +{val}
               </button>
-            </div>
+            ))}
+          </div>
 
-            {/* ================= HUD XP DISPLAY ================= */}
-            <div className="bg-zinc-900/80 border border-zinc-800 p-4 rounded-sm">
-              <div className="flex justify-between items-end mb-2">
-                <div>
-                  <span className="text-[8px] text-zinc-500 font-black uppercase block tracking-tighter">Current Rank</span>
-                  <span className="text-xl font-black italic text-zinc-100">LV.{level}</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-[10px] font-bold text-emerald-400">{xp} <span className="text-zinc-600">/</span> {xpNeeded}</span>
-                  <span className="text-[8px] text-zinc-500 block uppercase font-black">Data Progress</span>
-                </div>
-              </div>
-              <div className="h-2 w-full bg-zinc-800 overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-blue-600 via-emerald-500 to-emerald-400 transition-all duration-700"
-                  style={{ width: `${Math.min(100, (xp / xpNeeded) * 100)}%` }}
-                />
-              </div>
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              placeholder="CUSTOM XP"
+              value={xpInput}
+              onChange={(e) => setXpInput(e.target.value)}
+              disabled={xpLocked}
+              className="h-10 bg-zinc-900 border-zinc-800 text-zinc-100 text-[10px] font-bold"
+            />
+            <Button
+              onClick={() => {
+                const val = parseInt(xpInput);
+                if (val > 0) { addXp(pokemon.uid, val); setXpInput(""); }
+              }}
+              disabled={xpLocked}
+              className="bg-emerald-600 hover:bg-emerald-500 text-black font-black px-4"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* ================= LEVEL & SPECIALS ================= */}
+        <div className="space-y-3 pt-2">
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              placeholder="SET LEVEL"
+              value={levelInput}
+              onChange={(e) => setLevelInput(e.target.value)}
+              disabled={xpLocked}
+              className="h-10 bg-zinc-900 border-zinc-800 text-[10px] font-bold"
+            />
+            <Button
+              onClick={() => {
+                const val = parseInt(levelInput);
+                if (val >= 1 && val <= 100) { setLevel(pokemon.uid, val); setLevelInput(""); }
+              }}
+              disabled={xpLocked}
+              className="bg-blue-600 hover:bg-blue-500 text-white font-black px-4"
+            >
+              <ArrowUp className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {hasRareCandy && (
+            <button
+              onClick={() => useRareCandy(pokemon.uid)}
+              className="w-full py-3 border border-emerald-500/50 bg-emerald-500/5 text-emerald-400 text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-emerald-500/20"
+            >
+              <Sparkles className="w-3 h-3 animate-pulse" /> Utilizar Rare Candy
+            </button>
+          )}
+
+          <button
+            onClick={() => {
+              const result = transferToProfesor(pokemon.uid);
+              if (result.xpGained > 0 && result.recipientName) {
+                setTransferResult({ pokemonName: pokemon.name, recipientName: result.recipientName, xpGained: result.xpGained });
+                setXpBarAnimProgress(100);
+              } else { onClose(); }
+            }}
+            className="w-full py-3 bg-zinc-900 border border-zinc-800 text-red-500/70 text-[10px] font-black uppercase tracking-widest hover:text-red-500"
+          >
+            Transferir ao Professor
+          </button>
+        </div>
+
+        {/* ================= HUD XP DISPLAY ================= */}
+        <div className="bg-zinc-900/80 border border-zinc-800 p-4 rounded-sm">
+          <div className="flex justify-between items-end mb-2">
+            <div>
+              <span className="text-[8px] text-zinc-500 font-black uppercase block tracking-tighter">Current Rank</span>
+              <span className="text-xl font-black italic text-zinc-100">LV.{level}</span>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] font-bold text-emerald-400">{xp} <span className="text-zinc-600">/</span> {xpNeeded}</span>
+              <span className="text-[8px] text-zinc-500 block uppercase font-black">Data Progress</span>
             </div>
           </div>
-        </TabsContent>
-      </Tabs>
+          <div className="h-2 w-full bg-zinc-800 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-blue-600 via-emerald-500 to-emerald-400 transition-all duration-700"
+              style={{ width: `${Math.min(100, (xp / xpNeeded) * 100)}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    </TabsContent>
+  </Tabs>
 
-      {/* ================= ANIMATION OVERLAY ================= */}
-      <AnimatePresence>
-        {transferResult && (
-          <motion.div className="absolute inset-0 z-[100] bg-zinc-950/90 backdrop-blur-md flex items-center justify-center p-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="w-full space-y-6 text-center">
-              <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} className="w-16 h-16 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full mx-auto flex items-center justify-center">
-                <Send className="w-6 h-6 text-emerald-500" />
-              </motion.div>
-              <div className="space-y-1">
-                <h2 className="text-sm font-black uppercase tracking-widest text-white">Transferência Concluída</h2>
-              </div>
-              <div className="bg-zinc-900 border border-zinc-800 p-4 relative">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase">{transferResult.recipientName}</span>
-                  <span className="text-xs font-black text-emerald-400">+{transferResult.xpGained} XP</span>
-                </div>
-                <div className="h-1.5 w-full bg-zinc-800">
-                  <motion.div className="h-full bg-emerald-500" initial={{ width: 0 }} animate={{ width: `${xpBarAnimProgress}%` }} transition={{ duration: 1.5 }} />
-                </div>
-              </div>
-              <Button onClick={() => setTransferResult(null)} className="bg-transparent border border-zinc-800 text-zinc-500 hover:text-white text-[10px] font-black uppercase">Fechar Terminal</Button>
-            </div>
+  {/* ================= ANIMATION OVERLAY ================= */}
+  <AnimatePresence>
+    {transferResult && (
+      <motion.div className="absolute inset-0 z-[100] bg-zinc-950/90 backdrop-blur-md flex items-center justify-center p-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        <div className="w-full space-y-6 text-center">
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }} className="w-16 h-16 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full mx-auto flex items-center justify-center">
+            <Send className="w-6 h-6 text-emerald-500" />
           </motion.div>
-        )}
-      </AnimatePresence>
-    </DialogContent>
+          <div className="space-y-1">
+            <h2 className="text-sm font-black uppercase tracking-widest text-white">Transferência Concluída</h2>
+          </div>
+          <div className="bg-zinc-900 border border-zinc-800 p-4 relative">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-[10px] font-bold text-zinc-400 uppercase">{transferResult.recipientName}</span>
+              <span className="text-xs font-black text-emerald-400">+{transferResult.xpGained} XP</span>
+            </div>
+            <div className="h-1.5 w-full bg-zinc-800">
+              <motion.div className="h-full bg-emerald-500" initial={{ width: 0 }} animate={{ width: `${xpBarAnimProgress}%` }} transition={{ duration: 1.5 }} />
+            </div>
+          </div>
+          <Button onClick={() => setTransferResult(null)} className="bg-transparent border border-zinc-800 text-zinc-500 hover:text-white text-[10px] font-black uppercase">Fechar Terminal</Button>
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+</DialogContent>
   );
 }
 
@@ -881,6 +881,86 @@ import {
   SkillTree
 } from "@/lib/skill-tree-data";
 import { POKEMON } from "@/lib/pokemon-data";
+
+// Small hexagon node (28px)
+function HexNode({ 
+  skill, isUnlocked, canUnlockIt, isSword, onClick 
+}: { 
+  skill: SkillNode; isUnlocked: boolean; canUnlockIt: boolean; isSword: boolean; onClick: () => void;
+}) {
+  const color = isSword ? "#ef4444" : "#3b82f6";
+  const glowShadow = isUnlocked ? `drop-shadow(0 0 5px ${color}cc)` : "none";
+
+  return (
+    <button 
+      onClick={onClick} 
+      className="flex flex-col items-center group relative outline-none"
+    >
+      {/* Container do Hexágono */}
+      <div 
+        className="relative w-11 h-12 flex items-center justify-center transition-all duration-300 group-hover:scale-110"
+        style={{ filter: glowShadow }}
+      >
+        {/* Borda Externa Neon */}
+        <div 
+          className="absolute inset-0 transition-colors duration-500"
+          style={{
+            clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+            background: isUnlocked ? color : canUnlockIt ? "#52525b" : "#27272a",
+          }}
+        />
+        
+        {/* Fundo Interno (Cria o efeito de moldura) */}
+        <div 
+          className="absolute inset-[1.5px] bg-zinc-950 flex items-center justify-center"
+          style={{
+            clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+          }}
+        >
+          {isUnlocked ? (
+            <div className="relative flex items-center justify-center">
+               {/* Ícone de fundo sutil */}
+              <div className="absolute opacity-10 scale-150 rotate-12 uppercase font-black text-[8px] text-white">
+                {skill.name.substring(0, 2)}
+              </div>
+              {/* Ponto de energia central */}
+              <div 
+                className="w-1.5 h-1.5 rounded-full animate-pulse z-10" 
+                style={{ backgroundColor: color, boxShadow: `0 0 12px ${color}` }} 
+              />
+            </div>
+          ) : (
+            <Lock className={`w-3.5 h-3.5 ${canUnlockIt ? "text-zinc-400" : "text-zinc-800"}`} />
+          )}
+        </div>
+      </div>
+
+      {/* Label Box - Organização Limpa */}
+      <div className="mt-2 text-center pointer-events-none">
+        <div className={`text-[8px] font-black uppercase tracking-[0.08em] leading-tight transition-colors
+          ${isUnlocked ? "text-zinc-100" : "text-zinc-600"}`}>
+          {skill.name}
+        </div>
+        
+        <div className="flex items-center justify-center gap-1 mt-0.5 opacity-80">
+          <span className="text-[6px] font-bold text-zinc-500">LV.{skill.levelRequired}</span>
+          <span className={`text-[7px] font-black px-1 rounded-sm
+            ${canUnlockIt && !isUnlocked ? "bg-yellow-500/10 text-yellow-500" : "text-zinc-700"}`}>
+            {skill.pbCost}PB
+          </span>
+        </div>
+      </div>
+
+      {/* Notificação de Upgrade Disponível */}
+      {canUnlockIt && !isUnlocked && (
+        <span className="absolute -top-1 -right-1 flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
+        </span>
+      )}
+    </button>
+  );
+}
 
 function SkillTreeTab({ pokemon }: { pokemon: TeamPokemon }) {
   const { trainer, unlockPokemonSkill, lockPokemonSkill, learnMove, forgetMove } = useGameStore();
@@ -912,197 +992,339 @@ function SkillTreeTab({ pokemon }: { pokemon: TeamPokemon }) {
       return;
     }
 
-    if (isUnlocked) {
-      // Lock: refund PB and forget move
-      lockPokemonSkill(pokemon.uid, skill.id, skill.pbCost);
-      if (skill.moveId) forgetMove(pokemon.uid, skill.moveId);
-    } else {
-      const result = canUnlockSkill(skill, pokemon.level, unlockedSkills, battlePoints);
-      if (!result.canUnlock) return;
-      const success = unlockPokemonSkill(pokemon.uid, skill.id, skill.pbCost);
-      if (success && skill.moveId) learnMove(pokemon.uid, skill.moveId);
-    }
-  };
+const nodePositions = {
+  // Lado SWORD (Vermelho)
+  s0: { x: 30, y: 5 },   // Golpe 1
+  s1: { x: 30, y: 28 },  // Golpe 2 (Alinhado verticalmente com o 1)
+  s2: { x: 12, y: 55 },  // Golpe 3 (Base esquerda)
+  s3: { x: 30, y: 55 },  // Golpe 4 (Base centro - logo abaixo do s1)
+  s4: { x: 48, y: 55 },  // Golpe 5 (Base direita)
 
-  const renderPath = (nodes: SkillNode[], isSword: boolean) => {
-    const color = isSword ? "#ef4444" : "#3b82f6";
-    const dimColor = isSword ? "#7f1d1d" : "#1e3a5f";
+  // Lado SHIELD (Azul)
+  h0: { x: 70, y: 5 },   // Golpe 1
+  h1: { x: 70, y: 28 },  // Golpe 2
+  h2: { x: 52, y: 55 },  // Golpe 3
+  h3: { x: 70, y: 55 },  // Golpe 4
+  h4: { x: 88, y: 55 },  // Golpe 5
+};
 
-    return (
-      <div className="grid grid-cols-3 gap-x-1 gap-y-2">
-        {nodes.map((skill) => {
-          const isUnlocked = skill.isUnlockedByDefault || unlockedSkills.includes(skill.id);
-          const { canUnlock: canUnlockIt } = canUnlockSkill(skill, pokemon.level, unlockedSkills, battlePoints);
-          // Ready = meets level req, has PB, not yet unlocked
-          const isReadyToUnlock = !isUnlocked && pokemon.level >= skill.levelRequired && battlePoints >= skill.pbCost;
-
-          return (
-            <button
-              key={skill.id}
-              onClick={() => handleToggle(skill)}
-              disabled={skill.isUnlockedByDefault}
-              className="flex flex-col items-center gap-0.5 p-0.5 rounded transition-all active:scale-95 disabled:cursor-default"
-            >
-              {/* Hexagon */}
-              <div className="relative">
-                <div
-                  className="w-7 h-8 flex items-center justify-center transition-all"
-                  style={{
-                    clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
-                    background: isUnlocked ? color : isReadyToUnlock ? dimColor : "#1c1c1e",
-                    boxShadow: isUnlocked ? `0 0 7px ${color}88` : isReadyToUnlock ? `0 0 5px ${dimColor}` : "none",
-                    border: `1.5px solid ${isUnlocked ? color : isReadyToUnlock ? color + "66" : "#3f3f46"}`,
-                    outline: "none",
-                  }}
-                >
-                  {isUnlocked ? (
-                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                  ) : (
-                    <Lock className={`w-2.5 h-2.5 ${isReadyToUnlock ? "text-zinc-300" : "text-zinc-700"}`} />
-                  )}
-                </div>
-                {/* Pulsing ring for ready-to-unlock */}
-                {isReadyToUnlock && (
-                  <span className="absolute inset-0 rounded-full animate-ping"
-                    style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", background: color + "33" }}
-                  />
-                )}
-              </div>
-
-              {/* Name */}
-              <span className={`text-[7px] font-semibold text-center leading-tight w-full px-0.5 truncate ${
-                isUnlocked ? "text-zinc-100" : isReadyToUnlock ? "text-zinc-300" : "text-zinc-600"
-              }`}>
-                {skill.name}
-              </span>
-
-              {/* Cost / level */}
-              <span className={`text-[6px] leading-none ${isReadyToUnlock && !isUnlocked ? "text-yellow-400 font-bold" : "text-zinc-700"}`}>
-                {skill.isUnlockedByDefault ? "inicial" : `Lv${skill.levelRequired} · ${skill.pbCost}PB`}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    );
-  };
-
-  const sw = skillTree.swordPath;
-  const sh = skillTree.shieldPath;
+const renderNode = (skill: SkillNode | undefined, pos: {x: number, y: number}, isSword: boolean) => {
+  if (!skill) return null;
+  const isUnlocked = skill.isUnlockedByDefault || unlockedSkills.includes(skill.id);
+  const { canUnlock: canUnlockIt } = canUnlockSkill(skill, pokemon.level, unlockedSkills, battlePoints);
 
   return (
-    <div className="flex flex-col bg-zinc-950 text-zinc-100 -mx-2 overflow-hidden">
+    <div className="z-20"> {/* Removido o absolute e o style de left/top */}
+      <HexNode 
+        skill={skill} 
+        isUnlocked={isUnlocked} 
+        canUnlockIt={canUnlockIt} 
+        isSword={isSword} 
+        onClick={() => setSelectedSkill(skill)} 
+      />
+    </div>
+  );
+};
 
-      {/* Stats row */}
-      <div className="flex items-center gap-3 px-3 py-1.5 bg-zinc-900/90 border-b border-zinc-800">
-        {/* XP bar */}
-        <div className="flex items-center gap-1.5 flex-1">
-          <span className="text-[7px] text-zinc-600 shrink-0">XP</span>
-          <div className="flex-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
-            <div className="h-full bg-green-500 transition-all" style={{ width: `${Math.min(100, (battleXp / nextLevelXp) * 100)}%` }} />
-          </div>
-          <span className="text-[7px] text-zinc-600 shrink-0">{battleLevel}</span>
-        </div>
-        {/* PB */}
-        <div className="flex items-center gap-1 shrink-0">
-          <div
-            className="w-5 h-5 flex items-center justify-center"
-            style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", background: "#ef4444" }}
-          >
-            <span className="text-[9px] font-bold text-white leading-none">{battlePoints}</span>
-          </div>
-          <span className="text-[7px] text-zinc-500">PB</span>
-        </div>
+  // Generate SVG lines between nodes
+  const makeLine = (from: {x: number, y: number}, to: {x: number, y: number}, color: string) => (
+    <g className="opacity-80">
+      {/* Glow da linha (borrado) */}
+      <line 
+        x1={`${from.x}%`} y1={`${from.y}%`} 
+        x2={`${to.x}%`} y2={`${to.y}%`} 
+        stroke={color} 
+        strokeWidth="3" 
+        className="blur-[2px] opacity-30" 
+      />
+      {/* Núcleo da linha */}
+      <line 
+        x1={`${from.x}%`} y1={`${from.y}%`} 
+        x2={`${to.x}%`} y2={`${to.y}%`} 
+        stroke={color} 
+        strokeWidth="1.5"
+        className="transition-all duration-1000"
+      />
+    </g>
+  );
+
+  return (
+<div className="flex flex-col h-full bg-zinc-950 text-zinc-100 font-sans overflow-hidden select-none">
+  
+  {/* ================= TRAINER HUD (Status Bar Compacta) ================= */}
+  <div className="grid grid-cols-3 items-center gap-2 p-2 bg-zinc-900/90 border-b border-zinc-800 backdrop-blur-md">
+    {/* XP Progress */}
+    <div className="col-span-1 flex flex-col justify-center">
+      <div className="flex justify-between items-end mb-0.5">
+        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-tighter">Battle XP</span>
+        <span className="text-[8px] font-bold text-green-400">{(battleXp/nextLevelXp * 100).toFixed(0)}%</span>
       </div>
-
-      {/* Path headers */}
-      <div className="flex border-b border-zinc-800">
-        <div className="flex-1 text-center py-1 bg-red-950/20">
-          <span className="text-[8px] font-bold text-red-500 tracking-widest">SWORD</span>
-        </div>
-        <div className="w-px bg-zinc-800" />
-        <div className="flex-1 text-center py-1 bg-blue-950/20">
-          <span className="text-[8px] font-bold text-blue-500 tracking-widest">SHIELD</span>
-        </div>
+      <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden border border-white/5">
+        <div 
+          className="h-full bg-gradient-to-r from-green-600 to-emerald-400 transition-all duration-500" 
+          style={{ width: `${(battleXp / nextLevelXp) * 100}%` }}
+        />
       </div>
+    </div>
 
-      {/* Grid */}
-      <div className="flex overflow-y-auto">
-        <div className="flex-1 p-2 border-r border-zinc-800/60">
-          {renderPath(sw, true)}
-        </div>
-        <div className="flex-1 p-2">
-          {renderPath(sh, false)}
+    {/* Battle Level Badge */}
+    <div className="flex flex-col items-center border-x border-zinc-800">
+      <span className="text-[7px] text-zinc-500 uppercase font-black">Rank</span>
+      <div className="flex items-center gap-1">
+        <div className="w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500/50 flex items-center justify-center shadow-[0_0_10px_rgba(59,130,246,0.3)]">
+          <span className="text-[10px] font-black text-blue-400">{battleLevel}</span>
         </div>
       </div>
     </div>
+
+    {/* PB Points */}
+    <div className="flex flex-col items-center">
+      <span className="text-[7px] text-zinc-500 uppercase font-black">Disponível</span>
+      <div className="flex items-center gap-1.5">
+        <div className="w-5 h-5 bg-red-500/20 border border-red-500/50 flex items-center justify-center shadow-[0_0_10px_rgba(239,68,68,0.3)]" style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }}>
+          <span className="text-[10px] font-black text-red-400">{battlePoints}</span>
+        </div>
+        <span className="text-[9px] font-bold text-zinc-300">PB</span>
+      </div>
+    </div>
+  </div>
+
+  {/* ================= PATH SELECTION ================= */}
+  <div className="flex text-center bg-zinc-900/50 border-b border-zinc-800">
+    <div className="flex-1 py-2 bg-gradient-to-r from-red-500/10 to-transparent border-r border-zinc-800">
+      <span className="text-[9px] font-black text-red-500 tracking-widest uppercase italic">Sword Path</span>
+    </div>
+    <div className="flex-1 py-2 bg-gradient-to-l from-blue-500/10 to-transparent">
+      <span className="text-[9px] font-black text-blue-500 tracking-widest uppercase italic">Shield Path</span>
+    </div>
+  </div>
+        {/* ================= TREE AREA (Com Fundo Colorido e Sub-Grid de 3 Colunas) ================= */}
+<div className="relative flex-1 bg-zinc-950 overflow-hidden flex items-stretch select-none">
+  
+  {/* 1. Grid sutil de fundo (Camada mais baixa) */}
+  <div className="absolute inset-0 opacity-[0.02] pointer-events-none z-0" 
+       style={{ backgroundImage: `linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)`, backgroundSize: '30px 30px' }} />
+  
+  {/* 2. GRADIENTES DE FUNDO (Cores das Laterais) */}
+  {/* Glow Vermelho (Sword - Esquerda) */}
+  <div className="absolute left-0 top-0 bottom-0 w-1/2 bg-gradient-to-r from-red-950/30 via-red-950/10 to-transparent pointer-events-none z-1" />
+  {/* Glow Azul (Shield - Direita) */}
+  <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-gradient-to-l from-blue-950/30 via-blue-950/10 to-transparent pointer-events-none z-1" />
+
+  {/* 3. POKEMON WATERMARK CENTRAL */}
+  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-2">
+    <img
+      src={getSpriteUrl(pokemon.speciesId)}
+      alt=""
+      className="w-40 h-40 object-contain opacity-10 blur-[1px] pixelated scale-[2]"
+    />
+  </div>
+
+  {/* ================= CONTEÚDO (Z-index superior para ficar acima dos fundos) ================= */}
+
+  {/* LADO SWORD (Esquerda - Vermelho) */}
+  <div className="flex-1 flex flex-col items-center pt-8 border-r border-white/5 z-10 relative">
+    {/* Borda Neon Sutil na Divisória (Opcional) */}
+    <div className="absolute right-0 top-1/4 bottom-1/4 w-[1px] bg-gradient-to-b from-transparent via-red-500/20 to-transparent" />
+
+    {/* Nível 1 e 2 alinhados verticalmente */}
+    <div className="flex flex-col gap-12 items-center mb-12">
+      {sw[0] && renderNode(sw[0], { x: 0, y: 0 }, true)}
+      {sw[1] && renderNode(sw[1], { x: 0, y: 0 }, true)}
+    </div>
+
+    {/* Grid de 3 colunas para Golpe 3, 4 e 5 */}
+    <div className="grid grid-cols-3 gap-4 px-2 w-full max-w-[280px]">
+      <div className="flex justify-center">{sw[2] && renderNode(sw[2], { x: 0, y: 0 }, true)}</div>
+      <div className="flex justify-center">{sw[3] && renderNode(sw[3], { x: 0, y: 0 }, true)}</div>
+      <div className="flex justify-center">{sw[4] && renderNode(sw[4], { x: 0, y: 0 }, true)}</div>
+    </div>
+  </div>
+
+  {/* LADO SHIELD (Direita - Azul) */}
+  <div className="flex-1 flex flex-col items-center pt-8 z-10 relative">
+    {/* Nível 1 e 2 alinhados verticalmente */}
+    <div className="flex flex-col gap-12 items-center mb-12">
+      {sh[0] && renderNode(sh[0], { x: 0, y: 0 }, false)}
+      {sh[1] && renderNode(sh[1], { x: 0, y: 0 }, false)}
+    </div>
+
+    {/* Grid de 3 colunas para Golpe 3, 4 e 5 */}
+    <div className="grid grid-cols-3 gap-4 px-2 w-full max-w-[280px]">
+      <div className="flex justify-center">{sh[2] && renderNode(sh[2], { x: 0, y: 0 }, false)}</div>
+      <div className="flex justify-center">{sh[3] && renderNode(sh[3], { x: 0, y: 0 }, false)}</div>
+      <div className="flex justify-center">{sh[4] && renderNode(sh[4], { x: 0, y: 0 }, false)}</div>
+    </div>
+  </div>
+</div>
+
+
+
+  {/* ================= SKILL DETAIL MODAL (Cyber Look) ================= */}
+  <AnimatePresence>
+    {selectedSkill && (
+      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setSelectedSkill(null)}>
+        <motion.div 
+          initial={{ y: "100%" }} 
+          animate={{ y: 0 }} 
+          exit={{ y: "100%" }}
+          className="bg-zinc-900 border-t-2 border-zinc-700 rounded-t-2xl p-4 w-full max-w-md relative overflow-hidden" 
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Decoração da Popup */}
+          <div className={`absolute top-0 right-0 w-24 h-1 ${selectedSkill.path === "sword" ? "bg-red-600" : "bg-blue-600"}`} />
+          
+          <div className="flex items-start gap-4 mb-4">
+            <div 
+              className="w-12 h-14 flex items-center justify-center flex-shrink-0" 
+              style={{ 
+                clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)", 
+                background: (selectedSkill.isUnlockedByDefault || unlockedSkills.includes(selectedSkill.id)) 
+                  ? (selectedSkill.path === "sword" ? "#ef4444" : "#3b82f6") 
+                  : "#27272a" 
+              }}
+            >
+              {(selectedSkill.isUnlockedByDefault || unlockedSkills.includes(selectedSkill.id)) ? 
+                <Unlock className="w-6 h-6 text-white" /> : <Lock className="w-6 h-6 text-zinc-500" />}
+            </div>
+            
+            <div className="flex-1">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="text-sm font-black text-white uppercase tracking-tight">{selectedSkill.name}</h4>
+                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${selectedSkill.path === "sword" ? "bg-red-500/10 text-red-500" : "bg-blue-500/10 text-blue-500"}`}>
+                    {selectedSkill.path === "sword" ? "Ofensivo" : "Estratégico"}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-zinc-500 block uppercase font-bold tracking-tighter">Custo</span>
+                  <span className="text-sm font-black text-yellow-500">{selectedSkill.pbCost} PB</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-zinc-950/50 border border-zinc-800 rounded-lg p-3 mb-4">
+            <p className="text-[11px] leading-relaxed text-zinc-400 italic">"{selectedSkill.description}"</p>
+          </div>
+          
+          {/* Info Grid */}
+          <div className="grid grid-cols-2 gap-2 mb-5">
+            <div className="bg-zinc-800/50 p-2 rounded flex justify-between items-center border border-zinc-700/30">
+              <span className="text-[9px] text-zinc-500 uppercase font-bold">Nível Req.</span>
+              <span className={`text-xs font-black ${pokemon.level >= selectedSkill.levelRequired ? "text-green-500" : "text-red-500"}`}>
+                {selectedSkill.levelRequired}
+              </span>
+            </div>
+            <div className="bg-zinc-800/50 p-2 rounded flex justify-between items-center border border-zinc-700/30">
+              <span className="text-[9px] text-zinc-500 uppercase font-bold">Status Req.</span>
+              <span className="text-xs font-black text-zinc-300">Pronto</span>
+            </div>
+          </div>
+          
+          {/* Action Button */}
+          {(() => {
+            const isAlreadyUnlocked = selectedSkill.isUnlockedByDefault || unlockedSkills.includes(selectedSkill.id);
+            if (isAlreadyUnlocked) {
+              return (
+                <button className="w-full py-3 bg-zinc-800 rounded-xl text-zinc-500 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 cursor-default border border-zinc-700" disabled>
+                  <Unlock className="w-4 h-4" /> Habilidade Ativa
+                </button>
+              );
+            }
+            
+            const result = canUnlockSkill(selectedSkill, pokemon.level, unlockedSkills, battlePoints);
+            return (
+              <button 
+                className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg
+                  ${result.canUnlock ? "bg-white text-black shadow-white/10" : "bg-zinc-800 text-zinc-600 grayscale cursor-not-allowed"}`}
+                disabled={!result.canUnlock} 
+                onClick={() => handleUnlock(selectedSkill)}
+              >
+                {result.canUnlock ? (
+                  <>Adquirir Golpe <span className="opacity-40">|</span> {selectedSkill.pbCost} PB</>
+                ) : (
+                  <><Lock className="w-4 h-4" /> {result.reason}</>
+                )}
+              </button>
+            );
+          })()}
+          
+          <button className="w-full py-3 mt-2 text-zinc-500 text-[10px] font-bold uppercase tracking-widest" onClick={() => setSelectedSkill(null)}>
+            Voltar
+          </button>
+        </motion.div>
+      </div>
+    )}
+  </AnimatePresence>
+</div>
   );
 }
 
 
-// <div className="flex flex-col gap-2">
-//         {(() => {
-//           const history = [...(pokemon.battleHistory || [])].reverse();
-//           const victories = history.filter((h) => h.type === "victory").length;
-//           const faints = history.filter((h) => h.type === "faint").length;
+    // <div className="flex flex-col gap-2">
+    //         {(() => {
+    //           const history = [...(pokemon.battleHistory || [])].reverse();
+    //           const victories = history.filter((h) => h.type === "victory").length;
+    //           const faints = history.filter((h) => h.type === "faint").length;
 
-//           return (
-//             <>
-//               {/* Stats summary */}
-//               <div className="flex gap-3 mb-2">
-//                 <div className="flex-1 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 text-center">
-//                   <Trophy className="w-4 h-4 text-amber-400 mx-auto mb-1" />
-//                   <span className="text-lg font-bold text-amber-400">{victories}</span>
-//                   <p className="text-[9px] text-muted-foreground">Vitorias</p>
-//                 </div>
-//                 <div className="flex-1 bg-red-500/10 border border-red-500/20 rounded-lg p-2 text-center">
-//                   <Skull className="w-4 h-4 text-red-400 mx-auto mb-1" />
-//                   <span className="text-lg font-bold text-red-400">{faints}</span>
-//                   <p className="text-[9px] text-muted-foreground">Derrotas</p>
-//                 </div>
-//               </div>
+    //           return (
+    //             <>
+    //               {/* Stats summary */}
+    //               <div className="flex gap-3 mb-2">
+    //                 <div className="flex-1 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 text-center">
+    //                   <Trophy className="w-4 h-4 text-amber-400 mx-auto mb-1" />
+    //                   <span className="text-lg font-bold text-amber-400">{victories}</span>
+    //                   <p className="text-[9px] text-muted-foreground">Vitorias</p>
+    //                 </div>
+    //                 <div className="flex-1 bg-red-500/10 border border-red-500/20 rounded-lg p-2 text-center">
+    //                   <Skull className="w-4 h-4 text-red-400 mx-auto mb-1" />
+    //                   <span className="text-lg font-bold text-red-400">{faints}</span>
+    //                   <p className="text-[9px] text-muted-foreground">Derrotas</p>
+    //                 </div>
+    //               </div>
 
-//               {history.length === 0 ? (
-//                 <div className="flex flex-col items-center gap-2 py-6 text-center">
-//                   <Clock className="w-8 h-8 text-muted-foreground" />
-//                   <p className="text-sm text-muted-foreground">
-//                     Nenhum registro de batalha ainda.
-//                   </p>
-//                 </div>
-//               ) : (
-//                 <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto">
-//                   {history.map((entry) => {
-//                     const date = new Date(entry.date);
-//                     const formatted = `${date.toLocaleDateString("pt-BR")} ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
-//                     return (
-//                       <div
-//                         key={entry.id}
-//                         className={`flex items-center gap-2 rounded-lg p-2 text-xs ${
-//                           entry.type === "victory"
-//                             ? "bg-amber-500/10 border border-amber-500/20"
-//                             : "bg-red-500/10 border border-red-500/20"
-//                         }`}
-//                       >
-//                         {entry.type === "victory" ? (
-//                           <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-//                         ) : (
-//                           <Skull className="w-3.5 h-3.5 text-red-400 shrink-0" />
-//                         )}
-//                         <div className="flex-1 min-w-0">
-//                           <span className="font-medium text-foreground">
-//                             {entry.type === "victory" ? "Vitoria" : "Desmaiou"}
-//                           </span>
-//                           {entry.xpGained && entry.xpGained > 0 && (
-//                             <span className="ml-1.5 text-amber-400 font-mono">+{entry.xpGained} XP</span>
-//                           )}
-//                         </div>
-//                         <span className="text-[9px] text-muted-foreground shrink-0">{formatted}</span>
-//                       </div>
-//                     );
-//                   })}
-//                 </div>
-//               )}
-//             </>
-//           );
-//         })()}
-//       </div>
+    //               {history.length === 0 ? (
+    //                 <div className="flex flex-col items-center gap-2 py-6 text-center">
+    //                   <Clock className="w-8 h-8 text-muted-foreground" />
+    //                   <p className="text-sm text-muted-foreground">
+    //                     Nenhum registro de batalha ainda.
+    //                   </p>
+    //                 </div>
+    //               ) : (
+    //                 <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto">
+    //                   {history.map((entry) => {
+    //                     const date = new Date(entry.date);
+    //                     const formatted = `${date.toLocaleDateString("pt-BR")} ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+    //                     return (
+    //                       <div
+    //                         key={entry.id}
+    //                         className={`flex items-center gap-2 rounded-lg p-2 text-xs ${
+    //                           entry.type === "victory"
+    //                             ? "bg-amber-500/10 border border-amber-500/20"
+    //                             : "bg-red-500/10 border border-red-500/20"
+    //                         }`}
+    //                       >
+    //                         {entry.type === "victory" ? (
+    //                           <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+    //                         ) : (
+    //                           <Skull className="w-3.5 h-3.5 text-red-400 shrink-0" />
+    //                         )}
+    //                         <div className="flex-1 min-w-0">
+    //                           <span className="font-medium text-foreground">
+    //                             {entry.type === "victory" ? "Vitoria" : "Desmaiou"}
+    //                           </span>
+    //                           {entry.xpGained && entry.xpGained > 0 && (
+    //                             <span className="ml-1.5 text-amber-400 font-mono">+{entry.xpGained} XP</span>
+    //                           )}
+    //                         </div>
+    //                         <span className="text-[9px] text-muted-foreground shrink-0">{formatted}</span>
+    //                       </div>
+    //                     );
+    //                   })}
+    //                 </div>
+    //               )}
+    //             </>
+    //           );
+    //         })()}
+    //       </div>
