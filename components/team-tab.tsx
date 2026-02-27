@@ -1293,9 +1293,9 @@ Habilidades
 // ─── Skill Tree Tab Component ───────────────────────────────────────────────
 import { TeamPokemon, battleXpForLevel } from "@/lib/game-store";
 import { 
-  getSkillTree, 
-  generateDefaultSkillTree, 
+  generateSkillTree, 
   canUnlockSkill, 
+  getUnlockedSkills,
   SkillNode, 
   SkillTree 
 } from "@/lib/skill-tree-data";
@@ -1305,38 +1305,29 @@ function SkillTreeTab({ pokemon }: { pokemon: TeamPokemon }) {
   const { trainer, unlockPokemonSkill, learnMove } = useGameStore();
   const [selectedSkill, setSelectedSkill] = useState<SkillNode | null>(null);
 
-  // Get or generate skill tree
-  const skillTree: SkillTree = (() => {
-    const existing = getSkillTree(pokemon.speciesId);
-    if (existing) return existing;
-    const species = POKEMON.find((p) => p.id === pokemon.speciesId);
-    if (!species) return { speciesId: pokemon.speciesId, swordPath: [], shieldPath: [] };
-    return generateDefaultSkillTree(pokemon.speciesId, species.startingMoves, species.learnableMoves);
-  })();
+  // Generate skill tree from Pokemon's actual moves
+  const species = POKEMON.find((p) => p.id === pokemon.speciesId);
+  const skillTree: SkillTree = species 
+    ? generateSkillTree(pokemon.speciesId, species.startingMoves, species.learnableMoves)
+    : { speciesId: pokemon.speciesId, swordPath: [], shieldPath: [] };
 
   const battleLevel = trainer.battleLevel ?? 1;
   const battlePoints = trainer.battlePoints ?? 0;
   const battleXp = trainer.battleXp ?? 0;
   const nextLevelXp = battleXpForLevel(battleLevel + 1);
   
-  // Auto-unlock first skills of each path (level 1 skills)
-  const autoUnlockedSkills = [
-    ...skillTree.swordPath.filter(s => s.levelRequired === 1).map(s => s.id),
-    ...skillTree.shieldPath.filter(s => s.levelRequired === 1).map(s => s.id),
-  ];
-  const unlockedSkills = [...new Set([...(pokemon.unlockedSkills ?? []), ...autoUnlockedSkills])];
+  // Get all unlocked skills (default + manually unlocked)
+  const unlockedSkills = getUnlockedSkills(skillTree, pokemon.unlockedSkills ?? []);
 
   const handleUnlockSkill = (skill: SkillNode) => {
-    // Level 1 skills are free
-    if (skill.levelRequired === 1) {
-      if (skill.moveId) {
-        learnMove(pokemon.uid, skill.moveId);
-      }
+    // Starting moves are already unlocked
+    if (skill.isUnlockedByDefault) {
       return;
     }
     
     const result = canUnlockSkill(skill, pokemon.level, unlockedSkills, battlePoints);
     if (!result.canUnlock) return;
+    
     const success = unlockPokemonSkill(pokemon.uid, skill.id, skill.pbCost);
     if (success && skill.moveId) {
       learnMove(pokemon.uid, skill.moveId);
@@ -1346,14 +1337,14 @@ function SkillTreeTab({ pokemon }: { pokemon: TeamPokemon }) {
 
   // Render a single skill node with neon style
   const renderSkillNode = (skill: SkillNode, path: "sword" | "shield") => {
-    const isUnlocked = unlockedSkills.includes(skill.id);
+    const isUnlocked = unlockedSkills.includes(skill.id) || skill.isUnlockedByDefault;
     const checkResult = canUnlockSkill(skill, pokemon.level, unlockedSkills, battlePoints);
-    const canUnlock = checkResult.canUnlock || skill.levelRequired === 1;
+    const canUnlock = checkResult.canUnlock;
 
-    const pathColor = path === "sword" ? "red" : "green";
     const bgColor = path === "sword" ? "bg-red-950/60" : "bg-green-950/60";
     const borderUnlocked = path === "sword" ? "border-red-400 shadow-[0_0_10px_rgba(248,113,113,0.5)]" : "border-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]";
     const borderLocked = "border-zinc-600";
+    const borderCanUnlock = path === "sword" ? "border-red-600 hover:border-red-400" : "border-green-600 hover:border-green-400";
 
     return (
       <div key={skill.id} className="relative">
@@ -1362,10 +1353,10 @@ function SkillTreeTab({ pokemon }: { pokemon: TeamPokemon }) {
             isUnlocked
               ? borderUnlocked
               : canUnlock
-                ? `border-zinc-500 hover:border-${pathColor}-400 cursor-pointer`
+                ? `${borderCanUnlock} cursor-pointer`
                 : `${borderLocked} opacity-60 cursor-not-allowed`
           }`}
-          onClick={() => setSelectedSkill(skill)}
+          onClick={() => !isUnlocked && setSelectedSkill(skill)}
         >
           {/* Skill Icon */}
           <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
@@ -1389,18 +1380,11 @@ function SkillTreeTab({ pokemon }: { pokemon: TeamPokemon }) {
           
           {/* Skill Info */}
           <span className="text-[8px] text-zinc-500">
-            {skill.isPassive ? `(Passive)` : `Level ${skill.levelRequired}, ${skill.pbCost} PB`}
+            {skill.isUnlockedByDefault 
+              ? "(Inicial)" 
+              : `Lv.${skill.levelRequired}, ${skill.pbCost} PB`
+            }
           </span>
-          
-          {/* Passive indicator */}
-          {skill.isPassive && (
-            <span className="text-[7px] text-yellow-400 font-medium">
-              {skill.passiveEffect?.type === "double_damage" && "DOUBLE DAMAGE"}
-              {skill.passiveEffect?.type === "double_xp" && "DOUBLE XP"}
-              {skill.passiveEffect?.type === "double_defense" && "DOUBLE DEFENSE"}
-              {skill.passiveEffect?.type === "dot" && "DOT"}
-            </span>
-          )}
         </button>
         
         {/* Connection line to next skill */}
@@ -1527,12 +1511,11 @@ function SkillTreeTab({ pokemon }: { pokemon: TeamPokemon }) {
             
             <p className="text-xs text-zinc-300 mb-3">{selectedSkill.description}</p>
             
-            {/* Passive Effect */}
-            {selectedSkill.isPassive && selectedSkill.passiveEffect && (
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 mb-3">
-                <span className="text-[10px] text-yellow-400 font-medium">
-                  Efeito: {selectedSkill.passiveEffect.type.replace(/_/g, " ").toUpperCase()}
-                  {selectedSkill.passiveEffect.condition && ` (${selectedSkill.passiveEffect.condition})`}
+            {/* Starting Move Badge */}
+            {selectedSkill.isUnlockedByDefault && (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-2 mb-3">
+                <span className="text-[10px] text-green-400 font-medium">
+                  Golpe Inicial - Ja desbloqueado!
                 </span>
               </div>
             )}
@@ -1557,7 +1540,8 @@ function SkillTreeTab({ pokemon }: { pokemon: TeamPokemon }) {
             
             {/* Action Button */}
             {(() => {
-              const isAlreadyUnlocked = unlockedSkills.includes(selectedSkill.id);
+              // Check if already unlocked (starting move or manually)
+              const isAlreadyUnlocked = selectedSkill.isUnlockedByDefault || unlockedSkills.includes(selectedSkill.id);
               if (isAlreadyUnlocked) {
                 return (
                   <Button className="w-full bg-green-600 hover:bg-green-700" size="sm" disabled>
