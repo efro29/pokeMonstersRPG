@@ -476,68 +476,54 @@ export function playTrioPunishment() {
   }, 500);
 }
 
-// -- Battle Music System --
+// -- Battle Music System (usando arquivo MP3) --
 
-let battleMusicInterval: ReturnType<typeof setInterval> | null = null;
+let battleMusicAudio: HTMLAudioElement | null = null;
 let battleMusicPlaying = false;
 
 export function playBattleMusic() {
   if (battleMusicPlaying) return;
-  battleMusicPlaying = true;
-
-  // Pokemon-style battle loop - intense and rhythmic
-  const bassLine = [147, 165, 175, 196, 175, 165];
-  const melody = [294, 330, 370, 392, 440, 392, 370, 330];
   
-  let bassIndex = 0;
-  let melodyIndex = 0;
-  let beat = 0;
-  
-  // Initial dramatic intro
-  playTone(147, 0.3, "sawtooth", 0.08);
-  setTimeout(() => playTone(196, 0.3, "sawtooth", 0.08), 200);
-  setTimeout(() => playTone(247, 0.3, "sawtooth", 0.1), 400);
-  
-  battleMusicInterval = setInterval(() => {
-    if (!battleMusicPlaying) {
-      if (battleMusicInterval) clearInterval(battleMusicInterval);
-      return;
+  try {
+    // Para qualquer musica anterior
+    if (battleMusicAudio) {
+      battleMusicAudio.pause();
+      battleMusicAudio.currentTime = 0;
     }
     
-    // Bass on every beat
-    const bassFreq = bassLine[bassIndex % bassLine.length];
-    playTone(bassFreq, 0.12, "sawtooth", 0.05);
+    // Cria novo elemento de audio com o arquivo battle.mp3
+    battleMusicAudio = new Audio("/mp3/battle.mp3");
+    battleMusicAudio.loop = true;
+    battleMusicAudio.volume = 0.4;
     
-    // Melody on odd beats
-    if (beat % 2 === 1) {
-      const melodyFreq = melody[melodyIndex % melody.length];
-      playTone(melodyFreq, 0.15, "square", 0.04);
-      melodyIndex++;
+    // Tenta tocar
+    const playPromise = battleMusicAudio.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          battleMusicPlaying = true;
+        })
+        .catch((error) => {
+          console.log("[v0] Battle music autoplay blocked:", error);
+          battleMusicPlaying = false;
+        });
     }
-    
-    // Hi-hat style noise on every beat
-    playNoise(0.03, 0.02);
-    
-    // Accent on beat 0 and 4
-    if (beat % 4 === 0) {
-      playTone(98, 0.08, "square", 0.06);
-    }
-    
-    bassIndex++;
-    beat = (beat + 1) % 8;
-  }, 180);
+  } catch (error) {
+    console.log("[v0] Error playing battle music:", error);
+  }
 }
 
 export function stopBattleMusic() {
   battleMusicPlaying = false;
-  if (battleMusicInterval) {
-    clearInterval(battleMusicInterval);
-    battleMusicInterval = null;
+  if (battleMusicAudio) {
+    battleMusicAudio.pause();
+    battleMusicAudio.currentTime = 0;
+    battleMusicAudio = null;
   }
 }
 
 export function playDuelIntro() {
-  // Epic duel introduction fanfare
+  // Epic duel introduction fanfare (sons sintetizados)
   const introNotes = [
     { freq: 196, delay: 0, dur: 0.2 },
     { freq: 247, delay: 150, dur: 0.2 },
