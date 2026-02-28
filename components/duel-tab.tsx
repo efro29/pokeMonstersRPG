@@ -22,7 +22,7 @@ import {
   Crown,
   Skull,
 } from "lucide-react";
-import { playButtonClick, playBattleMusic, playDuelIntro } from "@/lib/sounds";
+import { playButtonClick, playBattleMusic } from "@/lib/sounds";
 
 interface DuelTabProps {
   onStartDuel: (npc: DuelNpc) => void;
@@ -74,17 +74,16 @@ export function DuelTab({ onStartDuel }: DuelTabProps) {
     
     // Inicia a musica de batalha imediatamente junto com a transicao
     playBattleMusic();
-    playDuelIntro();
     
     // Marca como lido
     setReadChallenges(prev => new Set(prev).add(npc.id));
     
-    // Aguarda a animacao de transicao antes de iniciar o duelo
+    // Aguarda 5 segundos na transicao antes de iniciar o duelo
     setTimeout(() => {
       onStartDuel(npc);
       setShowTransition(false);
       setSelectedChallenge(null);
-    }, 2000);
+    }, 5000);
   };
 
   const getNivelIcon = (nivel: DuelNpc["nivel"]) => {
