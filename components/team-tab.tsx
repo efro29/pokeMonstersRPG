@@ -723,9 +723,32 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
     count?: number;
   } | null>(null);
   const [xpBarAnimProgress, setXpBarAnimProgress] = useState(0);
-  const [starDustAnim, setStarDustAnim] = useState<{ isActive: boolean; amount: number; type: "gain" | "spend" }>({ isActive: false, amount: 0, type: "gain" });
+  const [starDustAnim, setStarDustAnim] = useState<{ 
+    isActive: boolean; 
+    amount: number; 
+    type: "gain" | "spend";
+    pendingResult?: {
+      pokemonName: string;
+      recipientName?: string;
+      xpGained: number;
+      starDustGained: number;
+    };
+  }>({ isActive: false, amount: 0, type: "gain" });
   const [pokemonPowerUp, setPokemonPowerUp] = useState<{ isActive: boolean; xp: number }>({ isActive: false, xp: 0 });
   const pokemonImageRef = useRef<HTMLDivElement>(null);
+
+  // Handler quando animacao termina
+  const handleAnimationComplete = useCallback(() => {
+    const pending = starDustAnim.pendingResult;
+    setStarDustAnim({ isActive: false, amount: 0, type: "gain" });
+    
+    if (pending) {
+      setTransferResult(pending);
+      setXpBarAnimProgress(0);
+      setTimeout(() => setXpBarAnimProgress(100), 100);
+      setTimeout(() => onClose(), 3000);
+    }
+  }, [starDustAnim.pendingResult, onClose]);
 
   return (
     <DialogContent
@@ -737,7 +760,7 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
         amount={starDustAnim.amount}
         isActive={starDustAnim.isActive}
         type={starDustAnim.type}
-        onComplete={() => setStarDustAnim({ isActive: false, amount: 0, type: "gain" })}
+        onComplete={handleAnimationComplete}
       />
 
       <div  className={`w-full rounded-[4px] p-1.5 flex flex-col h-full cursor-pointer bg-gradient-to-b from-[#1e3a8a] to-[#0f172a] border } `}
@@ -1082,7 +1105,6 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                 );
                 
                 // Trigger fullscreen spend animation
-                console.log("[v0] Converter clicked - triggering spend animation with amount:", amountToConvert);
                 setStarDustAnim({ isActive: true, amount: amountToConvert, type: "spend" });
                 
                 // Fazer conversao e mostrar resultado apos animacao
@@ -1106,22 +1128,18 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
               onClick={() => {
                 const result = transferToProfesor(pokemon.uid);
                 
-                // Trigger fullscreen gain animation for Star Dust
-                console.log("[v0] Transferir clicked - triggering gain animation with amount:", result.starDustGained);
-                setStarDustAnim({ isActive: true, amount: result.starDustGained, type: "gain" });
-                
-                // Mostrar resultado apos animacao completar (4 segundos)
-                setTimeout(() => {
-                  setTransferResult({
+                // Trigger fullscreen gain animation com pendingResult
+                setStarDustAnim({ 
+                  isActive: true, 
+                  amount: result.starDustGained, 
+                  type: "gain",
+                  pendingResult: {
                     pokemonName: pokemon.name,
                     recipientName: result.recipientName ?? undefined,
                     xpGained: result.xpGained,
                     starDustGained: result.starDustGained,
-                  });
-                  setXpBarAnimProgress(0);
-                  setTimeout(() => setXpBarAnimProgress(100), 100);
-                  setTimeout(() => onClose(), 3000);
-                }, 4000);
+                  }
+                });
               }}
               className="flex-1"
             >
