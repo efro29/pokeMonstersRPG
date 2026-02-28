@@ -207,12 +207,6 @@ export function StarDustFullscreenAnimation({
   onCompleteRef.current = onComplete;
   onStarArriveRef.current = onStarArrive;
 
-  // Mount check
-  useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
-
   // Reset
   useEffect(() => {
     if (!isActive) {
@@ -223,14 +217,17 @@ export function StarDustFullscreenAnimation({
     }
   }, [isActive]);
 
-  // Iniciar animacao
+  // Iniciar animacao IMEDIATAMENTE quando isActive muda para true
   useEffect(() => {
-    if (!isActive || !mounted || amount <= 0) return;
+    if (!isActive || amount <= 0) {
+      return;
+    }
 
-    // Fase 1: Mostrar numero grande
+    // Fase 1: Mostrar numero grande IMEDIATAMENTE (nao esperar mounted)
     setPhase("showNumber");
     setDisplayedAmount(0);
     arrivedCountRef.current = 0;
+    setMounted(true);
 
     // Apos 1.5s, criar estrelas
     const timer = setTimeout(() => {
@@ -271,7 +268,7 @@ export function StarDustFullscreenAnimation({
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [isActive, mounted, amount]);
+  }, [isActive, amount]);
 
   // Callback quando estrela chega
   const handleStarArrive = () => {
@@ -314,8 +311,8 @@ export function StarDustFullscreenAnimation({
     }
   };
 
-  // Nao renderizar se nao ativo ou ja terminou
-  if (!mounted || !isActive || phase === "idle" || phase === "done") {
+  // Nao renderizar se nao ativo ou ja terminou ou no SSR
+  if (!isActive || phase === "idle" || phase === "done" || typeof window === "undefined") {
     return null;
   }
 
