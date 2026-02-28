@@ -2,8 +2,6 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useGameStore } from "@/lib/game-store";
-import { TrainerAvatar } from "@/components/trainer-avatar";
-import { BattleCards } from "@/components/battle-cards";
 import {
   getSpriteUrl,
   getBattleSpriteUrl,
@@ -199,6 +197,9 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
   const [diceRoll, setDiceRoll] = useState<number | null>(null);
   const [hitResult, setHitResult] = useState<HitResult | null>(null);
   const [damageDealt, setDamageDealt] = useState<number | null>(null);
+  const [battleLog, setBattleLog] = useState<string[]>(
+    [`Um ${wildPokemon.name} selvagem Lv.${wildLevel} apareceu!`]
+  );
   const [showPlayerParticles, setShowPlayerParticles] = useState(false);
   const [showWildParticles, setShowWildParticles] = useState(false);
   const [playerAttacking, setPlayerAttacking] = useState(false);
@@ -219,6 +220,17 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
   const [showXpBar, setShowXpBar] = useState(false);
   const [xpBarProgress, setXpBarProgress] = useState(0);
   const [attackEffect, setAttackEffect] = useState<{ type: PokemonType | null; side: "player" | "wild" } | null>(null);
+  const logRef = useRef<HTMLDivElement>(null);
+
+  const addLog = useCallback((msg: string) => {
+    setBattleLog((prev) => [...prev, msg]);
+  }, []);
+
+  useEffect(() => {
+    if (logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+    }
+  }, [battleLog]);
 
   // Init battle in store for switch/damage tracking
   const initRef = useRef(false);
@@ -259,6 +271,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
     // Check if pokemon has PP for the move
     const moveData = pokemon?.moves.find((m) => m.moveId === moveId);
     if (!moveData || moveData.currentPP <= 0) {
+      addLog(`${pokemon?.name} nao tem PP para usar esse golpe!`);
       return;
     }
     
@@ -319,7 +332,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
       // Calc damage with level scaling
       const pokemonAttrs = computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes);
       const wildAttrs = computeAttributes(wild.speciesId, wild.level);
-      const breakdown = calculateBattleDamage(move, hr, pokemonAttrs, wildAttrs.defesa, pokemon.level, wild.level, wild.types);
+      const breakdown = calculateBattleDamage(move, hr, pokemonAttrs, wildAttrs.defesa, pokemon.level, wild.level);
       const finalDmg = breakdown.finalDamage;
       setDamageDealt(finalDmg);
 
@@ -341,8 +354,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
           }, 600);
         }, 300);
 
-        const typeMsg = breakdown.typeEffectivenessLabel ? ` ${breakdown.typeEffectivenessLabel}` : "";
-        addLog(`${pokemon.name} usou ${move.name}! Rolou ${roll} - ${getHitResultLabel(hr)}!${typeMsg} ${finalDmg} de dano!`);
+        addLog(`${pokemon.name} usou ${move.name}! Rolou ${roll} - ${getHitResultLabel(hr)}! ${finalDmg} de dano!`);
       } else {
         addLog(`${pokemon.name} usou ${move.name}! Rolou ${roll} - ${getHitResultLabel(hr)}! Errou!`);
       }
@@ -434,8 +446,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
     // Calculate damage with level scaling (wild attacking player)
     const wildAttrs = computeAttributes(wild.speciesId, wild.level);
     const pokemonAttrs = pokemon ? computeAttributes(pokemon.speciesId, pokemon.level, pokemon.customAttributes) : wildAttrs;
-    const playerTypes = pokemon ? getPokemon(pokemon.speciesId)?.types || [] : [];
-    const breakdown = calculateBattleDamage(move, eHr, wildAttrs, pokemonAttrs.defesa, wild.level, pokemon?.level || 5, playerTypes);
+    const breakdown = calculateBattleDamage(move, eHr, wildAttrs, pokemonAttrs.defesa, wild.level, pokemon?.level || 5);
     const finalDmg = breakdown.finalDamage;
 
     setTimeout(() => {
@@ -450,8 +461,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
           setShowPlayerParticles(false);
         }, 600);
         setEnemyDamage(finalDmg);
-        const typeMsg = breakdown.typeEffectivenessLabel ? ` ${breakdown.typeEffectivenessLabel}` : "";
-        addLog(`${wild.name} selvagem usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}!${typeMsg} ${finalDmg} de dano!`);
+        addLog(`${wild.name} selvagem usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}! ${finalDmg} de dano!`);
       } else {
         setEnemyDamage(0);
         addLog(`${wild.name} selvagem usou ${move.name}! Rolou ${enemyRoll} - ${getHitResultLabel(eHr)}! Errou!`);
@@ -632,7 +642,7 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
     return { x, y, scale, rotation };
   };
 
-  // ─── RENDER ───────────────────────────���───────────────
+  // ─── RENDER ───────────────────────────────────────────
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Top nav */}
@@ -660,29 +670,6 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
           </Button>
         </div>
       </nav>
-
-      {/* Wild Pokemon Info Header */}
-      <div className="flex items-center justify-between px-3 py-2 bg-amber-900/30 border-b border-amber-700/50">
-        <div className="flex items-center gap-2">
-          <div className="w-12 h-12 rounded-lg overflow-hidden border-2 border-amber-500 bg-black/40 flex items-center justify-center">
-            <span className="text-[24px]">🐾</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-bold text-white truncate">{wild.name} Selvagem</div>
-            <div className="text-[11px] text-amber-300">Pokemon Encontrado</div>
-          </div>
-        </div>
-        {/* Wild Pokemon Status (single) */}
-        <div className="flex items-center gap-1 bg-black/50 rounded-lg px-2 py-1">
-          <div
-            className="w-6 h-6 rounded-full border-2 border-amber-500/50 flex items-center justify-center"
-            style={{ backgroundColor: wild.currentHp > 0 ? "#f59e0b" : "#666" }}
-            title={`${wild.name} ${wild.currentHp > 0 ? "ativo" : "derrotado"}`}
-          >
-            <div className="w-5 h-5 rounded-full border border-amber-700/50" style={{ backgroundColor: wild.currentHp > 0 ? "#fbbf24" : "#555" }} />
-          </div>
-        </div>
-      </div>
 
       {/* Arena */}
       <div className="relative flex-1 overflow-hidden">
@@ -1334,33 +1321,6 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
               {log}
             </p>
           ))}
-        </div>
-      </div>
-
-      {/* Player Info Footer */}
-      <div className="flex items-center justify-between px-3 py-2 bg-blue-900/30 border-t border-blue-700/50">
-        {/* Player Pokeballs */}
-        <div className="flex items-center gap-1 bg-black/50 rounded-lg px-2 py-1">
-          {team.map((p, i) => (
-            <div
-              key={i}
-              className="w-5 h-5 rounded-full border border-blue-500/50 flex items-center justify-center"
-              style={{ backgroundColor: p.currentHp > 0 ? "#3b82f6" : "#666" }}
-              title={`${p.name} ${p.currentHp > 0 ? "ativo" : "derrotado"}`}
-            >
-              <div className="w-4 h-4 rounded-full border border-blue-700/50" style={{ backgroundColor: p.currentHp > 0 ? "#60a5fa" : "#555" }} />
-            </div>
-          ))}
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <div className="flex-1">
-            <div className="text-sm font-bold text-white truncate text-right">{trainer.name}</div>
-            <div className="text-[11px] text-blue-300 text-right">Treinador</div>
-          </div>
-          <div className="w-12 h-12 rounded-lg overflow-hidden border-2 border-blue-500 bg-black/40 flex items-center justify-center">
-            <TrainerAvatar avatarId={trainer.avatarId} size={48} />
-          </div>
         </div>
       </div>
     </div>
