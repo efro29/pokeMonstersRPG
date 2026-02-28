@@ -78,7 +78,30 @@ import {
   playHeal,
   playSendPokemon,
   playVictoryFanfare,
+  stopBattleMusic,
 } from "@/lib/sounds";
+
+// Mapa de efeitos visuais por tipo
+const ATTACK_EFFECT_ICONS: Record<string, { icon: string; color: string }> = {
+  fire: { icon: "🔥", color: "#EF4444" },
+  water: { icon: "💧", color: "#3B82F6" },
+  grass: { icon: "🍃", color: "#22C55E" },
+  electric: { icon: "⚡", color: "#EAB308" },
+  ice: { icon: "❄️", color: "#67E8F9" },
+  fighting: { icon: "👊", color: "#C2410C" },
+  poison: { icon: "☠️", color: "#A855F7" },
+  ground: { icon: "🌍", color: "#92400E" },
+  flying: { icon: "🌪️", color: "#93C5FD" },
+  psychic: { icon: "🔮", color: "#EC4899" },
+  bug: { icon: "🐛", color: "#84CC16" },
+  rock: { icon: "🪨", color: "#78716C" },
+  ghost: { icon: "👻", color: "#7C3AED" },
+  dragon: { icon: "🐉", color: "#6366F1" },
+  dark: { icon: "🌑", color: "#1F2937" },
+  steel: { icon: "🛡️", color: "#9CA3AF" },
+  fairy: { icon: "✨", color: "#F9A8D4" },
+  normal: { icon: "💥", color: "#A8A29E" },
+};
 import { BattleCards } from "./battle-cards";
 import { BattleParticles } from "./battle-particles";
 import { kantoPokemonSizes } from "@/lib/kantoPokemonSizes";
@@ -224,6 +247,13 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
   const [rivalAction, setRivalAction] = useState<string | null>(null);
   const [rivalDamage, setRivalDamage] = useState<number | null>(null);
   const [battleLog, setBattleLog] = useState<string[]>([]);
+  
+  // Animacoes de ataque
+  const [playerAttacking, setPlayerAttacking] = useState(false);
+  const [rivalAttacking, setRivalAttacking] = useState(false);
+  const [playerShake, setPlayerShake] = useState(false);
+  const [rivalShake, setRivalShake] = useState(false);
+  const [attackEffect, setAttackEffect] = useState<{ type: PokemonType | null; side: "player" | "rival" } | null>(null);
 
   const ARENAS = ["campo"];
   const [arena] = useState(() => ARENAS[Math.floor(Math.random() * ARENAS.length)]);
@@ -331,6 +361,14 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
       setRivalAction(`${activeRival.nome} usou ${chosenMove.name}!`);
       playAttack();
       
+      // Animacao de ataque do rival
+      setRivalAttacking(true);
+      setAttackEffect({ type: chosenMove.type as PokemonType, side: "player" });
+      setTimeout(() => {
+        setRivalAttacking(false);
+        setAttackEffect(null);
+      }, 600);
+      
       setTimeout(() => {
         // Rola D20 para acerto
         const roll = Math.floor(Math.random() * 20) + 1;
@@ -371,11 +409,13 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
         setRivalDamage(damage);
         setRivalAction(`${hitLabel} ${damage} dano!`);
         
-        // Aplica dano ao pokemon do jogador
+        // Aplica dano ao pokemon do jogador com animacao de shake
+        setPlayerShake(true);
         setShowParticles(true);
         playDamageReceived();
         
         setTimeout(() => {
+          setPlayerShake(false);
           setShowParticles(false);
           applyOpponentDamage(damage);
           setRivalDamage(null);
@@ -427,10 +467,12 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
         else if (hr === "miss") playMiss();
         else if (hr === "critical-miss") playCriticalMiss();
         
-        // Aplica dano ao rival
+        // Aplica dano ao rival com animacao de shake
         if (damageDealt > 0 && activeRival) {
+          setRivalShake(true);
           setShowRivalParticles(true);
           setTimeout(() => {
+            setRivalShake(false);
             setShowRivalParticles(false);
             setRivalTeam((prev) => {
               const updated = [...prev];
@@ -458,6 +500,16 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
     setIsRolling(true);
     playAttack();
     playDiceRoll();
+    
+    // Animacao de ataque do jogador
+    setPlayerAttacking(true);
+    if (moveDef) {
+      setAttackEffect({ type: moveDef.type as PokemonType, side: "rival" });
+    }
+    setTimeout(() => {
+      setPlayerAttacking(false);
+      setAttackEffect(null);
+    }, 600);
   };
 
   // Handler do fim do turno do jogador
@@ -514,6 +566,29 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
     const currentWins = storedWins ? parseInt(storedWins) : 0;
     localStorage.setItem("pokerpg-weekly-duel-wins", String(currentWins + 1));
     
+    // Incrementa XP de batalha
+    const storedBattleXp = localStorage.getItem("pokerpg-battle-xp");
+    const storedBattleLevel = localStorage.getItem("pokerpg-battle-level");
+    let currentBattleXp = storedBattleXp ? parseInt(storedBattleXp) : 0;
+    let currentBattleLevel = storedBattleLevel ? parseInt(storedBattleLevel) : 1;
+    
+    // XP de batalha baseado no nivel do NPC
+    const battleXpGained = npc.xp;
+    currentBattleXp += battleXpGained;
+    
+    // Verifica level up de batalha
+    const xpForNextLevel = currentBattleLevel * 500;
+    while (currentBattleXp >= xpForNextLevel) {
+      currentBattleXp -= xpForNextLevel;
+      currentBattleLevel++;
+    }
+    
+    localStorage.setItem("pokerpg-battle-xp", String(currentBattleXp));
+    localStorage.setItem("pokerpg-battle-level", String(currentBattleLevel));
+    
+    // Para a musica de batalha
+    stopBattleMusic();
+    
     endBattle();
     onVictory(npc);
   };
@@ -529,6 +604,9 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
       });
     });
     
+    // Para a musica de batalha
+    stopBattleMusic();
+    
     endBattle();
     onDefeat();
   };
@@ -543,6 +621,7 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
         <div className="flex items-center gap-1.5">
           <Button
             onClick={() => {
+              stopBattleMusic();
               endBattle();
               onClose();
             }}
@@ -614,7 +693,7 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
               alt={npc.nome}
               className="w-10 h-10 rounded-full border-2 border-red-400 shadow-md object-cover"
               onError={(e) => {
-                (e.target as HTMLImageElement).src = "/images/trainers/rival.png";
+                (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
               }}
             />
             <div className="flex flex-col">
@@ -726,6 +805,18 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
                 {showRivalParticles && (
                   <BattleParticles effectType="damage" isAnimating={true} />
                 )}
+                {/* Flash overlay on hit */}
+                <AnimatePresence>
+                  {rivalShake && (
+                    <motion.div
+                      className="absolute inset-0 bg-white rounded-full z-10"
+                      initial={{ opacity: 0.8 }}
+                      animate={{ opacity: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  )}
+                </AnimatePresence>
                 <motion.img
                   src={getBattleSpriteUrl(activeRival.speciesId)}
                   alt={activeRival.nome}
@@ -734,7 +825,16 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
                     width: 64,
                     height: 64,
                   }}
-                  animate={activeRival.currentHp <= 0 ? { opacity: 0.3, y: 20 } : { opacity: 1, y: 0 }}
+                  animate={
+                    rivalShake
+                      ? { x: [0, -8, 8, -6, 6, -3, 3, 0], opacity: [1, 0.5, 1, 0.5, 1] }
+                      : rivalAttacking
+                      ? { x: [0, -30, -30, 0], transition: { duration: 0.4 } }
+                      : activeRival.currentHp <= 0
+                      ? { opacity: 0.3, y: 20 }
+                      : { opacity: 1, y: [0, -3, 0], transition: { duration: 2, repeat: Infinity } }
+                  }
+                  transition={{ duration: 0.3 }}
                   crossOrigin="anonymous"
                 />
               </motion.div>
@@ -765,11 +865,33 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
             >
               {showParticles && <BattleParticles effectType="damage" isAnimating={true} />}
               {showParticlePok && <BattleParticles effectType="changed" isAnimating={true} />}
+              {/* Flash overlay on hit */}
+              <AnimatePresence>
+                {playerShake && (
+                  <motion.div
+                    className="absolute inset-0 bg-white rounded-full z-10"
+                    initial={{ opacity: 0.8 }}
+                    animate={{ opacity: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                )}
+              </AnimatePresence>
               <motion.img
                 src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/back/${pokemon.speciesId}.gif`}
                 alt={pokemon.name}
-                animate={isFainted ? { opacity: 0.3, y: 20 } : { opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
+                animate={
+                  playerShake
+                    ? { x: [0, 6, -6, 4, -4, 2, -2, 0], opacity: [1, 0.5, 1, 0.5, 1] }
+                    : playerAttacking
+                    ? { x: [0, 40, 40, 0], y: [0, -10, -10, 0], transition: { duration: 0.4 } }
+                    : isSwitching
+                    ? { opacity: 0, scale: 0.3 }
+                    : isFainted
+                    ? { opacity: 0.3, y: 15, rotate: 20 }
+                    : { opacity: 1, y: 0, scale: 1 }
+                }
+                transition={{ duration: 0.3 }}
                 style={{
                   width: 80,
                   height: 80,
@@ -779,6 +901,73 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
               />
             </div>
           </div>
+
+          {/* Type Attack Effect Overlay */}
+          <AnimatePresence>
+            {attackEffect && (
+              <motion.div
+                key={`effect-${attackEffect.side}-${Date.now()}`}
+                className="absolute z-30 pointer-events-none flex items-center justify-center"
+                style={
+                  attackEffect.side === "rival"
+                    ? { top: 40, right: 60, width: 100, height: 100 }
+                    : { bottom: 50, left: 40, width: 100, height: 100 }
+                }
+                initial={{ opacity: 0, scale: 0.3 }}
+                animate={{ opacity: 1, scale: 1.2 }}
+                exit={{ opacity: 0, scale: 2 }}
+                transition={{ duration: 0.4 }}
+              >
+                {/* Impact ring */}
+                <motion.div
+                  className="absolute rounded-full border-4"
+                  style={{
+                    borderColor: ATTACK_EFFECT_ICONS[attackEffect.type ?? "normal"]?.color ?? "#A8A29E",
+                    width: 80,
+                    height: 80,
+                  }}
+                  initial={{ scale: 0.2, opacity: 1 }}
+                  animate={{ scale: 1.5, opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                />
+                {/* Type icon burst */}
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <motion.span
+                    key={i}
+                    className="absolute text-2xl"
+                    initial={{
+                      x: 0,
+                      y: 0,
+                      opacity: 1,
+                      scale: 0.5,
+                    }}
+                    animate={{
+                      x: Math.cos((i * 72 * Math.PI) / 180) * 40,
+                      y: Math.sin((i * 72 * Math.PI) / 180) * 40,
+                      opacity: 0,
+                      scale: 1.2,
+                    }}
+                    transition={{ duration: 0.5, delay: i * 0.05 }}
+                  >
+                    {ATTACK_EFFECT_ICONS[attackEffect.type ?? "normal"]?.icon ?? "💥"}
+                  </motion.span>
+                ))}
+                {/* Central flash */}
+                <motion.div
+                  className="absolute rounded-full"
+                  style={{
+                    backgroundColor: ATTACK_EFFECT_ICONS[attackEffect.type ?? "normal"]?.color ?? "#A8A29E",
+                    width: 30,
+                    height: 30,
+                    filter: `blur(8px)`,
+                  }}
+                  initial={{ scale: 0, opacity: 0.9 }}
+                  animate={{ scale: 2, opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* KO Overlay */}
           {isFainted && (
@@ -823,11 +1012,11 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
           {/* Foto + Nome */}
           <div className="flex items-center gap-3">
             <img
-              src="/images/trainers/player.png"
+              src="/images/trainers/player.jpg"
               alt={trainer.name}
               className="w-10 h-10 rounded-full border-2 border-blue-400 shadow-md object-cover"
               onError={(e) => {
-                (e.target as HTMLImageElement).src = "/images/trainers/rival.png";
+                (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
               }}
             />
             <div className="flex flex-col">

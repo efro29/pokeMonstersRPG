@@ -475,3 +475,88 @@ export function playTrioPunishment() {
     playNoise(0.5, 0.1);
   }, 500);
 }
+
+// -- Battle Music System --
+
+let battleMusicInterval: ReturnType<typeof setInterval> | null = null;
+let battleMusicPlaying = false;
+
+export function playBattleMusic() {
+  if (battleMusicPlaying) return;
+  battleMusicPlaying = true;
+
+  // Pokemon-style battle loop - intense and rhythmic
+  const bassLine = [147, 165, 175, 196, 175, 165];
+  const melody = [294, 330, 370, 392, 440, 392, 370, 330];
+  
+  let bassIndex = 0;
+  let melodyIndex = 0;
+  let beat = 0;
+  
+  // Initial dramatic intro
+  playTone(147, 0.3, "sawtooth", 0.08);
+  setTimeout(() => playTone(196, 0.3, "sawtooth", 0.08), 200);
+  setTimeout(() => playTone(247, 0.3, "sawtooth", 0.1), 400);
+  
+  battleMusicInterval = setInterval(() => {
+    if (!battleMusicPlaying) {
+      if (battleMusicInterval) clearInterval(battleMusicInterval);
+      return;
+    }
+    
+    // Bass on every beat
+    const bassFreq = bassLine[bassIndex % bassLine.length];
+    playTone(bassFreq, 0.12, "sawtooth", 0.05);
+    
+    // Melody on odd beats
+    if (beat % 2 === 1) {
+      const melodyFreq = melody[melodyIndex % melody.length];
+      playTone(melodyFreq, 0.15, "square", 0.04);
+      melodyIndex++;
+    }
+    
+    // Hi-hat style noise on every beat
+    playNoise(0.03, 0.02);
+    
+    // Accent on beat 0 and 4
+    if (beat % 4 === 0) {
+      playTone(98, 0.08, "square", 0.06);
+    }
+    
+    bassIndex++;
+    beat = (beat + 1) % 8;
+  }, 180);
+}
+
+export function stopBattleMusic() {
+  battleMusicPlaying = false;
+  if (battleMusicInterval) {
+    clearInterval(battleMusicInterval);
+    battleMusicInterval = null;
+  }
+}
+
+export function playDuelIntro() {
+  // Epic duel introduction fanfare
+  const introNotes = [
+    { freq: 196, delay: 0, dur: 0.2 },
+    { freq: 247, delay: 150, dur: 0.2 },
+    { freq: 294, delay: 300, dur: 0.2 },
+    { freq: 392, delay: 500, dur: 0.3 },
+    { freq: 494, delay: 700, dur: 0.2 },
+    { freq: 392, delay: 850, dur: 0.15 },
+    { freq: 494, delay: 950, dur: 0.15 },
+    { freq: 587, delay: 1100, dur: 0.4 },
+  ];
+  
+  introNotes.forEach(({ freq, delay, dur }) => {
+    setTimeout(() => playTone(freq, dur, "square", 0.09), delay);
+  });
+  
+  // Dramatic chord at the end
+  setTimeout(() => {
+    playTone(392, 0.5, "sawtooth", 0.08);
+    playTone(494, 0.5, "sawtooth", 0.06);
+    playTone(587, 0.5, "sawtooth", 0.05);
+  }, 1500);
+}

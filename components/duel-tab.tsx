@@ -22,7 +22,7 @@ import {
   Crown,
   Skull,
 } from "lucide-react";
-import { playButtonClick } from "@/lib/sounds";
+import { playButtonClick, playBattleMusic, playDuelIntro } from "@/lib/sounds";
 
 interface DuelTabProps {
   onStartDuel: (npc: DuelNpc) => void;
@@ -36,6 +36,13 @@ export function DuelTab({ onStartDuel }: DuelTabProps) {
   const [weeklyBoss, setWeeklyBoss] = useState<DuelNpc | null>(null);
   const [weeklyWins, setWeeklyWins] = useState(0);
   const [readChallenges, setReadChallenges] = useState<Set<string>>(new Set());
+  const [battleXp, setBattleXp] = useState(0);
+  const [battleLevel, setBattleLevel] = useState(1);
+
+  // Calcula XP necessario para o proximo nivel de batalha
+  const getXpForLevel = (level: number) => level * 500;
+  const xpToNextLevel = getXpForLevel(battleLevel);
+  const xpProgress = (battleXp / xpToNextLevel) * 100;
 
   // Gera desafios ao montar o componente
   useEffect(() => {
@@ -53,11 +60,23 @@ export function DuelTab({ onStartDuel }: DuelTabProps) {
       const boss = superBossSemanal.find(b => b.semana === ((weekNumber - 1) % 4) + 1);
       setWeeklyBoss(boss || null);
     }
+
+    // Carrega XP de batalha
+    const storedBattleXp = localStorage.getItem("pokerpg-battle-xp");
+    const storedBattleLevel = localStorage.getItem("pokerpg-battle-level");
+    if (storedBattleXp) setBattleXp(parseInt(storedBattleXp));
+    if (storedBattleLevel) setBattleLevel(parseInt(storedBattleLevel));
   }, []);
 
   const handleAcceptChallenge = (npc: DuelNpc) => {
     playButtonClick();
     setShowTransition(true);
+    
+    // Toca musica de intro do duelo e depois inicia a musica de batalha
+    playDuelIntro();
+    setTimeout(() => {
+      playBattleMusic();
+    }, 1800);
     
     // Marca como lido
     setReadChallenges(prev => new Set(prev).add(npc.id));
@@ -111,11 +130,11 @@ export function DuelTab({ onStartDuel }: DuelTabProps) {
                   transition={{ delay: 0.3, type: "spring" }}
                 >
                   <img
-                    src="/images/trainers/player.png"
+                    src="/images/trainers/player.jpg"
                     alt="Jogador"
                     className="w-24 h-24 rounded-full border-4 border-white shadow-2xl object-cover"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/images/trainers/rival.png";
+                      (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
                     }}
                   />
                   <span className="mt-3 text-white font-bold text-lg tracking-wider">
@@ -171,7 +190,7 @@ export function DuelTab({ onStartDuel }: DuelTabProps) {
                     alt={selectedChallenge.nome}
                     className="w-24 h-24 rounded-full border-4 border-white shadow-2xl object-cover"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/images/trainers/rival.png";
+                      (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
                     }}
                   />
                   <span className="mt-3 text-white font-bold text-lg tracking-wider">
@@ -206,7 +225,7 @@ export function DuelTab({ onStartDuel }: DuelTabProps) {
                 alt={selectedChallenge.nome}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/images/trainers/rival.png";
+                  (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
                 }}
               />
             </div>
@@ -318,7 +337,7 @@ export function DuelTab({ onStartDuel }: DuelTabProps) {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-border bg-card">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <div>
             <h2 className="font-bold text-foreground flex items-center gap-2">
               <Mail className="w-5 h-5 text-primary" />
@@ -338,6 +357,42 @@ export function DuelTab({ onStartDuel }: DuelTabProps) {
                 <Skull className="w-4 h-4 text-orange-500" />
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Barra de XP de Batalha */}
+        <div className="bg-secondary/50 rounded-lg p-3 border border-border">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                <Trophy className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-foreground">Nivel de Batalha</p>
+                <p className="text-[10px] text-muted-foreground">
+                  Influencia a dificuldade dos oponentes
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">
+                Lv.{battleLevel}
+              </p>
+            </div>
+          </div>
+          <div className="relative">
+            <div className="w-full h-3 bg-gray-700/50 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${xpProgress}%` }}
+                transition={{ duration: 0.5 }}
+              />
+            </div>
+            <div className="flex justify-between mt-1">
+              <span className="text-[9px] text-muted-foreground">{battleXp} XP</span>
+              <span className="text-[9px] text-muted-foreground">{xpToNextLevel} XP</span>
+            </div>
           </div>
         </div>
       </div>
@@ -363,7 +418,7 @@ export function DuelTab({ onStartDuel }: DuelTabProps) {
                     alt={weeklyBoss.nome}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/images/trainers/rival.png";
+                      (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
                     }}
                   />
                 </div>
@@ -425,7 +480,7 @@ export function DuelTab({ onStartDuel }: DuelTabProps) {
                       alt={npc.nome}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/images/trainers/rival.png";
+                        (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
                       }}
                     />
                   </div>
