@@ -84,6 +84,7 @@ export interface TrainerProfile {
   hometown: string;
   trainerClass: string;
   money: number;
+  starDust: number; // Star Dust currency (1 XP = 1,100 Star Dust)
   badges: Badge[];
   johtoBadges: Badge[];
   attributes: TrainerAttributes;
@@ -104,6 +105,67 @@ export interface TrainerProfile {
   legendaryUnlockedDays: number[]; // which 30-day milestones were unlocked (30, 60, 90...)
   // Weekly events
   weeklyEventProgress: WeeklyEventProgress | null;
+}
+
+// ---- Star Dust Economy System ----
+export const STAR_DUST_CONFIG = {
+  // Conversão: 1 XP = 1,100 Star Dust
+  XP_TO_STARDUST_RATIO: 1100,
+  
+  // Recompensas de captura (base)
+  CAPTURE_REWARDS: {
+    common: 500,
+    rare: 800,
+    legendary: 2000,
+  },
+  
+  // Bônus de captura
+  CAPTURE_BONUSES: {
+    weather_sun: 200,
+    night_time: 500,
+    special_event: 300,
+  },
+  
+  // Transferência para professor
+  TRANSFER_REWARD: 1100, // Fixo, equivalente a 1 XP
+  
+  // Batalhas
+  BATTLE_REWARDS: {
+    wild: 1000,
+  },
+  
+  // Chocar ovos
+  EGG_HATCH_REWARDS: {
+    green: 800,
+    yellow: 1500,
+    red: 2500,
+  },
+} as const;
+
+/** Convert Star Dust to XP (1 XP = 1,100 Star Dust) */
+export function convertStarDustToXP(starDust: number): { xp: number; starDustUsed: number } {
+  const xp = Math.floor(starDust / STAR_DUST_CONFIG.XP_TO_STARDUST_RATIO);
+  const starDustUsed = xp * STAR_DUST_CONFIG.XP_TO_STARDUST_RATIO;
+  return { xp, starDustUsed };
+}
+
+/** Calculate capture reward based on pokemon rarity and context */
+export function calculateCaptureStarDust(
+  isRare: boolean,
+  isLegendary: boolean,
+  context?: { isSunny?: boolean; isNight?: boolean; specialEvent?: boolean }
+): number {
+  let reward = isLegendary 
+    ? STAR_DUST_CONFIG.CAPTURE_REWARDS.legendary 
+    : isRare 
+      ? STAR_DUST_CONFIG.CAPTURE_REWARDS.rare 
+      : STAR_DUST_CONFIG.CAPTURE_REWARDS.common;
+  
+  if (context?.isSunny) reward += STAR_DUST_CONFIG.CAPTURE_BONUSES.weather_sun;
+  if (context?.isNight) reward += STAR_DUST_CONFIG.CAPTURE_BONUSES.night_time;
+  if (context?.specialEvent) reward += STAR_DUST_CONFIG.CAPTURE_BONUSES.special_event;
+  
+  return reward;
 }
 
 /** XP required for a given trainer level */
@@ -777,6 +839,12 @@ interface GameState {
   toggleBattleCards: () => void;
   addMoney: (amount: number) => void;
   spendMoney: (amount: number) => boolean;
+  // Star Dust economy
+  addStarDust: (amount: number) => void;
+  removeStarDust: (amount: number) => boolean;
+  convertStarDustToXPForPokemon: (uid: string, starDustAmount: number) => { xpGained: number; starDustUsed: number } | null;
+  rewardBattleStarDust: (type: "wild") => number;
+  rewardEggHatchStarDust: (tier: "green" | "yellow" | "red") => number;
   toggleBadge: (badgeId: string) => void;
   toggleJohtoBadge: (badgeId: string) => void;
   updateAttributes: (attrs: Partial<TrainerAttributes>) => void;
@@ -785,8 +853,8 @@ interface GameState {
   addToTeam: (species: PokemonSpecies) => void;
   addToTeamWithLevel: (species: PokemonSpecies, level: number) => string;
   removeFromTeam: (uid: string) => void;
-  transferToProfesor: (uid: string) => { xpGained: number; recipientName: string | null };
-  transferAllDuplicates: (speciesId: number, keepUid: string) => { count: number; totalXp: number };
+  transferToProfesor: (uid: string, options?: { deferStarDust?: boolean }) => { starDustGained: number; xpGained: number; recipientName: string | null };
+  transferAllDuplicates: (speciesId: number, keepUid: string) => { count: number; totalStarDust: number; totalXp: number };
   reorderTeam: (fromIndex: number, toIndex: number) => void;
   // Reserves management
   moveToReserves: (uid: string) => void;
@@ -886,6 +954,7 @@ export const useGameStore = create<GameState>()(
         hometown: "Pallet Town",
         trainerClass: "Treinador Pokemon",
         money: 3000,
+        starDust: 0,
         badges: KANTO_BADGES.map((b) => ({ ...b })),
         johtoBadges: JOHTO_BADGES.map((b) => ({ ...b })),
         attributes: { ...DEFAULT_ATTRIBUTES },
@@ -1008,6 +1077,47 @@ export const useGameStore = create<GameState>()(
         return true;
       },
 
+      // ── Star Dust Economy ──
+      addStarDust: (amount) => {
+        const { trainer } = get();
+        set({ trainer: { ...trainer, starDust: (trainer.starDust ?? 0) + amount } });
+      },
+
+      removeStarDust: (amount) => {
+        const { trainer } = get();
+        if ((trainer.starDust ?? 0) < amount) return false;
+        set({ trainer: { ...trainer, starDust: (trainer.starDust ?? 0) - amount } });
+        return true;
+      },
+
+      convertStarDustToXPForPokemon: (uid, starDustAmount) => {
+        const { trainer } = get();
+        if ((trainer.starDust ?? 0) < starDustAmount) return null;
+        
+        const { xp, starDustUsed } = convertStarDustToXP(starDustAmount);
+        if (xp === 0) return null;
+        
+        // Remove Star Dust
+        set({ trainer: { ...trainer, starDust: (trainer.starDust ?? 0) - starDustUsed } });
+        
+        // Add XP to pokemon
+        get().addXp(uid, xp);
+        
+        return { xpGained: xp, starDustUsed };
+      },
+
+      rewardBattleStarDust: (type) => {
+        const reward = STAR_DUST_CONFIG.BATTLE_REWARDS[type];
+        get().addStarDust(reward);
+        return reward;
+      },
+
+      rewardEggHatchStarDust: (tier) => {
+        const reward = STAR_DUST_CONFIG.EGG_HATCH_REWARDS[tier];
+        get().addStarDust(reward);
+        return reward;
+      },
+
       toggleBadge: (badgeId) => {
         set({
           trainer: {
@@ -1108,11 +1218,13 @@ export const useGameStore = create<GameState>()(
         set({ team: get().team.filter((p) => p.uid !== uid) });
       },
 
-      transferToProfesor: (uid) => {
+      transferToProfesor: (uid, options) => {
         const { team, reserves } = get();
         const pokemon = team.find((p) => p.uid === uid) || reserves.find((p) => p.uid === uid);
-        if (!pokemon) return { xpGained: 0, recipientName: null };
+        if (!pokemon) return { starDustGained: 0, xpGained: 0, recipientName: null };
 
+        // Give fixed 1,100 Star Dust (equivalent to 1 XP in value)
+        const starDustGained = STAR_DUST_CONFIG.TRANSFER_REWARD;
         const xpGained = (pokemon.level ?? 1) * 25;
         const speciesId = pokemon.speciesId;
 
@@ -1125,13 +1237,18 @@ export const useGameStore = create<GameState>()(
           reserves: reserves.filter((p) => p.uid !== uid),
         });
 
+        // Add Star Dust unless deferred (for animation)
+        if (!options?.deferStarDust) {
+          get().addStarDust(starDustGained);
+        }
+
         // Give XP to the recipient if found
         if (recipient) {
           get().addXp(recipient.uid, xpGained);
-          return { xpGained, recipientName: recipient.name };
+          return { starDustGained, xpGained, recipientName: recipient.name };
         }
 
-        return { xpGained: 0, recipientName: null };
+        return { starDustGained, xpGained: 0, recipientName: null };
       },
 
       transferAllDuplicates: (speciesId, keepUid) => {
@@ -1141,9 +1258,10 @@ export const useGameStore = create<GameState>()(
           (p) => p.speciesId === speciesId && p.uid !== keepUid
         );
 
-        if (duplicates.length === 0) return { count: 0, totalXp: 0 };
+        if (duplicates.length === 0) return { count: 0, totalStarDust: 0, totalXp: 0 };
 
         const totalXp = duplicates.reduce((sum, p) => sum + (p.level ?? 1) * 25, 0);
+        const totalStarDust = duplicates.length * STAR_DUST_CONFIG.TRANSFER_REWARD;
         const dupUids = new Set(duplicates.map((p) => p.uid));
 
         // Remove all duplicates
@@ -1152,10 +1270,13 @@ export const useGameStore = create<GameState>()(
           reserves: reserves.filter((p) => !dupUids.has(p.uid)),
         });
 
+        // Add Star Dust for all transfers
+        get().addStarDust(totalStarDust);
+
         // Give accumulated XP to the kept pokemon
         get().addXp(keepUid, totalXp);
 
-        return { count: duplicates.length, totalXp };
+        return { count: duplicates.length, totalStarDust, totalXp };
       },
 
       reorderTeam: (fromIndex, toIndex) => {

@@ -27,8 +27,9 @@ import { CaptureScene } from "@/components/capture-scene";
 import { WildBattleScene } from "@/components/wild-battle-scene";
 import { TrainerAvatar } from "@/components/trainer-avatar";
 import { getPokemon, POKEMON } from "@/lib/pokemon-data";
-import { calculateExplorationXp } from "@/lib/game-store";
+import { calculateExplorationXp, calculateCaptureStarDust, STAR_DUST_CONFIG } from "@/lib/game-store";
 import type { ExplorationReward, StreakUpdateResult } from "@/lib/game-store";
+import { StarDustFullscreenAnimation, StarDustCounter } from "@/components/star-dust-animation";
 
 import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords, Crosshair, Settings, Plus, StarIcon } from "lucide-react";
 import { playTabSwitch, playButtonClick } from "@/lib/sounds";
@@ -51,7 +52,7 @@ export default function Page() {
   // Pre-load all project images into browser cache on mount
   useImagePreloader();
   const { mode, setMode, profiles, activeProfileId, setActiveProfile, clearActiveProfile, resetMode } = useModeStore();
-  const { battle, startBattle, addToTeamWithLevel, team, trainer } = useGameStore();
+  const { battle, startBattle, addToTeamWithLevel, team, trainer, addStarDust } = useGameStore();
   const { updateTrainer, updateAttributes, addMoney, toggleBadge, toggleJohtoBadge, addTrainerXp, setTrainerLevel, damageTrainer, healTrainer, recalcTrainerStats } = useGameStore();
   const [screen, setScreen] = useState<Screen>("loading");
   const [moneyDialog, setMoneyDialog] = useState(false);
@@ -75,6 +76,8 @@ export default function Page() {
     legendaryId: number | null;
     legendaryName: string | null;
   } | null>(null);
+  const [starDustAnimation, setStarDustAnimation] = useState<{ amount: number; isActive: boolean }>({ amount: 0, isActive: false });
+  const [prevStarDust, setPrevStarDust] = useState(trainer.starDust ?? 0);
   const [musicMuted, setMusicMuted] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("pokerpg-music-muted") === "true";
@@ -123,6 +126,13 @@ export default function Page() {
       }
     }
   }, [activeProfileId, mode]);
+
+  // Keep prevStarDust in sync after animations complete
+  useEffect(() => {
+    if (!starDustAnimation.isActive) {
+      setPrevStarDust(trainer.starDust ?? 0);
+    }
+  }, [trainer.starDust, starDustAnimation.isActive]);
 
   // In master mode, auto-set trainer name so ProfileTab doesn't force edit dialog
   useEffect(() => {
@@ -364,6 +374,16 @@ export default function Page() {
       const rewards = useGameStore.getState().addExplorationXp(explorationXpGained);
       const newLevel = useGameStore.getState().trainer.explorationLevel ?? 1;
 
+      // Grant Star Dust for capture
+      const isRare = pokemonSpecies.catchDifficulty === "rare" || pokemonSpecies.catchDifficulty === "very-rare";
+      const isLegendary = pokemonSpecies.catchDifficulty === "legendary";
+      const hour = new Date().getHours();
+      const isNight = hour >= 21 || hour < 6;
+      const starDustReward = calculateCaptureStarDust(isRare, isLegendary, { isNight });
+      setPrevStarDust(useGameStore.getState().trainer.starDust ?? 0);
+      useGameStore.getState().addStarDust(starDustReward);
+      setStarDustAnimation({ amount: starDustReward, isActive: true });
+
       // Show exploration reward toast
       setExplorationRewardToast({
         xp: explorationXpGained,
@@ -522,6 +542,14 @@ export default function Page() {
   // Game
   return (
     <main className="flex flex-col h-dvh max-w-md mx-auto bg-background relative">
+      {/* Star Dust Fullscreen Animation para captura */}
+      <StarDustFullscreenAnimation
+        amount={starDustAnimation.amount}
+        isActive={starDustAnimation.isActive}
+        type="gain"
+        onComplete={() => setStarDustAnimation({ amount: 0, isActive: false })}
+      />
+      
       {/* Daily Streak Toast */}
       {streakToast && (
         <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[101] animate-in fade-in slide-in-from-top-4 duration-300 w-[300px]">
@@ -645,21 +673,16 @@ export default function Page() {
         </div>
         <div className="flex items-center gap-2">
           {/* Quantidade de poeira estelar */}
-         <div className="flex items-center gap-1.5 justify-between bg-secondary/50 rounded-full px-2.5 py-1">
-            <StarIcon className="w-9 h-3 text-accent text-blue-300" />
-            <span className="text-xs font-bold font-mono text-blue-300 text-accent">
-             12000
-            </span>
-              {!useModeStore.getState().economyLocked && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setMoneyDialog(true)}
-                  className="h-7 w-7 p-0 border-border text-foreground bg-transparent hover:bg-secondary"
-                >
-                  <Plus className="w-3 h-3" />
-                </Button>
-              )}
+         <div 
+           id="stardust-counter-target"
+           className="flex items-center gap-1.5 justify-between bg-secondary/50 rounded-full px-2.5 py-1"
+         >
+            <StarIcon className="w-4 h-4 text-blue-300" />
+            <StarDustCounter 
+              value={trainer.starDust ?? 0} 
+              previousValue={prevStarDust}
+              className="text-xs font-bold font-mono text-blue-300"
+            />
           </div>
           <div className="flex items-center gap-1.5 bg-secondary/50 rounded-full px-2.5 py-1">
             <Coins className="w-3 h-3 text-accent" />
