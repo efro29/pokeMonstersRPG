@@ -145,11 +145,17 @@ export function StarDustFullscreenAnimation({
 
   // Iniciar animacao
   useEffect(() => {
-    if (!isActive || !mounted || amount <= 0) return;
+    console.log("[v0] StarDust useEffect - isActive:", isActive, "mounted:", mounted, "amount:", amount);
+    if (!isActive || amount <= 0) {
+      console.log("[v0] StarDust useEffect early return");
+      return;
+    }
 
+    console.log("[v0] StarDust starting animation - setting phase to showNumber");
     // Fase 1: Mostrar numero grande
     setPhase("showNumber");
     setDisplayedAmount(0);
+    setMounted(true); // Garantir que mounted seja true
 
     // Apos 1.5s, iniciar estrelas
     const timer = setTimeout(() => {
@@ -250,11 +256,16 @@ export function StarDustFullscreenAnimation({
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [isActive, mounted, amount]);
+  }, [isActive, amount]);
 
-  if (!mounted || !isActive || phase === "idle" || phase === "done") {
+  console.log("[v0] StarDust render - isActive:", isActive, "phase:", phase, "amount:", amount);
+
+  if (!isActive || phase === "idle" || phase === "done") {
+    console.log("[v0] StarDust returning null - isActive:", isActive, "phase:", phase);
     return null;
   }
+
+  console.log("[v0] StarDust rendering content for phase:", phase);
 
   const content = (
     <div className="fixed inset-0 z-[99999] pointer-events-none overflow-hidden">
