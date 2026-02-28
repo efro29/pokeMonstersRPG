@@ -879,9 +879,20 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
     setTimeout(() => setScanMessage(null), 1000);
   }, [weather]);
 
+
+
+
+
   // ── Iniciar scan ──
   const startScan = useCallback(() => {
-    if (scanning) return;
+
+
+    if(blips.length > 0 ){
+
+
+    }else{
+
+  if (scanning) return;
     if (energy.charges <= 0) {
       setScanMessage("Sem energia! Aguarde a recarga.");
       setTimeout(() => setScanMessage(null), 1000);
@@ -919,6 +930,12 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
         finishScan();
       }
     }, 50);
+
+
+
+    }
+
+  
   }, [scanning, energy, finishScan]);
 
   // Cleanup
@@ -1070,7 +1087,7 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
 
       {/* Radar circular */}
       <div
-
+          onClick={startScan}
         className="z-20 relative shrink-0"
         style={{ width: radarSize, height: radarSize }}
       >
@@ -1181,7 +1198,7 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ delay: blip.delay, type: "spring", stiffness: 300, damping: 20, left: { duration: 0.35, ease: "easeOut", delay: 0 }, top: { duration: 0.35, ease: "easeOut", delay: 0 } }}
                 className="absolute z-10 group"
-                style={{
+                style={{ zIndex:100,
                   width: 24,
                   height: 24,
                 }}
@@ -1264,7 +1281,7 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
 
       {/* Botão de scan */}
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, width: '100%' }}>
-        <Button
+        {/* <Button
           onClick={startScan}
           disabled={scanning || energy.charges <= 0}
           className="w-full  h-12 text-sm font-bold relative overflow-hidden"
@@ -1288,7 +1305,7 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
               {energy.charges > 0 ? "Iniciar" : "Sem Energia"}
             </span>
           )}
-        </Button>
+        </Button> */}
 
 
         <>
@@ -1296,7 +1313,7 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
             disabled={!selectedBlip || !selectedBlip.pokemon}
             onClick={handleBattle}
             className="w-full max-w-sm h-12 text-sm font-bold relative overflow-hidden"
-            style={{ backgroundColor: selectedBlip && selectedBlip.pokemon ? "#b91c1c" : "#333645" }}
+            style={{ backgroundColor: selectedBlip && selectedBlip.pokemon ? "#0a8c61" : "#333645" }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
               <path d="M14.5 17.5L3 6V3h3l11.5 11.5" />
@@ -1310,7 +1327,7 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
             disabled={!selectedBlip || !selectedBlip.pokemon}
             onClick={handleCapture}
             className="w-full max-w-sm h-12 text-sm font-bold relative overflow-hidden"
-            style={{ backgroundColor: selectedBlip && selectedBlip.pokemon ? "#c88941" : "#333645" }}
+            style={{ backgroundColor: selectedBlip && selectedBlip.pokemon ? "#0a8c61" : "#333645" }}
           >
             <svg width="16" height="16" viewBox="0 0 100 100" className="mr-1">
               <circle cx="50" cy="50" r="48" fill={selectedBlip && selectedBlip.pokemon ? "#EF4444" : "#1E293B"} stroke="#1E293B" strokeWidth="3" />

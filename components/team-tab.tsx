@@ -59,6 +59,9 @@ import {
   BookAIcon,
   Send,
   Users,
+  CheckCircle2,
+  PlusCircle,
+  Target,
 } from "lucide-react";
 import { EvolutionAnimation } from "@/components/evolution-animation";
 
@@ -296,11 +299,38 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
           </div>
 
           {/* ART AREA */}
-          <div className={`relative flex justify-center items-center my-1.5 h-[56px]
+          <div className={`relative flex justify-center items-center my-1.5 h-[56px]  ${ isFainted ? "bg-gradient-to-b from-[#3a3a3a] via-[#262626] to-[#141414]" : " bg-gradient-to-b from-[#1e2f5a] via-[#162447] to-[#0f1a33] " }  rounded `}>
           
-            ${ isFainted ? "bg-gradient-to-b from-[#3a3a3a] via-[#262626] to-[#141414]" : " bg-gradient-to-b from-[#1e2f5a] via-[#162447] to-[#0f1a33] " }
-          rounded `}>
+            <div className="absolute inset-0 pointer-events-none opacity-40">
+                <svg className="w-full h-full" viewBox="0 0 400 100" preserveAspectRatio="none">
+                  <defs>
+                    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="white" strokeWidth="0.5" opacity="0.1"/>
+                    </pattern>
+                    
+                    <mask id="scanMask">
+                      <rect className="animate-ecg-scan" x="-100" y="0" width="100" height="100" fill="white" />
+                    </mask>
+                  </defs>
+
+                  <rect width="100%" height="100%" fill="url(#grid)" />
+
+                  <path
+                    d="M0 50 L140 50 L145 35 L155 65 L160 50 L180 50 L190 15 L210 85 L220 50 L240 50 L245 42 L255 58 L260 50 L400 50"
+                    fill="none"
+                    stroke={hpColor}
+                    strokeWidth="5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    mask="url(#scanMask)"
+                    style={{ filter: `drop-shadow(0 0 4px ${hpColor})` }}
+                  />
+                </svg>
+              </div>
+          
+          
             <img
+            style={{zIndex:20}}
               src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
               alt={pokemon.name}
               className={`pixelated h-[48px]  ${isFainted?'grayscale':''}` }
@@ -314,7 +344,6 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
 
           {/* STATUS */}
           <div className="flex flex-col gap-[3px] mt-auto">
-
             {/* HP */}
             <div className="flex items-center gap-[3px]">
               <Heart className="w-2.5 h-2.5 text-red-500" />
@@ -422,10 +451,36 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
 
     {/* ART AREA */}
         <div className="relative flex justify-center items-center my-1.5 h-[56px] bg-gradient-to-b from-neutral-800 to-neutral-900 rounded  border-neutral-700">
-      <img
+                      <div className="absolute inset-0 pointer-events-none opacity-40">
+                <svg className="w-full h-full" viewBox="0 0 400 100" preserveAspectRatio="none">
+                  <defs>
+                    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="white" strokeWidth="0.5" opacity="0.1"/>
+                    </pattern>
+                    
+                    <mask id="scanMask">
+                      <rect className="animate-ecg-scan" x="-100" y="0" width="100" height="100" fill="white" />
+                    </mask>
+                  </defs>
+
+                  <rect width="100%" height="100%" fill="url(#grid)" />
+
+                  <path
+                    d="M0 50 L140 50 L145 35 L155 65 L160 50 L180 50 L190 15 L210 85 L220 50 L240 50 L245 42 L255 58 L260 50 L400 50"
+                    fill="none"
+                    stroke={hpColor}
+                    strokeWidth="5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    mask="url(#scanMask)"
+                    style={{ filter: `drop-shadow(0 0 4px ${hpColor})` }}
+                  />
+                </svg>
+              </div>
+      <img style={{zIndex:20}}
         src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
         alt={pokemon.name}
-        className="pixelated h-[48px] select-none pointer-events-none grayscale"
+        className="pixelated h-[48px] select-none pointer-events-none "
         crossOrigin="anonymous"
         draggable={false}
       />
@@ -636,6 +691,11 @@ function PokemonDetailContent({
 }) {
   const level = pokemon.level ?? 1;
   const xp = pokemon.xp ?? 0;
+  const pokeHP = pokemon.currentHp ?? 0;
+  const pokeMaxHP = pokemon.maxHp ?? 0;
+  const pokeHPPercent = pokeMaxHP > 0 ? (Math.round(pokeHP) / pokeMaxHP) * 100 : 0;
+  const pokeHpColor = pokeHPPercent > 50 ? "#22C55E" : pokeHPPercent > 25 ? "#F59E0B" : "#EF4444";
+
   const xpNeeded = xpForLevel(level + 1);
 
   const species = getPokemon(pokemon.speciesId);
@@ -663,104 +723,112 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
   const [xpBarAnimProgress, setXpBarAnimProgress] = useState(0);
 
   return (
-    <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto h-[75vh] overflow-y-auto">
+    <DialogContent
+          style={{ background:"linear-gradient(135deg, #1852e6, #09bfcf, #030240)", }}
+    className=" border-border text-foreground max-w-sm mx-auto h-[75vh] overflow-y-auto">
+
+      <div  className={`w-full rounded-[4px] p-1.5 flex flex-col h-full cursor-pointer bg-gradient-to-b from-[#1e3a8a] to-[#0f172a] border } `}
+        >
+          
       <DialogHeader>
-        <DialogTitle className="flex items-center gap-2 text-foreground">
-          {pokemon.name}
-          <span className="text-xs font-normal text-muted-foreground bg-secondary rounded-full px-2 py-0.5">
-            Lv.{level}
-          </span>
-        </DialogTitle>
+            <DialogTitle className="flex flex-col gap-4 text-foreground">
+              {/* Header: Nome e Nível */}
+            <div className="relative flex justify-center items-center w-full h-[120px] bg-gradient-to-b from-[#1e2f5a] via-[#162447] to-[#0f1a33] rounded-lg overflow-hidden border border-white/10 shadow-inner">
+              
+              {/* Badge de HP no Canto Superior Esquerdo */}
+              <div className="absolute top-2 left-2 z-20 flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-md rounded border border-white/10">
+                <Heart 
+                  className={`w-3 h-3 ${pokeHPPercent <= 25 ? 'animate-pulse' : ''}`} 
+                  style={{ color: pokeHpColor, fill: pokeHpColor }} 
+                />
+                <span className="text-[10px] font-mono font-bold tracking-tighter text-white/90">
+                  {Math.round(pokeHP)}<span className="text-white/40">/</span>{pokeMaxHP}
+                </span>
+              </div>
+
+              {/* Monitor ECG Realista */}
+              <div className="absolute inset-0 pointer-events-none opacity-40">
+                <svg className="w-full h-full" viewBox="0 0 400 100" preserveAspectRatio="none">
+                  <defs>
+                    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="white" strokeWidth="0.5" opacity="0.1"/>
+                    </pattern>
+                    
+                    <mask id="scanMask">
+                      <rect className="animate-ecg-scan" x="-100" y="0" width="100" height="100" fill="white" />
+                    </mask>
+                  </defs>
+
+                  <rect width="100%" height="100%" fill="url(#grid)" />
+
+                  <path
+                    d="M0 50 L140 50 L145 35 L155 65 L160 50 L180 50 L190 15 L210 85 L220 50 L240 50 L245 42 L255 58 L260 50 L400 50"
+                    fill="none"
+                    stroke={pokeHpColor}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    mask="url(#scanMask)"
+                    style={{ filter: `drop-shadow(0 0 4px ${pokeHpColor})` }}
+                  />
+                </svg>
+              </div>
+
+              {/* Sprite do Pokémon */}
+              <img
+              style={{zIndex:20}}
+                src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
+                alt={pokemon.name}
+
+                className="pixelated h-[90px] "
+                crossOrigin="anonymous"
+              />
+
+     
+            </div>
+      </DialogTitle>
 
       </DialogHeader>
+      
       <Tabs defaultValue="info" className="w-full">
         <TabsList className="w-full bg-secondary">
           <TabsTrigger
             value="info"
             style={{fontSize:9}}
-            className="flex-1  data-[state=active]:bg-card"
+            className="flex-1  data-[state=active]:"
           >
-          Info
+          Dados
           </TabsTrigger>
           <TabsTrigger
                     style={{fontSize:9}}
             value="moves"
-            className="flex-1  data-[state=active]:bg-card"
+                     className="flex-1  data-[state=active]:"
           >
             Golpes
           </TabsTrigger>
+
+    
           <TabsTrigger
-                    style={{fontSize:9}}
-            value="learn"
-            className="flex-1  data-[state=active]:bg-card"
-          >
-            Aprender
-          </TabsTrigger>
-          <TabsTrigger
-                    style={{fontSize:9}}
-            value="attrs"
-            className="flex-1  data-[state=active]:bg-card"
-          >
-            Atributos
-          </TabsTrigger>
-          {/* <TabsTrigger
                     style={{fontSize:9}}
             value="evolve"
-            className="flex-1  data-[state=active]:bg-card"
+                     className="flex-1  data-[state=active]:"
           >
-           <ArrowUp size={10} />
-          </TabsTrigger> */}
+            Evoluções
+          </TabsTrigger>
           <TabsTrigger
                     style={{fontSize:9}}
             value="history"
-            className="flex-1  data-[state=active]:bg-card"
+                     className="flex-1  data-[state=active]:"
           >
-            <Swords size={25} />
+            Batalhas
           </TabsTrigger>
         </TabsList>
 
         {/* Info Tab */}
         <TabsContent value="info" className="mt-3">
-          <div className="flex flex-col items-center gap-3">
-            <img
-              src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
-              alt={pokemon.name}
-              width={96}
-              height={96}
-              className="pixelated"
-              crossOrigin="anonymous"
-            />
-            {/* <div className="flex items-center gap-2 text-sm">
-              <Heart className="w-4 h-4 text-red-400" />
-              <span className="text-foreground">
-                {Math.round(pokemon.currentHp)} / {pokemon.maxHp} HP
-              </span>
-            </div> */}
-            {/* <div className="flex items-center gap-2 text-sm">
-              <Star className="w-4 h-4 text-yellow-400" />
-                <p> {habildade_especial.toLowerCase().replace("_"," ")}</p>
-            </div> */}
+          <div className="flex flex-col items-center gap-1">
+          
 
-                 
-            {/* XP display */}
-            <div className="w-full bg-secondary/50 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-muted-foreground">
-                  Level {level}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  XP: {xp} / {xpNeeded}
-                </span>
-              </div>
-              <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-accent rounded-full transition-all"
-                  style={{
-                    width: `${Math.min(100, (xp / xpNeeded) * 100)}%`,
-                  }}
-                />
-              </div>
-            </div>
 
             {/* Duplicates panel */}
             {duplicateCount > 0 && (
@@ -798,14 +866,10 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
             )}
 
             {/* Add XP */}
-            <div className="w-full flex flex-col gap-2">
-              {xpLocked && (
-                <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-2 mb-1">
-                  <p className="text-xs text-amber-400 text-center">
-                    Adicao de XP bloqueada. Desbloqueie nas Configuracoes.
-                  </p>
-                </div>
-              )}
+            {xpLocked?"":
+            <>
+                   <div className="w-full flex flex-col gap-2">
+
               <div className="flex gap-2">
                 {[50, 100, 250, 500].map((val) => (
                   <Button
@@ -845,9 +909,7 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                 </Button>
               </div>
             </div>
-
-            {/* Set Level directly */}
-            <div className="w-full flex flex-col gap-2">
+                        <div className="w-full flex flex-col gap-2">
       
               <div className="flex gap-2">
                 <Input
@@ -876,21 +938,128 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                 </Button>
               </div>
             </div>
+            
+            </>
+            }
 
-            {/* Rare Candy */}
-            {hasRareCandy && (
-              <Button
-                variant="outline"
-                onClick={() => useRareCandy(pokemon.uid)}
-                className="w-full border-accent/50 text-accent bg-transparent hover:bg-accent/10"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Usar Rare Candy (Lv.{level} {"->"} {level + 1})
-              </Button>
-            )}
 
+      {(() => {
+            const attrs = computeAttributes(pokemon.speciesId, level, pokemon.customAttributes);
+            const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
+            const attrKeys: (keyof PokemonBaseAttributes)[] = ["velocidade", "felicidade", "resistencia", "acrobacia","especial"];
+            const attrIcons: Record<string, { icon: typeof Zap; color: string }> = {
+              velocidade:  { icon: Zap,    color: "#FACC15" },
+              felicidade:  { icon: Heart,  color: "#F472B6" },
+              resistencia: { icon: Shield, color: "#60A5FA" },
+              acrobacia:   { icon: Wind,   color: "#2DD4BF" },
+               especial:   { icon: Wind,   color: "#e6f511" },
+            };
+            const isFainted = pokemon.currentHp <= 0;
+            return (
+              <div className="flex w-full  flex-col gap-1">
+                {isFainted && (
+                  <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-2 text-center">
+                    <span className="text-xs text-destructive font-medium">
+                      Pokemon desmaiado - atributos penalizados!
+                    </span>
+                  </div>
+                )}
+
+                {/* DEFESE e NIVEL */}
+            <div style={{display:'flex',gap:4,justifyContent:"space-between"}}>
+
+
+                  {/* Level*/}       
+                <div className="w-[50%]  bg-blue-400/10 border border-blue-400/20 rounded-lg p-3 ">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-muted-foreground">
+                        Level {level}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {xp} / {xpNeeded}
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-accent rounded-full transition-all"
+                        style={{
+                          width: `${Math.min(100, (xp / xpNeeded) * 100)}%`,
+                        }}
+                      />
+            
+                    </div>
+                  </div>
+
+                {/* Defense / AC */}
+                <div className="w-[50%] bg-blue-400/10 border border-blue-400/20 rounded-lg p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-blue-400" />
+                    <div>
+                      <span className="text-sm font-bold text-foreground">Defesa</span>
+                    </div>
+                  </div>
+                  <span className="text-2xl font-bold font-mono text-blue-400">{attrs.defesa}</span>
+                </div>
+              
+
+            </div>
+  
+              <div className="bg-blue-400/10 border border-blue-400/20 rounded-lg p-3">
+                {attrKeys.map((attr) => {
+                  const info = POKEMON_ATTRIBUTE_INFO[attr];
+                  const { icon: Icon, color } = attrIcons[attr];
+                  const baseVal = attrs[attr];
+                  const modKey = `${attr}Mod` as keyof typeof attrs;
+                  const mod = attrs[modKey] as number;
+                  const barPercent = Math.min(100, baseVal * 10);
+                  return (
+        
+                                <>
+                                  <div  className=" text-sm  flex items-center gap-2 ">
+                                    {attr == 'especial'?"":
+                                    <>
+                                       <Icon className="text-sm  w-4 h-4 shrink-0" style={{ color }} />   
+                                        <span className="text-sm  text-foreground">{info.name}:  {baseVal}</span>
+                                        <span className="text-sm  ml-auto text-xs  text-accent">+{mod} mod</span>
+                                    </>
+                                    }
+                               
+                                  </div>
+                                  <div style={{fontSize:12}} className="w-full flex text-sm  items-center gap-2 mb-1">
+                                  {attr == 'especial'?  (habildade_especial ?? '').replace('_',' ') :
+                                  <div className="flex-1 h-2.5 bg-background rounded-full overflow-hidden">
+                                  <div
+                                  className="h-full w-full  rounded-full transition-all duration-300"  style={{ width: `${barPercent}%`, backgroundColor: color }} />
+                                  </div>
+                                  }
+
+                             
+                                  </div>
+                                </>
+           
+                  );
+                })}
+                       </div>
+              </div>
+            );
+          })()}
+
+
+
+
+
+            <div style={{display:"flex",justifyContent:"space-between",gap:4}}>
+              
             <Button
-              variant="destructive"
+                                  style={{backgroundColor:"blue"}}
+              onClick={() => alert("Função para trocar 10% startDust por XP")}
+        
+            >
+              <Star className="w-4 h-4 mr-2" />
+              Receber
+            </Button>
+            <Button
+                     style={{backgroundColor:"purple"}}
               onClick={() => {
                 const result = transferToProfesor(pokemon.uid);
                 if (result.xpGained > 0 && result.recipientName) {
@@ -906,227 +1075,123 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                   onClose();
                 }
               }}
-              className="w-full"
+             className="w-[50%]"
             >
               <Send className="w-4 h-4 mr-2" />
-              Transferir para o Professor
+              Transferir
             </Button>
+
+
+            </div>
+
           </div>
         </TabsContent>
 
-        {/* Moves Tab */}
         <TabsContent value="moves" className="mt-3">
-          <div className="flex flex-col gap-2">
-            {pokemon.moves.map((m) => {
-              const moveDef = getMove(m.moveId);
-              if (!moveDef) return null;
-              return (
-                <div
-                  key={m.moveId}
-                  className="flex items-center justify-between bg-secondary rounded-lg p-2"
-                >
-                  <div className="flex flex-col gap-0.5">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="text-[8px] px-1 py-0.5 rounded text-white"
-                        style={{
-                          backgroundColor:
-                            TYPE_COLORS[moveDef.type as PokemonType],
-                        }}
-                      >
-                        {moveDef.type.toUpperCase()}
-                      </span>
-                      <span className="text-sm font-medium text-foreground">
-                        {moveDef.name}
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-muted-foreground">
-                      {moveDef.description}
-                    </span>
-                    <div className="flex gap-2 text-[10px] text-muted-foreground">
-                      {moveDef.power > 0 && (
-                        <span>PWR: {moveDef.power}</span>
-                      )}
-                      <span>
-                        D20 {">="} {moveDef.accuracy}
-                      </span>
-                      <span>
-                        PP: {m.currentPP}/{m.maxPP}
-                      </span>
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => forgetMove(pokemon.uid, m.moveId)}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              );
-            })}
-            {pokemon.moves.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Nenhum golpe. Va em Aprender para adicionar.
-              </p>
-            )}
-          </div>
-        </TabsContent>
+          <div className="flex flex-col gap-4">
+            {/* Grid de Golpes */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
+              {/* Concatenamos os nomes para saber o que já está ativo */}
+              {(() => {
+                const activeMoveIds = pokemon.moves.map(m => m.moveId);
+                // Lista única de todos os golpes (atuais + aprendíveis) sem duplicatas
+                const allPossibleMoves = Array.from(new Set([...activeMoveIds, ...pokemon.learnableMoves]));
 
-        {/* Learn Tab */}
-        <TabsContent value="learn" className="mt-3">
-          <div className="flex flex-col gap-2">
-            {pokemon.learnableMoves.map((mId) => {
-              const moveDef = getMove(mId);
-              if (!moveDef) return null;
-              const canLearn = pokemon.moves.length < 4;
-              return (
-                <div
-                  key={mId}
-                  className="flex items-center justify-between bg-secondary rounded-lg p-2"
-                >
-                  <div className="flex flex-col gap-0.5">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="text-[8px] px-1 py-0.5 rounded text-white"
-                        style={{
-                          backgroundColor:
-                            TYPE_COLORS[moveDef.type as PokemonType],
-                        }}
-                      >
-                        {moveDef.type.toUpperCase()}
-                      </span>
-                      <span className="text-sm font-medium text-foreground">
-                        {moveDef.name}
-                      </span>
+                return allPossibleMoves.map((mId) => {
+                  const moveDef = getMove(mId);
+                  if (!moveDef) return null;
+
+                  const isActive = activeMoveIds.includes(mId);
+                  const currentMoveData = pokemon.moves.find(m => m.moveId === mId);
+                  const canLearn = pokemon.moves.length < 4;
+
+                  return (
+                    <div
+                      key={mId}
+                      onClick={() => {
+                        if (isActive) {
+                          forgetMove(pokemon.uid, mId);
+                        } else if (canLearn) {
+                          learnMove(pokemon.uid, mId);
+                        }
+                      }}
+                      className={`
+                        relative flex flex-col p-3 rounded-xl border-2 cursor-pointer transition-all duration-200
+                        ${isActive 
+                          ? "bg-secondary border-green-500 shadow-[0_0_10px_rgba(var(--primary),0.2)]" 
+                          : "bg-background/50 border-border opacity-60 hover:opacity-100 hover:border-muted-foreground"}
+                        ${!isActive && !canLearn ? "cursor-not-allowed grayscale" : ""}
+                      `}
+                    >
+                      {/* Badge de Status */}
+                      <div className="absolute top-2 right-2">
+                        {isActive ? (
+                          <CheckCircle2 className="w-4 h-4  animate-in zoom-in text-green-500" />
+                        ) : (
+                          canLearn && <PlusCircle className="w-4 h-4 text-muted-foreground opacity-50" />
+                        )}
+                      </div>
+
+                      {/* Cabeçalho do Card */}
+                      <div className="flex items-center gap-2 mb-1">
+                        <span
+                          className="text-[9px] font-bold px-1.5 py-0.5 rounded text-white shadow-sm"
+                          style={{ backgroundColor: TYPE_COLORS[moveDef.type as PokemonType] }}
+                        >
+                          {moveDef.type.toUpperCase()}
+                        </span>
+                        <span className={`text-sm font-bold ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
+                          {moveDef.name}
+                        </span>
+                      </div>
+
+                      {/* Descrição Curta */}
+                      <p className="text-[10px] text-muted-foreground leading-tight mb-2 line-clamp-2">
+                        {moveDef.description}
+                      </p>
+
+                      {/* Footer de Stats */}
+                      <div className="flex items-center gap-3 mt-auto pt-2 border-t border-white/5 text-[9px] font-mono">
+                        {moveDef.power > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Zap className="w-3 h-3 text-yellow-500" /> {moveDef.power}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <Target className="w-3 h-3 text-blue-400" /> {moveDef.accuracy}%
+                        </span>
+                        {isActive && currentMoveData && (
+                          <span className="ml-auto font-bold text-primary">
+                            PP {currentMoveData.currentPP}/{currentMoveData.maxPP}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-[10px] text-muted-foreground">
-                      {moveDef.description}
-                    </span>
-                    <div className="flex gap-2 text-[10px] text-muted-foreground">
-                      {moveDef.power > 0 && (
-                        <span>PWR: {moveDef.power}</span>
-                      )}
-                      <span>
-                        D20 {">="} {moveDef.accuracy}
-                      </span>
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    disabled={!canLearn}
-                    onClick={() => learnMove(pokemon.uid, mId)}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-              );
-            })}
-            {pokemon.learnableMoves.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Nenhum golpe disponivel para aprender.
-              </p>
-            )}
-            {pokemon.moves.length >= 4 && (
-              <p className="text-xs text-accent text-center">
-                Maximo 4 golpes. Esqueca um para aprender outro.
-              </p>
-            )}
+                  );
+                });
+              })()}
+            </div>
+
+            {/* Contador de Limite */}
+            <div className="flex items-center justify-between px-2 py-1 bg-secondary/50 rounded-lg">
+              <span className="text-xs text-muted-foreground">
+                Slots de Golpes
+              </span>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4].map((slot) => (
+                  <div 
+                    key={slot}
+                    className={`w-3 h-1.5 rounded-full ${slot <= pokemon.moves.length ? "bg-primary" : "bg-border"}`}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </TabsContent>
 
         {/* Attributes Tab */}
         <TabsContent value="attrs" className="mt-3">
-          {(() => {
-            const attrs = computeAttributes(pokemon.speciesId, level, pokemon.customAttributes);
-
-            const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
-
-
-            const attrKeys: (keyof PokemonBaseAttributes)[] = ["velocidade", "felicidade", "resistencia", "acrobacia","especial"];
-            const attrIcons: Record<string, { icon: typeof Zap; color: string }> = {
-              velocidade:  { icon: Zap,    color: "#FACC15" },
-              felicidade:  { icon: Heart,  color: "#F472B6" },
-              resistencia: { icon: Shield, color: "#60A5FA" },
-              acrobacia:   { icon: Wind,   color: "#2DD4BF" },
-               especial:   { icon: Wind,   color: "#e6f511" },
-            };
-            const isFainted = pokemon.currentHp <= 0;
-            return (
-              <div className="flex flex-col gap-3">
-                <p className="text-xs text-muted-foreground text-center">
-                  Atributos do Pokemon (escalam com o nivel)
-               
-                </p>
-                {isFainted && (
-                  <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-2 text-center">
-                    <span className="text-xs text-destructive font-medium">
-                      Pokemon desmaiado - atributos penalizados!
-                    </span>
-                  </div>
-                )}
-
-                {/* Defense / AC */}
-                <div className="bg-blue-400/10 border border-blue-400/20 rounded-lg p-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-blue-400" />
-                    <div>
-                      <span className="text-sm font-bold text-foreground">Defesa (AC)</span>
-                      <p className="text-[10px] text-muted-foreground">Reducao de dano: -{Math.floor(attrs.defesa / 3)}</p>
-                    </div>
-                  </div>
-                  <span className="text-2xl font-bold font-mono text-blue-400">{attrs.defesa}</span>
-                </div>
-
-                {attrKeys.map((attr) => {
-
-             
-                  const info = POKEMON_ATTRIBUTE_INFO[attr];
-                  const { icon: Icon, color } = attrIcons[attr];
-                  const baseVal = attrs[attr];
-                  const modKey = `${attr}Mod` as keyof typeof attrs;
-                  const mod = attrs[modKey] as number;
-                  const barPercent = Math.min(100, baseVal * 10);
-                  return (
-                    <div key={attr} style={{backgroundColor: attr == 'especial'?'rgb(0,0,0,0.4)':''}}  className="bg-secondary rounded-lg p-3">
-
-                      <div  className="flex items-center gap-2 mb-1.5">
-                        <Icon className="w-4 h-4 shrink-0" style={{ color }} />
-                        <span className="text-sm font-bold text-foreground">{info.name}</span>
-                        <span className="ml-auto text-xs font-mono text-accent">+{mod} mod</span>
-                      </div>
-                      <div className="flex items-center gap-2 mb-1">
-
-                        {attr == 'especial'?  (habildade_especial ?? '').replace('_',' ') :
-                          <div className="flex-1 h-2.5 bg-background rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-300"
-                            style={{ width: `${barPercent}%`, backgroundColor: color }}
-                          />
-                        </div>
-                        
-                        }
-                      
-                        <span className="text-xs font-mono text-muted-foreground w-8 text-right">
-                          {baseVal}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground">{info.desc}</p>
-                    </div>
-                  );
-                })}
-                <div className="bg-secondary/50 rounded-lg p-2 mt-1">
-                  <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
-                    Modificador = Base/2 + Nivel/5. Defesa = 8 + Resistencia/2 + Nivel/4.
-                    <br />
-                    Atributos sobem ao ganhar nivel e caem ao desmaiar.
-                  </p>
-                </div>
-              </div>
-            );
-          })()}
+    
         </TabsContent>
 
         {/* Evolve Tab */}
@@ -1138,7 +1203,7 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                 const evoSpecies = getPokemon(levelEvo.to);
                 const canEvolveNow = level >= (levelEvo.level || 999);
                 return (
-                  <div className="bg-secondary rounded-lg p-3 flex items-center gap-3">
+                  <div className="rounded-lg p-3 flex items-center gap-3">
                     <img
                       src={getSpriteUrl(levelEvo.to) || "/placeholder.svg"}
                       alt={evoSpecies?.name || ""}
@@ -1185,7 +1250,7 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
               return (
                 <div
                   key={stone.id}
-                  className="bg-secondary rounded-lg p-3 flex items-center gap-3"
+                  className="bg-blue-700/20 rounded-lg p-3 flex items-center gap-3"
                 >
                   <img
                     src={getSpriteUrl(evo.to) || "/placeholder.svg"}
@@ -1408,6 +1473,8 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+
     </DialogContent>
   );
 }

@@ -30,7 +30,7 @@ import { getPokemon, POKEMON } from "@/lib/pokemon-data";
 import { calculateExplorationXp } from "@/lib/game-store";
 import type { ExplorationReward, StreakUpdateResult } from "@/lib/game-store";
 
-import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords, Crosshair, Settings, Plus } from "lucide-react";
+import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords, Crosshair, Settings, Plus, StarIcon } from "lucide-react";
 import { playTabSwitch, playButtonClick } from "@/lib/sounds";
 import { useImagePreloader } from "@/hooks/use-image-preloader";
 import {
@@ -621,12 +621,12 @@ export default function Page() {
               title="Trocar perfil"
             >
               <TrainerAvatar avatarId={activeProfile.avatarId} size={28} />
-              <div className="flex flex-col">
+              {/* <div className="flex flex-col">
                 <h1 className="text-xs font-bold text-foreground tracking-wide leading-none">
                   {activeProfile.name}
                 </h1>
                 <span className="text-[9px] text-muted-foreground">Treinador</span>
-              </div>
+              </div> */}
             </button>
           ) : (
             <div className="flex items-center gap-2 ">
@@ -638,12 +638,29 @@ export default function Page() {
                 <circle cx="50" cy="50" r="7" fill="hsl(var(--card))" />
               </svg>
               <h1 className="text-sm font-bold text-foreground tracking-wide">
-                Pokemon RPG Manaus
+                Mestre
               </h1>
             </div>
           )}
         </div>
         <div className="flex items-center gap-2">
+          {/* Quantidade de poeira estelar */}
+         <div className="flex items-center gap-1.5 justify-between bg-secondary/50 rounded-full px-2.5 py-1">
+            <StarIcon className="w-9 h-3 text-accent text-blue-300" />
+            <span className="text-xs font-bold font-mono text-blue-300 text-accent">
+             12000
+            </span>
+              {!useModeStore.getState().economyLocked && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setMoneyDialog(true)}
+                  className="h-7 w-7 p-0 border-border text-foreground bg-transparent hover:bg-secondary"
+                >
+                  <Plus className="w-3 h-3" />
+                </Button>
+              )}
+          </div>
           <div className="flex items-center gap-1.5 bg-secondary/50 rounded-full px-2.5 py-1">
             <Coins className="w-3 h-3 text-accent" />
             <span className="text-xs font-bold font-mono text-accent">

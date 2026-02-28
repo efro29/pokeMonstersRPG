@@ -6,6 +6,7 @@ const config: Config = {
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/**/*.{js,ts,jsx,tsx,mdx}', // Adicionado src por segurança
     '*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
@@ -73,28 +74,38 @@ const config: Config = {
       },
       keyframes: {
         'accordion-down': {
-          from: {
-            height: '0',
-          },
-          to: {
-            height: 'var(--radix-accordion-content-height)',
-          },
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
         },
         'accordion-up': {
-          from: {
-            height: 'var(--radix-accordion-content-height)',
-          },
-          to: {
-            height: '0',
-          },
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
+        },
+        // --- Efeito de Monitor de Hospital ---
+        'ecg-scan': {
+          '0%': { x: '-20%' },
+          '100%': { x: '120%' },
         },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        // --- Animação de Varredura Realista ---
+        'ecg-scan': 'ecg-scan 2.5s linear infinite',
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [
+    require('tailwindcss-animate'),
+    // Utilitário para renderização de pixel art nítida
+    function ({ addUtilities }: any) {
+      addUtilities({
+        '.pixelated': {
+          'image-rendering': 'pixelated',
+        },
+      })
+    },
+  ],
 }
+
 export default config
