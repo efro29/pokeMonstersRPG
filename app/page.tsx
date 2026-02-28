@@ -29,7 +29,7 @@ import { TrainerAvatar } from "@/components/trainer-avatar";
 import { getPokemon, POKEMON } from "@/lib/pokemon-data";
 import { calculateExplorationXp, calculateCaptureStarDust, STAR_DUST_CONFIG } from "@/lib/game-store";
 import type { ExplorationReward, StreakUpdateResult } from "@/lib/game-store";
-import { StarDustAnimation, StarDustCounter, StarDustAnimationProvider, useStarDustAnimation } from "@/components/star-dust-animation";
+import { StarDustFullscreenAnimation, StarDustCounter } from "@/components/star-dust-animation";
 
 import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords, Crosshair, Settings, Plus, StarIcon } from "lucide-react";
 import { playTabSwitch, playButtonClick } from "@/lib/sounds";
@@ -78,7 +78,6 @@ export default function Page() {
   } | null>(null);
   const [starDustAnimation, setStarDustAnimation] = useState<{ amount: number; isActive: boolean }>({ amount: 0, isActive: false });
   const [prevStarDust, setPrevStarDust] = useState(trainer.starDust ?? 0);
-  const starDustCounterRef = useRef<HTMLDivElement>(null);
   const [musicMuted, setMusicMuted] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("pokerpg-music-muted") === "true";
@@ -543,11 +542,11 @@ export default function Page() {
   // Game
   return (
     <main className="flex flex-col h-dvh max-w-md mx-auto bg-background relative">
-      {/* Star Dust Animation */}
-      <StarDustAnimation
+      {/* Star Dust Fullscreen Animation para captura */}
+      <StarDustFullscreenAnimation
         amount={starDustAnimation.amount}
         isActive={starDustAnimation.isActive}
-        targetRef={starDustCounterRef}
+        type="gain"
         onComplete={() => setStarDustAnimation({ amount: 0, isActive: false })}
       />
       
@@ -674,10 +673,7 @@ export default function Page() {
         </div>
         <div className="flex items-center gap-2">
           {/* Quantidade de poeira estelar */}
-         <div 
-           ref={starDustCounterRef}
-           className="flex items-center gap-1.5 justify-between bg-secondary/50 rounded-full px-2.5 py-1"
-         >
+         <div className="flex items-center gap-1.5 justify-between bg-secondary/50 rounded-full px-2.5 py-1">
             <StarIcon className="w-4 h-4 text-blue-300" />
             <StarDustCounter 
               value={trainer.starDust ?? 0} 

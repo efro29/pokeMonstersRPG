@@ -1,115 +1,96 @@
 "use client";
 
-import React, { useEffect, useState, useRef, createContext, useContext, useCallback } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Star } from "lucide-react";
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// STAR DUST ANIMATION CONTEXT - Sistema centralizado de animações
+// MARIO COIN SOUND - Som classico de moeda do Mario
 // ═══════════════════════════════════════════════════════════════════════════════
 
-interface StarDustAnimationEvent {
-  id: string;
-  amount: number;
-  type: "gain" | "spend";
-  sourcePosition?: { x: number; y: number };
-  targetPosition?: { x: number; y: number };
-}
-
-interface StarDustAnimationContextType {
-  triggerGainAnimation: (amount: number, sourcePosition?: { x: number; y: number }) => void;
-  triggerSpendAnimation: (amount: number, targetPosition?: { x: number; y: number }) => void;
-  setCounterRef: (ref: HTMLElement | null) => void;
-  setPokemonRef: (ref: HTMLElement | null) => void;
-}
-
-const StarDustAnimationContext = createContext<StarDustAnimationContextType | null>(null);
-
-export function useStarDustAnimation() {
-  const context = useContext(StarDustAnimationContext);
-  if (!context) {
-    throw new Error("useStarDustAnimation must be used within StarDustAnimationProvider");
+function playMarioCoinSound() {
+  try {
+    const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    
+    const audioContext = new AudioContextClass();
+    const masterGain = audioContext.createGain();
+    masterGain.connect(audioContext.destination);
+    masterGain.gain.setValueAtTime(0.15, audioContext.currentTime);
+    
+    // Nota 1: B5 (987.77 Hz)
+    const osc1 = audioContext.createOscillator();
+    const gain1 = audioContext.createGain();
+    osc1.connect(gain1);
+    gain1.connect(masterGain);
+    osc1.frequency.setValueAtTime(987.77, audioContext.currentTime);
+    osc1.type = "square";
+    gain1.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    osc1.start(audioContext.currentTime);
+    osc1.stop(audioContext.currentTime + 0.1);
+    
+    // Nota 2: E6 (1318.51 Hz) - a nota alta classica
+    const osc2 = audioContext.createOscillator();
+    const gain2 = audioContext.createGain();
+    osc2.connect(gain2);
+    gain2.connect(masterGain);
+    osc2.frequency.setValueAtTime(1318.51, audioContext.currentTime + 0.1);
+    osc2.type = "square";
+    gain2.gain.setValueAtTime(0, audioContext.currentTime);
+    gain2.gain.setValueAtTime(0.3, audioContext.currentTime + 0.1);
+    gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+    osc2.start(audioContext.currentTime + 0.1);
+    osc2.stop(audioContext.currentTime + 0.4);
+    
+    // Cleanup
+    setTimeout(() => audioContext.close(), 500);
+  } catch {
+    // Audio not supported
   }
-  return context;
+}
+
+// Som para cada estrela chegando (mais curto)
+function playStarHitSound(pitch: number = 1) {
+  try {
+    const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    
+    const audioContext = new AudioContextClass();
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    
+    // Som tipo "pling" de moeda
+    const baseFreq = 1200 * pitch;
+    osc.frequency.setValueAtTime(baseFreq, audioContext.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, audioContext.currentTime + 0.05);
+    osc.type = "sine";
+    
+    gain.gain.setValueAtTime(0.08, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.15);
+    
+    osc.start(audioContext.currentTime);
+    osc.stop(audioContext.currentTime + 0.15);
+    
+    setTimeout(() => audioContext.close(), 200);
+  } catch {
+    // Audio not supported
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// STAR DUST ANIMATION PROVIDER - Provedor global
+// STAR DUST FULLSCREEN ANIMATION - Animacao fullscreen epica
 // ═══════════════════════════════════════════════════════════════════════════════
 
-interface StarDustAnimationProviderProps {
-  children: React.ReactNode;
+interface StarDustFullscreenAnimationProps {
+  amount: number;
+  isActive: boolean;
+  type: "gain" | "spend";
+  onComplete?: () => void;
 }
-
-export function StarDustAnimationProvider({ children }: StarDustAnimationProviderProps) {
-  const [events, setEvents] = useState<StarDustAnimationEvent[]>([]);
-  const counterRef = useRef<HTMLElement | null>(null);
-  const pokemonRef = useRef<HTMLElement | null>(null);
-
-  const setCounterRef = useCallback((ref: HTMLElement | null) => {
-    counterRef.current = ref;
-  }, []);
-
-  const setPokemonRef = useCallback((ref: HTMLElement | null) => {
-    pokemonRef.current = ref;
-  }, []);
-
-  const triggerGainAnimation = useCallback((amount: number, sourcePosition?: { x: number; y: number }) => {
-    const targetPos = counterRef.current?.getBoundingClientRect();
-    const event: StarDustAnimationEvent = {
-      id: `gain-${Date.now()}-${Math.random()}`,
-      amount,
-      type: "gain",
-      sourcePosition: sourcePosition ?? { x: window.innerWidth / 2, y: window.innerHeight / 2 },
-      targetPosition: targetPos 
-        ? { x: targetPos.left + targetPos.width / 2, y: targetPos.top + targetPos.height / 2 }
-        : { x: window.innerWidth - 80, y: 50 },
-    };
-    setEvents(prev => [...prev, event]);
-  }, []);
-
-  const triggerSpendAnimation = useCallback((amount: number, targetPosition?: { x: number; y: number }) => {
-    const sourcePos = counterRef.current?.getBoundingClientRect();
-    const targetPos = pokemonRef.current?.getBoundingClientRect() ?? targetPosition;
-    const event: StarDustAnimationEvent = {
-      id: `spend-${Date.now()}-${Math.random()}`,
-      amount,
-      type: "spend",
-      sourcePosition: sourcePos 
-        ? { x: sourcePos.left + sourcePos.width / 2, y: sourcePos.top + sourcePos.height / 2 }
-        : { x: window.innerWidth - 80, y: 50 },
-      targetPosition: targetPos 
-        ? "x" in targetPos 
-          ? targetPos 
-          : { x: targetPos.left + targetPos.width / 2, y: targetPos.top + targetPos.height / 2 }
-        : { x: window.innerWidth / 2, y: window.innerHeight / 2 },
-    };
-    setEvents(prev => [...prev, event]);
-  }, []);
-
-  const removeEvent = useCallback((id: string) => {
-    setEvents(prev => prev.filter(e => e.id !== id));
-  }, []);
-
-  return (
-    <StarDustAnimationContext.Provider value={{ triggerGainAnimation, triggerSpendAnimation, setCounterRef, setPokemonRef }}>
-      {children}
-      {/* Render all active animations */}
-      <AnimatePresence>
-        {events.map(event => (
-          <StarDustParticleSystem
-            key={event.id}
-            event={event}
-            onComplete={() => removeEvent(event.id)}
-          />
-        ))}
-      </AnimatePresence>
-    </StarDustAnimationContext.Provider>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// STAR DUST PARTICLE SYSTEM - Sistema de partículas épico
-// ═══════════════════════════════════════════════════════════════════════════════
 
 interface StarParticle {
   id: number;
@@ -119,217 +100,209 @@ interface StarParticle {
   endY: number;
   delay: number;
   size: number;
-  rotation: number;
-  trail: boolean;
+  duration: number;
 }
 
-interface StarDustParticleSystemProps {
-  event: StarDustAnimationEvent;
-  onComplete: () => void;
-}
-
-function StarDustParticleSystem({ event, onComplete }: StarDustParticleSystemProps) {
+export function StarDustFullscreenAnimation({ 
+  amount, 
+  isActive, 
+  type,
+  onComplete 
+}: StarDustFullscreenAnimationProps) {
   const [particles, setParticles] = useState<StarParticle[]>([]);
-  const [showExplosion, setShowExplosion] = useState(true);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [showCounter, setShowCounter] = useState(false);
+  const [displayAmount, setDisplayAmount] = useState(0);
+  const particlesArrivedRef = useRef(0);
+  const totalParticlesRef = useRef(0);
+
+  console.log("[v0] StarDustFullscreenAnimation - isActive:", isActive, "amount:", amount, "type:", type);
 
   useEffect(() => {
-    // Calculate particle count based on amount (capped for performance)
-    // Representacao proporcional: mais dust = mais particulas
-    const baseCount = Math.floor(event.amount / 100);
-    const particleCount = Math.min(50, Math.max(8, baseCount)); // 8-50 particulas
+    if (!isActive) {
+      setParticles([]);
+      setShowCounter(false);
+      setDisplayAmount(0);
+      particlesArrivedRef.current = 0;
+      return;
+    }
+
+    console.log("[v0] StarDustFullscreenAnimation useEffect triggered - creating particles");
     
-    const { sourcePosition, targetPosition } = event;
-    if (!sourcePosition || !targetPosition) return;
+    // Som inicial do Mario
+    playMarioCoinSound();
 
-    const isGain = event.type === "gain";
-    const startPos = isGain ? sourcePosition : sourcePosition;
-    const endPos = isGain ? targetPosition : targetPosition;
+    // Criar particulas - maximo 30 para performance, minimo 5
+    const particleCount = Math.min(30, Math.max(5, Math.floor(amount / 200)));
+    totalParticlesRef.current = particleCount;
+    particlesArrivedRef.current = 0;
 
-    // Create particles with varied properties
+    const isGain = type === "gain";
+    
+    // Posicao central do alvo (contador no topo direito para gain, centro para spend)
+    const targetX = isGain ? window.innerWidth - 100 : window.innerWidth / 2;
+    const targetY = isGain ? 60 : window.innerHeight / 2;
+    
+    // Criar particulas com posicoes aleatorias
     const newParticles: StarParticle[] = [];
     for (let i = 0; i < particleCount; i++) {
       const angle = (i / particleCount) * Math.PI * 2;
-      const spreadRadius = 60 + Math.random() * 40;
+      const radius = 150 + Math.random() * 100;
+      
+      // Spawn em circulo ao redor do centro
+      const spawnX = window.innerWidth / 2 + Math.cos(angle) * radius;
+      const spawnY = window.innerHeight / 2 + Math.sin(angle) * radius;
       
       newParticles.push({
         id: i,
-        startX: startPos.x + Math.cos(angle) * spreadRadius * Math.random(),
-        startY: startPos.y + Math.sin(angle) * spreadRadius * Math.random(),
-        endX: endPos.x + (Math.random() - 0.5) * 20,
-        endY: endPos.y + (Math.random() - 0.5) * 20,
-        delay: i * 0.02 + Math.random() * 0.1,
-        size: 12 + Math.random() * 8,
-        rotation: Math.random() * 360,
-        trail: i % 3 === 0, // Every 3rd particle has a trail
+        startX: isGain ? spawnX : targetX + (Math.random() - 0.5) * 40,
+        startY: isGain ? spawnY : targetY + (Math.random() - 0.5) * 40,
+        endX: isGain ? targetX + (Math.random() - 0.5) * 30 : spawnX,
+        endY: isGain ? targetY + (Math.random() - 0.5) * 20 : spawnY,
+        delay: i * 0.08, // Escalonado para efeito cascata
+        size: 20 + Math.random() * 12,
+        duration: 0.6 + Math.random() * 0.3,
       });
     }
 
     setParticles(newParticles);
+    setShowCounter(true);
 
-    // Play sound effect
-    try {
-      // Web Audio API for sound
-      const audioContext = new (window.AudioContext || (window as typeof window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.setValueAtTime(isGain ? 800 : 400, audioContext.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(isGain ? 1200 : 200, audioContext.currentTime + 0.3);
-      
-      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-      
-      oscillator.type = "sine";
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.5);
-    } catch {
-      // Audio not supported, continue silently
-    }
+    // Animar o contador incrementando
+    const amountPerParticle = Math.floor(amount / particleCount);
+    let currentAmount = 0;
+    const counterInterval = setInterval(() => {
+      if (currentAmount < amount) {
+        currentAmount = Math.min(amount, currentAmount + amountPerParticle);
+        setDisplayAmount(currentAmount);
+      }
+    }, 80);
 
-    // Hide explosion after initial burst
-    setTimeout(() => setShowExplosion(false), 400);
-
-    // Complete animation
+    // Finalizar animacao apos todas as estrelas chegarem (max 8 segundos)
+    const totalDuration = Math.min(8000, (particleCount * 80) + 1500);
     const timeout = setTimeout(() => {
-      onComplete();
-    }, 1500);
+      clearInterval(counterInterval);
+      setDisplayAmount(amount);
+      setTimeout(() => {
+        onComplete?.();
+      }, 500);
+    }, totalDuration);
 
-    return () => clearTimeout(timeout);
-  }, [event, onComplete]);
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(counterInterval);
+    };
+  }, [isActive, amount, type, onComplete]);
 
-  const isGain = event.type === "gain";
+  const handleParticleArrived = () => {
+    particlesArrivedRef.current++;
+    // Som de cada estrela chegando com pitch variavel
+    const pitch = 0.8 + (particlesArrivedRef.current / totalParticlesRef.current) * 0.6;
+    playStarHitSound(pitch);
+  };
+
+  if (!isActive || particles.length === 0) return null;
+
+  const isGain = type === "gain";
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[9999]">
-      {/* Initial explosion effect */}
+    <div className="fixed inset-0 z-[9999] pointer-events-none overflow-hidden">
+      {/* Fundo escurecido com blur */}
+      <motion.div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+      />
+
+      {/* Flash inicial */}
+      <motion.div
+        className="absolute inset-0"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 0.4, 0] }}
+        transition={{ duration: 0.4 }}
+        style={{
+          background: isGain
+            ? "radial-gradient(circle at center, rgba(96,165,250,0.4) 0%, transparent 70%)"
+            : "radial-gradient(circle at center, rgba(251,191,36,0.4) 0%, transparent 70%)",
+        }}
+      />
+
+      {/* Contador central grande */}
       <AnimatePresence>
-        {showExplosion && (
+        {showCounter && (
           <motion.div
+            className="absolute left-1/2 top-1/3 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2"
             initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: [0, 2, 2.5], opacity: [0, 0.8, 0] }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="absolute"
-            style={{
-              left: event.sourcePosition?.x ?? 0,
-              top: event.sourcePosition?.y ?? 0,
-              transform: "translate(-50%, -50%)",
-            }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.5, opacity: 0, y: -50 }}
+            transition={{ type: "spring", damping: 15 }}
           >
-            <div 
-              className="w-20 h-20 rounded-full"
-              style={{
-                background: isGain 
-                  ? "radial-gradient(circle, rgba(147,197,253,0.8) 0%, rgba(96,165,250,0.4) 50%, transparent 70%)"
-                  : "radial-gradient(circle, rgba(252,211,77,0.8) 0%, rgba(251,191,36,0.4) 50%, transparent 70%)",
-                boxShadow: isGain
-                  ? "0 0 40px rgba(147,197,253,0.6), 0 0 80px rgba(96,165,250,0.4)"
-                  : "0 0 40px rgba(252,211,77,0.6), 0 0 80px rgba(251,191,36,0.4)",
-              }}
-            />
+            <motion.div
+              className="flex items-center gap-3"
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 0.5, repeat: Infinity }}
+            >
+              <Star 
+                className="w-12 h-12" 
+                style={{ 
+                  color: isGain ? "#60A5FA" : "#FBBF24",
+                  filter: `drop-shadow(0 0 20px ${isGain ? "rgba(96,165,250,0.8)" : "rgba(251,191,36,0.8)"})`,
+                }}
+                fill={isGain ? "#60A5FA" : "#FBBF24"}
+              />
+              <span 
+                className="text-5xl font-bold tabular-nums"
+                style={{ 
+                  color: isGain ? "#93C5FD" : "#FCD34D",
+                  textShadow: `0 0 30px ${isGain ? "rgba(147,197,253,0.8)" : "rgba(252,211,77,0.8)"}`,
+                }}
+              >
+                {isGain ? "+" : "-"}{displayAmount.toLocaleString("pt-BR")}
+              </span>
+            </motion.div>
+            <span className="text-lg text-white/80 font-medium">
+              Star Dust
+            </span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Star particles */}
+      {/* Particulas de estrela */}
       {particles.map((particle) => (
-        <motion.div
+        <StarParticleComponent
           key={particle.id}
-          initial={{
-            x: particle.startX,
-            y: particle.startY,
-            scale: 0,
-            opacity: 0,
-            rotate: particle.rotation,
-          }}
-          animate={{
-            x: particle.endX,
-            y: particle.endY,
-            scale: [0, 1.5, 1.2, 0.8, 0],
-            opacity: [0, 1, 1, 0.8, 0],
-            rotate: particle.rotation + (isGain ? 180 : -180),
-          }}
-          transition={{
-            duration: 0.8 + Math.random() * 0.3,
-            delay: particle.delay,
-            ease: [0.25, 0.1, 0.25, 1],
-          }}
-          className="absolute"
-          style={{ 
-            transform: "translate(-50%, -50%)",
-            filter: `drop-shadow(0 0 ${particle.size / 2}px ${isGain ? "rgba(147,197,253,0.9)" : "rgba(252,211,77,0.9)"})`,
-          }}
-        >
-          {/* Star with glow */}
-          <svg
-            width={particle.size}
-            height={particle.size}
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <defs>
-              <filter id={`glow-${particle.id}`} x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                <feMerge>
-                  <feMergeNode in="coloredBlur"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
-              <linearGradient id={`starGradient-${particle.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor={isGain ? "#93C5FD" : "#FCD34D"} />
-                <stop offset="50%" stopColor={isGain ? "#60A5FA" : "#FBBF24"} />
-                <stop offset="100%" stopColor={isGain ? "#3B82F6" : "#F59E0B"} />
-              </linearGradient>
-            </defs>
-            <path
-              d="M12 2L14.09 8.26L20 9.27L15.5 13.14L16.82 19.02L12 16.24L7.18 19.02L8.5 13.14L4 9.27L9.91 8.26L12 2Z"
-              fill={`url(#starGradient-${particle.id})`}
-              filter={`url(#glow-${particle.id})`}
-            />
-          </svg>
-          
-          {/* Trail effect for some particles */}
-          {particle.trail && (
-            <motion.div
-              className="absolute inset-0"
-              initial={{ opacity: 0.8, scale: 1 }}
-              animate={{ opacity: 0, scale: 0.5 }}
-              transition={{ duration: 0.3, delay: particle.delay }}
-              style={{
-                background: isGain
-                  ? "radial-gradient(circle, rgba(147,197,253,0.6) 0%, transparent 70%)"
-                  : "radial-gradient(circle, rgba(252,211,77,0.6) 0%, transparent 70%)",
-              }}
-            />
-          )}
-        </motion.div>
+          particle={particle}
+          isGain={isGain}
+          onArrived={handleParticleArrived}
+        />
       ))}
 
-      {/* Impact effect at target */}
+      {/* Efeito de impacto no alvo */}
       <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: [0, 1.5, 0], opacity: [0, 0.8, 0] }}
-        transition={{ duration: 0.5, delay: 0.6 }}
         className="absolute"
         style={{
-          left: event.targetPosition?.x ?? 0,
-          top: event.targetPosition?.y ?? 0,
+          left: isGain ? window.innerWidth - 100 : window.innerWidth / 2,
+          top: isGain ? 60 : window.innerHeight / 2,
           transform: "translate(-50%, -50%)",
+        }}
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ 
+          scale: [0, 1.5, 2, 0],
+          opacity: [0, 0.8, 0.6, 0],
+        }}
+        transition={{ 
+          duration: 2,
+          delay: particles.length * 0.08 + 0.3,
+          ease: "easeOut",
         }}
       >
         <div 
-          className="w-16 h-16 rounded-full"
+          className="w-24 h-24 rounded-full"
           style={{
             background: isGain
               ? "radial-gradient(circle, rgba(147,197,253,0.9) 0%, rgba(96,165,250,0.5) 40%, transparent 70%)"
               : "radial-gradient(circle, rgba(252,211,77,0.9) 0%, rgba(251,191,36,0.5) 40%, transparent 70%)",
-            boxShadow: isGain
-              ? "0 0 30px rgba(147,197,253,0.8), 0 0 60px rgba(96,165,250,0.5)"
-              : "0 0 30px rgba(252,211,77,0.8), 0 0 60px rgba(251,191,36,0.5)",
           }}
         />
       </motion.div>
@@ -337,28 +310,104 @@ function StarDustParticleSystem({ event, onComplete }: StarDustParticleSystemPro
   );
 }
 
+// Componente individual de particula
+function StarParticleComponent({ 
+  particle, 
+  isGain,
+  onArrived,
+}: { 
+  particle: StarParticle; 
+  isGain: boolean;
+  onArrived: () => void;
+}) {
+  const hasArrivedRef = useRef(false);
+
+  return (
+    <motion.div
+      className="absolute"
+      style={{ 
+        left: 0,
+        top: 0,
+        width: particle.size,
+        height: particle.size,
+      }}
+      initial={{
+        x: particle.startX - particle.size / 2,
+        y: particle.startY - particle.size / 2,
+        scale: 0,
+        opacity: 0,
+        rotate: 0,
+      }}
+      animate={{
+        x: particle.endX - particle.size / 2,
+        y: particle.endY - particle.size / 2,
+        scale: [0, 1.3, 1, 0.8, 0],
+        opacity: [0, 1, 1, 0.8, 0],
+        rotate: [0, 180, 360],
+      }}
+      transition={{
+        duration: particle.duration,
+        delay: particle.delay,
+        ease: [0.25, 0.1, 0.25, 1],
+      }}
+      onAnimationComplete={() => {
+        if (!hasArrivedRef.current) {
+          hasArrivedRef.current = true;
+          onArrived();
+        }
+      }}
+    >
+      <svg
+        width="100%"
+        height="100%"
+        viewBox="0 0 24 24"
+        style={{
+          filter: `drop-shadow(0 0 ${particle.size / 3}px ${isGain ? "rgba(147,197,253,1)" : "rgba(252,211,77,1)"})`,
+        }}
+      >
+        <defs>
+          <linearGradient id={`starGrad-${particle.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={isGain ? "#BFDBFE" : "#FEF3C7"} />
+            <stop offset="50%" stopColor={isGain ? "#60A5FA" : "#FBBF24"} />
+            <stop offset="100%" stopColor={isGain ? "#3B82F6" : "#F59E0B"} />
+          </linearGradient>
+        </defs>
+        <path
+          d="M12 2L14.09 8.26L20 9.27L15.5 13.14L16.82 19.02L12 16.24L7.18 19.02L8.5 13.14L4 9.27L9.91 8.26L12 2Z"
+          fill={`url(#starGrad-${particle.id})`}
+        />
+      </svg>
+      
+      {/* Trail/rastro */}
+      <motion.div
+        className="absolute inset-0 rounded-full"
+        initial={{ opacity: 0.6, scale: 1 }}
+        animate={{ opacity: 0, scale: 2 }}
+        transition={{ duration: 0.3, delay: particle.delay }}
+        style={{
+          background: isGain
+            ? "radial-gradient(circle, rgba(147,197,253,0.5) 0%, transparent 70%)"
+            : "radial-gradient(circle, rgba(252,211,77,0.5) 0%, transparent 70%)",
+        }}
+      />
+    </motion.div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
-// STAR DUST COUNTER - Contador animado
+// STAR DUST COUNTER - Contador animado simples
 // ═══════════════════════════════════════════════════════════════════════════════
 
 interface StarDustCounterProps {
   value: number;
   previousValue: number;
   className?: string;
-  onRef?: (ref: HTMLSpanElement | null) => void;
 }
 
-export function StarDustCounter({ value, previousValue, className = "", onRef }: StarDustCounterProps) {
+export function StarDustCounter({ value, previousValue, className = "" }: StarDustCounterProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [displayValue, setDisplayValue] = useState(value);
   const [animationType, setAnimationType] = useState<"gain" | "spend" | null>(null);
-  const spanRef = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    if (onRef && spanRef.current) {
-      onRef(spanRef.current);
-    }
-  }, [onRef]);
 
   useEffect(() => {
     const diff = value - previousValue;
@@ -370,9 +419,8 @@ export function StarDustCounter({ value, previousValue, className = "", onRef }:
     setIsAnimating(true);
     setAnimationType(diff > 0 ? "gain" : "spend");
     
-    // Animate counting
-    const absDiff = Math.abs(diff);
-    const steps = Math.min(30, Math.max(10, Math.floor(absDiff / 50)));
+    // Animar contagem
+    const steps = 15;
     const stepValue = diff / steps;
     let currentStep = 0;
     
@@ -386,32 +434,27 @@ export function StarDustCounter({ value, previousValue, className = "", onRef }:
         setTimeout(() => {
           setIsAnimating(false);
           setAnimationType(null);
-        }, 400);
+        }, 300);
       }
-    }, 25);
+    }, 30);
 
     return () => clearInterval(interval);
   }, [value, previousValue]);
 
   return (
     <motion.span
-      ref={spanRef}
       className={className}
       animate={isAnimating ? {
-        scale: animationType === "gain" ? [1, 1.3, 1] : [1, 0.85, 1],
-        textShadow: animationType === "gain"
-          ? [
-              "0 0 0px rgba(147, 197, 253, 0)",
-              "0 0 20px rgba(147, 197, 253, 1)",
-              "0 0 8px rgba(147, 197, 253, 0.6)",
-            ]
-          : [
-              "0 0 0px rgba(252, 211, 77, 0)",
-              "0 0 20px rgba(252, 211, 77, 1)",
-              "0 0 8px rgba(252, 211, 77, 0.6)",
-            ],
+        scale: animationType === "gain" ? [1, 1.2, 1] : [1, 0.9, 1],
       } : {}}
-      transition={{ duration: 0.6, ease: "easeOut" }}
+      transition={{ duration: 0.4 }}
+      style={{
+        textShadow: isAnimating 
+          ? animationType === "gain"
+            ? "0 0 15px rgba(147, 197, 253, 0.8)"
+            : "0 0 15px rgba(252, 211, 77, 0.8)"
+          : "none",
+      }}
     >
       {displayValue.toLocaleString("pt-BR")}
     </motion.span>
@@ -419,132 +462,81 @@ export function StarDustCounter({ value, previousValue, className = "", onRef }:
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// LEGACY ANIMATION COMPONENT - Para compatibilidade
+// LEGACY EXPORTS - Para compatibilidade
 // ═══════════════════════════════════════════════════════════════════════════════
 
-interface StarDustAnimationProps {
+// Mantido para compatibilidade com codigo existente
+export function StarDustAnimation({ 
+  amount, 
+  isActive, 
+  onComplete,
+}: {
   amount: number;
   isActive: boolean;
   onComplete?: () => void;
   targetRef?: React.RefObject<HTMLElement | null>;
-}
-
-export function StarDustAnimation({ 
-  amount, 
-  isActive, 
-  onComplete, 
-  targetRef 
-}: StarDustAnimationProps) {
-  const [event, setEvent] = useState<StarDustAnimationEvent | null>(null);
-
-  useEffect(() => {
-    if (!isActive) {
-      setEvent(null);
-      return;
-    }
-
-    const targetPos = targetRef?.current?.getBoundingClientRect();
-    setEvent({
-      id: `legacy-${Date.now()}`,
-      amount,
-      type: "gain",
-      sourcePosition: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
-      targetPosition: targetPos 
-        ? { x: targetPos.left + targetPos.width / 2, y: targetPos.top + targetPos.height / 2 }
-        : { x: window.innerWidth - 80, y: 50 },
-    });
-  }, [isActive, amount, targetRef]);
-
-  if (!event) return null;
-
+}) {
   return (
-    <StarDustParticleSystem
-      event={event}
-      onComplete={() => {
-        setEvent(null);
-        onComplete?.();
-      }}
+    <StarDustFullscreenAnimation
+      amount={amount}
+      isActive={isActive}
+      type="gain"
+      onComplete={onComplete}
     />
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// POKEMON POWER UP ANIMATION - Efeito de absorção no Pokemon
-// ═══════════════════════════════════════════════════════════════════════════════
-
-interface PokemonPowerUpProps {
-  isActive: boolean;
-  xpGained: number;
+export function StarDustAnimationProvider({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
 }
 
-export function PokemonPowerUp({ isActive, xpGained }: PokemonPowerUpProps) {
+export function useStarDustAnimation() {
+  return {
+    triggerGainAnimation: () => {},
+    triggerSpendAnimation: () => {},
+    setCounterRef: () => {},
+    setPokemonRef: () => {},
+  };
+}
+
+export function PokemonPowerUp({ isActive, xpGained }: { isActive: boolean; xpGained: number }) {
   if (!isActive) return null;
 
   return (
     <motion.div
-      className="absolute inset-0 pointer-events-none"
+      className="absolute inset-0 pointer-events-none z-20"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      {/* Glow effect */}
+      {/* Glow verde */}
       <motion.div
-        className="absolute inset-0 rounded-lg"
-        initial={{ opacity: 0, scale: 0.8 }}
+        className="absolute inset-0"
+        initial={{ opacity: 0 }}
         animate={{ 
-          opacity: [0, 0.8, 0.4, 0],
-          scale: [0.8, 1.1, 1.05, 1],
+          opacity: [0, 0.7, 0],
+          scale: [0.8, 1.2, 1],
         }}
-        transition={{ duration: 1.2, ease: "easeOut" }}
+        transition={{ duration: 1 }}
         style={{
-          background: "radial-gradient(circle, rgba(34,197,94,0.4) 0%, rgba(16,185,129,0.2) 50%, transparent 70%)",
-          boxShadow: "0 0 40px rgba(34,197,94,0.6), inset 0 0 30px rgba(16,185,129,0.3)",
+          background: "radial-gradient(circle, rgba(34,197,94,0.5) 0%, transparent 70%)",
+          boxShadow: "0 0 60px rgba(34,197,94,0.6)",
         }}
       />
       
-      {/* Rising particles */}
-      {Array.from({ length: 8 }).map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-2 h-2 rounded-full bg-emerald-400"
-          initial={{
-            x: "50%",
-            y: "100%",
-            opacity: 0,
-            scale: 0,
-          }}
-          animate={{
-            x: `${30 + Math.random() * 40}%`,
-            y: "-20%",
-            opacity: [0, 1, 0],
-            scale: [0, 1, 0.5],
-          }}
-          transition={{
-            duration: 1 + Math.random() * 0.5,
-            delay: i * 0.1,
-            ease: "easeOut",
-          }}
-          style={{
-            filter: "blur(1px)",
-            boxShadow: "0 0 10px rgba(34,197,94,0.8)",
-          }}
-        />
-      ))}
-      
-      {/* XP text */}
+      {/* Texto XP */}
       <motion.div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-        initial={{ opacity: 0, scale: 0.5, y: 0 }}
+        className="absolute top-0 left-1/2 -translate-x-1/2"
+        initial={{ opacity: 0, y: 20 }}
         animate={{ 
           opacity: [0, 1, 1, 0],
-          scale: [0.5, 1.2, 1, 0.8],
-          y: [0, -30, -40, -50],
+          y: [20, -10, -20, -40],
         }}
-        transition={{ duration: 1.5, ease: "easeOut" }}
+        transition={{ duration: 1.5 }}
       >
         <span 
-          className="text-2xl font-bold text-emerald-400"
-          style={{ textShadow: "0 0 20px rgba(34,197,94,0.8)" }}
+          className="text-xl font-bold text-emerald-400 whitespace-nowrap"
+          style={{ textShadow: "0 0 15px rgba(34,197,94,0.8)" }}
         >
           +{xpGained} XP
         </span>
