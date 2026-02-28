@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useGameStore, battleXpForLevel } from "@/lib/game-store";
 import { TrainerAvatar } from "@/components/trainer-avatar";
+import { BattleCards } from "@/components/battle-cards";
 import {
   getSpriteUrl,
   getBattleSpriteUrl,
@@ -359,7 +360,7 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
         }
       }, 1200);
     }
-  }, [npc, phase, pokemon, addXp, addLog, addPokemonBattleHistory, challenge.npcName, npcTeam, activeNpcIndex]);
+  }, [npc, phase, pokemon, addXp, addPokemonBattleHistory, challenge.npcName, npcTeam, activeNpcIndex]);
 
   // ─── Enemy Turn ────────────────────────────────────────
   const executeEnemyTurn = useCallback(() => {
@@ -450,10 +451,8 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
           });
           const nextAlive = currentTeam.find((p) => p.currentHp > 0);
           if (!nextAlive) {
-            addLog("Todos os seus Pokemon desmaiaram!");
             setPhase("defeated");
           } else {
-            addLog(`${activePoke.name} desmaiou! Troque de Pokemon!`);
             setPhase("switch");
           }
         } else {
@@ -462,12 +461,11 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
         }
       }, 1500);
     }, 1000);
-  }, [npc, pokemon, battle.activePokemonUid, applyOpponentDamage, addLog, activeNpcIndex, addPokemonBattleHistory, challenge.npcName]);
+  }, [npc, pokemon, battle.activePokemonUid, applyOpponentDamage, activeNpcIndex, addPokemonBattleHistory, challenge.npcName]);
 
   // ─── Flee ─────────────────────────────────────────────
   const handleFlee = () => {
     playFlee();
-    addLog("Voce desistiu da batalha!");
     // Record loss
     recordBattleResult(false, 0);
     addTrainerBattleHistory({
@@ -485,7 +483,6 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
   // ─── End Turn ─────────────────────────────────────────
   const handleEndTurn = () => {
     playButtonClick();
-    addLog(`--- Fim do Turno ${turnNumber} ---`);
     executeEnemyTurn();
   };
 
@@ -496,7 +493,6 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
     if (!target || target.currentHp <= 0) return;
     setIsSwitching(true);
     playSendPokemon();
-    addLog(`Trocou para ${target.name}!`);
     setTimeout(() => {
       switchBattlePokemon(uid);
       setIsSwitching(false);
@@ -514,7 +510,6 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
     const def = BAG_ITEMS.find((d) => d.id === itemId);
     if (def && pokemon) {
       useBagItem(itemId, pokemon.uid);
-      addLog(`Usou ${def.name}!`);
       playHeal();
     }
     setShowBagDialog(false);
@@ -823,17 +818,8 @@ export function NpcBattleScene({ challenge, onEnd }: Props) {
         </div>
       </div>
 
-      {/* Battle Log */}
-      <div
-        ref={logRef}
-        className="h-20 overflow-y-auto px-3 py-2 bg-card/80 border-t border-border text-[10px] leading-relaxed"
-      >
-        {battleLog.map((msg, i) => (
-          <p key={i} className={msg.startsWith("---") ? "text-muted-foreground italic" : "text-foreground"}>
-            {msg}
-          </p>
-        ))}
-      </div>
+      {/* Battle Cards System */}
+      <BattleCards />
 
       {/* Controls */}
       <div className="p-2 bg-card border-t border-border">

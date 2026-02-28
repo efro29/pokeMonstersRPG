@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useGameStore } from "@/lib/game-store";
 import { TrainerAvatar } from "@/components/trainer-avatar";
+import { BattleCards } from "@/components/battle-cards";
 import {
   getSpriteUrl,
   getBattleSpriteUrl,
@@ -198,9 +199,6 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
   const [diceRoll, setDiceRoll] = useState<number | null>(null);
   const [hitResult, setHitResult] = useState<HitResult | null>(null);
   const [damageDealt, setDamageDealt] = useState<number | null>(null);
-  const [battleLog, setBattleLog] = useState<string[]>(
-    [`Um ${wildPokemon.name} selvagem Lv.${wildLevel} apareceu!`]
-  );
   const [showPlayerParticles, setShowPlayerParticles] = useState(false);
   const [showWildParticles, setShowWildParticles] = useState(false);
   const [playerAttacking, setPlayerAttacking] = useState(false);
@@ -221,17 +219,6 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
   const [showXpBar, setShowXpBar] = useState(false);
   const [xpBarProgress, setXpBarProgress] = useState(0);
   const [attackEffect, setAttackEffect] = useState<{ type: PokemonType | null; side: "player" | "wild" } | null>(null);
-  const logRef = useRef<HTMLDivElement>(null);
-
-  const addLog = useCallback((msg: string) => {
-    setBattleLog((prev) => [...prev, msg]);
-  }, []);
-
-  useEffect(() => {
-    if (logRef.current) {
-      logRef.current.scrollTop = logRef.current.scrollHeight;
-    }
-  }, [battleLog]);
 
   // Init battle in store for switch/damage tracking
   const initRef = useRef(false);
@@ -272,7 +259,6 @@ export function WildBattleScene({ wildPokemon, wildLevel, onClose, onCapture, on
     // Check if pokemon has PP for the move
     const moveData = pokemon?.moves.find((m) => m.moveId === moveId);
     if (!moveData || moveData.currentPP <= 0) {
-      addLog(`${pokemon?.name} nao tem PP para usar esse golpe!`);
       return;
     }
     
