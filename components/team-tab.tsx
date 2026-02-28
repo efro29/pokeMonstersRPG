@@ -737,18 +737,22 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
   const [pokemonPowerUp, setPokemonPowerUp] = useState<{ isActive: boolean; xp: number }>({ isActive: false, xp: 0 });
   const pokemonImageRef = useRef<HTMLDivElement>(null);
 
-  // Handler quando animacao termina
+  // Handler quando animacao termina - adiciona Star Dust ao store
   const handleAnimationComplete = useCallback(() => {
     const pending = starDustAnim.pendingResult;
+    const amount = starDustAnim.amount;
     setStarDustAnim({ isActive: false, amount: 0, type: "gain" });
     
-    if (pending) {
+    if (pending && amount > 0) {
+      // AGORA adiciona o Star Dust ao store (apos animacao)
+      useGameStore.getState().addStarDust(amount);
+      
       setTransferResult(pending);
       setXpBarAnimProgress(0);
       setTimeout(() => setXpBarAnimProgress(100), 100);
       setTimeout(() => onClose(), 3000);
     }
-  }, [starDustAnim.pendingResult, onClose]);
+  }, [starDustAnim.pendingResult, starDustAnim.amount, onClose]);
 
   return (
     <DialogContent
@@ -1126,9 +1130,10 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
             <Button
               style={{backgroundColor:"#7c3aed"}}
               onClick={() => {
-                const result = transferToProfesor(pokemon.uid);
+                // Transferir Pokemon mas NAO adicionar Star Dust ainda (deferStarDust: true)
+                const result = transferToProfesor(pokemon.uid, { deferStarDust: true });
                 
-                // Trigger fullscreen gain animation com pendingResult
+                // Trigger fullscreen gain animation - Star Dust sera adicionado no onComplete
                 setStarDustAnim({ 
                   isActive: true, 
                   amount: result.starDustGained, 
