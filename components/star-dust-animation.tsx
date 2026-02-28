@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Star } from "lucide-react";
 
@@ -15,7 +15,7 @@ function playMarioCoinSound() {
     const audioContext = new AudioContextClass();
     const masterGain = audioContext.createGain();
     masterGain.connect(audioContext.destination);
-    masterGain.gain.setValueAtTime(0.15, audioContext.currentTime);
+    masterGain.gain.setValueAtTime(0.12, audioContext.currentTime);
     
     // B5 -> E6 - classico do Mario
     const osc1 = audioContext.createOscillator();
@@ -66,11 +66,9 @@ export function StarDustCounter({ value, previousValue, className = "" }: StarDu
       return;
     }
 
-    // Animacao de escala
     setScale(1.4);
     setTimeout(() => setScale(1), 200);
 
-    // Animacao de contagem
     const diff = value - previousValue;
     const steps = Math.min(Math.abs(diff), 20);
     const stepValue = diff / steps;
@@ -94,13 +92,85 @@ export function StarDustCounter({ value, previousValue, className = "" }: StarDu
   return (
     <span 
       className={`${className} transition-transform duration-200`}
-      style={{
-        transform: `scale(${scale})`,
-        display: "inline-block",
-      }}
+      style={{ transform: `scale(${scale})`, display: "inline-block" }}
     >
       {displayValue.toLocaleString("pt-BR")}
     </span>
+  );
+}
+
+// ============================================
+// ESTRELA INDIVIDUAL ANIMADA
+// ============================================
+interface FlyingStarProps {
+  id: number;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  delay: number;
+  duration: number;
+  onArrive: () => void;
+}
+
+function FlyingStar({ startX, startY, endX, endY, delay, duration, onArrive }: FlyingStarProps) {
+  const [state, setState] = useState<"hidden" | "visible" | "flying" | "arrived">("hidden");
+  const onArriveRef = useRef(onArrive);
+  onArriveRef.current = onArrive;
+  
+  useEffect(() => {
+    // Mostrar estrela apos delay
+    const showTimer = setTimeout(() => {
+      setState("visible");
+      // Iniciar voo no proximo frame para a transicao funcionar
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setState("flying");
+        });
+      });
+    }, delay);
+    
+    // Marcar chegada apos delay + duration
+    const arriveTimer = setTimeout(() => {
+      setState("arrived");
+      onArriveRef.current();
+    }, delay + duration);
+    
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(arriveTimer);
+    };
+  }, [delay, duration]);
+  
+  if (state === "hidden") return null;
+  
+  const translateX = endX - startX;
+  const translateY = endY - startY;
+  
+  const isFlying = state === "flying" || state === "arrived";
+  
+  return (
+    <div
+      className="absolute pointer-events-none"
+      style={{
+        left: startX,
+        top: startY,
+        transform: isFlying 
+          ? `translate(${translateX}px, ${translateY}px) scale(${state === "arrived" ? 0 : 0.8})`
+          : "translate(0, 0) scale(1.2)",
+        transition: `transform ${duration}ms ease-in`,
+        opacity: state === "arrived" ? 0 : 1,
+        zIndex: 100000,
+      }}
+    >
+      <Star 
+        className="w-5 h-5 text-yellow-400" 
+        fill="currentColor"
+        style={{
+          filter: "drop-shadow(0 0 6px rgba(250,204,21,1)) drop-shadow(0 0 3px rgba(255,255,255,0.9))",
+        }}
+      />
+    </div>
   );
 }
 
@@ -121,47 +191,45 @@ export function StarDustFullscreenAnimation({
   onComplete 
 }: StarDustFullscreenAnimationProps) {
   const [phase, setPhase] = useState<"idle" | "showNumber" | "flyStars" | "done">("idle");
-  const [starElements, setStarElements] = useState<React.ReactNode[]>([]);
+  const [stars, setStars] = useState<Array<{ id: number; startX: number; startY: number; endX: number; endY: number; delay: number; duration: number }>>([]);
   const [displayedAmount, setDisplayedAmount] = useState(0);
-  const [mounted, setMounted] = useState(false);
   const [counterPulse, setCounterPulse] = useState(false);
+  const [mounted, setMounted] = useState(false);
   
+  const arrivedCountRef = useRef(0);
+  const totalStarsRef = useRef(0);
   const onCompleteRef = useRef(onComplete);
+  const amountPerStarRef = useRef(0);
+  
   onCompleteRef.current = onComplete;
 
+  // Mount check
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
 
-  // Reset quando desativado
+  // Reset
   useEffect(() => {
     if (!isActive) {
       setPhase("idle");
-      setStarElements([]);
+      setStars([]);
       setDisplayedAmount(0);
+      arrivedCountRef.current = 0;
     }
   }, [isActive]);
 
   // Iniciar animacao
   useEffect(() => {
-    console.log("[v0] StarDust useEffect - isActive:", isActive, "mounted:", mounted, "amount:", amount);
-    if (!isActive || amount <= 0) {
-      console.log("[v0] StarDust useEffect early return");
-      return;
-    }
+    if (!isActive || !mounted || amount <= 0) return;
 
-    console.log("[v0] StarDust starting animation - setting phase to showNumber");
     // Fase 1: Mostrar numero grande
     setPhase("showNumber");
     setDisplayedAmount(0);
-    setMounted(true); // Garantir que mounted seja true
+    arrivedCountRef.current = 0;
 
-    // Apos 1.5s, iniciar estrelas
+    // Apos 1.5s, criar estrelas
     const timer = setTimeout(() => {
-      setPhase("flyStars");
-
-      // Pegar posicao do contador no header
       const targetEl = document.getElementById("stardust-counter-target");
       const targetRect = targetEl?.getBoundingClientRect();
       const targetX = targetRect ? targetRect.left + targetRect.width / 2 : window.innerWidth - 60;
@@ -170,166 +238,135 @@ export function StarDustFullscreenAnimation({
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
 
-      // Numero de estrelas: 1 por 50 stardust, min 8, max 50
-      const numStars = Math.min(50, Math.max(8, Math.ceil(amount / 50)));
-      const starsPerBatch = Math.ceil(amount / numStars);
+      // Numero de estrelas: 1 por 25 stardust, min 10, max 60
+      const numStars = Math.min(60, Math.max(10, Math.ceil(amount / 25)));
+      totalStarsRef.current = numStars;
+      amountPerStarRef.current = Math.ceil(amount / numStars);
 
-      let arrivedCount = 0;
-      const elements: React.ReactNode[] = [];
-
-      // Criar estrelas em sequencia (60ms entre cada)
+      const newStars: typeof stars = [];
+      
       for (let i = 0; i < numStars; i++) {
-        const delay = i * 60;
-        const duration = 400 + Math.random() * 100;
+        const delay = i * 50; // 50ms entre cada estrela
+        const duration = 350 + Math.random() * 100;
         
-        // Posicao inicial com variacao
-        const startX = centerX + (Math.random() - 0.5) * 80;
-        const startY = centerY + (Math.random() - 0.5) * 80;
+        // Posicao inicial espalhada do centro
+        const angle = (i / numStars) * Math.PI * 2 + Math.random() * 0.5;
+        const radius = 30 + Math.random() * 50;
+        const startX = centerX + Math.cos(angle) * radius;
+        const startY = centerY + Math.sin(angle) * radius;
         
-        // Posicao final com pequena variacao
-        const endX = targetX + (Math.random() - 0.5) * 20;
+        // Posicao final no contador com pequena variacao
+        const endX = targetX + (Math.random() - 0.5) * 15;
         const endY = targetY + (Math.random() - 0.5) * 10;
 
-        // Criar elemento de estrela com animacao CSS
-        const starElement = (
-          <div
-            key={i}
-            className="absolute"
-            style={{
-              left: startX,
-              top: startY,
-              transform: "translate(-50%, -50%)",
-              animation: `flyToTarget${i} ${duration}ms ease-out ${delay}ms forwards`,
-              opacity: 0,
-            }}
-          >
-            <style>{`
-              @keyframes flyToTarget${i} {
-                0% {
-                  transform: translate(-50%, -50%) scale(0);
-                  opacity: 0;
-                }
-                10% {
-                  transform: translate(-50%, -50%) scale(1.5);
-                  opacity: 1;
-                }
-                100% {
-                  left: ${endX}px;
-                  top: ${endY}px;
-                  transform: translate(-50%, -50%) scale(0.5);
-                  opacity: 0;
-                }
-              }
-            `}</style>
-            <Star 
-              className="w-6 h-6 text-yellow-400" 
-              fill="currentColor"
-              style={{
-                filter: "drop-shadow(0 0 8px rgba(250,204,21,1)) drop-shadow(0 0 4px rgba(255,255,255,0.8))",
-              }}
-            />
-          </div>
-        );
-
-        elements.push(starElement);
-
-        // Quando estrela chega: tocar som, atualizar contador, pulsar
-        setTimeout(() => {
-          playMarioCoinSound();
-          arrivedCount++;
-          setDisplayedAmount(Math.min(amount, arrivedCount * starsPerBatch));
-          setCounterPulse(true);
-          setTimeout(() => setCounterPulse(false), 100);
-          
-          // Ultima estrela = terminar animacao
-          if (arrivedCount >= numStars) {
-            setDisplayedAmount(amount);
-            setTimeout(() => {
-              setPhase("done");
-              onCompleteRef.current();
-            }, 300);
-          }
-        }, delay + duration);
+        newStars.push({ id: i, startX, startY, endX, endY, delay, duration });
       }
 
-      setStarElements(elements);
+      setStars(newStars);
+      setPhase("flyStars");
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [isActive, amount]);
+  }, [isActive, mounted, amount]);
 
-  console.log("[v0] StarDust render - isActive:", isActive, "phase:", phase, "amount:", amount);
+  // Callback quando estrela chega
+  const handleStarArrive = () => {
+    arrivedCountRef.current++;
+    
+    // Tocar som
+    playMarioCoinSound();
+    
+    // Atualizar contador
+    const newAmount = Math.min(amount, arrivedCountRef.current * amountPerStarRef.current);
+    setDisplayedAmount(newAmount);
+    
+    // Pulsar
+    setCounterPulse(true);
+    setTimeout(() => setCounterPulse(false), 80);
+    
+    // Verificar se terminou
+    if (arrivedCountRef.current >= totalStarsRef.current) {
+      setDisplayedAmount(amount);
+      setTimeout(() => {
+        setPhase("done");
+        onCompleteRef.current();
+      }, 400);
+    }
+  };
 
-  if (!isActive || phase === "idle" || phase === "done") {
-    console.log("[v0] StarDust returning null - isActive:", isActive, "phase:", phase);
+  // Nao renderizar se nao ativo ou ja terminou
+  if (!mounted || !isActive || phase === "idle" || phase === "done") {
     return null;
   }
 
-  console.log("[v0] StarDust rendering content for phase:", phase);
-
   const content = (
-    <div className="fixed inset-0 z-[99999] pointer-events-none overflow-hidden">
+    <div 
+      className="fixed inset-0 pointer-events-none overflow-hidden"
+      style={{ zIndex: 99999 }}
+    >
       {/* Overlay escuro */}
       <div 
-        className="absolute inset-0 transition-opacity duration-500"
-        style={{ 
-          backgroundColor: phase === "showNumber" ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.6)",
-        }}
+        className="absolute inset-0 transition-opacity duration-300"
+        style={{ backgroundColor: "rgba(0,0,0,0.75)" }}
       />
 
       {/* Numero grande no centro (fase 1) */}
       {phase === "showNumber" && (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <div 
-            className="text-7xl font-bold animate-in zoom-in-50 duration-300"
+            className="text-6xl font-bold"
             style={{ 
               color: type === "gain" ? "#fde047" : "#f87171",
-              textShadow: `0 0 60px ${type === "gain" ? "rgba(253,224,71,0.9)" : "rgba(248,113,113,0.9)"}`,
+              textShadow: `0 0 40px ${type === "gain" ? "rgba(253,224,71,0.9)" : "rgba(248,113,113,0.9)"}`,
+              animation: "zoomIn 0.4s ease-out",
             }}
           >
             {type === "gain" ? "+" : "-"}{amount.toLocaleString("pt-BR")}
           </div>
-          <div className="flex items-center gap-3 mt-4 text-2xl text-blue-300 animate-in fade-in duration-500 delay-300">
-            <Star className="w-8 h-8" fill="currentColor" />
+          <div className="flex items-center gap-2 mt-3 text-xl text-blue-300">
+            <Star className="w-6 h-6" fill="currentColor" />
             <span>Star Dust</span>
           </div>
         </div>
       )}
 
-      {/* Estrelas voando (fase 2) */}
+      {/* Estrelas voando e contador (fase 2) */}
       {phase === "flyStars" && (
         <>
           {/* Contador progressivo no centro */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center">
             <div 
-              className="text-5xl font-bold tabular-nums transition-transform duration-100"
+              className="text-5xl font-bold tabular-nums"
               style={{ 
                 color: "#fde047",
-                textShadow: "0 0 30px rgba(253,224,71,0.9)",
-                transform: counterPulse ? "scale(1.2)" : "scale(1)",
+                textShadow: "0 0 25px rgba(253,224,71,0.9)",
+                transform: counterPulse ? "scale(1.15)" : "scale(1)",
+                transition: "transform 0.08s ease-out",
               }}
             >
               {displayedAmount.toLocaleString("pt-BR")}
             </div>
           </div>
 
-          {/* Estrelas animadas */}
-          {starElements}
-
-          {/* Efeito de pulso no alvo */}
-          {displayedAmount > 0 && (
-            <div
-              className="absolute w-16 h-16 rounded-full"
-              style={{
-                left: document.getElementById("stardust-counter-target")?.getBoundingClientRect().left ?? 0,
-                top: document.getElementById("stardust-counter-target")?.getBoundingClientRect().top ?? 0,
-                background: "radial-gradient(circle, rgba(253,224,71,0.4) 0%, transparent 70%)",
-                animation: counterPulse ? "pulse 0.2s ease-out" : "none",
-              }}
+          {/* Estrelas */}
+          {stars.map((star) => (
+            <FlyingStar
+              key={star.id}
+              {...star}
+              onArrive={handleStarArrive}
             />
-          )}
+          ))}
         </>
       )}
+
+      {/* Keyframes CSS */}
+      <style>{`
+        @keyframes zoomIn {
+          0% { transform: scale(0); opacity: 0; }
+          60% { transform: scale(1.1); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 
