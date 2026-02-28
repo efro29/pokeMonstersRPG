@@ -737,18 +737,12 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
   const [pokemonPowerUp, setPokemonPowerUp] = useState<{ isActive: boolean; xp: number }>({ isActive: false, xp: 0 });
   const pokemonImageRef = useRef<HTMLDivElement>(null);
 
-  // Handler a cada estrela que chega - adiciona Star Dust ao store INCREMENTALMENTE
-  const handleStarArrive = useCallback((amountPerStar: number) => {
-    useGameStore.getState().addStarDust(amountPerStar);
-  }, []);
-
-  // Handler quando animacao termina - mostra resultado
+  // Handler quando animacao termina
   const handleAnimationComplete = useCallback(() => {
     const pending = starDustAnim.pendingResult;
     setStarDustAnim({ isActive: false, amount: 0, type: "gain" });
     
     if (pending) {
-      // Star Dust ja foi adicionado a cada estrela via onStarArrive
       setTransferResult(pending);
       setXpBarAnimProgress(0);
       setTimeout(() => setXpBarAnimProgress(100), 100);
@@ -766,7 +760,6 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
         amount={starDustAnim.amount}
         isActive={starDustAnim.isActive}
         type={starDustAnim.type}
-        onStarArrive={handleStarArrive}
         onComplete={handleAnimationComplete}
       />
 
@@ -1133,10 +1126,9 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
             <Button
               style={{backgroundColor:"#7c3aed"}}
               onClick={() => {
-                // Transferir Pokemon mas NAO adicionar Star Dust ainda (deferStarDust: true)
-                const result = transferToProfesor(pokemon.uid, { deferStarDust: true });
+                const result = transferToProfesor(pokemon.uid);
                 
-                // Trigger fullscreen gain animation - Star Dust sera adicionado no onComplete
+                // Trigger fullscreen gain animation com pendingResult
                 setStarDustAnim({ 
                   isActive: true, 
                   amount: result.starDustGained, 

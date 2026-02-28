@@ -853,7 +853,7 @@ interface GameState {
   addToTeam: (species: PokemonSpecies) => void;
   addToTeamWithLevel: (species: PokemonSpecies, level: number) => string;
   removeFromTeam: (uid: string) => void;
-  transferToProfesor: (uid: string, options?: { deferStarDust?: boolean }) => { starDustGained: number; xpGained: number; recipientName: string | null };
+  transferToProfesor: (uid: string) => { starDustGained: number; xpGained: number; recipientName: string | null };
   transferAllDuplicates: (speciesId: number, keepUid: string) => { count: number; totalStarDust: number; totalXp: number };
   reorderTeam: (fromIndex: number, toIndex: number) => void;
   // Reserves management
@@ -1218,7 +1218,7 @@ export const useGameStore = create<GameState>()(
         set({ team: get().team.filter((p) => p.uid !== uid) });
       },
 
-      transferToProfesor: (uid, options) => {
+      transferToProfesor: (uid) => {
         const { team, reserves } = get();
         const pokemon = team.find((p) => p.uid === uid) || reserves.find((p) => p.uid === uid);
         if (!pokemon) return { starDustGained: 0, xpGained: 0, recipientName: null };
@@ -1237,10 +1237,8 @@ export const useGameStore = create<GameState>()(
           reserves: reserves.filter((p) => p.uid !== uid),
         });
 
-        // Add Star Dust unless deferred (for animation)
-        if (!options?.deferStarDust) {
-          get().addStarDust(starDustGained);
-        }
+        // Always add Star Dust
+        get().addStarDust(starDustGained);
 
         // Give XP to the recipient if found
         if (recipient) {
