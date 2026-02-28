@@ -11,6 +11,7 @@ import { TeamTab } from "@/components/team-tab";
 import { Input } from "@/components/ui/input";
 import { BagTab } from "@/components/bag-tab";
 import { BattleScene } from "@/components/battle-scene";
+import { BattleSceneDuel } from "@/components/battle-scene-duel";
 import {
   Dialog,
   DialogContent,
@@ -536,7 +537,7 @@ export default function Page() {
       </main>
     );
   }
-
+  
  
 
   // Game

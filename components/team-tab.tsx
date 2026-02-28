@@ -581,6 +581,7 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
               <Swords className="w-3.5 h-3.5" />
               Batalhar
             </Button>
+
           </div>
           <div className="grid grid-cols-3 gap-2">
             {slots.map((pokemon, i) => renderTeamSlot(pokemon, i))}

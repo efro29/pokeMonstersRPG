@@ -110,7 +110,7 @@ export interface TrainerProfile {
 // ---- Star Dust Economy System ----
 export const STAR_DUST_CONFIG = {
   // Conversão: 1 XP = 1,100 Star Dust
-  XP_TO_STARDUST_RATIO: 1100,
+  XP_TO_STARDUST_RATIO: 1,
   
   // Recompensas de captura (base)
   CAPTURE_REWARDS: {
