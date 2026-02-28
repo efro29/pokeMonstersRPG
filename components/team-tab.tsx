@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useGameStore } from "@/lib/game-store";
+import { useGameStore, STAR_DUST_CONFIG, convertStarDustToXP } from "@/lib/game-store";
 import { useModeStore } from "@/lib/mode-store";
 import {
   getSpriteUrl,
@@ -683,8 +683,8 @@ function PokemonDetailContent({
   learnMove: (uid: string, moveId: string) => void;
   forgetMove: (uid: string, moveId: string) => void;
   removeFromTeam: (uid: string) => void;
-  transferToProfesor: (uid: string) => { xpGained: number; recipientName: string | null };
-  transferAllDuplicates: (speciesId: number, keepUid: string) => { count: number; totalXp: number };
+  transferToProfesor: (uid: string) => { starDustGained: number; xpGained: number; recipientName: string | null };
+  transferAllDuplicates: (speciesId: number, keepUid: string) => { count: number; totalStarDust: number; totalXp: number };
   allTeam: ReturnType<typeof useGameStore.getState>["team"];
   allReserves: ReturnType<typeof useGameStore.getState>["reserves"];
   onClose: () => void;
@@ -716,8 +716,9 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
 
   const [transferResult, setTransferResult] = useState<{
     pokemonName: string;
-    recipientName: string;
+    recipientName?: string;
     xpGained: number;
+    starDustGained: number;
     count?: number;
   } | null>(null);
   const [xpBarAnimProgress, setXpBarAnimProgress] = useState(0);
@@ -851,6 +852,7 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                         pokemonName: pokemon.name,
                         recipientName: pokemon.name,
                         xpGained: result.totalXp,
+                        starDustGained: result.totalStarDust,
                         count: result.count,
                       });
                       setXpBarAnimProgress(0);
@@ -1051,31 +1053,51 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
             <div style={{display:"flex",justifyContent:"space-between",gap:4}}>
               
             <Button
-                                  style={{backgroundColor:"blue"}}
-              onClick={() => alert("Função para trocar 10% startDust por XP")}
-        
-            >
-              <Star className="w-4 h-4 mr-2" />
-              Receber
-            </Button>
-            <Button
-                     style={{backgroundColor:"purple"}}
+              style={{backgroundColor:"#2563eb"}}
               onClick={() => {
-                const result = transferToProfesor(pokemon.uid);
-                if (result.xpGained > 0 && result.recipientName) {
+                // Converter Star Dust em XP para este Pokemon
+                const trainerStarDust = useGameStore.getState().trainer.starDust ?? 0;
+                if (trainerStarDust < STAR_DUST_CONFIG.XP_TO_STARDUST_RATIO) {
+                  return; // Nao tem Star Dust suficiente
+                }
+                // Converter 10% do Star Dust disponivel (minimo 1,100)
+                const amountToConvert = Math.max(
+                  STAR_DUST_CONFIG.XP_TO_STARDUST_RATIO,
+                  Math.floor(trainerStarDust * 0.1)
+                );
+                const result = useGameStore.getState().convertStarDustToXPForPokemon(pokemon.uid, amountToConvert);
+                if (result) {
                   setTransferResult({
                     pokemonName: pokemon.name,
-                    recipientName: result.recipientName,
                     xpGained: result.xpGained,
+                    starDustGained: -result.starDustUsed,
                   });
                   setXpBarAnimProgress(0);
                   setTimeout(() => setXpBarAnimProgress(100), 100);
-                  setTimeout(() => onClose(), 3000);
-                } else {
-                  onClose();
+                  setTimeout(() => setTransferResult(null), 2500);
                 }
               }}
-             className="w-[50%]"
+              disabled={(useGameStore.getState().trainer.starDust ?? 0) < STAR_DUST_CONFIG.XP_TO_STARDUST_RATIO}
+              className="flex-1"
+            >
+              <Star className="w-4 h-4 mr-2" />
+              Converter
+            </Button>
+            <Button
+              style={{backgroundColor:"#7c3aed"}}
+              onClick={() => {
+                const result = transferToProfesor(pokemon.uid);
+                setTransferResult({
+                  pokemonName: pokemon.name,
+                  recipientName: result.recipientName ?? undefined,
+                  xpGained: result.xpGained,
+                  starDustGained: result.starDustGained,
+                });
+                setXpBarAnimProgress(0);
+                setTimeout(() => setXpBarAnimProgress(100), 100);
+                setTimeout(() => onClose(), 3000);
+              }}
+              className="flex-1"
             >
               <Send className="w-4 h-4 mr-2" />
               Transferir
@@ -1396,7 +1418,7 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
         </TabsContent>
       </Tabs>
 
-      {/* Transfer XP Animation Overlay */}
+      {/* Transfer Result Animation Overlay */}
       <AnimatePresence>
         {transferResult && (
           <motion.div
@@ -1417,7 +1439,11 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: "spring", damping: 10, delay: 0.2 }}
               >
-                <Send className="w-10 h-10 text-amber-400" />
+                {transferResult.starDustGained < 0 ? (
+                  <Star className="w-10 h-10 text-blue-400" />
+                ) : (
+                  <Send className="w-10 h-10 text-amber-400" />
+                )}
               </motion.div>
               <motion.p
                 className="text-sm text-center text-foreground font-bold"
@@ -1425,9 +1451,11 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
               >
-                {transferResult.count
-                  ? `${transferResult.count} Pokemon transferido${transferResult.count > 1 ? 's' : ''}!`
-                  : `${transferResult.pokemonName} transferido!`}
+                {transferResult.starDustGained < 0
+                  ? `Star Dust convertido em XP!`
+                  : transferResult.count
+                    ? `${transferResult.count} Pokemon transferido${transferResult.count > 1 ? 's' : ''}!`
+                    : `${transferResult.pokemonName} transferido!`}
               </motion.p>
               <motion.div
                 className="w-full bg-card rounded-lg border border-border p-3"
@@ -1435,24 +1463,49 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-foreground">{transferResult.recipientName}</span>
-                  <motion.span
-                    className="text-sm font-bold text-emerald-400"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: [0, 1.4, 1] }}
-                    transition={{ delay: 0.8, duration: 0.5 }}
-                  >
-                    +{transferResult.xpGained} XP
-                  </motion.span>
-                </div>
-                <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full rounded-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400"
-                    initial={{ width: "0%" }}
-                    animate={{ width: `${xpBarAnimProgress}%` }}
-                    transition={{ duration: 1.5, ease: "easeOut", delay: 0.8 }}
-                  />
+                <div className="flex flex-col gap-2">
+                  {/* Star Dust display */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-300 flex items-center gap-1">
+                      <Star className="w-3 h-3" />
+                      Star Dust
+                    </span>
+                    <motion.span
+                      className={`text-sm font-bold ${transferResult.starDustGained >= 0 ? 'text-blue-400' : 'text-red-400'}`}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: [0, 1.4, 1] }}
+                      transition={{ delay: 0.8, duration: 0.5 }}
+                    >
+                      {transferResult.starDustGained >= 0 ? '+' : ''}{transferResult.starDustGained.toLocaleString('pt-BR')}
+                    </motion.span>
+                  </div>
+                  
+                  {/* XP display (if has recipient or converting) */}
+                  {(transferResult.xpGained > 0 || transferResult.recipientName) && (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-foreground">
+                          {transferResult.recipientName || transferResult.pokemonName}
+                        </span>
+                        <motion.span
+                          className="text-sm font-bold text-emerald-400"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: [0, 1.4, 1] }}
+                          transition={{ delay: 1, duration: 0.5 }}
+                        >
+                          +{transferResult.xpGained} XP
+                        </motion.span>
+                      </div>
+                      <div className="w-full h-3 bg-gray-700 rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full rounded-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400"
+                          initial={{ width: "0%" }}
+                          animate={{ width: `${xpBarAnimProgress}%` }}
+                          transition={{ duration: 1.5, ease: "easeOut", delay: 0.8 }}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </motion.div>
               <motion.div
