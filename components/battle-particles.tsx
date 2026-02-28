@@ -14,6 +14,7 @@ interface Particle {
   distance: number;
 }
 
+
 function generateParticles(count: number): Particle[] {
   return Array.from({ length: count }, (_, i) => ({
     id: i,
@@ -51,7 +52,7 @@ const PARTICLE_CONFIG: Record<
     count: 18,
     glow: "rgba(168, 85, 247, 0.6)",
   },
-    changed: {
+  changed: {
     colors: ["#f7ec55", "#e4ea33", "#3ad8ed", "#fcc084", "#dbf979"],
     count: 18,
     glow: "rgba(247, 215, 85, 0.6)",
@@ -173,7 +174,7 @@ export function BattleParticles({
               }}
             />
           ))}
-     {effectType === "heal" &&
+        {effectType === "heal" &&
           Array.from({ length: 8 }, (_, i) => (
             <motion.div
               key={`sparkle-${i}`}
