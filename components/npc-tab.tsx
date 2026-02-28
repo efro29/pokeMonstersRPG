@@ -55,7 +55,6 @@ export function NpcTab({ onStartBattleWithPokemon }: NpcTabProps) {
 
   const selectedNpc = npcs.find((n) => n.id === selectedNpcId);
 
-
   const handleCreateNpc = () => {
     if (!newNpcName.trim()) return;
     playGift();
