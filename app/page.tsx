@@ -29,7 +29,7 @@ import { TrainerAvatar } from "@/components/trainer-avatar";
 import { getPokemon, POKEMON } from "@/lib/pokemon-data";
 import { calculateExplorationXp, calculateCaptureStarDust, STAR_DUST_CONFIG } from "@/lib/game-store";
 import type { ExplorationReward, StreakUpdateResult } from "@/lib/game-store";
-import { StarDustAnimation, StarDustCounter } from "@/components/star-dust-animation";
+import { StarDustAnimation, StarDustCounter, StarDustAnimationProvider, useStarDustAnimation } from "@/components/star-dust-animation";
 
 import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords, Crosshair, Settings, Plus, StarIcon } from "lucide-react";
 import { playTabSwitch, playButtonClick } from "@/lib/sounds";
@@ -127,6 +127,13 @@ export default function Page() {
       }
     }
   }, [activeProfileId, mode]);
+
+  // Keep prevStarDust in sync after animations complete
+  useEffect(() => {
+    if (!starDustAnimation.isActive) {
+      setPrevStarDust(trainer.starDust ?? 0);
+    }
+  }, [trainer.starDust, starDustAnimation.isActive]);
 
   // In master mode, auto-set trainer name so ProfileTab doesn't force edit dialog
   useEffect(() => {
