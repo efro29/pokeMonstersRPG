@@ -610,9 +610,7 @@ export default function Page() {
               </div>
               <div>
                 <p className="text-xs font-bold text-orange-400">{streakToast.streak === 1 ? "Ofensiva iniciada!" : `${streakToast.streak} dias seguidos!`}</p>
-                <p className="text-[10px] text-muted-foreground">
-                  Proximo lendario em {30 - (streakToast.streak % 30)} dia{30 - (streakToast.streak % 30) !== 1 ? "s" : ""}
-                </p>
+    
               </div>
             </div>
           )}
@@ -795,7 +793,7 @@ export default function Page() {
             { id: "shop", label: "Loja", icon: ShopIcon },
             { id: "team", label: "Equipe", icon: TeamIcon },
             { id: "profile", label: "Perfil", icon: ProfileIcon },
-            { id: "duels", label: "Duelos", icon: Swords },
+            { id: "duels", label: "Duelos", icon: MovesIcon },
             { id: "moves", label: "Golpes", icon: MovesIcon },
             { id: "pokedex", label: "Pokedex", icon: PokedexIcon },
             { id: "settings", label: "Config", icon: SettingsIcon },

@@ -670,17 +670,7 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
         </div>
 
         {/* Direita: Passar Turno */}
-        <div className="flex items-center gap-1">
-          <Button
-            size="sm"
-            onClick={handleEndPlayerTurn}
-            disabled={!isPlayerTurn}
-            className="h-7 px-2 text-[9px] font-bold bg-amber-500/90 hover:bg-amber-500 text-black gap-0.5"
-          >
-            <SkipForward className="w-3 h-3" />
-            Passar
-          </Button>
-        </div>
+    
       </nav>
 
       {/* AREA DO RIVAL */}
@@ -792,13 +782,53 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
               }}
             />
 
-            {/* Pokemon Rival */}
+            {/* Treinador Rival */}
             {activeRival && (
               <motion.div
                 className="absolute"
                 style={{
-                  top: "15%",
+                  top: "30%",
                   right: "25%",
+                  transform: "translateX(60%)",
+                }}
+              >
+                {showRivalParticles && (
+                  <BattleParticles effectType="damage" isAnimating={true} />
+                )}
+                {/* Flash overlay on hit */}
+                <AnimatePresence>
+                  {rivalShake && (
+                    <motion.div
+                      className="absolute inset-0 bg-white rounded-full z-10"
+                      initial={{ opacity: 0.8 }}
+                      animate={{ opacity: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  )}
+                </AnimatePresence>
+                <motion.img
+                src={npc.imagem}
+                  alt={activeRival.nome}
+                  style={{
+                    imageRendering: "pixelated",
+                    width: 90,
+                    height: 90,
+                  }}
+      
+                  transition={{ duration: 0.3 }}
+                  crossOrigin="anonymous"
+                />
+                
+              </motion.div>
+            )}
+            {/* Pokemon Rival */}
+             {activeRival && (
+              <motion.div
+                className="absolute"
+                style={{
+                  top: "60%",
+                  right: "40%",
                   transform: "translateX(60%)",
                 }}
               >
@@ -822,8 +852,8 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
                   alt={activeRival.nome}
                   style={{
                     imageRendering: "pixelated",
-                    width: 64,
-                    height: 64,
+                    width: 35,
+                    height: 35,
                   }}
                   animate={
                     rivalShake
@@ -837,6 +867,7 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
                   transition={{ duration: 0.3 }}
                   crossOrigin="anonymous"
                 />
+                
               </motion.div>
             )}
 
@@ -859,8 +890,8 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
             <div
               className="absolute"
               style={{
-                bottom: "10%",
-                left: "15%",
+                bottom: "5%",
+                left: "7%",
               }}
             >
               {showParticles && <BattleParticles effectType="damage" isAnimating={true} />}
@@ -1300,13 +1331,57 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
               className="flex flex-col items-center justify-center gap-4 mt-auto py-8"
             >
               <div className="flex items-center gap-3">
+
+       
+
+                
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                 >
                   <RefreshCw className="w-6 h-6 text-red-400" />
                 </motion.div>
-                <span className="text-red-400 font-bold">Turno do {npc.nome}...</span>
+                <span style={{zIndex:29}} className="bg-black text-red-400 font-bold">Turno do {npc.nome}...</span>
+                
+       
+              <motion.div
+          
+                 style={{position:"absolute",
+                    zIndex:0,
+                 
+           
+                }}
+          
+              >
+                {showRivalParticles && (
+                  <BattleParticles effectType="damage" isAnimating={true} />
+                )}
+                {/* Flash overlay on hit */}
+                <AnimatePresence>
+                  {rivalShake && (
+                    <motion.div
+                      className="absolute inset-0 bg-white rounded-full z-10"
+                      initial={{ opacity: 0.8 }}
+                      animate={{ opacity: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  )}
+                </AnimatePresence>
+                <motion.img
+                src={npc.imagem}
+                  alt={activeRival.nome}
+                  style={{
+                    imageRendering: "pixelated",
+                    width: 300,
+                    height: 150,
+                  }}
+      
+                  transition={{ duration: 0.3 }}
+                  crossOrigin="anonymous"
+                />
+                
+              </motion.div>
               </div>
             </motion.div>
           )}
