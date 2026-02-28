@@ -737,22 +737,24 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
   const [pokemonPowerUp, setPokemonPowerUp] = useState<{ isActive: boolean; xp: number }>({ isActive: false, xp: 0 });
   const pokemonImageRef = useRef<HTMLDivElement>(null);
 
-  // Handler quando animacao termina - adiciona Star Dust ao store
+  // Handler a cada estrela que chega - adiciona Star Dust ao store INCREMENTALMENTE
+  const handleStarArrive = useCallback((amountPerStar: number) => {
+    useGameStore.getState().addStarDust(amountPerStar);
+  }, []);
+
+  // Handler quando animacao termina - mostra resultado
   const handleAnimationComplete = useCallback(() => {
     const pending = starDustAnim.pendingResult;
-    const amount = starDustAnim.amount;
     setStarDustAnim({ isActive: false, amount: 0, type: "gain" });
     
-    if (pending && amount > 0) {
-      // AGORA adiciona o Star Dust ao store (apos animacao)
-      useGameStore.getState().addStarDust(amount);
-      
+    if (pending) {
+      // Star Dust ja foi adicionado a cada estrela via onStarArrive
       setTransferResult(pending);
       setXpBarAnimProgress(0);
       setTimeout(() => setXpBarAnimProgress(100), 100);
       setTimeout(() => onClose(), 3000);
     }
-  }, [starDustAnim.pendingResult, starDustAnim.amount, onClose]);
+  }, [starDustAnim.pendingResult, onClose]);
 
   return (
     <DialogContent
@@ -764,6 +766,7 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
         amount={starDustAnim.amount}
         isActive={starDustAnim.isActive}
         type={starDustAnim.type}
+        onStarArrive={handleStarArrive}
         onComplete={handleAnimationComplete}
       />
 

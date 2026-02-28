@@ -181,6 +181,7 @@ interface StarDustFullscreenAnimationProps {
   amount: number;
   isActive: boolean;
   type: "gain" | "spend";
+  onStarArrive?: (amountPerStar: number) => void; // Chamado a cada estrela que chega
   onComplete: () => void;
 }
 
@@ -188,6 +189,7 @@ export function StarDustFullscreenAnimation({
   amount, 
   isActive, 
   type,
+  onStarArrive,
   onComplete 
 }: StarDustFullscreenAnimationProps) {
   const [phase, setPhase] = useState<"idle" | "showNumber" | "flyStars" | "done">("idle");
@@ -199,9 +201,11 @@ export function StarDustFullscreenAnimation({
   const arrivedCountRef = useRef(0);
   const totalStarsRef = useRef(0);
   const onCompleteRef = useRef(onComplete);
+  const onStarArriveRef = useRef(onStarArrive);
   const amountPerStarRef = useRef(0);
   
   onCompleteRef.current = onComplete;
+  onStarArriveRef.current = onStarArrive;
 
   // Mount check
   useEffect(() => {
@@ -276,17 +280,33 @@ export function StarDustFullscreenAnimation({
     // Tocar som
     playMarioCoinSound();
     
-    // Atualizar contador
+    // Calcular quanto adicionar ao contador REAL
+    const isLastStar = arrivedCountRef.current >= totalStarsRef.current;
+    let amountToAdd: number;
+    
+    if (isLastStar) {
+      // Ultima estrela: adicionar o resto para garantir total exato
+      const addedSoFar = (arrivedCountRef.current - 1) * amountPerStarRef.current;
+      amountToAdd = amount - addedSoFar;
+    } else {
+      amountToAdd = amountPerStarRef.current;
+    }
+    
+    // Chamar callback para adicionar ao contador REAL no store
+    if (onStarArriveRef.current && type === "gain") {
+      onStarArriveRef.current(amountToAdd);
+    }
+    
+    // Atualizar contador visual interno
     const newAmount = Math.min(amount, arrivedCountRef.current * amountPerStarRef.current);
-    setDisplayedAmount(newAmount);
+    setDisplayedAmount(isLastStar ? amount : newAmount);
     
     // Pulsar
     setCounterPulse(true);
     setTimeout(() => setCounterPulse(false), 80);
     
     // Verificar se terminou
-    if (arrivedCountRef.current >= totalStarsRef.current) {
-      setDisplayedAmount(amount);
+    if (isLastStar) {
       setTimeout(() => {
         setPhase("done");
         onCompleteRef.current();
