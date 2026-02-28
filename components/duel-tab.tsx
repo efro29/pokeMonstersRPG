@@ -72,11 +72,9 @@ export function DuelTab({ onStartDuel }: DuelTabProps) {
     playButtonClick();
     setShowTransition(true);
     
-    // Toca musica de intro do duelo e depois inicia a musica de batalha
+    // Inicia a musica de batalha imediatamente junto com a transicao
+    playBattleMusic();
     playDuelIntro();
-    setTimeout(() => {
-      playBattleMusic();
-    }, 1800);
     
     // Marca como lido
     setReadChallenges(prev => new Set(prev).add(npc.id));
