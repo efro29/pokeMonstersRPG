@@ -475,3 +475,74 @@ export function playTrioPunishment() {
     playNoise(0.5, 0.1);
   }, 500);
 }
+
+// -- Battle Music System (usando arquivo MP3) --
+
+let battleMusicAudio: HTMLAudioElement | null = null;
+let battleMusicPlaying = false;
+
+export function playBattleMusic() {
+  if (battleMusicPlaying) return;
+  
+  try {
+    // Para qualquer musica anterior
+    if (battleMusicAudio) {
+      battleMusicAudio.pause();
+      battleMusicAudio.currentTime = 0;
+    }
+    
+    // Cria novo elemento de audio com o arquivo battle.mp3
+    battleMusicAudio = new Audio("/mp3/battle.mp3");
+    battleMusicAudio.loop = true;
+    battleMusicAudio.volume = 0.4;
+    
+    // Tenta tocar
+    const playPromise = battleMusicAudio.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          battleMusicPlaying = true;
+        })
+        .catch((error) => {
+          console.log("[v0] Battle music autoplay blocked:", error);
+          battleMusicPlaying = false;
+        });
+    }
+  } catch (error) {
+    console.log("[v0] Error playing battle music:", error);
+  }
+}
+
+export function stopBattleMusic() {
+  battleMusicPlaying = false;
+  if (battleMusicAudio) {
+    battleMusicAudio.pause();
+    battleMusicAudio.currentTime = 0;
+    battleMusicAudio = null;
+  }
+}
+
+export function playDuelIntro() {
+  // Epic duel introduction fanfare (sons sintetizados)
+  const introNotes = [
+    { freq: 196, delay: 0, dur: 0.2 },
+    { freq: 247, delay: 150, dur: 0.2 },
+    { freq: 294, delay: 300, dur: 0.2 },
+    { freq: 392, delay: 500, dur: 0.3 },
+    { freq: 494, delay: 700, dur: 0.2 },
+    { freq: 392, delay: 850, dur: 0.15 },
+    { freq: 494, delay: 950, dur: 0.15 },
+    { freq: 587, delay: 1100, dur: 0.4 },
+  ];
+  
+  introNotes.forEach(({ freq, delay, dur }) => {
+    setTimeout(() => playTone(freq, dur, "square", 0.09), delay);
+  });
+  
+  // Dramatic chord at the end
+  setTimeout(() => {
+    playTone(392, 0.5, "sawtooth", 0.08);
+    playTone(494, 0.5, "sawtooth", 0.06);
+    playTone(587, 0.5, "sawtooth", 0.05);
+  }, 1500);
+}

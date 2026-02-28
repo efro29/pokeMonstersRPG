@@ -23,6 +23,9 @@ import { ProfileTab } from "@/components/profile-tab";
 import { ShopTab } from "@/components/shop-tab";
 import { NpcTab } from "@/components/npc-tab";
 import { MovesDictionaryTab } from "@/components/moves-dictionary-tab";
+import { DuelTab } from "@/components/duel-tab";
+import { DuelBattleScene } from "@/components/duel-battle-scene";
+import type { DuelNpc } from "@/lib/duel-npcs";
 import { SettingsTab } from "@/components/settings-tab";
 import { CaptureScene } from "@/components/capture-scene";
 import { WildBattleScene } from "@/components/wild-battle-scene";
@@ -46,7 +49,7 @@ import {
   SettingsIcon,
 } from "@/components/game-icons";
 import { Button } from "@/components/ui/button";
-type Tab = "team" | "bag" | "pokedex" | "profile" | "shop" | "npcs" | "moves" | "settings";
+type Tab = "team" | "bag" | "pokedex" | "profile" | "shop" | "npcs" | "moves" | "settings" | "duels";
 type Screen = "loading" | "mode-select" | "profile-select" | "start" | "game";
 
 export default function Page() {
@@ -63,6 +66,7 @@ export default function Page() {
   const [captureTarget, setCaptureTarget] = useState<number | null>(null);
   const [wildBattleTarget, setWildBattleTarget] = useState<number | null>(null);
   const wildLevelRef = useRef<number>(1);
+  const [activeDuel, setActiveDuel] = useState<DuelNpc | null>(null);
   const [explorationRewardToast, setExplorationRewardToast] = useState<{
     xp: number;
     ballsUsed: number;
@@ -529,6 +533,28 @@ export default function Page() {
     }
   }
 
+  // Duel mode
+  if (activeDuel !== null) {
+    return (
+      <main className="flex flex-col h-dvh max-w-md mx-auto bg-background">
+        <DuelBattleScene
+          npc={activeDuel}
+          onClose={() => {
+            setActiveDuel(null);
+          }}
+          onVictory={(npc) => {
+            setActiveDuel(null);
+            setActiveTab("duels");
+          }}
+          onDefeat={() => {
+            setActiveDuel(null);
+            setActiveTab("duels");
+          }}
+        />
+      </main>
+    );
+  }
+
   // Battle
   if (battle.phase !== "idle") {
     return (
@@ -736,6 +762,19 @@ export default function Page() {
         {activeTab === "npcs" && (
           <NpcTab onStartBattleWithPokemon={handleStartBattleWithPokemon} />
         )}
+        {activeTab === "duels" && (
+          <DuelTab
+            onStartDuel={(npc) => {
+              // Inicia batalha com o primeiro pokemon da equipe
+              const currentTeam = useGameStore.getState().team;
+              const firstAlive = currentTeam.find((p) => p.currentHp > 0);
+              if (firstAlive) {
+                useGameStore.getState().startBattle(firstAlive.uid);
+                setActiveDuel(npc);
+              }
+            }}
+          />
+        )}
       </div>
 
       {/* Bottom tab bar */}
@@ -746,7 +785,7 @@ export default function Page() {
        
                 borderTopWidth:1,
                 display: "grid",
-                gridTemplateColumns: "repeat(7, minmax(0,1fr))"
+                gridTemplateColumns: "repeat(8, minmax(0,1fr))"
               }}
             >
             {([
@@ -756,6 +795,7 @@ export default function Page() {
             { id: "shop", label: "Loja", icon: ShopIcon },
             { id: "team", label: "Equipe", icon: TeamIcon },
             { id: "profile", label: "Perfil", icon: ProfileIcon },
+            { id: "duels", label: "Duelos", icon: Swords },
             { id: "moves", label: "Golpes", icon: MovesIcon },
             { id: "pokedex", label: "Pokedex", icon: PokedexIcon },
             { id: "settings", label: "Config", icon: SettingsIcon },
