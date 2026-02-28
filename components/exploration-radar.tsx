@@ -16,7 +16,7 @@ const MAX_ENERGY = 4;
 const BATTERY_ENERGY = 10;
 const ENERGY_RECOVERY_MS = 5 * 60 * 1000; // 5 minutos
 const MIN = 1_000; // 1 segundo
-const MAX = 8_000; // 8 segundos
+const MAX = 8_000; // 8 segundo
 
 const SCAN_DURATION_MS = Math.floor(
   Math.random() * (MAX - MIN + 1)
@@ -123,9 +123,9 @@ async function fetchWeather(): Promise<WeatherState> {
     const response = await fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&timezone=auto`
     );
-    
+
     if (!response.ok) throw new Error("Weather API error");
-    
+
     const data = await response.json();
     const weatherCode = data.current.weather_code;
     const temp = data.current.temperature_2m;
@@ -309,39 +309,39 @@ function getRadarPool(weather: WeatherState): PokemonSpecies[] {
   const night = isNightTime();
   const isRaining = weather.condition === "rain" || weather.condition === "thunderstorm";
   const isSunny = weather.condition === "clear";
-  
+
   return POKEMON.filter((p) => {
     // 1. Excluir lendarios/miticos/deuses (somente em metas ofensivas)
     if (LEGENDARY_IDS.has(p.id)) return false;
-    
+
     // 2. Excluir fosseis (somente em metas ofensivas)
     if (FOSSIL_IDS.has(p.id)) return false;
-    
+
     // 3. Excluir raros especiais (somente em metas ofensivas)
     if (RARE_SPECIAL_IDS.has(p.id)) return false;
-    
+
     // 4. Excluir evolucoes (somente nivel 1 de evolucao aparece)
     if (EVOLVED_IDS.has(p.id)) return false;
-    
+
     // 5. Excluir baby Pokemon (somente nos ovos do radar)
     if (BABY_POKEMON_IDS.has(p.id)) return false;
-    
+
     // 6. Nocturnos (Ghost, Dark) somente a noite
     const isNocturnal = p.types.some((t) => NOCTURNAL_TYPES.has(t));
     if (isNocturnal && !night) return false;
-    
+
     // 7. Tipo Agua - dificil sem chuva (80% de chance de ser filtrado)
     const isWaterType = p.types.some((t) => WATER_TYPES.has(t));
     if (isWaterType && !isRaining) {
       if (Math.random() > 0.20) return false; // 80% chance de nao aparecer
     }
-    
+
     // 8. Tipo Fogo - dificil sem sol (80% de chance de ser filtrado)
     const isFireType = p.types.some((t) => FIRE_TYPES.has(t));
     if (isFireType && !isSunny) {
       if (Math.random() > 0.20) return false; // 80% chance de nao aparecer
     }
-    
+
     return true;
   });
 }
@@ -353,23 +353,23 @@ function getRadarPool(weather: WeatherState): PokemonSpecies[] {
  */
 function getWeatherAdjustedWeight(p: PokemonSpecies, weather: WeatherState): number {
   let baseWeight = getSpawnWeight(p);
-  
+
   const isRaining = weather.condition === "rain" || weather.condition === "thunderstorm";
   const isSunny = weather.condition === "clear";
-  
+
   const isWaterType = p.types.some((t) => WATER_TYPES.has(t));
   const isFireType = p.types.some((t) => FIRE_TYPES.has(t));
-  
+
   // Clima de chuva: agua 3x mais comum
   if (isRaining && isWaterType) {
     baseWeight *= 3;
   }
-  
+
   // Clima ensolarado: fogo 3x mais comum
   if (isSunny && isFireType) {
     baseWeight *= 3;
   }
-  
+
   return baseWeight;
 }
 
@@ -596,7 +596,7 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
   const [claimedGift, setClaimedGift] = useState<GiftKit | null>(null);
   const [claimedEgg, setClaimedEgg] = useState<PokemonEgg | null>(null);
   const scanInterval = useRef<ReturnType<typeof setInterval> | null>(null);
-  
+
   // Estado do clima
   const [weather, setWeather] = useState<WeatherState>({
     condition: "unknown",
@@ -605,7 +605,7 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
     city: "",
     lastUpdated: 0,
   });
-  
+
   // Carregar clima ao montar componente
   useEffect(() => {
     fetchWeather().then(setWeather);
@@ -617,97 +617,97 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
   }, []);
 
   // ── Movimentacao dos blips com rastro de patinhas ──
-// ── Movimentacao dos blips com rastro de patinhas ──
-useEffect(() => {
-  if (blips.length === 0 || scanning) return;
+  // ── Movimentacao dos blips com rastro de patinhas ──
+  useEffect(() => {
+    if (blips.length === 0 || scanning) return;
 
-  const moveInterval = setInterval(() => {
-    setBlips((prev) =>
-      prev.map((blip) => {
-        if (blip.isGift || blip.isEgg) return blip;
+    const moveInterval = setInterval(() => {
+      setBlips((prev) =>
+        prev.map((blip) => {
+          if (blip.isGift || blip.isEgg) return blip;
 
-        let newVAngle = blip.vAngle;
-        let newVDist = blip.vDist;
+          let newVAngle = blip.vAngle;
+          let newVDist = blip.vDist;
 
-        // Mudança aleatória de direção
-        if (Math.random() < 0.08) {
-          newVAngle = (Math.random() - 0.5) * 8;
-          newVDist = (Math.random() - 0.5) * 0.02;
-        }
+          // Mudança aleatória de direção
+          if (Math.random() < 0.08) {
+            newVAngle = (Math.random() - 0.5) * 8;
+            newVDist = (Math.random() - 0.5) * 0.02;
+          }
 
-        const speedMultiplier = 2;
+          const speedMultiplier = 2;
 
-        const radarSize = 280;
-        const center = radarSize / 2;
-        const maxR = center - 16;
+          const radarSize = 280;
+          const center = radarSize / 2;
+          const maxR = center - 16;
 
-        // 📍 POSIÇÃO ATUAL (antes de mover)
-        const currentRad = (blip.angle * Math.PI) / 180;
-        const currentX =
-          center + Math.cos(currentRad) * maxR * blip.distance;
-        const currentY =
-          center + Math.sin(currentRad) * maxR * blip.distance;
+          // 📍 POSIÇÃO ATUAL (antes de mover)
+          const currentRad = (blip.angle * Math.PI) / 180;
+          const currentX =
+            center + Math.cos(currentRad) * maxR * blip.distance;
+          const currentY =
+            center + Math.sin(currentRad) * maxR * blip.distance;
 
-        // 🏃 NOVA POSIÇÃO
-        let newAngle = blip.angle + newVAngle * speedMultiplier;
-        let newDist = blip.distance + newVDist * speedMultiplier;
+          // 🏃 NOVA POSIÇÃO
+          let newAngle = blip.angle + newVAngle * speedMultiplier;
+          let newDist = blip.distance + newVDist * speedMultiplier;
 
-        // Bounce nas bordas
-        if (newDist > 0.85) {
-          newDist = 0.85;
-          newVDist = -Math.abs(newVDist);
-        }
-        if (newDist < 0.12) {
-          newDist = 0.12;
-          newVDist = Math.abs(newVDist);
-        }
+          // Bounce nas bordas
+          if (newDist > 0.85) {
+            newDist = 0.85;
+            newVDist = -Math.abs(newVDist);
+          }
+          if (newDist < 0.12) {
+            newDist = 0.12;
+            newVDist = Math.abs(newVDist);
+          }
 
-        // 📍 NOVA POSIÇÃO CARTESIANA
-        const newRad = (newAngle * Math.PI) / 180;
-        const newX =
-          center + Math.cos(newRad) * maxR * newDist;
-        const newY =
-          center + Math.sin(newRad) * maxR * newDist;
+          // 📍 NOVA POSIÇÃO CARTESIANA
+          const newRad = (newAngle * Math.PI) / 180;
+          const newX =
+            center + Math.cos(newRad) * maxR * newDist;
+          const newY =
+            center + Math.sin(newRad) * maxR * newDist;
 
-        // 🔄 ÂNGULO REAL DE MOVIMENTO
-        const deltaX = newX - currentX;
-        const deltaY = newY - currentY;
+          // 🔄 ÂNGULO REAL DE MOVIMENTO
+          const deltaX = newX - currentX;
+          const deltaY = newY - currentY;
 
-        const movementAngle =
-          (Math.atan2(deltaY, deltaX) * 180) / Math.PI;
+          const movementAngle =
+            (Math.atan2(deltaY, deltaX) * 180) / Math.PI;
 
-        // 🐾 NOVA PATINHA (posição anterior)
-        const newPaw: PawPrint = {
-          id: `paw-${Date.now()}-${Math.random()}`,
-          x: currentX,
-          y: currentY,
-          opacity: 0.7,
-          rotation: movementAngle + 90, 
-          // ajuste para -90 se necessário
-        };
+          // 🐾 NOVA PATINHA (posição anterior)
+          const newPaw: PawPrint = {
+            id: `paw-${Date.now()}-${Math.random()}`,
+            x: currentX,
+            y: currentY,
+            opacity: 0.7,
+            rotation: movementAngle + 90,
+            // ajuste para -90 se necessário
+          };
 
-        // 🐾 RASTRO LONGO
-        const updatedPaws = [...blip.pawPrints, newPaw]
-          .map((p) => ({
-            ...p,
-            opacity: Math.max(0, p.opacity - 0.02),
-          }))
-          .filter((p) => p.opacity > 0.005);
+          // 🐾 RASTRO LONGO
+          const updatedPaws = [...blip.pawPrints, newPaw]
+            .map((p) => ({
+              ...p,
+              opacity: Math.max(0, p.opacity - 0.02),
+            }))
+            .filter((p) => p.opacity > 0.005);
 
-        return {
-          ...blip,
-          angle: newAngle,
-          distance: newDist,
-          vAngle: newVAngle,
-          vDist: newVDist,
-          pawPrints: updatedPaws,
-        };
-      })
-    );
-  }, 120);
+          return {
+            ...blip,
+            angle: newAngle,
+            distance: newDist,
+            vAngle: newVAngle,
+            vDist: newVDist,
+            pawPrints: updatedPaws,
+          };
+        })
+      );
+    }, 120);
 
-  return () => clearInterval(moveInterval);
-}, [blips.length, scanning]);
+    return () => clearInterval(moveInterval);
+  }, [blips.length, scanning]);
 
   // Bateria na bolsa (para mostrar botão de ativar)
   const bagBatteryCount = bag.find((i) => i.itemId === "radar-battery")?.quantity ?? 0;
@@ -775,7 +775,7 @@ useEffect(() => {
 
     // Usar clima atual para filtrar e ponderar Pokemon
     const pool = getRadarPool(weather);
-    
+
     // Distribuicao ponderada: 0 possivel, 1-2 normal, 3 pode acontecer, 4 raro, 5 muito raro
     const spawnRoll = Math.random();
     let finalCount: number;
@@ -1042,15 +1042,15 @@ useEffect(() => {
         {/* Bateria com raio */}
         <div className="flex items-center">
           {recoveryTimer && !energy.batteryActive && (
-            <span style={{paddingRight:5}} className="text-[10px] text-muted-foreground font-mono">{recoveryTimer}</span>
+            <span style={{ paddingRight: 5 }} className="text-[10px] text-muted-foreground font-mono">{recoveryTimer}</span>
           )}
-          <BatteryIcon charges={energy.charges} max={energy.batteryActive ? BATTERY_ENERGY : MAX_ENERGY} /> 
+          <BatteryIcon charges={energy.charges} max={energy.batteryActive ? BATTERY_ENERGY : MAX_ENERGY} />
           {energy.batteryActive
-              ? <span style={{ color: "#EAB308",fontSize:10,paddingLeft:2}}>{energy.charges/BATTERY_ENERGY*100}%</span>
-              : <span style={{ color: "#595753",fontSize:10,paddingLeft:2}}>{energy.charges/MAX_ENERGY*100}%</span>
-            }
+            ? <span style={{ color: "#EAB308", fontSize: 10, paddingLeft: 2 }}>{energy.charges / BATTERY_ENERGY * 100}%</span>
+            : <span style={{ color: "#595753", fontSize: 10, paddingLeft: 2 }}>{energy.charges / MAX_ENERGY * 100}%</span>
+          }
         </div>
-        
+
       </div>
 
       {/* Mensagem */}
@@ -1061,7 +1061,7 @@ useEffect(() => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             className="absolute text-xs font-medium text-center px-3 py-1.5 rounded-lg"
-            style={{ backgroundColor: "rgb(0, 3, 1)", color: "#22C55E",top:270,zIndex:77 }}
+            style={{ backgroundColor: "rgb(0, 3, 1)", color: "#22C55E", top: 270, zIndex: 77 }}
           >
             {scanMessage}
           </motion.p>
@@ -1070,7 +1070,7 @@ useEffect(() => {
 
       {/* Radar circular */}
       <div
-      
+
         className="z-20 relative shrink-0"
         style={{ width: radarSize, height: radarSize }}
       >
@@ -1263,39 +1263,39 @@ useEffect(() => {
 
 
       {/* Botão de scan */}
-      <div style={{display:"flex",justifyContent:"space-between", gap:8,width:'100%'}}>
-            <Button
-        onClick={startScan}
-        disabled={scanning || energy.charges <= 0}
-        className="w-full  h-12 text-sm font-bold relative overflow-hidden"
-        style={{
-          backgroundColor: scanning ? "rgba(16, 80, 148, 0.15)" : energy.charges > 0 ? "#22C55E" : "rgba(255,255,255,0.08)",
-          color: energy.charges > 0 ? "#fff" : "rgba(255,255,255,0.4)",
-        }}
-      >
-        {scanning ? (
-          <span className="flex items-center gap-2">
-            <motion.div
-              className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            />
-            Escaneando
-          </span>
-        ) : (
-          <span className="flex items-center gap-2">
-                      <RadarIcon/>
-            {energy.charges > 0 ? "Iniciar" : "Sem Energia"}
-          </span>
-        )}
-      </Button>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, width: '100%' }}>
+        <Button
+          onClick={startScan}
+          disabled={scanning || energy.charges <= 0}
+          className="w-full  h-12 text-sm font-bold relative overflow-hidden"
+          style={{
+            backgroundColor: scanning ? "rgba(16, 80, 148, 0.15)" : energy.charges > 0 ? "#22C55E" : "rgba(255,255,255,0.08)",
+            color: energy.charges > 0 ? "#fff" : "rgba(255,255,255,0.4)",
+          }}
+        >
+          {scanning ? (
+            <span className="flex items-center gap-2">
+              <motion.div
+                className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              />
+              Escaneando
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <RadarIcon />
+              {energy.charges > 0 ? "Iniciar" : "Sem Energia"}
+            </span>
+          )}
+        </Button>
 
-    
-          <>
+
+        <>
           <Button
-          disabled={!selectedBlip || !selectedBlip.pokemon}
+            disabled={!selectedBlip || !selectedBlip.pokemon}
             onClick={handleBattle}
-                  className="w-full max-w-sm h-12 text-sm font-bold relative overflow-hidden"
+            className="w-full max-w-sm h-12 text-sm font-bold relative overflow-hidden"
             style={{ backgroundColor: selectedBlip && selectedBlip.pokemon ? "#b91c1c" : "#333645" }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
@@ -1304,26 +1304,26 @@ useEffect(() => {
               <path d="M16 16l4 4" />
               <path d="M19 21l2-2" />
             </svg>
-             { selectedBlip && selectedBlip.pokemon ? "Batalhar" : ""}
+            {selectedBlip && selectedBlip.pokemon ? "Batalhar" : ""}
           </Button>
           <Button
-          disabled={!selectedBlip || !selectedBlip.pokemon}
+            disabled={!selectedBlip || !selectedBlip.pokemon}
             onClick={handleCapture}
-                  className="w-full max-w-sm h-12 text-sm font-bold relative overflow-hidden"
-            style={{ backgroundColor:selectedBlip && selectedBlip.pokemon ?"#c88941": "#333645" }}
+            className="w-full max-w-sm h-12 text-sm font-bold relative overflow-hidden"
+            style={{ backgroundColor: selectedBlip && selectedBlip.pokemon ? "#c88941" : "#333645" }}
           >
             <svg width="16" height="16" viewBox="0 0 100 100" className="mr-1">
-              <circle cx="50" cy="50" r="48" fill={selectedBlip && selectedBlip.pokemon ?"#EF4444":"#1E293B"} stroke="#1E293B" strokeWidth="3" />
+              <circle cx="50" cy="50" r="48" fill={selectedBlip && selectedBlip.pokemon ? "#EF4444" : "#1E293B"} stroke="#1E293B" strokeWidth="3" />
               <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
               <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#F1F5F9" />
               <circle cx="50" cy="50" r="14" fill="#F1F5F9" stroke="#1E293B" strokeWidth="3" />
               <circle cx="50" cy="50" r="7" fill="#1E293B" />
             </svg>
-             { selectedBlip && selectedBlip.pokemon ?"Capturar":""}
+            {selectedBlip && selectedBlip.pokemon ? "Capturar" : ""}
           </Button>
-          </>
+        </>
       </div>
-  
+
 
       {/* Painel do presente coletado */}
       <AnimatePresence>
@@ -1456,12 +1456,13 @@ useEffect(() => {
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             className="absolute z-0  w-full max-w-sm rounded-xl  p-4 flex flex-col items-center gap-3"
             style={{
-              background: ` ${TYPE_COLORS[selectedBlip.pokemon.types[0] as PokemonType]}15 100%)`, }} >
+              background: ` ${TYPE_COLORS[selectedBlip.pokemon.types[0] as PokemonType]}15 100%)`,
+            }} >
             {/* Pokemon sprite */}
             <div className="relative">
               <div
                 className="absolute -inset-6 rounded-full blur-2xl opacity-60"
-                style={{ backgroundColor: TYPE_COLORS[selectedBlip.pokemon.types[0] as PokemonType] ,top:70}}
+                style={{ backgroundColor: TYPE_COLORS[selectedBlip.pokemon.types[0] as PokemonType], top: 70 }}
               />
               <img
                 src={getSpriteUrl(selectedBlip.pokemon.id)}
@@ -1469,7 +1470,7 @@ useEffect(() => {
                 width={100}
                 height={100}
                 className="relative z-0  pixelated drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)]"
-                style={isDiscovered(selectedBlip.pokemon.id) ? {top:70} : { filter: "saturate(0%) brightness(0.0)" ,top:70}}
+                style={isDiscovered(selectedBlip.pokemon.id) ? { top: 70 } : { filter: "saturate(0%) brightness(0.0)", top: 70 }}
                 crossOrigin="anonymous"
                 loading="lazy"
               />
@@ -1480,17 +1481,17 @@ useEffect(() => {
               <span className="text-xs text-muted-foreground font-mono">
                 {isDiscovered(selectedBlip.pokemon.id) ? `#${String(selectedBlip.pokemon.id).padStart(3, "0")}` : ""}
               </span>
-              <span style={{top:8,zIndex:0}} className="absolute text-base font-bold text-foreground capitalize">
+              <span style={{ top: 8, zIndex: 0 }} className="absolute text-base font-bold text-foreground capitalize">
                 {isDiscovered(selectedBlip.pokemon.id) ? selectedBlip.pokemon.name : ""}
               </span>
-              
-             
+
+
             </div>
 
             {/* Botão capturar */}
-       
 
-       
+
+
           </motion.div>
         )}
       </AnimatePresence>
@@ -1524,15 +1525,15 @@ useEffect(() => {
 function BatteryIcon({ charges, max, size = 28 }: { charges: number; max: number; size?: number }) {
   const pct = charges / max;
   const barColor = pct > 0.5 ? "#22C55E" : pct > 0.25 ? "#F59E0B" : "#EF4444";
-  const w = max == 10?90:size;
+  const w = max == 10 ? 90 : size;
   const h = size * 0.55;
 
   return (
     <svg width={w} height={h} viewBox="0 0 40 22" className="shrink-0">
       {/* Corpo da bateria */}
-      <rect x="1" y="3" width={max==10?"80":"33"} height="16" rx="3" ry="3" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground" />
+      <rect x="1" y="3" width={max == 10 ? "80" : "33"} height="16" rx="3" ry="3" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground" />
       {/* Terminal da bateria */}
-      <rect x={max==10?"80":"34"} y="7" width="4" height="8" rx="1" fill="currentColor" className="text-muted-foreground" />
+      <rect x={max == 10 ? "80" : "34"} y="7" width="4" height="8" rx="1" fill="currentColor" className="text-muted-foreground" />
       {/* Barras de energia */}
       {Array.from({ length: max }).map((_, i) => {
         const barW = 6;
