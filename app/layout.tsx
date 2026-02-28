@@ -75,7 +75,7 @@ export default function RootLayout({
         <link rel="preload" href="/images/ico/team.png" as="image" />
                            
       </head>
-      <body suppressHydrationWarning className={`${_inter.variable} ${_pixel.variable} font-sans antialiased`}>{children}</body>
+      <body className={`${_inter.variable} ${_pixel.variable} font-sans antialiased`}>{children}</body>
     </html>
   )
 }
