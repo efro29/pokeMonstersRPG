@@ -854,7 +854,7 @@ interface GameState {
   addToTeamWithLevel: (species: PokemonSpecies, level: number) => string;
   removeFromTeam: (uid: string) => void;
   transferToProfesor: (uid: string, options?: { deferStarDust?: boolean }) => { starDustGained: number; xpGained: number; recipientName: string | null };
-  transferAllDuplicates: (speciesId: number, keepUid: string) => { count: number; totalStarDust: number; totalXp: number };
+  transferAllDuplicates: (speciesId: number, keepUid: string, options?: { deferStarDust?: boolean }) => { count: number; totalStarDust: number; totalXp: number };
   reorderTeam: (fromIndex: number, toIndex: number) => void;
   // Reserves management
   moveToReserves: (uid: string) => void;
@@ -1251,7 +1251,7 @@ export const useGameStore = create<GameState>()(
         return { starDustGained, xpGained: 0, recipientName: null };
       },
 
-      transferAllDuplicates: (speciesId, keepUid) => {
+      transferAllDuplicates: (speciesId, keepUid, options) => {
         const { team, reserves } = get();
         const allPokemon = [...team, ...reserves];
         const duplicates = allPokemon.filter(
@@ -1270,8 +1270,10 @@ export const useGameStore = create<GameState>()(
           reserves: reserves.filter((p) => !dupUids.has(p.uid)),
         });
 
-        // Add Star Dust for all transfers
-        get().addStarDust(totalStarDust);
+        // Add Star Dust for all transfers (unless deferred for animation)
+        if (!options?.deferStarDust) {
+          get().addStarDust(totalStarDust);
+        }
 
         // Give accumulated XP to the kept pokemon
         get().addXp(keepUid, totalXp);

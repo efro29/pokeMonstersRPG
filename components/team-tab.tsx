@@ -685,7 +685,7 @@ function PokemonDetailContent({
   forgetMove: (uid: string, moveId: string) => void;
   removeFromTeam: (uid: string) => void;
   transferToProfesor: (uid: string) => { starDustGained: number; xpGained: number; recipientName: string | null };
-  transferAllDuplicates: (speciesId: number, keepUid: string) => { count: number; totalStarDust: number; totalXp: number };
+  transferAllDuplicates: (speciesId: number, keepUid: string, options?: { deferStarDust?: boolean }) => { count: number; totalStarDust: number; totalXp: number };
   allTeam: ReturnType<typeof useGameStore.getState>["team"];
   allReserves: ReturnType<typeof useGameStore.getState>["reserves"];
   onClose: () => void;
@@ -891,17 +891,21 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                 <Button
                   size="sm"
                   onClick={() => {
-                    const result = transferAllDuplicates(pokemon.speciesId, pokemon.uid);
+                    // Transferir duplicatas mas NAO adicionar Star Dust ainda (deferStarDust: true)
+                    const result = transferAllDuplicates(pokemon.speciesId, pokemon.uid, { deferStarDust: true });
                     if (result.count > 0) {
-                      setTransferResult({
-                        pokemonName: pokemon.name,
-                        recipientName: pokemon.name,
-                        xpGained: result.totalXp,
-                        starDustGained: result.totalStarDust,
-                        count: result.count,
+                      // Trigger fullscreen gain animation - Star Dust sera adicionado no onComplete
+                      setStarDustAnim({
+                        isActive: true,
+                        amount: result.totalStarDust,
+                        type: "gain",
+                        pendingResult: {
+                          pokemonName: pokemon.name,
+                          recipientName: pokemon.name,
+                          xpGained: result.totalXp,
+                          starDustGained: result.totalStarDust,
+                        },
                       });
-                      setXpBarAnimProgress(0);
-                      setTimeout(() => setXpBarAnimProgress(100), 100);
                     }
                   }}
                   className="w-full bg-amber-600 text-white hover:bg-amber-700 text-xs"
