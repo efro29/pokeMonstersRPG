@@ -673,7 +673,10 @@ export default function Page() {
         </div>
         <div className="flex items-center gap-2">
           {/* Quantidade de poeira estelar */}
-         <div className="flex items-center gap-1.5 justify-between bg-secondary/50 rounded-full px-2.5 py-1">
+         <div 
+           id="stardust-counter-target"
+           className="flex items-center gap-1.5 justify-between bg-secondary/50 rounded-full px-2.5 py-1"
+         >
             <StarIcon className="w-4 h-4 text-blue-300" />
             <StarDustCounter 
               value={trainer.starDust ?? 0} 
