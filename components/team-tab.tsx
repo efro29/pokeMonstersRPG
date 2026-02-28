@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useGameStore } from "@/lib/game-store";
 import { useModeStore } from "@/lib/mode-store";
@@ -1014,7 +1014,7 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                   const barPercent = Math.min(100, baseVal * 10);
                   return (
         
-                                <>
+                                <React.Fragment key={attr}>
                                   <div  className=" text-sm  flex items-center gap-2 ">
                                     {attr == 'especial'?"":
                                     <>
@@ -1035,7 +1035,7 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
 
                              
                                   </div>
-                                </>
+                                </React.Fragment>
            
                   );
                 })}
