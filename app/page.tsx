@@ -771,6 +771,7 @@ export default function Page() {
                 setActiveDuel(npc);
               }
             }}
+            onStartCapture={handleStartCapture}
           />
         )}
       </div>
