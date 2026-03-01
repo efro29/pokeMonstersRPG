@@ -492,31 +492,26 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
           </div>
         </div>
 
-        {/* Barra de Progresso Diario */}
-        <div className="bg-secondary/50 rounded-lg p-3 border border-border mb-3">
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-lg ${
+        {/* Barras de Progresso lado a lado */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* Desafios Diarios */}
+          <div className="bg-secondary/50 rounded-lg p-2 border border-border">
+            <div className="flex items-center gap-1.5 mb-1">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
                 dailyChallengesCompleted 
                   ? "bg-gradient-to-br from-emerald-500 to-green-600" 
                   : "bg-gradient-to-br from-amber-500 to-orange-600"
               }`}>
-                <Swords className="w-4 h-4 text-white" />
+                <Swords className="w-3 h-3 text-white" />
               </div>
-              <div>
-                <p className="text-xs font-bold text-foreground">
-                  {dailyChallengesCompleted ? "Desafios Completos!" : "Desafios Diarios"}
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold text-foreground truncate">
+                  {dailyChallengesCompleted ? "Completo!" : "Diarios"}
                 </p>
-                <p className="text-[10px] text-muted-foreground">
-                  {dailyChallengesCompleted 
-                    ? "Parabens! Volte amanha." 
-                    : "Venca 5 desafios por dia"}
-                </p>
+                <p className="text-[8px] text-muted-foreground">{dailyChallengeWins}/{DAILY_CHALLENGE_LIMIT}</p>
               </div>
             </div>
-          </div>
-          <div className="relative">
-            <div className="w-full h-3 bg-gray-700/50 rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-gray-700/50 rounded-full overflow-hidden">
               <motion.div
                 className={`h-full rounded-full ${
                   dailyChallengesCompleted 
@@ -528,45 +523,26 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
                 transition={{ duration: 0.5 }}
               />
             </div>
-            <div className="flex justify-between mt-1">
-              <span className="text-[9px] text-muted-foreground">{dailyChallengeWins} vitorias</span>
-              <span className="text-[9px] text-muted-foreground">{DAILY_CHALLENGE_LIMIT} max</span>
-            </div>
           </div>
-        </div>
 
-        {/* Barra de XP de Batalha */}
-        <div className="bg-secondary/50 rounded-lg p-3 border border-border">
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                <Trophy className="w-4 h-4 text-white" />
+          {/* Nivel de Batalha */}
+          <div className="bg-secondary/50 rounded-lg p-2 border border-border">
+            <div className="flex items-center gap-1.5 mb-1">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shrink-0">
+                <Trophy className="w-3 h-3 text-white" />
               </div>
-              <div>
-                <p className="text-xs font-bold text-foreground">Nivel de Batalha</p>
-                <p className="text-[10px] text-muted-foreground">
-                  Influencia a dificuldade dos oponentes
-                </p>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold text-foreground truncate">Batalha</p>
+                <p className="text-[8px] text-muted-foreground">Lv.{battleLevel}</p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">
-                Lv.{battleLevel}
-              </p>
-            </div>
-          </div>
-          <div className="relative">
-            <div className="w-full h-3 bg-gray-700/50 rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-gray-700/50 rounded-full overflow-hidden">
               <motion.div
                 className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${xpProgress}%` }}
                 transition={{ duration: 0.5 }}
               />
-            </div>
-            <div className="flex justify-between mt-1">
-              <span className="text-[9px] text-muted-foreground">{battleXp} XP</span>
-              <span className="text-[9px] text-muted-foreground">{xpToNextLevel} XP</span>
             </div>
           </div>
         </div>
