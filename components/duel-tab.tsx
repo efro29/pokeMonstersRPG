@@ -38,7 +38,7 @@ interface DuelTabProps {
 }
 
 export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChange, onTrailNodeStart }: DuelTabProps) {
-  const { trainer, registerDailyChallengeWin, getDailyChallengeWinsRemaining } = useGameStore();
+  const { trainer } = useGameStore();
   const [challenges, setChallenges] = useState<DuelNpc[]>([]);
   const [selectedChallenge, setSelectedChallenge] = useState<DuelNpc | null>(null);
   const [showTransition, setShowTransition] = useState(false);
@@ -60,7 +60,7 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
     setChallenges(newChallenges);
     
     // Atualiza desafios restantes do dia
-    const remaining = getDailyChallengeWinsRemaining();
+    const remaining = useGameStore.getState().getDailyChallengeWinsRemaining();
     setChallengesRemaining(remaining);
     
     // Verifica se o boss semanal esta disponivel (10 vitorias no fim de semana)
@@ -80,7 +80,7 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
     const storedBattleLevel = localStorage.getItem("pokerpg-battle-level");
     if (storedBattleXp) setBattleXp(parseInt(storedBattleXp));
     if (storedBattleLevel) setBattleLevel(parseInt(storedBattleLevel));
-  }, [getDailyChallengeWinsRemaining]);
+  }, []);
 
   const handleAcceptChallenge = (npc: DuelNpc) => {
     // Verifica se ainda ha desafios disponiveis hoje
