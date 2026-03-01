@@ -488,7 +488,7 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
       </div>
 
       {/* Trail Path - Duolingo Style */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 overflow-hidden">
         <div className="py-6 px-4">
           {/* Pokemon Reward Banner - Enhanced Design */}
           {currentStage && (
