@@ -21,14 +21,23 @@ import {
   Flame,
   Crown,
   Skull,
+  Map,
+  Inbox,
 } from "lucide-react";
 import { playButtonClick, playBattleMusic } from "@/lib/sounds";
+import { TrailsMode } from "./trails-mode";
+
+export type DuelMode = "challenges" | "trails";
 
 interface DuelTabProps {
   onStartDuel: (npc: DuelNpc) => void;
+  onStartCapture?: (speciesId: number) => void;
+  duelMode: DuelMode;
+  onDuelModeChange: (mode: DuelMode) => void;
+  onTrailNodeStart?: (nodeId: string) => void;
 }
 
-export function DuelTab({ onStartDuel }: DuelTabProps) {
+export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChange, onTrailNodeStart }: DuelTabProps) {
   const { trainer } = useGameStore();
   const [challenges, setChallenges] = useState<DuelNpc[]>([]);
   const [selectedChallenge, setSelectedChallenge] = useState<DuelNpc | null>(null);
@@ -329,9 +338,65 @@ export function DuelTab({ onStartDuel }: DuelTabProps) {
     );
   }
 
+  // Trails Mode
+  if (duelMode === "trails") {
+    return (
+      <TrailsMode
+        onStartDuel={onStartDuel}
+        onStartCapture={onStartCapture || (() => {})}
+        onBack={() => onDuelModeChange("challenges")}
+        onNodeStart={onTrailNodeStart}
+      />
+    );
+  }
+
   // Lista de Desafios (estilo Email)
   return (
     <div className="flex flex-col h-full">
+      {/* Mode Selector Tabs */}
+      <div className="flex border-b border-border bg-card">
+        <button
+          onClick={() => {
+            playButtonClick();
+            onDuelModeChange("challenges");
+          }}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 transition-all relative ${
+            duelMode === "challenges"
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Inbox className="w-4 h-4" />
+          <span className="text-sm font-medium">Desafios</span>
+          {duelMode === "challenges" && (
+            <motion.div
+              layoutId="duel-tab-indicator"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+            />
+          )}
+        </button>
+        <button
+          onClick={() => {
+            playButtonClick();
+            onDuelModeChange("trails");
+          }}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 transition-all relative ${
+            duelMode === "trails"
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Map className="w-4 h-4" />
+          <span className="text-sm font-medium">Trilhas</span>
+          {duelMode === "trails" && (
+            <motion.div
+              layoutId="duel-tab-indicator"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+            />
+          )}
+        </button>
+      </div>
+
       {/* Header */}
       <div className="p-4 border-b border-border bg-card">
         <div className="flex items-center justify-between mb-3">

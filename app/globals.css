@@ -751,3 +751,58 @@ to{transform:translateX(100%)}
   font-size:8px;
   color:#aaa;
 }
+
+/* Trail Mode Duolingo Style */
+@keyframes trailNodePulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--node-color);
+  }
+  50% {
+    box-shadow: 0 0 20px 8px var(--node-color);
+  }
+  100% {
+    box-shadow: 0 0 0 0 var(--node-color);
+  }
+}
+
+.trail-node-active {
+  animation: trailNodePulse 2s ease-in-out infinite;
+}
+
+@keyframes trailBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.trail-node-bounce {
+  animation: trailBounce 1.5s ease-in-out infinite;
+}
+
+@keyframes starSparkle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.2);
+  }
+}
+
+.trail-star-sparkle {
+  animation: starSparkle 1s ease-in-out infinite;
+}
+
+.trail-path-line {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--path-color) 10%,
+    var(--path-color) 90%,
+    transparent 100%
+  );
+}
