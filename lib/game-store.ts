@@ -1,7 +1,13 @@
-// Game Store - v13
+// Game Store - v14 (Daily Challenges)
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { PokemonSpecies, BagItemDef, PokemonBaseAttributes, DamageBreakdown, HitResult } from "./pokemon-data";
+import type {
+  PokemonSpecies,
+  BagItemDef,
+  PokemonBaseAttributes,
+  DamageBreakdown,
+  HitResult,
+} from "./pokemon-data";
 import { getGameStoreKey } from "./mode-store";
 import { BAG_ITEMS, getMove, getPokemon, canEvolveByLevel, canEvolveByStone, canEvolveByTrade, xpForLevel, computeAttributes, getBaseAttributes, applyFaintPenalty, applyLevelUpBonus, rollDamageAgainstPokemon, calculateHitResult, calculateBattleDamage, getDamageMultiplier, getHappinessBonus } from "./pokemon-data";
 import type { BattleCard, CardAlignment, CardElement, SuperEffect } from "./card-data";
