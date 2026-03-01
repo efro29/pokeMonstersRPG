@@ -194,9 +194,10 @@ interface TrailsModeProps {
   onStartDuel: (npc: DuelNpc) => void;
   onStartCapture: (speciesId: number) => void;
   onBack: () => void;
+  onNodeStart?: (nodeId: string) => void;
 }
 
-export function TrailsMode({ onStartDuel, onStartCapture, onBack }: TrailsModeProps) {
+export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }: TrailsModeProps) {
   const [sortedNpcs] = useState(() => sortNpcsByDifficulty(npcs));
   const [completedNodes, setCompletedNodes] = useState<Set<string>>(() => {
     if (typeof window !== "undefined") {
@@ -262,22 +263,46 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack }: TrailsModePr
       playBattleMusic();
 
       setTimeout(() => {
-        // Mark as completed before starting (will be validated after battle)
+        // Notify parent about which node is being challenged (DON'T mark completed yet)
         const localIndex = getLocalNodeIndex(selectedNode);
         const nodeId = `stage-${selectedNode.stageIndex}-node-${localIndex}`;
-        setCompletedNodes(prev => new Set(prev).add(nodeId));
+        onNodeStart?.(nodeId);
         onStartDuel(selectedNode.npc!);
         setShowTransition(false);
         setSelectedNode(null);
       }, 3000);
     } else if (selectedNode.type === "pokemon" && selectedNode.pokemonReward) {
-      // Mark as completed
+      // Notify parent about pokemon node
       const nodeId = `stage-${selectedNode.stageIndex}-pokemon`;
-      setCompletedNodes(prev => new Set(prev).add(nodeId));
+      onNodeStart?.(nodeId);
       onStartCapture(selectedNode.pokemonReward.speciesId);
       setSelectedNode(null);
     }
   };
+
+  // Reload progress from localStorage when component regains focus
+  // This ensures we pick up changes made by page.tsx after battle victories
+  useEffect(() => {
+    const handleFocus = () => {
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem("pokerpg-trail-progress");
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved) as string[];
+            setCompletedNodes(new Set(parsed));
+          } catch {
+            // ignore
+          }
+        }
+      }
+    };
+    
+    // Also check on mount/re-render
+    handleFocus();
+    
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, []);
 
   // Calculate progress
   const totalNodes = stages.reduce((acc, stage) => acc + stage.nodes.length, 0);

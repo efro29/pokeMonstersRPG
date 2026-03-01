@@ -23,7 +23,7 @@ import { ProfileTab } from "@/components/profile-tab";
 import { ShopTab } from "@/components/shop-tab";
 import { NpcTab } from "@/components/npc-tab";
 import { MovesDictionaryTab } from "@/components/moves-dictionary-tab";
-import { DuelTab } from "@/components/duel-tab";
+import { DuelTab, type DuelMode } from "@/components/duel-tab";
 import { DuelBattleScene } from "@/components/duel-battle-scene";
 import type { DuelNpc } from "@/lib/duel-npcs";
 import { SettingsTab } from "@/components/settings-tab";
@@ -67,6 +67,8 @@ export default function Page() {
   const [wildBattleTarget, setWildBattleTarget] = useState<number | null>(null);
   const wildLevelRef = useRef<number>(1);
   const [activeDuel, setActiveDuel] = useState<DuelNpc | null>(null);
+  const [duelMode, setDuelMode] = useState<"challenges" | "trails">("challenges");
+  const [activeTrailNodeId, setActiveTrailNodeId] = useState<string | null>(null);
   const [explorationRewardToast, setExplorationRewardToast] = useState<{
     xp: number;
     ballsUsed: number;
@@ -339,6 +341,14 @@ export default function Page() {
   };
 
   const handleCaptureSuccess = (species: { id: number; name: string; types: string[]; baseHp: number; startingMoves: string[]; learnableMoves: string[] }, ballsUsed: number) => {
+    // If this was a trail capture, mark the node as completed
+    if (duelMode === "trails" && activeTrailNodeId) {
+      const saved = localStorage.getItem("pokerpg-trail-progress");
+      const completed = saved ? new Set(JSON.parse(saved) as string[]) : new Set<string>();
+      completed.add(activeTrailNodeId);
+      localStorage.setItem("pokerpg-trail-progress", JSON.stringify([...completed]));
+      setActiveTrailNodeId(null);
+    }
     handleCaptureSuccessWithLevel(species, ballsUsed, 1);
   };
 
@@ -526,7 +536,10 @@ export default function Page() {
       return (
         <CaptureScene
           pokemon={captureSpecies}
-          onClose={() => setCaptureTarget(null)}
+          onClose={() => {
+            setCaptureTarget(null);
+            setActiveTrailNodeId(null);
+          }}
           onCaptured={handleCaptureSuccess}
         />
       );
@@ -541,13 +554,25 @@ export default function Page() {
           npc={activeDuel}
           onClose={() => {
             setActiveDuel(null);
+            setActiveTrailNodeId(null);
           }}
           onVictory={(npc) => {
+            // If this was a trail battle, mark the node as completed
+            if (duelMode === "trails" && activeTrailNodeId) {
+              // Save to localStorage directly
+              const saved = localStorage.getItem("pokerpg-trail-progress");
+              const completed = saved ? new Set(JSON.parse(saved) as string[]) : new Set<string>();
+              completed.add(activeTrailNodeId);
+              localStorage.setItem("pokerpg-trail-progress", JSON.stringify([...completed]));
+            }
             setActiveDuel(null);
+            setActiveTrailNodeId(null);
             setActiveTab("duels");
           }}
           onDefeat={() => {
+            // Don't mark as completed on defeat
             setActiveDuel(null);
+            setActiveTrailNodeId(null);
             setActiveTab("duels");
           }}
         />
@@ -762,6 +787,8 @@ export default function Page() {
         )}
         {activeTab === "duels" && (
           <DuelTab
+            duelMode={duelMode}
+            onDuelModeChange={setDuelMode}
             onStartDuel={(npc) => {
               // Inicia batalha com o primeiro pokemon da equipe
               const currentTeam = useGameStore.getState().team;
@@ -772,6 +799,7 @@ export default function Page() {
               }
             }}
             onStartCapture={handleStartCapture}
+            onTrailNodeStart={(nodeId) => setActiveTrailNodeId(nodeId)}
           />
         )}
       </div>

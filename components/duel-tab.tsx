@@ -27,16 +27,18 @@ import {
 import { playButtonClick, playBattleMusic } from "@/lib/sounds";
 import { TrailsMode } from "./trails-mode";
 
-type DuelMode = "challenges" | "trails";
+export type DuelMode = "challenges" | "trails";
 
 interface DuelTabProps {
   onStartDuel: (npc: DuelNpc) => void;
   onStartCapture?: (speciesId: number) => void;
+  duelMode: DuelMode;
+  onDuelModeChange: (mode: DuelMode) => void;
+  onTrailNodeStart?: (nodeId: string) => void;
 }
 
-export function DuelTab({ onStartDuel, onStartCapture }: DuelTabProps) {
+export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChange, onTrailNodeStart }: DuelTabProps) {
   const { trainer } = useGameStore();
-  const [duelMode, setDuelMode] = useState<DuelMode>("challenges");
   const [challenges, setChallenges] = useState<DuelNpc[]>([]);
   const [selectedChallenge, setSelectedChallenge] = useState<DuelNpc | null>(null);
   const [showTransition, setShowTransition] = useState(false);
@@ -342,7 +344,8 @@ export function DuelTab({ onStartDuel, onStartCapture }: DuelTabProps) {
       <TrailsMode
         onStartDuel={onStartDuel}
         onStartCapture={onStartCapture || (() => {})}
-        onBack={() => setDuelMode("challenges")}
+        onBack={() => onDuelModeChange("challenges")}
+        onNodeStart={onTrailNodeStart}
       />
     );
   }
@@ -355,7 +358,7 @@ export function DuelTab({ onStartDuel, onStartCapture }: DuelTabProps) {
         <button
           onClick={() => {
             playButtonClick();
-            setDuelMode("challenges");
+            onDuelModeChange("challenges");
           }}
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 transition-all relative ${
             duelMode === "challenges"
@@ -375,7 +378,7 @@ export function DuelTab({ onStartDuel, onStartCapture }: DuelTabProps) {
         <button
           onClick={() => {
             playButtonClick();
-            setDuelMode("trails");
+            onDuelModeChange("trails");
           }}
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 transition-all relative ${
             duelMode === "trails"
