@@ -557,6 +557,10 @@ export default function Page() {
             setActiveTrailNodeId(null);
           }}
           onVictory={(npc) => {
+            // Se for um desafio (challenges), registra vitória no contador diário
+            if (duelMode === "challenges") {
+              useGameStore.getState().registerDailyChallengeWin();
+            }
             // If this was a trail battle, mark the node as completed
             if (duelMode === "trails" && activeTrailNodeId) {
               // Save to localStorage directly

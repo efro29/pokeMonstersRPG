@@ -38,7 +38,7 @@ interface DuelTabProps {
 }
 
 export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChange, onTrailNodeStart }: DuelTabProps) {
-  const { trainer } = useGameStore();
+  const { trainer, registerDailyChallengeWin, getDailyChallengeWinsRemaining } = useGameStore();
   const [challenges, setChallenges] = useState<DuelNpc[]>([]);
   const [selectedChallenge, setSelectedChallenge] = useState<DuelNpc | null>(null);
   const [showTransition, setShowTransition] = useState(false);
@@ -47,6 +47,7 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
   const [readChallenges, setReadChallenges] = useState<Set<string>>(new Set());
   const [battleXp, setBattleXp] = useState(0);
   const [battleLevel, setBattleLevel] = useState(1);
+  const [challengesRemaining, setChallengesRemaining] = useState(5);
 
   // Calcula XP necessario para o proximo nivel de batalha
   const getXpForLevel = (level: number) => level * 500;
@@ -57,6 +58,10 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
   useEffect(() => {
     const newChallenges = generateRandomChallenges(6);
     setChallenges(newChallenges);
+    
+    // Atualiza desafios restantes do dia
+    const remaining = getDailyChallengeWinsRemaining();
+    setChallengesRemaining(remaining);
     
     // Verifica se o boss semanal esta disponivel (10 vitorias no fim de semana)
     const storedWins = localStorage.getItem("pokerpg-weekly-duel-wins");
@@ -75,9 +80,15 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
     const storedBattleLevel = localStorage.getItem("pokerpg-battle-level");
     if (storedBattleXp) setBattleXp(parseInt(storedBattleXp));
     if (storedBattleLevel) setBattleLevel(parseInt(storedBattleLevel));
-  }, []);
+  }, [getDailyChallengeWinsRemaining]);
 
   const handleAcceptChallenge = (npc: DuelNpc) => {
+    // Verifica se ainda ha desafios disponiveis hoje
+    if (challengesRemaining <= 0) {
+      alert("Você atingiu o limite de 5 desafios por dia! Volte amanhã para mais desafios.");
+      return;
+    }
+    
     playButtonClick();
     setShowTransition(true);
     
@@ -521,20 +532,53 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
             </button>
           )}
 
+          {/* Indicador de Desafios Diarios Restantes */}
+          <div className={`px-4 py-3 border-b border-border ${
+            challengesRemaining <= 0 
+              ? 'bg-red-500/10 border-red-500/30' 
+              : 'bg-blue-500/10 border-blue-500/30'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  challengesRemaining <= 0 ? 'bg-red-500' : 'bg-blue-500'
+                }`} />
+                <span className="text-xs font-bold text-foreground">Desafios Diarios</span>
+              </div>
+              <span className={`text-sm font-bold px-3 py-1 rounded-full ${
+                challengesRemaining <= 0
+                  ? 'bg-red-500/20 text-red-400'
+                  : 'bg-blue-500/20 text-blue-400'
+              }`}>
+                {challengesRemaining}/5 Restantes
+              </span>
+            </div>
+            {challengesRemaining <= 0 && (
+              <p className="text-[10px] text-red-400 mt-1">
+                Você atingiu o limite diário. Volte amanhã para mais desafios!
+              </p>
+            )}
+          </div>
+
           {/* Lista de Desafios Normais */}
           {challenges.map((npc) => {
             const isRead = readChallenges.has(npc.id);
+            const isDisabled = challengesRemaining <= 0;
             return (
               <button
                 key={npc.id}
                 onClick={() => {
+                  if (isDisabled) return;
                   playButtonClick();
                   setSelectedChallenge(npc);
                 }}
+                disabled={isDisabled}
                 className={`flex items-center gap-3 p-4 border-b border-border transition-all text-left ${
-                  isRead
-                    ? "bg-card hover:bg-secondary/50"
-                    : "bg-primary/5 hover:bg-primary/10"
+                  isDisabled
+                    ? 'opacity-50 cursor-not-allowed bg-muted/30'
+                    : isRead
+                    ? 'bg-card hover:bg-secondary/50'
+                    : 'bg-primary/5 hover:bg-primary/10'
                 }`}
               >
                 <div className="relative">

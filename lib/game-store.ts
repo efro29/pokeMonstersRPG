@@ -936,6 +936,9 @@ interface GameState {
   activateCardEffect: (slotIndex: number) => { isCrit: boolean; alignment: string } | undefined;
   activateHealCard: (slotIndex: number, targetUid: string) => boolean;
   activateResurrectCard: (slotIndex: number, targetUid: string) => boolean;
+  // Daily challenges
+  registerDailyChallengeWin: () => void;
+  getDailyChallengeWinsRemaining: () => number;
   // PA system
   spendPA: (action: PAActionType) => boolean;
   endTurn: () => void;
@@ -3022,6 +3025,42 @@ export const useGameStore = create<GameState>()(
           },
         });
         get().addBattleLog("[BARALHO] Cartas embaralhadas!");
+      },
+
+      // Daily challenges system
+      registerDailyChallengeWin: () => {
+        const today = getTodayDateStr();
+        set((state) => {
+          const trainer = state.trainer;
+          // Reset counter if date changed
+          if (trainer.lastChallengeDate !== today) {
+            return {
+              trainer: {
+                ...trainer,
+                dailyChallengeWins: 1,
+                lastChallengeDate: today,
+              },
+            };
+          }
+          // Increment counter for today
+          return {
+            trainer: {
+              ...trainer,
+              dailyChallengeWins: Math.min(5, trainer.dailyChallengeWins + 1),
+            },
+          };
+        });
+      },
+
+      getDailyChallengeWinsRemaining: (): number => {
+        const { trainer } = get();
+        const today = getTodayDateStr();
+        // If it's a new day, reset and allow 5 challenges
+        if (trainer.lastChallengeDate !== today) {
+          return 5;
+        }
+        // Otherwise return remaining challenges (max 5)
+        return Math.max(0, 5 - trainer.dailyChallengeWins);
       },
 
       // ---- REPLENISH DECK: return discard pile back into the deck and shuffle ----
