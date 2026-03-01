@@ -896,10 +896,10 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
             />
 
             <motion.div
-              className="relative w-full max-w-md bg-gradient-to-b from-card to-background rounded-t-3xl overflow-hidden flex flex-col max-h-[90vh]"
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
+              className="relative w-full max-w-md bg-gradient-to-b from-card to-background rounded-2xl overflow-hidden flex flex-col max-h-[85vh] z-50"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -909,14 +909,9 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                 style={{ background: `linear-gradient(90deg, ${getStageColor(currentStageView)}, ${getStageColor(currentStageView)}80)` }}
               />
 
-              {/* Handle bar */}
-              <div className="flex justify-center pt-3 pb-2 flex-shrink-0">
-                <div className="w-12 h-1.5 rounded-full bg-border" />
-              </div>
-
               {/* Scrollable Content */}
               <ScrollArea className="flex-1 overflow-hidden">
-                <div className="p-6 pt-2">
+                <div className="p-6">
                   {selectedNode.type === "npc" && selectedNode.npc && (
                     <>
                       <div className="flex items-center gap-4 mb-5">
