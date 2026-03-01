@@ -112,6 +112,9 @@ export interface TrainerProfile {
   legendaryUnlockedDays: number[]; // which 30-day milestones were unlocked (30, 60, 90...)
   // Weekly events
   weeklyEventProgress: WeeklyEventProgress | null;
+  // Daily challenges system
+  dailyChallengeWins: number;
+  lastChallengeDate: string | null; // YYYY-MM-DD
 }
 
 // ---- Star Dust Economy System ----
@@ -941,6 +944,9 @@ interface GameState {
   activateCardEffect: (slotIndex: number) => { isCrit: boolean; alignment: string } | undefined;
   activateHealCard: (slotIndex: number, targetUid: string) => boolean;
   activateResurrectCard: (slotIndex: number, targetUid: string) => boolean;
+  // Daily challenges
+  registerDailyChallengeWin: () => void;
+  getDailyChallengeWinsRemaining: () => number;
   // PA system
   spendPA: (action: PAActionType) => boolean;
   endTurn: () => void;
@@ -978,6 +984,8 @@ export const useGameStore = create<GameState>()(
         weekStartDate: null,
         legendaryUnlockedDays: [],
         weeklyEventProgress: null,
+        dailyChallengeWins: 0,
+        lastChallengeDate: null,
       },
       team: [],
       reserves: [],
@@ -1116,6 +1124,40 @@ export const useGameStore = create<GameState>()(
       activateCardEffect: () => undefined,
       activateHealCard: () => false,
       activateResurrectCard: () => false,
+      // Daily challenges
+      registerDailyChallengeWin: () => {
+        const today = getTodayDateStr();
+        set((state) => {
+          const trainer = state.trainer;
+          // Reset counter if date changed
+          if (trainer.lastChallengeDate !== today) {
+            return {
+              trainer: {
+                ...trainer,
+                dailyChallengeWins: 1,
+                lastChallengeDate: today,
+              },
+            };
+          }
+          // Increment counter for today
+          return {
+            trainer: {
+              ...trainer,
+              dailyChallengeWins: Math.min(5, trainer.dailyChallengeWins + 1),
+            },
+          };
+        });
+      },
+      getDailyChallengeWinsRemaining: () => {
+        const { trainer } = get();
+        const today = getTodayDateStr();
+        // If it's a new day, reset and allow 5 challenges
+        if (trainer.lastChallengeDate !== today) {
+          return 5;
+        }
+        // Otherwise return remaining challenges (max 5)
+        return Math.max(0, 5 - trainer.dailyChallengeWins);
+      },
       spendPA: () => false,
       endTurn: () => {},
       moveBoardSquares: () => false,
