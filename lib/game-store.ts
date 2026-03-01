@@ -105,7 +105,9 @@ export interface TrainerProfile {
   legendaryUnlockedDays: number[]; // which 30-day milestones were unlocked (30, 60, 90...)
   // Weekly events
   weeklyEventProgress: WeeklyEventProgress | null;
-}
+  // Daily challenges system
+  dailyChallengeWins: number; // quantas vitórias em desafios hoje
+  lastChallengeDate: string | null; // YYYY-MM-DD da última vitória
 
 // ---- Star Dust Economy System ----
 export const STAR_DUST_CONFIG = {
@@ -971,6 +973,8 @@ export const useGameStore = create<GameState>()(
         weekStartDate: null,
         legendaryUnlockedDays: [],
         weeklyEventProgress: null,
+        dailyChallengeWins: 0,
+        lastChallengeDate: null,
       },
       team: [],
       reserves: [],
