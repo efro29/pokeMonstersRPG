@@ -565,6 +565,29 @@ export default function Page() {
               completed.add(activeTrailNodeId);
               localStorage.setItem("pokerpg-trail-progress", JSON.stringify([...completed]));
             }
+            
+            // If this was a challenge battle, increment daily wins
+            if (duelMode === "challenges") {
+              const today = new Date();
+              const todayKey = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+              const stored = localStorage.getItem("pokerpg-daily-challenge-wins");
+              let dailyData = { date: todayKey, wins: 0 };
+              
+              if (stored) {
+                try {
+                  const parsed = JSON.parse(stored);
+                  if (parsed.date === todayKey) {
+                    dailyData = parsed;
+                  }
+                } catch {
+                  // ignore
+                }
+              }
+              
+              dailyData.wins += 1;
+              localStorage.setItem("pokerpg-daily-challenge-wins", JSON.stringify(dailyData));
+            }
+            
             setActiveDuel(null);
             setActiveTrailNodeId(null);
             setActiveTab("duels");
