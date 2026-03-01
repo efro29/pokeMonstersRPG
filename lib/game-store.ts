@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { PokemonSpecies, BagItemDef, PokemonBaseAttributes, DamageBreakdown, HitResult } from "./pokemon-data";
 import { getGameStoreKey } from "./mode-store";
-import { BAG_ITEMS, getMove, getPokemon, canEvolveByLevel, canEvolveByStone, canEvolveByTrade, xpForLevel, computeAttributes, getBaseAttributes, applyFaintPenalty, applyLevelUpBonus, rollDamageAgainstPokemon, calculateHitResult, calculateBattleDamage, getDamageMultiplier } from "./pokemon-data";
+import { BAG_ITEMS, getMove, getPokemon, canEvolveByLevel, canEvolveByStone, canEvolveByTrade, xpForLevel, computeAttributes, getBaseAttributes, applyFaintPenalty, applyLevelUpBonus, rollDamageAgainstPokemon, calculateHitResult, calculateBattleDamage, getDamageMultiplier, getHappinessBonus } from "./pokemon-data";
 import type { BattleCard, CardAlignment, CardElement, SuperEffect } from "./card-data";
 import { drawCard, buildDeck, shuffleDeck, createLuckCardOfElement, checkLuckTrio, checkBadLuckTrio, checkElementalAffinity, calculateBadLuckPenalty, rollSuperAdvantage, rollSuperPunishment, countFieldCardsByElement, consumeEnergyCards, hasAuraAmplificada, consumeAuraAmplificada } from "./card-data";
 
@@ -1600,7 +1600,14 @@ export const useGameStore = create<GameState>()(
         const critExpansion = Math.floor(trainerAttrs.sorte / 2);
         const critThreshold = Math.max(15, 20 - critExpansion);
 
-        const effectiveRoll = roll + combateBonus;
+        // Bonus de Felicidade do Pokemon: melhora chances nos dados
+        const activePokemon = team.find((p) => p.uid === battle.activePokemonUid);
+        const pokemonBaseAttrs = activePokemon 
+          ? (activePokemon.customAttributes || getBaseAttributes(activePokemon.speciesId))
+          : getBaseAttributes(1);
+        const happinessBonus = getHappinessBonus(pokemonBaseAttrs.felicidade);
+
+        const effectiveRoll = roll + combateBonus + happinessBonus;
 
         // Determine hit result
         let hitResult: HitResult;

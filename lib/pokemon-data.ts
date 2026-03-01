@@ -23,6 +23,77 @@ export const TYPE_COLORS: Record<PokemonType, string> = {
   steel: "#B8B8D0",
 };
 
+// ========== Type Effectiveness Chart ==========
+// Multiplicadores: 2.0 = super efetivo (2x dano), 0.5 = pouco efetivo (0.5x dano), 0 = imune
+// Baseado na tabela oficial de Pokemon
+export const TYPE_EFFECTIVENESS: Record<PokemonType, Partial<Record<PokemonType, number>>> = {
+  normal: { rock: 0.5, ghost: 0, steel: 0.5 },
+  fire: { fire: 0.5, water: 0.5, grass: 2, ice: 2, bug: 2, rock: 0.5, dragon: 0.5, steel: 2 },
+  water: { fire: 2, water: 0.5, grass: 0.5, ground: 2, rock: 2, dragon: 0.5 },
+  grass: { fire: 0.5, water: 2, grass: 0.5, poison: 0.5, ground: 2, flying: 0.5, bug: 0.5, rock: 2, dragon: 0.5, steel: 0.5 },
+  electric: { water: 2, grass: 0.5, electric: 0.5, ground: 0, flying: 2, dragon: 0.5 },
+  ice: { fire: 0.5, water: 0.5, grass: 2, ice: 0.5, ground: 2, flying: 2, dragon: 2, steel: 0.5 },
+  fighting: { normal: 2, ice: 2, poison: 0.5, flying: 0.5, psychic: 0.5, bug: 0.5, rock: 2, ghost: 0, dark: 2, steel: 2 },
+  poison: { grass: 2, poison: 0.5, ground: 0.5, rock: 0.5, ghost: 0.5, steel: 0 },
+  ground: { fire: 2, electric: 2, grass: 0.5, poison: 2, flying: 0, bug: 0.5, rock: 2, steel: 2 },
+  flying: { grass: 2, electric: 0.5, fighting: 2, bug: 2, rock: 0.5, steel: 0.5 },
+  psychic: { fighting: 2, poison: 2, psychic: 0.5, dark: 0, steel: 0.5 },
+  bug: { fire: 0.5, grass: 2, fighting: 0.5, poison: 0.5, flying: 0.5, psychic: 2, ghost: 0.5, dark: 2, steel: 0.5 },
+  rock: { fire: 2, ice: 2, fighting: 0.5, ground: 0.5, flying: 2, bug: 2, steel: 0.5 },
+  ghost: { normal: 0, psychic: 2, ghost: 2, dark: 0.5 },
+  dragon: { dragon: 2, steel: 0.5 },
+  dark: { fighting: 0.5, psychic: 2, ghost: 2, dark: 0.5 },
+  steel: { fire: 0.5, water: 0.5, electric: 0.5, ice: 2, rock: 2, steel: 0.5 },
+};
+
+/**
+ * Calcula o multiplicador de efetividade de tipo para um ataque.
+ * @param attackType - Tipo do golpe
+ * @param defenderTypes - Tipos do Pokemon defensor
+ * @returns Multiplicador (0, 0.25, 0.5, 1, 2, ou 4)
+ */
+export function getTypeEffectiveness(attackType: PokemonType, defenderTypes: PokemonType[]): number {
+  let multiplier = 1;
+  for (const defType of defenderTypes) {
+    const effectiveness = TYPE_EFFECTIVENESS[attackType]?.[defType];
+    if (effectiveness !== undefined) {
+      multiplier *= effectiveness;
+    }
+  }
+  return multiplier;
+}
+
+/**
+ * Retorna o label de efetividade para exibir na UI
+ */
+export function getTypeEffectivenessLabel(multiplier: number): string | null {
+  if (multiplier === 0) return "Imune!";
+  if (multiplier === 0.25) return "Muito Pouco Efetivo";
+  if (multiplier === 0.5) return "Pouco Efetivo";
+  if (multiplier === 2) return "Super Efetivo!";
+  if (multiplier === 4) return "Extremamente Efetivo!";
+  return null; // 1x = normal, não precisa label
+}
+
+/**
+ * Calcula o bônus de felicidade para rolagens de dados.
+ * Pokemon com felicidade alta têm mais sorte nos dados.
+ * @param felicidade - Atributo de felicidade do Pokemon (1-10)
+ * @returns Bônus para adicionar ao D20 roll
+ */
+export function getHappinessBonus(felicidade: number): number {
+  // Felicidade 1-3: +0
+  // Felicidade 4-5: +1
+  // Felicidade 6-7: +2
+  // Felicidade 8-9: +3
+  // Felicidade 10: +4
+  if (felicidade <= 3) return 0;
+  if (felicidade <= 5) return 1;
+  if (felicidade <= 7) return 2;
+  if (felicidade <= 9) return 3;
+  return 4;
+}
+
 export type MoveRange = "melee" | "short" | "medium" | "long" | "area";
 
 export const MOVE_RANGE_INFO: Record<MoveRange, { label: string; labelPt: string; tiles: number; description: string }> = {
