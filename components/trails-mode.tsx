@@ -593,42 +593,117 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
 
           {/* Trail Nodes - Enhanced Duolingo Style */}
           <div className="relative flex flex-col items-center pb-8">
-            {/* Curved Path Background */}
+            {/* Smooth S-Curve Path Background - Behind all nodes */}
             <svg
-              className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-full pointer-events-none"
-              style={{ zIndex: 0 }}
+              className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none"
+              style={{ zIndex: 0, width: "200px", height: `${(currentStage?.nodes.length || 1) * 96 + 48}px` }}
+              preserveAspectRatio="none"
             >
               <defs>
                 <linearGradient id={`pathGradient-${currentStageView}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor={getStageColor(currentStageView)} stopOpacity="0.1" />
-                  <stop offset="50%" stopColor={getStageColor(currentStageView)} stopOpacity="0.3" />
-                  <stop offset="100%" stopColor={getStageColor(currentStageView)} stopOpacity="0.1" />
+                  <stop offset="0%" stopColor={getStageColor(currentStageView)} stopOpacity="0.4" />
+                  <stop offset="50%" stopColor={getStageColor(currentStageView)} stopOpacity="0.6" />
+                  <stop offset="100%" stopColor={getStageColor(currentStageView)} stopOpacity="0.4" />
                 </linearGradient>
               </defs>
-              {/* Path segments connecting nodes */}
-              {currentStage?.nodes.map((_, idx) => {
-                if (idx === 0) return null;
-                const isEven = idx % 2 === 0;
-                const prevIsEven = (idx - 1) % 2 === 0;
-                const yStart = (idx - 1) * 100 + 50;
-                const yEnd = idx * 100 + 50;
-                const xStart = prevIsEven ? 24 : 104;
-                const xEnd = isEven ? 24 : 104;
-                const cpX = 64;
-
-                return (
-                  <path
-                    key={idx}
-                    d={`M ${xStart} ${yStart} Q ${cpX} ${(yStart + yEnd) / 2} ${xEnd} ${yEnd}`}
-                    stroke={getStageColor(currentStageView)}
-                    strokeWidth="4"
-                    strokeOpacity="0.3"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeDasharray={completedNodes.has(`stage-${currentStageView}-node-${idx - 1}`) ? "0" : "8 8"}
-                  />
-                );
-              })}
+              {/* Single continuous S-curve path */}
+              {currentStage && currentStage.nodes.length > 0 && (
+                <path
+                  d={(() => {
+                    const nodes = currentStage.nodes;
+                    const nodeSpacing = 96; // mb-4 = 16px + node height ~80px
+                    const centerX = 100;
+                    const amplitude = 50; // How far left/right the S curves
+                    
+                    // Build smooth cubic bezier path
+                    let pathD = "";
+                    
+                    nodes.forEach((_, idx) => {
+                      const y = idx * nodeSpacing + 48; // Center of each node
+                      const isEven = idx % 2 === 0;
+                      const x = isEven ? centerX - amplitude : centerX + amplitude;
+                      
+                      if (idx === 0) {
+                        pathD = `M ${x} ${y}`;
+                      } else {
+                        const prevY = (idx - 1) * nodeSpacing + 48;
+                        const prevIsEven = (idx - 1) % 2 === 0;
+                        const prevX = prevIsEven ? centerX - amplitude : centerX + amplitude;
+                        
+                        // Control points for smooth S-curve
+                        const cp1X = prevX;
+                        const cp1Y = prevY + nodeSpacing * 0.5;
+                        const cp2X = x;
+                        const cp2Y = y - nodeSpacing * 0.5;
+                        
+                        pathD += ` C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${x} ${y}`;
+                      }
+                    });
+                    
+                    return pathD;
+                  })()}
+                  stroke={`url(#pathGradient-${currentStageView})`}
+                  strokeWidth="8"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
+              {/* Completed path overlay - solid line over completed sections */}
+              {currentStage && currentStage.nodes.length > 0 && (
+                <path
+                  d={(() => {
+                    const nodes = currentStage.nodes;
+                    const nodeSpacing = 96;
+                    const centerX = 100;
+                    const amplitude = 50;
+                    
+                    let pathD = "";
+                    let lastCompletedIdx = -1;
+                    
+                    // Find last completed node
+                    nodes.forEach((_, idx) => {
+                      if (completedNodes.has(`stage-${currentStageView}-node-${idx}`) || 
+                          (idx === nodes.length - 1 && completedNodes.has(`stage-${currentStageView}-pokemon`))) {
+                        lastCompletedIdx = idx;
+                      }
+                    });
+                    
+                    if (lastCompletedIdx < 0) return "";
+                    
+                    nodes.forEach((_, idx) => {
+                      if (idx > lastCompletedIdx) return;
+                      
+                      const y = idx * nodeSpacing + 48;
+                      const isEven = idx % 2 === 0;
+                      const x = isEven ? centerX - amplitude : centerX + amplitude;
+                      
+                      if (idx === 0) {
+                        pathD = `M ${x} ${y}`;
+                      } else {
+                        const prevY = (idx - 1) * nodeSpacing + 48;
+                        const prevIsEven = (idx - 1) % 2 === 0;
+                        const prevX = prevIsEven ? centerX - amplitude : centerX + amplitude;
+                        
+                        const cp1X = prevX;
+                        const cp1Y = prevY + nodeSpacing * 0.5;
+                        const cp2X = x;
+                        const cp2Y = y - nodeSpacing * 0.5;
+                        
+                        pathD += ` C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${x} ${y}`;
+                      }
+                    });
+                    
+                    return pathD;
+                  })()}
+                  stroke={getStageColor(currentStageView)}
+                  strokeWidth="8"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ filter: `drop-shadow(0 0 8px ${getStageColor(currentStageView)}60)` }}
+                />
+              )}
             </svg>
 
             {currentStage?.nodes.map((node, idx) => {
