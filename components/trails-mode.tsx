@@ -498,14 +498,6 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
               className={`mb-8 relative overflow-hidden rounded-2xl ${isLegendaryStage(currentStageView) ? "ring-2 ring-yellow-400/50" : ""
                 }`}
             >
-          {/* Pokemon Reward Banner - Enhanced Design */}
-          {currentStage && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`mb-8 relative overflow-hidden rounded-2xl ${isLegendaryStage(currentStageView) ? "ring-2 ring-yellow-400/50" : ""
-                }`}
-            >
               {/* Gradient Background */}
               <div
                 className={`absolute inset-0 bg-gradient-to-r ${getStageGradient(currentStageView)} opacity-20`}
