@@ -100,7 +100,7 @@ function buildTrailStages(sortedNpcs: DuelNpc[], completedNodeIds: Set<string>):
       const npc = sortedNpcs[npcIndex];
       const nodeId = `stage-${stageIdx}-node-${i}`;
       const isCompleted = completedNodeIds.has(nodeId);
-      
+
       // Determine if locked: need previous node to be completed
       let isLocked = false;
       if (i === 0) {
@@ -307,10 +307,10 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
         }
       }
     };
-    
+
     // Also check on mount/re-render
     handleFocus();
-    
+
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
   }, []);
@@ -465,17 +465,16 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
               <button
                 key={idx}
                 onClick={() => setCurrentStageView(idx)}
-                className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                  currentStageView === idx
+                className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${currentStageView === idx
                     ? "ring-2 ring-offset-2 ring-offset-background"
                     : ""
-                }`}
+                  }`}
                 style={{
                   backgroundColor: stageCompleted
                     ? getStageColor(idx)
                     : hasProgress
-                    ? `${getStageColor(idx)}40`
-                    : "hsl(var(--secondary))",
+                      ? `${getStageColor(idx)}40`
+                      : "hsl(var(--secondary))",
                   color: stageCompleted || hasProgress ? "#fff" : "hsl(var(--muted-foreground))",
                   borderColor: getStageColor(idx),
                   ...(currentStageView === idx ? { ringColor: getStageColor(idx) } : {}),
@@ -496,15 +495,14 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`mb-8 relative overflow-hidden rounded-2xl ${
-                isLegendaryStage(currentStageView) ? "ring-2 ring-yellow-400/50" : ""
-              }`}
+              className={`mb-8 relative overflow-hidden rounded-2xl ${isLegendaryStage(currentStageView) ? "ring-2 ring-yellow-400/50" : ""
+                }`}
             >
               {/* Gradient Background */}
-              <div 
+              <div
                 className={`absolute inset-0 bg-gradient-to-r ${getStageGradient(currentStageView)} opacity-20`}
               />
-              
+
               {/* Legendary glow effect */}
               {isLegendaryStage(currentStageView) && (
                 <motion.div
@@ -513,7 +511,7 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                   transition={{ duration: 2, repeat: Infinity }}
                 />
               )}
-              
+
               <div className="relative p-5 flex items-center gap-4">
                 {/* Pokemon Sprite Container */}
                 <motion.div
@@ -522,10 +520,9 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                   transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                 >
                   <div
-                    className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg ${
-                      isLegendaryStage(currentStageView) ? "ring-2 ring-yellow-400" : ""
-                    }`}
-                    style={{ 
+                    className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg ${isLegendaryStage(currentStageView) ? "ring-2 ring-yellow-400" : ""
+                      }`}
+                    style={{
                       background: `linear-gradient(135deg, ${getStageColor(currentStageView)}40, ${getStageColor(currentStageView)}20)`,
                       boxShadow: `0 8px 32px ${getStageColor(currentStageView)}30`
                     }}
@@ -549,7 +546,7 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                     </motion.div>
                   )}
                 </motion.div>
-                
+
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
@@ -565,9 +562,9 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                   </div>
                   <p className="font-bold text-lg text-foreground truncate">{currentStage.pokemonReward.name}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <span 
+                    <span
                       className="text-xs font-medium px-2 py-0.5 rounded-full"
-                      style={{ 
+                      style={{
                         backgroundColor: `${getStageColor(currentStageView)}30`,
                         color: getStageColor(currentStageView)
                       }}
@@ -579,15 +576,15 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                     </span>
                   </div>
                 </div>
-                
+
                 {/* Sparkles */}
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
                 >
-                  <Sparkles 
-                    className="w-8 h-8" 
-                    style={{ color: isLegendaryStage(currentStageView) ? "#FBBF24" : getStageColor(currentStageView) }} 
+                  <Sparkles
+                    className="w-8 h-8"
+                    style={{ color: isLegendaryStage(currentStageView) ? "#FBBF24" : getStageColor(currentStageView) }}
                   />
                 </motion.div>
               </div>
@@ -618,7 +615,7 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                 const xStart = prevIsEven ? 24 : 104;
                 const xEnd = isEven ? 24 : 104;
                 const cpX = 64;
-                
+
                 return (
                   <path
                     key={idx}
@@ -668,35 +665,32 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                     disabled={node.locked}
                     animate={isAvailable ? { y: [0, -8, 0] } : {}}
                     transition={isAvailable ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" } : {}}
-                    className={`relative flex items-center justify-center transition-all ${
-                      isPokemonNode ? "w-24 h-24" : "w-20 h-20"
-                    } rounded-full ${
-                      node.locked
+                    className={`relative flex items-center justify-center transition-all ${isPokemonNode ? "w-24 h-24" : "w-20 h-20"
+                      } rounded-full ${node.locked
                         ? "opacity-40 cursor-not-allowed grayscale"
                         : node.completed
-                        ? "cursor-default"
-                        : "cursor-pointer hover:scale-110 active:scale-95"
-                    }`}
+                          ? "cursor-default"
+                          : "cursor-pointer hover:scale-110 active:scale-95"
+                      }`}
                     style={{
                       background: node.completed
                         ? `linear-gradient(135deg, ${getStageColor(currentStageView)}, ${getStageColor(currentStageView)}cc)`
                         : node.locked
-                        ? "hsl(var(--secondary))"
-                        : isPokemonNode
-                        ? `linear-gradient(135deg, ${getStageColor(currentStageView)}50, ${getStageColor(currentStageView)}20)`
-                        : `linear-gradient(135deg, ${getStageColor(currentStageView)}40, ${getStageColor(currentStageView)}15)`,
-                      border: `4px solid ${
-                        node.completed
+                          ? "hsl(var(--secondary))"
+                          : isPokemonNode
+                            ? `linear-gradient(135deg, ${getStageColor(currentStageView)}50, ${getStageColor(currentStageView)}20)`
+                            : `linear-gradient(135deg, ${getStageColor(currentStageView)}40, ${getStageColor(currentStageView)}15)`,
+                      border: `4px solid ${node.completed
                           ? "#fff"
                           : node.locked
-                          ? "hsl(var(--border))"
-                          : getStageColor(currentStageView)
-                      }`,
+                            ? "hsl(var(--border))"
+                            : getStageColor(currentStageView)
+                        }`,
                       boxShadow: node.completed
                         ? `0 6px 24px ${getStageColor(currentStageView)}60, inset 0 -4px 0 ${getStageColor(currentStageView)}80`
                         : node.locked
-                        ? "inset 0 -3px 0 hsl(var(--border))"
-                        : `0 6px 20px ${getStageColor(currentStageView)}40, inset 0 -4px 0 ${getStageColor(currentStageView)}50`,
+                          ? "inset 0 -3px 0 hsl(var(--border))"
+                          : `0 6px 20px ${getStageColor(currentStageView)}40, inset 0 -4px 0 ${getStageColor(currentStageView)}50`,
                     }}
                   >
                     {node.locked ? (
@@ -737,10 +731,10 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                     {isAvailable && (
                       <motion.div
                         className="absolute -top-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg"
-                        style={{ 
-                          background: isPokemonNode 
-                            ? "linear-gradient(135deg, #FBBF24, #F59E0B)" 
-                            : `linear-gradient(135deg, ${getStageColor(currentStageView)}, ${getStageColor(currentStageView)}cc)` 
+                        style={{
+                          background: isPokemonNode
+                            ? "linear-gradient(135deg, #FBBF24, #F59E0B)"
+                            : `linear-gradient(135deg, ${getStageColor(currentStageView)}, ${getStageColor(currentStageView)}cc)`
                         }}
                         animate={{ scale: [1, 1.1, 1] }}
                         transition={{ duration: 1.5, repeat: Infinity }}
@@ -755,7 +749,7 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
 
                     {/* Stars for completed */}
                     {node.completed && (
-                      <motion.div 
+                      <motion.div
                         className="absolute -bottom-3 flex gap-0.5"
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
@@ -777,9 +771,8 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
 
                   {/* Node Label */}
                   <div
-                    className={`mt-3 text-center ${
-                      isEven ? "text-left -ml-2" : "text-right -mr-2"
-                    }`}
+                    className={`mt-3 text-center ${isEven ? "text-left -ml-2" : "text-right -mr-2"
+                      }`}
                   >
                     {node.type === "npc" ? (
                       <>
@@ -813,20 +806,20 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
       <AnimatePresence>
         {selectedNode && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-end justify-center"
+            className="fixed top-10 inset-0 z-50 flex items-end justify-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSelectedNode(null)}
           >
             {/* Backdrop with blur */}
-            <motion.div 
+            <motion.div
               className="absolute inset-0 bg-black/70 backdrop-blur-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             />
-            
+
             <motion.div
               className="relative w-full max-w-md bg-gradient-to-b from-card to-background rounded-t-3xl overflow-hidden"
               initial={{ y: "100%" }}
@@ -836,22 +829,22 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
               onClick={(e) => e.stopPropagation()}
             >
               {/* Top gradient accent */}
-              <div 
+              <div
                 className="absolute top-0 left-0 right-0 h-1"
                 style={{ background: `linear-gradient(90deg, ${getStageColor(currentStageView)}, ${getStageColor(currentStageView)}80)` }}
               />
-              
+
               {/* Handle bar */}
               <div className="flex justify-center pt-3 pb-2">
                 <div className="w-12 h-1.5 rounded-full bg-border" />
               </div>
-              
+
               <div className="p-6 pt-2">
                 {selectedNode.type === "npc" && selectedNode.npc && (
                   <>
                     <div className="flex items-center gap-4 mb-5">
                       <div className="relative">
-                        <div 
+                        <div
                           className="absolute inset-0 rounded-full opacity-30 blur-md"
                           style={{ backgroundColor: getDifficultyColor(selectedNode.npc.nivel) }}
                         />
@@ -859,7 +852,7 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                           src={selectedNode.npc.imagem}
                           alt={selectedNode.npc.nome}
                           className="relative w-20 h-20 rounded-full object-cover ring-4"
-                          style={{ 
+                          style={{
                             ringColor: getDifficultyColor(selectedNode.npc.nivel),
                             boxShadow: `0 4px 20px ${getDifficultyColor(selectedNode.npc.nivel)}40`
                           }}
@@ -874,7 +867,7 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                         </h3>
                         <span
                           className="inline-block text-xs font-bold uppercase px-3 py-1 rounded-full"
-                          style={{ 
+                          style={{
                             backgroundColor: `${getDifficultyColor(selectedNode.npc.nivel)}20`,
                             color: getDifficultyColor(selectedNode.npc.nivel)
                           }}
@@ -907,8 +900,8 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                       <p className="text-xs text-muted-foreground mb-3 font-medium">EQUIPE ADVERSARIA ({selectedNode.npc.time.length})</p>
                       <div className="flex gap-2 overflow-x-auto pb-2">
                         {selectedNode.npc.time.map((p, i) => (
-                          <div 
-                            key={i} 
+                          <div
+                            key={i}
                             className="flex-shrink-0 flex flex-col items-center bg-secondary/30 rounded-xl p-2"
                           >
                             <img
@@ -935,15 +928,14 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                         animate={{ y: [0, -8, 0] }}
                         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                       >
-                        <div 
+                        <div
                           className="absolute inset-0 rounded-full blur-xl opacity-50"
                           style={{ backgroundColor: getStageColor(currentStageView) }}
                         />
                         <div
-                          className={`relative w-28 h-28 rounded-full flex items-center justify-center ${
-                            isLegendaryStage(selectedNode.stageIndex) ? "ring-4 ring-yellow-400" : ""
-                          }`}
-                          style={{ 
+                          className={`relative w-28 h-28 rounded-full flex items-center justify-center ${isLegendaryStage(selectedNode.stageIndex) ? "ring-4 ring-yellow-400" : ""
+                            }`}
+                          style={{
                             background: `linear-gradient(135deg, ${getStageColor(currentStageView)}50, ${getStageColor(currentStageView)}20)`,
                             boxShadow: `0 8px 32px ${getStageColor(currentStageView)}40`
                           }}
@@ -971,9 +963,9 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                         {selectedNode.pokemonReward.name}
                       </h3>
                       <div className="flex items-center gap-2 mt-2">
-                        <span 
+                        <span
                           className="text-xs font-medium px-3 py-1 rounded-full"
-                          style={{ 
+                          style={{
                             backgroundColor: `${getStageColor(currentStageView)}30`,
                             color: getStageColor(currentStageView)
                           }}
@@ -990,7 +982,7 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
 
                     <div
                       className="p-5 rounded-2xl mb-5 text-center border"
-                      style={{ 
+                      style={{
                         backgroundColor: `${getStageColor(currentStageView)}10`,
                         borderColor: `${getStageColor(currentStageView)}30`
                       }}
@@ -1002,7 +994,7 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                         <Sparkles className="w-10 h-10 mx-auto mb-3" style={{ color: getStageColor(currentStageView) }} />
                       </motion.div>
                       <p className="text-sm text-foreground font-medium">
-                        {isLegendaryStage(selectedNode.stageIndex) 
+                        {isLegendaryStage(selectedNode.stageIndex)
                           ? "Um Pokemon lendario aguarda! Prepare sua melhor equipe para esta captura epica!"
                           : "Parabens! Voce completou todos os desafios desta fase. Capture seu premio!"
                         }
