@@ -745,8 +745,8 @@ export type BattlePhase =
 
 // --- PA (Action Points) System ---
 export const PA_CONFIG = {
-  startingPA: 3,
-  maxPA: 5,
+  startingPA: 2,
+  maxPA: 2,
   costs: {
     attack: 1,
     item: 1,
