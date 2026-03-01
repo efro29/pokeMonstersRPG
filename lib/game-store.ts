@@ -70,12 +70,42 @@ export const DEFAULT_ATTRIBUTES: TrainerAttributes = {
 };
 
 export const ATTRIBUTE_INFO: Record<keyof TrainerAttributes, { name: string; icon: string; desc: string; battleEffect: string }> = {
-  combate: { name: "Combate", icon: "swords", desc: "Instinto de batalha do treinador.", battleEffect: "+1 na rolagem D20 a cada 2 pontos" },
-  afinidade: { name: "Afinidade", icon: "heart", desc: "Vinculo com seus Pokemon.", battleEffect: "+3 HP de cura por ponto" },
-  sorte: { name: "Sorte", icon: "sparkles", desc: "Sorte e acasos favoraveis.", battleEffect: "Critico em 19+ (2pts), 18+ (4pts)..." },
-  furtividade: { name: "Furtividade", icon: "eye-off", desc: "Habilidade de se mover sem ser visto.", battleEffect: "Bonus em fugas e ataques surpresa" },
-  percepcao: { name: "Percepcao", icon: "eye", desc: "Atencao aos detalhes e perigos.", battleEffect: "Bonus em encontrar itens e armadilhas" },
-  carisma: { name: "Carisma", icon: "users", desc: "Poder de persuasao e lideranca.", battleEffect: "Bonus em captura e interacoes" },
+  combate: {
+    name: "Combate",
+    icon: "swords",
+    desc: "Instinto de batalha do treinador.",
+    battleEffect: "+1 na rolagem D20 a cada 2 pontos",
+  },
+  afinidade: {
+    name: "Afinidade",
+    icon: "heart",
+    desc: "Vinculo com seus Pokemon.",
+    battleEffect: "+3 HP de cura por ponto",
+  },
+  sorte: {
+    name: "Sorte",
+    icon: "sparkles",
+    desc: "Sorte e acasos favoraveis.",
+    battleEffect: "Critico em 19+ (2pts), 18+ (4pts)...",
+  },
+  furtividade: {
+    name: "Furtividade",
+    icon: "eye-off",
+    desc: "Habilidade de se mover sem ser visto.",
+    battleEffect: "Bonus em fugas e ataques surpresa",
+  },
+  percepcao: {
+    name: "Percepcao",
+    icon: "eye",
+    desc: "Atencao aos detalhes e perigos.",
+    battleEffect: "Bonus em encontrar itens e armadilhas",
+  },
+  carisma: {
+    name: "Carisma",
+    icon: "users",
+    desc: "Poder de persuasao e lideranca.",
+    battleEffect: "Bonus em captura e interacoes",
+  },
 };
 
 export interface TrainerProfile {
