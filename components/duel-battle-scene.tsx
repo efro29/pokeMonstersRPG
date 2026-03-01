@@ -17,6 +17,11 @@ import {
   POKEMON_ATTRIBUTE_INFO,
   MOVE_RANGE_INFO,
   getPokemon,
+  getTypeEffectiveness,
+  getTypeEffectivenessLabel,
+  getHappinessBonus,
+  applyFaintPenalty,
+  getBaseAttributes,
 } from "@/lib/pokemon-data";
 import type { PokemonType, HitResult, MoveRange, DamageBreakdown } from "@/lib/pokemon-data";
 import { D20Dice } from "./d20-dice";
@@ -173,27 +178,56 @@ function getAIMove(
   return pokemonMoves[Math.floor(Math.random() * pokemonMoves.length)];
 }
 
-// Rola dano do rival baseado no golpe
-function rollRivalDamage(moveId: string, level: number): number {
+// Rola dano do rival baseado no golpe, com efetividade de tipos e balanceamento por nível
+function rollRivalDamage(
+  moveId: string, 
+  attackerLevel: number, 
+  defenderLevel: number,
+  defenderTypes: PokemonType[],
+  defenderDefesa: number
+): { damage: number; typeMultiplier: number; levelMultiplier: number } {
   const move = getMove(moveId);
-  if (!move || !move.damage_dice || move.damage_type === "status") return 0;
+  if (!move || !move.damage_dice || move.damage_type === "status") {
+    return { damage: 0, typeMultiplier: 1, levelMultiplier: 1 };
+  }
   
   const diceMatch = move.damage_dice.match(/(\d+)d(\d+)/);
-  if (!diceMatch) return 0;
+  if (!diceMatch) return { damage: 0, typeMultiplier: 1, levelMultiplier: 1 };
   
   const numDice = parseInt(diceMatch[1]);
   const diceSize = parseInt(diceMatch[2]);
   
-  let total = 0;
+  let diceTotal = 0;
   for (let i = 0; i < numDice; i++) {
-    total += Math.floor(Math.random() * diceSize) + 1;
+    diceTotal += Math.floor(Math.random() * diceSize) + 1;
   }
   
-  // Adiciona bonus de nivel
-  const levelBonus = Math.floor(level / 5);
-  total += levelBonus;
+  // Bonus de nivel do atacante
+  const levelBonus = Math.floor(attackerLevel / 5);
   
-  return total;
+  // Multiplicador de diferença de nível: +10% por nível acima, -5% por nível abaixo
+  let levelMultiplier = 1.0;
+  const levelDiff = attackerLevel - defenderLevel;
+  if (levelDiff > 0) {
+    levelMultiplier = Math.min(2.0, 1.0 + (levelDiff * 0.10));
+  } else if (levelDiff < 0) {
+    levelMultiplier = Math.max(0.5, 1.0 + (levelDiff * 0.05));
+  }
+  
+  // Efetividade de tipo (ex: elétrico vs água = 2x)
+  const typeMultiplier = getTypeEffectiveness(move.type as PokemonType, defenderTypes);
+  
+  // Calcula dano bruto
+  const rawDamage = Math.floor((diceTotal + levelBonus) * levelMultiplier * typeMultiplier);
+  
+  // Redução de defesa (menos efetiva se atacante é de nível mais alto)
+  const defenseEffectiveness = levelMultiplier > 1.0 ? Math.max(0.5, 2.0 - levelMultiplier) : 1.0;
+  const defenseReduction = Math.floor((defenderDefesa / 3) * defenseEffectiveness);
+  
+  // Dano final (mínimo 1)
+  const finalDamage = Math.max(1, rawDamage - defenseReduction);
+  
+  return { damage: finalDamage, typeMultiplier, levelMultiplier };
 }
 
 export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattleSceneProps) {
@@ -218,6 +252,7 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
     addTrainerBattleHistory,
     addMoney,
     addStarDust,
+    applyFaintPenaltyToPokemon,
   } = useGameStore();
 
   const attrs = trainer.attributes || { combate: 0, afinidade: 0, sorte: 0, furtividade: 0, percepcao: 0, carisma: 0 };
@@ -297,6 +332,26 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
     }
   }, [rivalPokemonAlive, playerPokemonAlive, showVictoryDialog, showDefeatDialog]);
 
+  // Rastreador de pokemon que ja tiveram penalidade aplicada nesta batalha
+  const faintedPokemonRef = useRef<Set<string>>(new Set());
+
+  // Quando o pokemon ativo do jogador desmaia, aplica penalidade e registra
+  useEffect(() => {
+    if (pokemon && pokemon.currentHp <= 0 && !faintedPokemonRef.current.has(pokemon.uid)) {
+      // Marca como ja processado para evitar duplicatas
+      faintedPokemonRef.current.add(pokemon.uid);
+      // Aplica penalidade de atributos
+      applyFaintPenaltyToPokemon(pokemon.uid);
+      // Registra no historico
+      addPokemonBattleHistory(pokemon.uid, {
+        type: "faint",
+        date: new Date().toISOString(),
+        opponentName: activeRival?.nome || npc.nome,
+      });
+      addLog(`${pokemon.name} desmaiou! Atributos penalizados.`);
+    }
+  }, [pokemon?.currentHp, pokemon?.uid]);
+
   // Auto-switch rival pokemon quando o atual desmaia
   useEffect(() => {
     if (activeRival && activeRival.currentHp <= 0) {
@@ -305,7 +360,7 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
         setTimeout(() => {
           addLog(`${activeRival.nome} desmaiou! ${npc.nome} enviou ${rivalTeam[nextAliveIndex].nome}!`);
           setActiveRivalIndex(nextAliveIndex);
-          // Registra vitoria do pokemon do jogador
+          // Registra vitoria do pokemon ativo do jogador contra esse rival
           if (pokemon) {
             addPokemonBattleHistory(pokemon.uid, {
               type: "victory",
@@ -315,7 +370,7 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
           }
         }, 800);
       } else {
-        // Verifica se ha algum pokemon vivo antes do atual
+        // Verifica se ha algum pokemon vivo em qualquer posicao
         const anyAlive = rivalTeam.findIndex((p) => p.currentHp > 0);
         if (anyAlive !== -1 && anyAlive !== activeRivalIndex) {
           setTimeout(() => {
@@ -330,6 +385,8 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
             }
           }, 800);
         }
+        // Nenhum rival vivo — a tela de vitória vai aparecer e handleVictory
+        // cuidará de registrar o histórico final de todos os pokemon
       }
     }
   }, [activeRival?.currentHp]);
@@ -389,25 +446,45 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
           return;
         }
         
-        // Calcula e aplica dano
-        let damage = rollRivalDamage(chosenMoveId, activeRival.level);
+        // Calcula dano com efetividade de tipos e balanceamento por nivel
+        const defenderTypes = (pokemonTypes || []) as PokemonType[];
+        const defenderDefesa = pokemonAttrs?.defesa || 10;
+        const defenderLevel = pokemon?.level || 1;
+        
+        const { damage: baseDamage, typeMultiplier, levelMultiplier } = rollRivalDamage(
+          chosenMoveId, 
+          activeRival.level, 
+          defenderLevel,
+          defenderTypes,
+          defenderDefesa
+        );
+        
+        // Aplica critico
+        let finalDamage = baseDamage;
         if (isCrit) {
-          damage = Math.floor(damage * 1.5);
+          finalDamage = Math.floor(finalDamage * 1.5);
           playCriticalHit();
         } else {
           playAttackHit();
         }
         
-        // Aplica defesa do pokemon do jogador
-        if (pokemonAttrs) {
-          const defReduction = Math.floor(pokemonAttrs.defesa / 3);
-          damage = Math.max(1, damage - defReduction);
-        }
-        
+        // Monta label de efetividade
+        const typeLabel = getTypeEffectivenessLabel(typeMultiplier);
         const hitLabel = isCrit ? "CRITICO!" : "Acertou!";
-        addLog(`${activeRival.nome} usou ${chosenMove.name}: ${hitLabel} ${damage} de dano! (D20: ${roll})`);
-        setRivalDamage(damage);
-        setRivalAction(`${hitLabel} ${damage} dano!`);
+        
+        // Log com informações de balanceamento
+        let logMsg = `${activeRival.nome} usou ${chosenMove.name}: ${hitLabel} ${finalDamage} de dano! (D20: ${roll})`;
+        if (typeLabel) {
+          logMsg += ` [${typeLabel}]`;
+        }
+        if (levelMultiplier !== 1.0) {
+          logMsg += ` [Nv: x${levelMultiplier.toFixed(1)}]`;
+        }
+        addLog(logMsg);
+        
+        setRivalDamage(finalDamage);
+        const actionLabel = typeLabel ? `${hitLabel} ${finalDamage} (${typeLabel})` : `${hitLabel} ${finalDamage} dano!`;
+        setRivalAction(actionLabel);
         
         // Aplica dano ao pokemon do jogador com animacao de shake
         setPlayerShake(true);
@@ -417,7 +494,7 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
         setTimeout(() => {
           setPlayerShake(false);
           setShowParticles(false);
-          applyOpponentDamage(damage);
+          applyOpponentDamage(finalDamage);
           setRivalDamage(null);
           setRivalAction(null);
           setIsPlayerTurn(true);
@@ -428,7 +505,7 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
         }, 800);
       }, 1000);
     }, 1000);
-  }, [activeRival, pokemonTypes, npc.ia, pokemonAttrs, addLog, applyOpponentDamage]);
+  }, [activeRival, pokemonTypes, npc.ia, pokemonAttrs, pokemon, addLog, applyOpponentDamage]);
 
   // Handler de troca de pokemon
   const handleSwitchPokemon = (uid: string) => {
@@ -460,15 +537,47 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
       setTimeout(() => {
         const state = useGameStore.getState();
         const hr = state.battle.hitResult;
-        const damageDealt = state.battle.damageDealt || 0;
+        const baseDamage = state.battle.damageDealt || 0;
+        const selectedMoveId = state.battle.selectedMoveId;
+        const move = selectedMoveId ? getMove(selectedMoveId) : null;
         
         if (hr === "critical-hit") playCriticalHit();
         else if (hr === "strong-hit" || hr === "hit") playAttackHit();
         else if (hr === "miss") playMiss();
         else if (hr === "critical-miss") playCriticalMiss();
         
-        // Aplica dano ao rival com animacao de shake
-        if (damageDealt > 0 && activeRival) {
+        // Aplica dano ao rival com efetividade de tipo
+        if (baseDamage > 0 && activeRival && move) {
+          // Obtem tipos do rival
+          const rivalSpecies = getPokemon(activeRival.speciesId);
+          const rivalTypes = rivalSpecies?.types || [];
+          
+          // Calcula multiplicador de tipo
+          const typeMultiplier = getTypeEffectiveness(move.type as PokemonType, rivalTypes as PokemonType[]);
+          
+          // Multiplicador de nivel (jogador vs rival)
+          const playerLevel = pokemon?.level || 1;
+          const rivalLevel = activeRival.level;
+          let levelMultiplier = 1.0;
+          const levelDiff = playerLevel - rivalLevel;
+          if (levelDiff > 0) {
+            levelMultiplier = Math.min(2.0, 1.0 + (levelDiff * 0.10));
+          } else if (levelDiff < 0) {
+            levelMultiplier = Math.max(0.5, 1.0 + (levelDiff * 0.05));
+          }
+          
+          // Dano final com multiplicadores
+          const damageDealt = Math.max(1, Math.floor(baseDamage * typeMultiplier * levelMultiplier));
+          
+          // Log de efetividade
+          const typeLabel = getTypeEffectivenessLabel(typeMultiplier);
+          if (typeLabel) {
+            addLog(`[${typeLabel}] ${move.name} causou ${damageDealt} de dano!`);
+          }
+          if (levelMultiplier !== 1.0) {
+            addLog(`[Diferenca de Nivel: x${levelMultiplier.toFixed(1)}]`);
+          }
+          
           setRivalShake(true);
           setShowRivalParticles(true);
           setTimeout(() => {
@@ -486,7 +595,7 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
         }
       }, 50);
     },
-    [resolveDiceRoll, activeRival, activeRivalIndex]
+    [resolveDiceRoll, activeRival, activeRivalIndex, pokemon, addLog]
   );
 
   // Handler de selecao de ataque
@@ -546,11 +655,33 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
     addMoney(npc.recompensa);
     addStarDust(npc.stardust);
     
-    // XP para todos os pokemon que participaram
+    // XP para todos os pokemon que participaram (vivos)
     const aliveTeam = team.filter((p) => p.currentHp > 0);
     const xpPerPokemon = Math.floor(npc.xp / Math.max(1, aliveTeam.length));
     aliveTeam.forEach((p) => {
       addXp(p.uid, xpPerPokemon);
+    });
+
+    // Registra vitória no histórico de cada pokemon vivo que participou
+    aliveTeam.forEach((p) => {
+      addPokemonBattleHistory(p.uid, {
+        type: "victory",
+        date: new Date().toISOString(),
+        opponentName: npc.nome,
+      });
+    });
+
+    // Registra derrota/desmaio dos pokemon que caíram mas não foram processados ainda
+    team.filter((p) => p.currentHp <= 0).forEach((p) => {
+      if (!faintedPokemonRef.current.has(p.uid)) {
+        faintedPokemonRef.current.add(p.uid);
+        addPokemonBattleHistory(p.uid, {
+          type: "faint",
+          date: new Date().toISOString(),
+          opponentName: npc.nome,
+        });
+        applyFaintPenaltyToPokemon(p.uid);
+      }
     });
     
     // Registra no historico do treinador
@@ -595,13 +726,20 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
 
   // Handler de derrota
   const handleDefeat = () => {
-    // Registra derrotas nos pokemon que desmaiaram
+    // Aplica penalidade e registra para pokemon que ainda nao foram processados
     team.filter((p) => p.currentHp <= 0).forEach((p) => {
-      addPokemonBattleHistory(p.uid, {
-        type: "faint",
-        date: new Date().toISOString(),
-        opponentName: npc.nome,
-      });
+      // Verifica se ja foi processado pelo useEffect
+      if (!faintedPokemonRef.current.has(p.uid)) {
+        faintedPokemonRef.current.add(p.uid);
+        // Registra no historico
+        addPokemonBattleHistory(p.uid, {
+          type: "faint",
+          date: new Date().toISOString(),
+          opponentName: npc.nome,
+        });
+        // Aplica penalidade de atributos (felicidade -1, outro atributo aleatorio -1)
+        applyFaintPenaltyToPokemon(p.uid);
+      }
     });
     
     // Para a musica de batalha
