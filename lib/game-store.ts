@@ -3272,3 +3272,5 @@ export const useGameStore = create<GameState>()(
     }
   )
 );
+
+// Game store v12 - Daily challenges system
