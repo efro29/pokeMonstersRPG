@@ -1165,9 +1165,19 @@ export const useGameStore = create<GameState>()(
     }),
     {
       name: getGameStoreKey(),
-      version: 13,
+      version: 14,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
+        // Ensure trainer has daily challenge fields
+        if (state.trainer && typeof state.trainer === 'object') {
+          const trainer = state.trainer as Record<string, unknown>;
+          if (trainer.dailyChallengeWins === undefined) {
+            trainer.dailyChallengeWins = 0;
+          }
+          if (trainer.lastChallengeDate === undefined) {
+            trainer.lastChallengeDate = null;
+          }
+        }
         return state as unknown as GameState;
       },
     }
