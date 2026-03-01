@@ -846,8 +846,7 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
 
                   {/* Node Label */}
                   <div
-                    className={`mt-3 text-center ${isEven ? "text-left -ml-2" : "text-right -mr-2"
-                      }`}
+                    className={`mt-3 text-center ${isEven ? "text-left -ml-2" : "text-right -mr-2"}`}
                   >
                     {node.type === "npc" ? (
                       <>

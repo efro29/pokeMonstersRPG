@@ -360,7 +360,7 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
         setTimeout(() => {
           addLog(`${activeRival.nome} desmaiou! ${npc.nome} enviou ${rivalTeam[nextAliveIndex].nome}!`);
           setActiveRivalIndex(nextAliveIndex);
-          // Registra vitoria do pokemon do jogador
+          // Registra vitoria do pokemon ativo do jogador contra esse rival
           if (pokemon) {
             addPokemonBattleHistory(pokemon.uid, {
               type: "victory",
@@ -370,7 +370,7 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
           }
         }, 800);
       } else {
-        // Verifica se ha algum pokemon vivo antes do atual
+        // Verifica se ha algum pokemon vivo em qualquer posicao
         const anyAlive = rivalTeam.findIndex((p) => p.currentHp > 0);
         if (anyAlive !== -1 && anyAlive !== activeRivalIndex) {
           setTimeout(() => {
@@ -385,6 +385,8 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
             }
           }, 800);
         }
+        // Nenhum rival vivo — a tela de vitória vai aparecer e handleVictory
+        // cuidará de registrar o histórico final de todos os pokemon
       }
     }
   }, [activeRival?.currentHp]);
@@ -653,11 +655,33 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
     addMoney(npc.recompensa);
     addStarDust(npc.stardust);
     
-    // XP para todos os pokemon que participaram
+    // XP para todos os pokemon que participaram (vivos)
     const aliveTeam = team.filter((p) => p.currentHp > 0);
     const xpPerPokemon = Math.floor(npc.xp / Math.max(1, aliveTeam.length));
     aliveTeam.forEach((p) => {
       addXp(p.uid, xpPerPokemon);
+    });
+
+    // Registra vitória no histórico de cada pokemon vivo que participou
+    aliveTeam.forEach((p) => {
+      addPokemonBattleHistory(p.uid, {
+        type: "victory",
+        date: new Date().toISOString(),
+        opponentName: npc.nome,
+      });
+    });
+
+    // Registra derrota/desmaio dos pokemon que caíram mas não foram processados ainda
+    team.filter((p) => p.currentHp <= 0).forEach((p) => {
+      if (!faintedPokemonRef.current.has(p.uid)) {
+        faintedPokemonRef.current.add(p.uid);
+        addPokemonBattleHistory(p.uid, {
+          type: "faint",
+          date: new Date().toISOString(),
+          opponentName: npc.nome,
+        });
+        applyFaintPenaltyToPokemon(p.uid);
+      }
     });
     
     // Registra no historico do treinador
