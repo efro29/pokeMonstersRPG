@@ -466,8 +466,8 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                 key={idx}
                 onClick={() => setCurrentStageView(idx)}
                 className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${currentStageView === idx
-                    ? "ring-2 ring-offset-2 ring-offset-background"
-                    : ""
+                  ? "ring-2 ring-offset-2 ring-offset-background"
+                  : ""
                   }`}
                 style={{
                   backgroundColor: stageCompleted
@@ -681,10 +681,10 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                             ? `linear-gradient(135deg, ${getStageColor(currentStageView)}50, ${getStageColor(currentStageView)}20)`
                             : `linear-gradient(135deg, ${getStageColor(currentStageView)}40, ${getStageColor(currentStageView)}15)`,
                       border: `4px solid ${node.completed
-                          ? "#fff"
-                          : node.locked
-                            ? "hsl(var(--border))"
-                            : getStageColor(currentStageView)
+                        ? "#fff"
+                        : node.locked
+                          ? "hsl(var(--border))"
+                          : getStageColor(currentStageView)
                         }`,
                       boxShadow: node.completed
                         ? `0 6px 24px ${getStageColor(currentStageView)}60, inset 0 -4px 0 ${getStageColor(currentStageView)}80`
@@ -806,7 +806,7 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
       <AnimatePresence>
         {selectedNode && (
           <motion.div
-            className="fixed top-10 inset-0 z-50 flex items-end justify-center"
+            className="h-screen flex items-center justify-center "
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
