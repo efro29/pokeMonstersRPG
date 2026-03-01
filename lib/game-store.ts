@@ -69,7 +69,10 @@ export const DEFAULT_ATTRIBUTES: TrainerAttributes = {
   carisma: 0,
 };
 
-export const ATTRIBUTE_INFO: Record<keyof TrainerAttributes, { name: string; icon: string; desc: string; battleEffect: string }> = {
+export const ATTRIBUTE_INFO: Record<
+  keyof TrainerAttributes,
+  { name: string; icon: string; desc: string; battleEffect: string }
+> = {
   combate: {
     name: "Combate",
     icon: "swords",
