@@ -1,3 +1,4 @@
+// Game Store - v13
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { PokemonSpecies, BagItemDef, PokemonBaseAttributes, DamageBreakdown, HitResult } from "./pokemon-data";
