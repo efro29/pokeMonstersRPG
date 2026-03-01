@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { npcs } from "@/lib/duel-npcs";
 import type { DuelNpc } from "@/lib/duel-npcs";
@@ -227,6 +227,8 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
   const [selectedNode, setSelectedNode] = useState<TrailNode | null>(null);
   const [showTransition, setShowTransition] = useState(false);
   const [currentStageView, setCurrentStageView] = useState(0);
+  const pendingNodeRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Build stages when component mounts or progress changes
   useEffect(() => {
@@ -242,6 +244,15 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
       if (firstIncomplete >= 0) {
         setCurrentStageView(firstIncomplete);
       }
+    }
+  }, [stages]);
+
+  // Scroll to pending node when stages load
+  useEffect(() => {
+    if (stages.length > 0 && pendingNodeRef.current) {
+      setTimeout(() => {
+        pendingNodeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
     }
   }, [stages]);
 
@@ -413,353 +424,261 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
         )}
       </AnimatePresence>
 
-      {/* Header */}
-      <div className="p-4 border-b border-border bg-card/80 backdrop-blur-sm">
-        <div className="flex items-center gap-3 mb-3">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={onBack}
-            className="text-foreground hover:bg-secondary shrink-0"
+      {/* Header Compacto */}
+      <div className="p-3 border-b border-border bg-card">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              playButtonClick();
+              onBack();
+            }}
+            className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center hover:bg-secondary/80 transition-colors shrink-0"
           >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <div className="flex-1">
-            <h2 className="font-bold text-foreground flex items-center gap-2">
-              <Crown className="w-5 h-5" style={{ color: getStageColor(currentStageView) }} />
+            <ChevronLeft className="w-5 h-5 text-foreground" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h2 className="font-bold text-base text-foreground flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-primary" />
               Modo Trilhas
             </h2>
-            <p className="text-xs text-muted-foreground">
-              {currentStage?.name || "Carregando..."}
+            <p className="text-[10px] text-muted-foreground">
+              {completedCount}/{totalNodes} desafios completos
             </p>
           </div>
           <div className="text-right">
-            <p className="text-sm font-bold text-foreground">{completedCount}/{totalNodes}</p>
-            <p className="text-[10px] text-muted-foreground">Completo</p>
+            <p className="text-lg font-bold text-primary">{Math.round(progressPercent)}%</p>
           </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="relative">
-          <div className="w-full h-3 bg-secondary rounded-full overflow-hidden">
-            <motion.div
-              className="h-full rounded-full"
-              style={{ background: `linear-gradient(90deg, ${getStageColor(0)}, ${getStageColor(currentStageView)})` }}
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPercent}%` }}
-              transition={{ duration: 0.5 }}
-            />
-          </div>
-          <div className="flex justify-between mt-1">
-            <span className="text-[9px] text-muted-foreground">{Math.round(progressPercent)}%</span>
-            <span className="text-[9px] text-muted-foreground">Nivel {currentStageView + 1}</span>
-          </div>
-        </div>
-
-        {/* Stage selector */}
-        <div className="flex gap-1 mt-3 overflow-x-auto pb-1">
-          {stages.map((stage, idx) => {
-            const stageCompleted = stage.nodes.every(n => n.completed);
-            const hasProgress = stage.nodes.some(n => n.completed);
-            return (
-              <button
-                key={idx}
-                onClick={() => setCurrentStageView(idx)}
-                className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${currentStageView === idx
-                  ? "ring-2 ring-offset-2 ring-offset-background"
-                  : ""
-                  }`}
-                style={{
-                  backgroundColor: stageCompleted
-                    ? getStageColor(idx)
-                    : hasProgress
-                      ? `${getStageColor(idx)}40`
-                      : "hsl(var(--secondary))",
-                  color: stageCompleted || hasProgress ? "#fff" : "hsl(var(--muted-foreground))",
-                  borderColor: getStageColor(idx),
-                  ...(currentStageView === idx ? { ringColor: getStageColor(idx) } : {}),
-                }}
-              >
-                {stageCompleted ? <Check className="w-4 h-4" /> : idx + 1}
-              </button>
-            );
-          })}
         </div>
       </div>
 
-      {/* Trail Path - Duolingo Style */}
-      <ScrollArea className="flex-1 overflow-hidden">
-        <div className="py-6 px-4">
-          {/* Pokemon Reward Banner - Enhanced Design */}
-          {currentStage && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`mb-8 relative overflow-hidden rounded-2xl ${isLegendaryStage(currentStageView) ? "ring-2 ring-yellow-400/50" : ""
-                }`}
-            >
-              {/* Gradient Background */}
-              <div
-                className={`absolute inset-0 bg-gradient-to-r ${getStageGradient(currentStageView)} opacity-20`}
-              />
+      {/* Trail Path - Todas as fases em lista continua estilo Duolingo */}
+      <ScrollArea className="flex-1 overflow-hidden" ref={scrollContainerRef}>
+        <div className="py-4 px-4">
+          {stages.map((stage, stageIdx) => {
+            const stageCompleted = stage.nodes.every(n => n.completed);
+            const hasProgress = stage.nodes.some(n => n.completed);
+            // Encontra o primeiro node pendente (disponivel) desta fase
+            const firstPendingIdx = stage.nodes.findIndex(n => !n.completed && !n.locked);
 
-              {/* Legendary glow effect */}
-              {isLegendaryStage(currentStageView) && (
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 via-transparent to-yellow-400/20"
-                  animate={{ opacity: [0.3, 0.6, 0.3] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-              )}
-
-              <div className="relative p-5 flex items-center gap-4">
-                {/* Pokemon Sprite Container */}
-                <motion.div
-                  className="relative"
-                  animate={isLegendaryStage(currentStageView) ? { y: [0, -4, 0] } : {}}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            return (
+              <div key={stageIdx} className="mb-6">
+                {/* Header da Fase com Pokemon Premio */}
+                <div
+                  className={`relative overflow-hidden rounded-xl mb-4 ${
+                    isLegendaryStage(stageIdx) ? "ring-1 ring-yellow-400/30" : ""
+                  }`}
+                  style={{
+                    background: `linear-gradient(135deg, ${getStageColor(stageIdx)}15, ${getStageColor(stageIdx)}05)`,
+                    borderLeft: `3px solid ${getStageColor(stageIdx)}`
+                  }}
                 >
-                  <div
-                    className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg ${isLegendaryStage(currentStageView) ? "ring-2 ring-yellow-400" : ""
-                      }`}
-                    style={{
-                      background: `linear-gradient(135deg, ${getStageColor(currentStageView)}40, ${getStageColor(currentStageView)}20)`,
-                      boxShadow: `0 8px 32px ${getStageColor(currentStageView)}30`
-                    }}
-                  >
-                    <img
-                      src={getSpriteUrl(currentStage.pokemonReward.speciesId)}
-                      alt={currentStage.pokemonReward.name}
-                      width={56}
-                      height={56}
-                      className="pixelated drop-shadow-lg"
-                      crossOrigin="anonymous"
-                    />
-                  </div>
-                  {isLegendaryStage(currentStageView) && (
-                    <motion.div
-                      className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-yellow-400 flex items-center justify-center"
-                      animate={{ scale: [1, 1.1, 1] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                    >
-                      <Crown className="w-3.5 h-3.5 text-yellow-900" />
-                    </motion.div>
-                  )}
-                </motion.div>
-
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    {isLegendaryStage(currentStageView) ? (
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-yellow-400 bg-yellow-400/20 px-2 py-0.5 rounded-full">
-                        Lendario
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                        Premio
-                      </span>
-                    )}
-                  </div>
-                  <p className="font-bold text-lg text-foreground truncate">{currentStage.pokemonReward.name}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span
-                      className="text-xs font-medium px-2 py-0.5 rounded-full"
+                  <div className="p-3 flex items-center gap-3">
+                    {/* Pokemon Sprite */}
+                    <div
+                      className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
                       style={{
-                        backgroundColor: `${getStageColor(currentStageView)}30`,
-                        color: getStageColor(currentStageView)
+                        background: `linear-gradient(135deg, ${getStageColor(stageIdx)}30, ${getStageColor(stageIdx)}10)`
                       }}
                     >
-                      Nv. {currentStage.pokemonReward.level}
-                    </span>
-                    <span className="text-xs text-muted-foreground capitalize">
-                      {currentStage.pokemonReward.type}
-                    </span>
+                      <img
+                        src={getSpriteUrl(stage.pokemonReward.speciesId)}
+                        alt={stage.pokemonReward.name}
+                        width={36}
+                        height={36}
+                        className="pixelated"
+                        crossOrigin="anonymous"
+                      />
+                    </div>
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-sm text-foreground truncate">{stage.name}</p>
+                        {isLegendaryStage(stageIdx) && (
+                          <Crown className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        Premio: <span style={{ color: getStageColor(stageIdx) }}>{stage.pokemonReward.name}</span> Nv.{stage.pokemonReward.level}
+                      </p>
+                    </div>
+                    {/* Status */}
+                    <div className="shrink-0">
+                      {stageCompleted ? (
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: getStageColor(stageIdx) }}
+                        >
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      ) : hasProgress ? (
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                          style={{ backgroundColor: `${getStageColor(stageIdx)}80` }}
+                        >
+                          {stage.nodes.filter(n => n.completed).length}/{stage.nodes.length}
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                          <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* Sparkles */}
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                >
-                  <Sparkles
-                    className="w-8 h-8"
-                    style={{ color: isLegendaryStage(currentStageView) ? "#FBBF24" : getStageColor(currentStageView) }}
-                  />
-                </motion.div>
-              </div>
-            </motion.div>
-          )}
+                {/* Nodes da Fase */}
+                <div className="relative flex flex-col items-center">
+                  {stage.nodes.map((node, idx) => {
+                    const isEven = idx % 2 === 0;
+                    const offset = isEven ? -40 : 40;
+                    const isPokemonNode = node.type === "pokemon";
+                    const isAvailable = !node.locked && !node.completed;
+                    const isPending = idx === firstPendingIdx;
 
-          {/* Trail Nodes - Enhanced Duolingo Style */}
-          <div className="relative flex flex-col items-center pb-8">
-            {currentStage?.nodes.map((node, idx) => {
-              // Zigzag pattern for Duolingo style - more pronounced
-              const isEven = idx % 2 === 0;
-              const offset = isEven ? -50 : 50;
-              const isPokemonNode = node.type === "pokemon";
-              const isAvailable = !node.locked && !node.completed;
-
-              return (
-                <motion.div
-                  key={idx}
-                  className="relative z-10 mb-4"
-                  style={{ marginLeft: offset }}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: idx * 0.06, type: "spring", damping: 15 }}
-                >
-                  {/* Glow effect for available nodes */}
-                  {isAvailable && (
-                    <motion.div
-                      className="absolute inset-0 rounded-full"
-                      style={{
-                        background: `radial-gradient(circle, ${getStageColor(currentStageView)}40 0%, transparent 70%)`,
-                      }}
-                      animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0.2, 0.5] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
-                  )}
-
-                  {/* Node Circle */}
-                  <motion.button
-                    onClick={() => handleNodeClick(node)}
-                    disabled={node.locked}
-                    animate={isAvailable ? { y: [0, -8, 0] } : {}}
-                    transition={isAvailable ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" } : {}}
-                    className={`relative flex items-center justify-center transition-all ${isPokemonNode ? "w-24 h-24" : "w-20 h-20"
-                      } rounded-full ${node.locked
-                        ? "opacity-40 cursor-not-allowed grayscale"
-                        : node.completed
-                          ? "cursor-default"
-                          : "cursor-pointer hover:scale-110 active:scale-95"
-                      }`}
-                    style={{
-                      background: node.completed
-                        ? `linear-gradient(135deg, ${getStageColor(currentStageView)}, ${getStageColor(currentStageView)}cc)`
-                        : node.locked
-                          ? "hsl(var(--secondary))"
-                          : isPokemonNode
-                            ? `linear-gradient(135deg, ${getStageColor(currentStageView)}50, ${getStageColor(currentStageView)}20)`
-                            : `linear-gradient(135deg, ${getStageColor(currentStageView)}40, ${getStageColor(currentStageView)}15)`,
-                      border: `4px solid ${node.completed
-                        ? "#fff"
-                        : node.locked
-                          ? "hsl(var(--border))"
-                          : getStageColor(currentStageView)
-                        }`,
-                      boxShadow: node.completed
-                        ? `0 6px 24px ${getStageColor(currentStageView)}60, inset 0 -4px 0 ${getStageColor(currentStageView)}80`
-                        : node.locked
-                          ? "inset 0 -3px 0 hsl(var(--border))"
-                          : `0 6px 20px ${getStageColor(currentStageView)}40, inset 0 -4px 0 ${getStageColor(currentStageView)}50`,
-                    }}
-                  >
-                    {node.locked ? (
-                      <Lock className="w-7 h-7 text-muted-foreground" />
-                    ) : node.completed ? (
+                    return (
                       <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: "spring", damping: 10 }}
+                        key={idx}
+                        ref={isPending ? pendingNodeRef : undefined}
+                        className="relative z-10 mb-3"
+                        style={{ marginLeft: offset }}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: idx * 0.03, type: "spring", damping: 15 }}
                       >
-                        <Check className="w-10 h-10 text-white drop-shadow-lg" />
-                      </motion.div>
-                    ) : node.type === "pokemon" ? (
-                      <motion.img
-                        src={getSpriteUrl(node.pokemonReward!.speciesId)}
-                        alt={node.pokemonReward!.name}
-                        width={56}
-                        height={56}
-                        className="pixelated drop-shadow-lg"
-                        crossOrigin="anonymous"
-                        animate={{ rotate: [0, 5, -5, 0] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      />
-                    ) : (
-                      <div className="relative w-14 h-14 rounded-full overflow-hidden ring-2 ring-white/30">
-                        <img
-                          src={node.npc!.imagem}
-                          alt={node.npc!.nome}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
-                          }}
-                        />
-                      </div>
-                    )}
-
-                    {/* Node Badge - Number or Star */}
-                    {isAvailable && (
-                      <motion.div
-                        className="absolute -top-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-lg"
-                        style={{
-                          background: isPokemonNode
-                            ? "linear-gradient(135deg, #FBBF24, #F59E0B)"
-                            : `linear-gradient(135deg, ${getStageColor(currentStageView)}, ${getStageColor(currentStageView)}cc)`
-                        }}
-                        animate={{ scale: [1, 1.1, 1] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                      >
-                        {isPokemonNode ? (
-                          <Crown className="w-4 h-4" />
-                        ) : (
-                          idx + 1
-                        )}
-                      </motion.div>
-                    )}
-
-                    {/* Stars for completed */}
-                    {node.completed && (
-                      <motion.div
-                        className="absolute -bottom-3 flex gap-0.5"
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 0.2 }}
-                      >
-                        {[1, 2, 3].map((s) => (
+                        {/* Glow para node pendente */}
+                        {isAvailable && (
                           <motion.div
-                            key={s}
-                            initial={{ scale: 0, rotate: -180 }}
-                            animate={{ scale: 1, rotate: 0 }}
-                            transition={{ delay: 0.1 * s }}
-                          >
-                            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400 drop-shadow" />
-                          </motion.div>
-                        ))}
-                      </motion.div>
-                    )}
-                  </motion.button>
+                            className="absolute inset-0 rounded-full"
+                            style={{
+                              background: `radial-gradient(circle, ${getStageColor(stageIdx)}40 0%, transparent 70%)`,
+                            }}
+                            animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0.2, 0.5] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                          />
+                        )}
 
-                  {/* Node Label */}
-                  <div
-                    className={`mt-3 text-center ${isEven ? "text-left -ml-2" : "text-right -mr-2"}`}
-                  >
-                    {node.type === "npc" ? (
-                      <>
-                        <p className="text-xs font-medium text-foreground truncate max-w-[80px]">
-                          {node.npc!.nome}
-                        </p>
-                        <p
-                          className="text-[10px] font-bold uppercase"
-                          style={{ color: getDifficultyColor(node.npc!.nivel) }}
+                        {/* Node Circle */}
+                        <motion.button
+                          onClick={() => {
+                            setCurrentStageView(stageIdx);
+                            handleNodeClick(node);
+                          }}
+                          disabled={node.locked}
+                          animate={isAvailable ? { y: [0, -6, 0] } : {}}
+                          transition={isAvailable ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" } : {}}
+                          className={`relative flex items-center justify-center transition-all ${
+                            isPokemonNode ? "w-16 h-16" : "w-14 h-14"
+                          } rounded-full ${
+                            node.locked
+                              ? "opacity-40 cursor-not-allowed grayscale"
+                              : node.completed
+                                ? "cursor-default"
+                                : "cursor-pointer hover:scale-110 active:scale-95"
+                          }`}
+                          style={{
+                            background: node.completed
+                              ? `linear-gradient(135deg, ${getStageColor(stageIdx)}, ${getStageColor(stageIdx)}cc)`
+                              : node.locked
+                                ? "hsl(var(--secondary))"
+                                : isPokemonNode
+                                  ? `linear-gradient(135deg, ${getStageColor(stageIdx)}50, ${getStageColor(stageIdx)}20)`
+                                  : `linear-gradient(135deg, ${getStageColor(stageIdx)}40, ${getStageColor(stageIdx)}15)`,
+                            border: `3px solid ${
+                              node.completed
+                                ? "#fff"
+                                : node.locked
+                                  ? "hsl(var(--border))"
+                                  : getStageColor(stageIdx)
+                            }`,
+                            boxShadow: node.completed
+                              ? `0 4px 16px ${getStageColor(stageIdx)}60`
+                              : node.locked
+                                ? "none"
+                                : `0 4px 12px ${getStageColor(stageIdx)}30`,
+                          }}
                         >
-                          {node.npc!.nivel}
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-xs font-medium text-foreground">
-                          {node.pokemonReward!.name}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">Capturar</p>
-                      </>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
+                          {node.locked ? (
+                            <Lock className="w-5 h-5 text-muted-foreground" />
+                          ) : node.completed ? (
+                            <Check className="w-7 h-7 text-white" />
+                          ) : node.type === "pokemon" ? (
+                            <img
+                              src={getSpriteUrl(node.pokemonReward!.speciesId)}
+                              alt={node.pokemonReward!.name}
+                              width={36}
+                              height={36}
+                              className="pixelated"
+                              crossOrigin="anonymous"
+                            />
+                          ) : (
+                            <div className="relative w-10 h-10 rounded-full overflow-hidden ring-1 ring-white/30">
+                              <img
+                                src={node.npc!.imagem}
+                                alt={node.npc!.nome}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
+                                }}
+                              />
+                            </div>
+                          )}
+
+                          {/* Badge de numero ou coroa */}
+                          {isAvailable && (
+                            <motion.div
+                              className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
+                              style={{
+                                background: isPokemonNode
+                                  ? "linear-gradient(135deg, #FBBF24, #F59E0B)"
+                                  : getStageColor(stageIdx)
+                              }}
+                              animate={{ scale: [1, 1.1, 1] }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                            >
+                              {isPokemonNode ? <Crown className="w-3 h-3" /> : idx + 1}
+                            </motion.div>
+                          )}
+
+                          {/* Estrelas para completo */}
+                          {node.completed && (
+                            <div className="absolute -bottom-2 flex gap-0.5">
+                              {[1, 2, 3].map((s) => (
+                                <Star key={s} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                              ))}
+                            </div>
+                          )}
+                        </motion.button>
+
+                        {/* Label do Node */}
+                        <div className={`mt-2 text-center ${isEven ? "text-left -ml-1" : "text-right -mr-1"}`}>
+                          {node.type === "npc" ? (
+                            <>
+                              <p className="text-[10px] font-medium text-foreground truncate max-w-[70px]">
+                                {node.npc!.nome}
+                              </p>
+                              <p
+                                className="text-[9px] font-bold uppercase"
+                                style={{ color: getDifficultyColor(node.npc!.nivel) }}
+                              >
+                                {node.npc!.nivel}
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-[10px] font-medium text-foreground">
+                                {node.pokemonReward!.name}
+                              </p>
+                              <p className="text-[9px] text-muted-foreground">Capturar</p>
+                            </>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </ScrollArea>
 
