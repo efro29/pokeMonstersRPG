@@ -324,16 +324,21 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
               </div>
             </div>
 
-            {/* Botao Aceitar Desafio */}
-            <Button
-              onClick={() => handleAcceptChallenge(selectedChallenge)}
-              className="h-14 text-lg font-bold bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 text-white shadow-lg"
-            >
-              <Swords className="w-6 h-6 mr-2" />
-              ACEITAR DESAFIO!
-            </Button>
+            {/* Espaço extra para padding quando scrollar */}
+            <div className="h-4"></div>
           </div>
         </ScrollArea>
+
+        {/* Botao Aceitar Desafio - Fixo na Parte Inferior */}
+        <div className="p-4 border-t border-border bg-card">
+          <Button
+            onClick={() => handleAcceptChallenge(selectedChallenge)}
+            className="w-full h-14 text-lg font-bold bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 text-white shadow-lg"
+          >
+            <Swords className="w-6 h-6 mr-2" />
+            ACEITAR DESAFIO!
+          </Button>
+        </div>
       </div>
     );
   }
