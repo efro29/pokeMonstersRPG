@@ -81,7 +81,7 @@ export const ATTRIBUTE_INFO: Record<keyof TrainerAttributes, { name: string; ico
 export interface TrainerProfile {
   name: string;
   age: string;
-  hometown: string;
+  hometown: string; // Profile hometown
   trainerClass: string;
   money: number;
   starDust: number; // Star Dust currency (1 XP = 1,100 Star Dust)
