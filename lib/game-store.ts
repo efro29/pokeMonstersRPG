@@ -1627,8 +1627,7 @@ export const useGameStore = create<GameState>()(
           hitResult = "miss";
         }
 
-        // Get active Pokemon's computed attributes for damage scaling
-        const activePokemon = team.find((p) => p.uid === battle.activePokemonUid);
+        // Get active Pokemon's computed attributes for damage scaling (reuses activePokemon from above)
         const pokemonAttrs = activePokemon
           ? computeAttributes(activePokemon.speciesId, activePokemon.level, activePokemon.customAttributes)
           : computeAttributes(1, 5); // fallback
