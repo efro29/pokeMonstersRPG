@@ -23,6 +23,8 @@ import {
   Skull,
   Map,
   Inbox,
+  Check,
+  Clock,
 } from "lucide-react";
 import { playButtonClick, playBattleMusic } from "@/lib/sounds";
 import { TrailsMode } from "./trails-mode";
@@ -37,6 +39,43 @@ interface DuelTabProps {
   onTrailNodeStart?: (nodeId: string) => void;
 }
 
+// Constante para o limite diario de desafios
+const DAILY_CHALLENGE_LIMIT = 5;
+
+// Funcao para obter a data atual formatada (para reset diario)
+function getTodayKey(): string {
+  const today = new Date();
+  return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+}
+
+// Funcao para obter vitorias diarias do localStorage
+function getDailyWins(): { date: string; wins: number } {
+  if (typeof window === "undefined") return { date: getTodayKey(), wins: 0 };
+  const stored = localStorage.getItem("pokerpg-daily-challenge-wins");
+  if (stored) {
+    try {
+      const data = JSON.parse(stored);
+      // Se a data mudou, reseta as vitorias
+      if (data.date !== getTodayKey()) {
+        return { date: getTodayKey(), wins: 0 };
+      }
+      return data;
+    } catch {
+      return { date: getTodayKey(), wins: 0 };
+    }
+  }
+  return { date: getTodayKey(), wins: 0 };
+}
+
+// Funcao para salvar vitorias diarias no localStorage
+function saveDailyWins(wins: number): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("pokerpg-daily-challenge-wins", JSON.stringify({
+    date: getTodayKey(),
+    wins
+  }));
+}
+
 export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChange, onTrailNodeStart }: DuelTabProps) {
   const { trainer } = useGameStore();
   const [challenges, setChallenges] = useState<DuelNpc[]>([]);
@@ -47,6 +86,10 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
   const [readChallenges, setReadChallenges] = useState<Set<string>>(new Set());
   const [battleXp, setBattleXp] = useState(0);
   const [battleLevel, setBattleLevel] = useState(1);
+  const [dailyChallengeWins, setDailyChallengeWins] = useState(0);
+
+  // Verifica se o jogador completou todos os desafios diarios
+  const dailyChallengesCompleted = dailyChallengeWins >= DAILY_CHALLENGE_LIMIT;
 
   // Calcula XP necessario para o proximo nivel de batalha
   const getXpForLevel = (level: number) => level * 500;
@@ -55,7 +98,12 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
 
   // Gera desafios ao montar o componente
   useEffect(() => {
-    const newChallenges = generateRandomChallenges(6);
+    // Carrega vitorias diarias
+    const dailyData = getDailyWins();
+    setDailyChallengeWins(dailyData.wins);
+
+    // So gera novos desafios se ainda nao completou o limite diario
+    const newChallenges = generateRandomChallenges(DAILY_CHALLENGE_LIMIT);
     setChallenges(newChallenges);
     
     // Verifica se o boss semanal esta disponivel (10 vitorias no fim de semana)
@@ -76,6 +124,21 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
     if (storedBattleXp) setBattleXp(parseInt(storedBattleXp));
     if (storedBattleLevel) setBattleLevel(parseInt(storedBattleLevel));
   }, []);
+
+  // Recarrega as vitorias diarias quando o componente ganha foco ou muda o modo
+  // Isso garante que o contador seja atualizado apos uma batalha
+  useEffect(() => {
+    const handleFocus = () => {
+      const dailyData = getDailyWins();
+      setDailyChallengeWins(dailyData.wins);
+    };
+
+    // Tambem verifica ao montar/re-renderizar e quando muda o modo
+    handleFocus();
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [duelMode]);
 
   const handleAcceptChallenge = (npc: DuelNpc) => {
     playButtonClick();
@@ -411,54 +474,75 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
               Caixa de Desafios
             </h2>
             <p className="text-xs text-muted-foreground">
-              {challenges.length} desafios disponiveis
+              {dailyChallengesCompleted 
+                ? "Volte amanha para mais desafios!" 
+                : `${DAILY_CHALLENGE_LIMIT - dailyChallengeWins} desafios restantes hoje`}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <div className="text-right">
-              <p className="text-[10px] text-muted-foreground">Vitorias Semanais</p>
-              <p className="text-sm font-bold text-foreground">{weeklyWins}/10</p>
+              <p className="text-[10px] text-muted-foreground">Desafios de Hoje</p>
+              <p className="text-sm font-bold text-foreground">{dailyChallengeWins}/{DAILY_CHALLENGE_LIMIT}</p>
             </div>
-            {weeklyWins >= 10 && (
-              <div className="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center">
-                <Skull className="w-4 h-4 text-orange-500" />
+            {dailyChallengesCompleted && (
+              <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <Trophy className="w-4 h-4 text-emerald-500" />
               </div>
             )}
           </div>
         </div>
 
-        {/* Barra de XP de Batalha */}
-        <div className="bg-secondary/50 rounded-lg p-3 border border-border">
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                <Trophy className="w-4 h-4 text-white" />
+        {/* Barras de Progresso lado a lado */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* Desafios Diarios */}
+          <div className="bg-secondary/50 rounded-lg p-2 border border-border">
+            <div className="flex items-center gap-1.5 mb-1">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+                dailyChallengesCompleted 
+                  ? "bg-gradient-to-br from-emerald-500 to-green-600" 
+                  : "bg-gradient-to-br from-amber-500 to-orange-600"
+              }`}>
+                <Swords className="w-3 h-3 text-white" />
               </div>
-              <div>
-                <p className="text-xs font-bold text-foreground">Nivel de Batalha</p>
-                <p className="text-[10px] text-muted-foreground">
-                  Influencia a dificuldade dos oponentes
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold text-foreground truncate">
+                  {dailyChallengesCompleted ? "Completo!" : "Diarios"}
                 </p>
+                <p className="text-[8px] text-muted-foreground">{dailyChallengeWins}/{DAILY_CHALLENGE_LIMIT}</p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">
-                Lv.{battleLevel}
-              </p>
+            <div className="w-full h-2 bg-gray-700/50 rounded-full overflow-hidden">
+              <motion.div
+                className={`h-full rounded-full ${
+                  dailyChallengesCompleted 
+                    ? "bg-gradient-to-r from-emerald-500 to-green-500" 
+                    : "bg-gradient-to-r from-amber-500 to-orange-500"
+                }`}
+                initial={{ width: 0 }}
+                animate={{ width: `${(dailyChallengeWins / DAILY_CHALLENGE_LIMIT) * 100}%` }}
+                transition={{ duration: 0.5 }}
+              />
             </div>
           </div>
-          <div className="relative">
-            <div className="w-full h-3 bg-gray-700/50 rounded-full overflow-hidden">
+
+          {/* Nivel de Batalha */}
+          <div className="bg-secondary/50 rounded-lg p-2 border border-border">
+            <div className="flex items-center gap-1.5 mb-1">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shrink-0">
+                <Trophy className="w-3 h-3 text-white" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold text-foreground truncate">Batalha</p>
+                <p className="text-[8px] text-muted-foreground">Lv.{battleLevel}</p>
+              </div>
+            </div>
+            <div className="w-full h-2 bg-gray-700/50 rounded-full overflow-hidden">
               <motion.div
                 className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${xpProgress}%` }}
                 transition={{ duration: 0.5 }}
               />
-            </div>
-            <div className="flex justify-between mt-1">
-              <span className="text-[9px] text-muted-foreground">{battleXp} XP</span>
-              <span className="text-[9px] text-muted-foreground">{xpToNextLevel} XP</span>
             </div>
           </div>
         </div>
@@ -521,8 +605,57 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
             </button>
           )}
 
+          {/* Estado: Desafios Diarios Completos */}
+          {dailyChallengesCompleted && (
+            <div className="flex flex-col items-center justify-center py-16 px-6 gap-4">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", damping: 10 }}
+                className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg"
+              >
+                <Check className="w-12 h-12 text-white" />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-center"
+              >
+                <h3 className="text-xl font-bold text-foreground mb-2">
+                  Desafios Completos!
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Voce venceu todos os {DAILY_CHALLENGE_LIMIT} desafios de hoje.
+                </p>
+                <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-xs">
+                    Novos desafios disponiveis amanha!
+                  </span>
+                </div>
+              </motion.div>
+              <div className="mt-4 p-4 bg-secondary/50 rounded-lg border border-border">
+                <p className="text-xs text-center text-muted-foreground">
+                  Enquanto isso, experimente o <strong>Modo Trilhas</strong> para mais batalhas e recompensas especiais!
+                </p>
+                <Button
+                  onClick={() => {
+                    playButtonClick();
+                    onDuelModeChange("trails");
+                  }}
+                  variant="outline"
+                  className="w-full mt-3"
+                >
+                  <Map className="w-4 h-4 mr-2" />
+                  Ir para Trilhas
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Lista de Desafios Normais */}
-          {challenges.map((npc) => {
+          {!dailyChallengesCompleted && challenges.map((npc) => {
             const isRead = readChallenges.has(npc.id);
             return (
               <button
@@ -606,7 +739,7 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
           })}
 
           {/* Empty State */}
-          {challenges.length === 0 && (
+          {!dailyChallengesCompleted && challenges.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 px-6 gap-3">
               <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center">
                 <Mail className="w-10 h-10 text-muted-foreground" />
