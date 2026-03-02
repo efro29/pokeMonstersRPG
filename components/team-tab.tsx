@@ -245,161 +245,170 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
     const isDragOver = dragOverIndex === slotIndex && dragIndex !== slotIndex;
 
     return (
+<div
+  key={pokemon.uid}
+  draggable
+  onDragStart={() => handleDragStart(slotIndex)}
+  onDragOver={(e) => handleDragOver(e, slotIndex)}
+  onDrop={() => handleDrop(slotIndex)}
+  onDragEnd={handleDragEnd}
+  className={`relative w-full transition-all duration-300 ${
+    isDragging ? "opacity-0" : ""
+  }`}
+>
+  {/* Moldura Externa com Brilho Neon */}
+  <div
+    className={`relative rounded-[4px] p-[1px] shadow-2xl transition-all duration-200 ${
+      isDragOver ? "ring-2 ring-cyan-400 ring-offset-2 ring-offset-black scale-[1.02]" : ""
+    }`}
+    style={{
+      background: isFainted
+        ? "linear-gradient(135deg, #444, #111, #222)"
+        : "linear-gradient(135deg, #1852e6, #09bfcf, #030240)",
+      boxShadow: !isFainted ? `0 0 10px ${hpColor}33` : "none"
+    }}
+  >
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => setSelectedUid(pokemon.uid)}
+      className={`w-full rounded-[3px] p-2 flex flex-col h-full cursor-pointer overflow-hidden backdrop-blur-sm
+        ${isFainted 
+          ? "bg-gradient-to-b from-[#2a2a2a] to-[#0f0f0f] border-red-900/40" 
+          : "bg-gradient-to-b from-[#101a35] via-[#081025] to-[#050a18] border-white/10"
+        } border`}
+      style={{
+        clipPath: "polygon(0 0, 100% 0, 100% 100%, 8px 100%, 0 calc(100% - 8px))"
+      }}
+    >
+      {/* SCANLINES - Efeito de Monitor Antigo */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
 
-      <div
-        key={pokemon.uid}
-        draggable
-        onDragStart={() => handleDragStart(slotIndex)}
-        onDragOver={(e) => handleDragOver(e, slotIndex)}
-        onDrop={() => handleDrop(slotIndex)}
-        onDragEnd={handleDragEnd}
-        className={`relativew-full rounded-[4px] p-[2px] transition-all duration-200 ${
-          isDragging ? "opacity-40 scale-95" : ""
-        } ${
-          isDragOver
-            ? "ring-2 ring-primary/60 ring-offset-1 ring-offset-background"
-            : ""
-        }`}
-        style={{
-          background: isFainted?"linear-gradient(135deg, #6d6969, #000000, #403f3f)":"linear-gradient(135deg, #1852e6, #09bfcf, #030240)",
-        }}
-      >
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => setSelectedUid(pokemon.uid)}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedUid(pokemon.uid) }}
-          className={`w-full rounded-[4px] p-1.5 flex flex-col h-full cursor-pointer
-        
-              ${ isFainted ? "bg-gradient-to-b from-[#4b4b4b] via-[#2e2e2e] to-[#1a1a1a]" : " bg-gradient-to-b from-[#1e3a8a] to-[#0f172a] border " }
-         ${ isFainted ? "border-red-800 " : "border-neutral-700 " }
-         
-         `}
-        >
-          {/* HEADER */}
-          <div className="flex justify-between items-start border-b border-neutral-700 pb-[2px]">
-            <div className="min-w-0">
-              <div className="text-[9px] font-bold text-neutral-100 truncate leading-none">
-                {pokemon.name}
-              </div>
-
-            </div>
-
-            <div className="text-right shrink-0">
-              {species && (
-                <div className="flex gap-[2px] mt-[1px]">
-                  {species.types.map((t) => (
-                    <span
-                      key={t}
-                      className="text-[6px] px-[2px] rounded-[2px] text-white"
-                      style={{ backgroundColor: TYPE_COLORS[t] }}
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+      {/* HEADER TÉCNICO */}
+      <div className="flex justify-between items-center border-b border-white/10 pb-1 mb-1 relative z-10">
+        <div className="flex flex-col">
+          <div className="text-[10px] font-black italic text-white truncate leading-none uppercase tracking-tighter">
+            {pokemon.name}
           </div>
+          <span className="text-[5px] font-bold text-cyan-400/60 tracking-widest uppercase">Bio_Link_Stable</span>
+        </div>
 
-          {/* ART AREA */}
-          <div className={`relative flex justify-center items-center my-1.5 h-[56px]  ${ isFainted ? "bg-gradient-to-b from-[#3a3a3a] via-[#262626] to-[#141414]" : " bg-gradient-to-b from-[#1e2f5a] via-[#162447] to-[#0f1a33] " }  rounded `}>
-          
-            <div className="absolute inset-0 pointer-events-none opacity-40">
-                <svg className="w-full h-full" viewBox="0 0 400 100" preserveAspectRatio="none">
-                  <defs>
-                    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="white" strokeWidth="0.5" opacity="0.1"/>
-                    </pattern>
-                    
-                    <mask id="scanMask">
-                      <rect className="animate-ecg-scan" x="-100" y="0" width="100" height="100" fill="white" />
-                    </mask>
-                  </defs>
-
-                  <rect width="100%" height="100%" fill="url(#grid)" />
-
-                  <path
-                    d="M0 50 L140 50 L145 35 L155 65 L160 50 L180 50 L190 15 L210 85 L220 50 L240 50 L245 42 L255 58 L260 50 L400 50"
-                    fill="none"
-                    stroke={hpColor}
-                    strokeWidth="5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    mask="url(#scanMask)"
-                    style={{ filter: `drop-shadow(0 0 4px ${hpColor})` }}
-                  />
-                </svg>
-              </div>
-          
-          
-            <img
-            style={{zIndex:20}}
-              src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
-              alt={pokemon.name}
-              className={`pixelated h-[48px]  ${isFainted?'grayscale':''}` }
-              crossOrigin="anonymous"
-            />
-                <span className="absolute top-1 left-1 text-[7px] font-mono text-neutral-500">
-                  Lv{level}
+        <div className="flex gap-[2px]">
+          {species?.types.map((t) => (
+            <span
+              key={t}
+              className="text-[5px] px-[3px] py-[1px] rounded-[1px] text-black font-black uppercase italic"
+              style={{ backgroundColor: TYPE_COLORS[t] }}
+            >
+              {t.substring(0, 3)}
             </span>
-
-          </div>
-
-          {/* STATUS */}
-          <div className="flex flex-col gap-[3px] mt-auto">
-            {/* HP */}
-            <div className="flex items-center gap-[3px]">
-              <Heart className="w-2.5 h-2.5 text-red-500" />
-              <div className="flex-1 h-[6px] bg-neutral-800 rounded-full overflow-hidden border border-neutral-700">
-                <div
-                  className="h-full transition-all duration-300"
-                  style={{
-                    width: `${hpPercent}%`,
-                    backgroundColor: hpColor,
-                  }}
-                />
-              </div>
-            </div>
-               <div className="text-[7px] font-mono text-neutral-400 leading-none">
-        {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
-      </div>
-            
-
-            {/* XP */}
-            <div className="flex items-center gap-[3px]">
-              <Star className="w-2.5 h-2.5 text-yellow-500" />
-              <div className="flex-1 h-[6px] bg-neutral-800 rounded-full overflow-hidden border border-neutral-700">
-                <div
-                  className="h-full bg-yellow-500 transition-all duration-300"
-                  style={{ width: `${xpPercent}%` }}
-                />
-              </div>
-            </div>
-
-            {/* FOOTER */}
-            <div className="flex justify-end pt-[2px]">
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  moveToReserves(pokemon.uid)
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.stopPropagation()
-                    moveToReserves(pokemon.uid)
-                  }
-                }}
-                className="h-5 w-full px-1.5 bg-gray-600 text-white hover:bg-red-700 text-[8px] rounded cursor-pointer inline-flex items-center justify-center font-medium"
-              >
-                Reserva
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
+
+      {/* ART AREA - MONITOR DE HOSPITAL UPGRADED */}
+      <div className={`relative flex justify-center items-center my-1 h-[60px] rounded bg-black/60 border border-white/5 overflow-hidden group`}>
+        {/* Monitor ECG (Igual ao Hospital, mas com brilho) */}
+        <div className="absolute inset-0 pointer-events-none opacity-60">
+          <svg className="w-full h-full" viewBox="0 0 400 100" preserveAspectRatio="none">
+            <defs>
+              <pattern id="grid-team" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="cyan" strokeWidth="0.5" opacity="0.15"/>
+              </pattern>
+              <mask id="scanMask-team">
+                <rect className="animate-ecg-scan" x="-100" y="0" width="100" height="100" fill="white" />
+              </mask>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                <feMerge>
+                  <feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+
+            <rect width="100%" height="100%" fill="url(#grid-team)" />
+
+            <path
+              d="M0 50 L140 50 L145 30 L155 70 L160 50 L180 50 L190 10 L210 90 L220 50 L240 50 L245 40 L255 60 L260 50 L400 50"
+              fill="none"
+              stroke={hpColor}
+              strokeWidth="4"
+              strokeLinecap="round"
+              mask="url(#scanMask-team)"
+              filter="url(#glow)"
+              className="transition-colors duration-500"
+            />
+          </svg>
+        </div>
+
+        <img
+          src={getSpriteUrl(pokemon.speciesId)}
+          alt={pokemon.name}
+          className={`relative z-20 pixelated h-[50px] drop-shadow-[0_0_8px_rgba(0,0,0,0.8)] transition-transform group-hover:scale-110
+            ${isFainted ? 'grayscale brightness-50' : ''}`}
+          crossOrigin="anonymous"
+        />
+
+        <div className="absolute top-1 left-1 flex flex-col gap-0 leading-none">
+          <span className="text-[5px] font-bold text-white/30 uppercase">Lvl</span>
+          <span className="text-[9px] font-mono font-black text-white/90">{level}</span>
+        </div>
+      </div>
+
+      {/* STATUS HUD */}
+      <div className="flex flex-col gap-1.5 mt-auto relative z-10">
+        {/* HP */}
+        <div className="space-y-0.5">
+          <div className="flex justify-between items-end px-0.5">
+            <span className="text-[6px] font-black text-cyan-400/80 uppercase italic">Vitals</span>
+            <span className="text-[8px] font-mono font-bold text-white tracking-tighter">
+              {Math.round(pokemon.currentHp)}<span className="opacity-30">/</span>{pokemon.maxHp}
+            </span>
+          </div>
+          <div className="h-[5px] w-full bg-black/80 rounded-[1px] overflow-hidden border border-white/5">
+            <div
+              className="h-full transition-all duration-500 shadow-[0_0_5px_rgba(0,255,255,0.2)]"
+              style={{ width: `${hpPercent}%`, backgroundColor: hpColor }}
+            />
+          </div>
+        </div>
+
+        {/* XP BAR - Fina e Técnica */}
+        <div className="h-[1px] w-full bg-white/5">
+          <div
+            className="h-full bg-yellow-400 transition-all duration-300 shadow-[0_0_3px_#fbbf24]"
+            style={{ width: `${xpPercent}%` }}
+          />
+        </div>
+
+        {/* BOTÃO DE RECOLHIMENTO */}
+<button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  moveToReserves(pokemon.uid);
+                }}
+                className="group/btn relative w-full h-6 flex items-center justify-center gap-1 transition-all duration-300 overflow-hidden bg-red-500/10 text-red-500 border border-red-500/30 hover:border-red-400 hover:text-white"
+                style={{ 
+                  clipPath: "polygon(0 0, 92% 0, 100% 100%, 8% 100%)" 
+                }}
+              >
+                {/* Efeito de preenchimento lateral no hover */}
+                <div className="absolute inset-0 bg-red-600 translate-x-[105%] group-hover/btn:translate-x-0 transition-transform duration-300 z-0" />
+                
+                <div className="relative z-10 flex items-center gap-1">
+                  <ArrowDown className="w-2.5 h-2.5 group-hover/btn:translate-y-0.5 transition-transform" />
+                  <span className="text-[7px] font-black uppercase italic tracking-[0.15em]">
+                    RESERVA
+                  </span>
+                </div>
+
+                {/* Pequeno detalhe decorativo no canto */}
+                <div className="absolute bottom-0 left-2 w-[2px] h-[2px] bg-white/30" />
+              </button>
+      </div>
+    </div>
+  </div>
+</div>
     );
   };
 
@@ -416,136 +425,144 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
     return (
 <div
   key={pokemon.uid}
-  className="relative w-[108px] rounded-[4px] p-[2px] transition-all duration-200"
-  style={{
-    background: "linear-gradient(135deg, #e02d2d, #1e0000, #180101)",
-  }}
+  className="relative w-[110px] group transition-all duration-300 active:scale-95"
 >
+  {/* Moldura Externa - Estética Industrial/Cyber */}
+  <div 
+    className="absolute inset-0 rounded-[4px] opacity-80" 
+    style={{
+      background: isFainted 
+        ? "linear-gradient(135deg, #444, #111)" 
+        : "linear-gradient(135deg, #e02d2d, #4a0000, #1a0101)",
+    }}
+  />
+
   <div
     role="button"
     tabIndex={0}
     onClick={() => setSelectedUid(pokemon.uid)}
-    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedUid(pokemon.uid) }}
-    className={`w-full rounded-[4px] p-1.5 flex flex-col h-full cursor-pointer
-    bg-gradient-to-b from-[#2b2b2b] to-[#161616] border transition-all
-    ${isFainted ? "border-red-800 opacity-60" : "border-neutral-700"}`}
+    className={`relative m-[1px] rounded-[3px] p-2 flex flex-col h-full cursor-pointer overflow-hidden transition-all border
+      ${isFainted 
+        ? "bg-[#1a1a1a] border-white/5 opacity-60" 
+        : "bg-[#0d0404] border-red-900/30 hover:border-red-500/50 group-hover:shadow-[0_0_10px_rgba(224,45,45,0.15)]"}`}
+    style={{
+      clipPath: "polygon(0 0, 100% 0, 100% 100%, 10px 100%, 0 calc(100% - 10px))"
+    }}
   >
+    {/* EFEITO DE SCANNER DE FUNDO */}
+    <div className="absolute inset-0 pointer-events-none opacity-5 bg-[radial-gradient(#ff0000_1px,transparent_0)] bg-[size:10px_10px] z-0" />
+
     {/* HEADER */}
-    <div className="flex justify-between items-start border-b border-neutral-700 pb-[2px]">
-      <div className="min-w-0">
-        <div className="text-[9px] font-bold text-neutral-100 truncate leading-none">
+    <div className="relative z-10 flex justify-between items-start border-b border-white/10 pb-1 mb-1.5">
+      <div className="flex flex-col min-w-0">
+        <span className="text-[9px] font-black italic uppercase text-neutral-100 truncate leading-none tracking-tighter">
           {pokemon.name}
-        </div>
+        </span>
+        <span className="text-[5px] font-bold text-red-500/50 uppercase">Storage_Unit</span>
       </div>
 
-              {species && (
-                <div className="flex gap-[2px] mt-[1px]">
-                  {species.types.map((t) => (
-                    <span
-                      key={t}
-                      className="text-[6px] px-[2px] rounded-[2px] text-white"
-                      style={{ backgroundColor: 'gray' }}
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              )}
+      <div className="flex gap-[2px]">
+        {species?.types.map((t) => (
+          <div
+            key={t}
+            className="w-1.5 h-1.5 rounded-full border border-white/20"
+            style={{ backgroundColor: TYPE_COLORS[t] || 'gray' }}
+          />
+        ))}
+      </div>
     </div>
 
-    {/* ART AREA */}
-        <div className="relative flex justify-center items-center my-1.5 h-[56px] bg-gradient-to-b from-neutral-800 to-neutral-900 rounded  border-neutral-700">
-                      <div className="absolute inset-0 pointer-events-none opacity-40">
-                <svg className="w-full h-full" viewBox="0 0 400 100" preserveAspectRatio="none">
-                  <defs>
-                    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="white" strokeWidth="0.5" opacity="0.1"/>
-                    </pattern>
-                    
-                    <mask id="scanMask">
-                      <rect className="animate-ecg-scan" x="-100" y="0" width="100" height="100" fill="white" />
-                    </mask>
-                  </defs>
+    {/* ART AREA - MONITOR DE HOSPITAL (ECG) */}
+    <div className={`relative flex justify-center items-center h-[56px] rounded border border-white/5 overflow-hidden
+      ${isFainted ? "bg-black/60" : "bg-gradient-to-b from-red-950/20 to-black/80"}`}
+    >
+      <div className="absolute inset-0 pointer-events-none opacity-40">
+        <svg className="w-full h-full" viewBox="0 0 400 100" preserveAspectRatio="none">
+          <defs>
+            <pattern id="grid-reserva" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="red" strokeWidth="0.5" opacity="0.2"/>
+            </pattern>
+            <mask id="scanMask-reserva">
+              <rect className="animate-ecg-scan" x="-100" y="0" width="100" height="100" fill="white" />
+            </mask>
+            <filter id="redGlow">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+          </defs>
 
-                  <rect width="100%" height="100%" fill="url(#grid)" />
+          <rect width="100%" height="100%" fill="url(#grid-reserva)" />
 
-                  <path
-                    d="M0 50 L140 50 L145 35 L155 65 L160 50 L180 50 L190 15 L210 85 L220 50 L240 50 L245 42 L255 58 L260 50 L400 50"
-                    fill="none"
-                    stroke={hpColor}
-                    strokeWidth="5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    mask="url(#scanMask)"
-                    style={{ filter: `drop-shadow(0 0 4px ${hpColor})` }}
-                  />
-                </svg>
-              </div>
-      <img style={{zIndex:20}}
-        src={getSpriteUrl(pokemon.speciesId) || "/placeholder.svg"}
+          <path
+            d="M0 50 L140 50 L145 30 L155 70 L160 50 L180 50 L190 10 L210 90 L220 50 L240 50 L245 40 L255 60 L260 50 L400 50"
+            fill="none"
+            stroke={isFainted ? "#444" : hpColor}
+            strokeWidth="5"
+            strokeLinecap="round"
+            mask="url(#scanMask-reserva)"
+            filter={isFainted ? "" : "url(#redGlow)"}
+          />
+        </svg>
+      </div>
+
+      <img
+        src={getSpriteUrl(pokemon.speciesId)}
         alt={pokemon.name}
-        className="pixelated h-[48px] select-none pointer-events-none "
+        className={`relative z-20 pixelated h-[46px] select-none drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]
+          ${isFainted ? 'grayscale brightness-50' : ''}`}
         crossOrigin="anonymous"
-        draggable={false}
       />
 
-      <span className="absolute top-1 left-1 text-[7px] font-mono text-neutral-500">
+      <span className="absolute top-1 left-1 text-[8px] font-mono font-black text-white/20 uppercase tracking-tighter">
         Lv{level}
       </span>
     </div>
 
-    {/* STATUS */}
-    <div className="flex flex-col gap-[3px] mt-auto">
-
-      {/* HP */}
-      <div className="flex items-center gap-[3px]">
-        <Heart className="w-2.5 h-2.5 text-gray-500" />
-        <div className="flex-1 h-[6px] bg-neutral-800 rounded-full overflow-hidden border border-neutral-700">
+    {/* STATUS HUD */}
+    <div className="relative z-10 flex flex-col gap-1.5 mt-auto pt-1">
+      {/* HP HUD */}
+      <div className="space-y-0.5">
+        <div className="flex justify-between items-center px-0.5">
+          <span className="text-[6px] font-black text-white/30 uppercase italic">Vitals</span>
+          <span className="text-[7px] font-mono text-white/50">{Math.round(pokemon.currentHp)}/{pokemon.maxHp}</span>
+        </div>
+        <div className="h-1 w-full bg-black/60 rounded-full overflow-hidden border border-white/5">
           <div
             className="h-full transition-all duration-300"
-            style={{
-              width: `${hpPercent}%`,
-              backgroundColor: 'gray',
-            }}
+            style={{ width: `${hpPercent}%`, backgroundColor: isFainted ? '#444' : hpColor }}
           />
         </div>
       </div>
 
-      <div className="text-[7px] font-mono text-neutral-400 leading-none">
-        {Math.round(pokemon.currentHp)}/{pokemon.maxHp}
-      </div>
-        {/* XP */}
-        <div className="flex items-center gap-[3px]">
-          <Star className="w-2.5 h-2.5 text-gray-500" />
-          <div className="flex-1 h-[6px] bg-neutral-800 rounded-full overflow-hidden border border-neutral-700">
-            <div
-              className="h-full bg-gray-500 transition-all duration-300"
-              style={{ width: `${xpPercent}%` }}
-            />
-          </div>
-        </div>
-      {/* FOOTER BUTTON */}
-      <div className="flex justify-end pt-[2px]">
-        <div
-          role="button"
-          tabIndex={0}
-          aria-disabled={team.length >= 6}
-          style={{backgroundColor:team.length >= 6?"gray":'green'}}
-          onClick={(e) => {
-            e.stopPropagation()
-            if (team.length < 6) moveToTeam(pokemon.uid)
-          }}
-          onKeyDown={(e) => {
-            if ((e.key === 'Enter' || e.key === ' ') && team.length < 6) {
-              e.stopPropagation()
-              moveToTeam(pokemon.uid)
-            }
-          }}
-          className={`h-5 w-full px-1.5 text-white text-[7px] rounded inline-flex items-center justify-center font-medium ${team.length >= 6 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-green-700'}`}
-          title="Promover para Equipe"
-        >
-          Promover
-        </div>
+      {/* FOOTER ACTION */}
+      <div className="pt-1.5">
+          <button
+            disabled={team.length >= 6}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (team.length < 6) moveToTeam(pokemon.uid);
+            }}
+            className={`group/btn relative w-full h-6 flex items-center justify-center gap-1 transition-all duration-300 overflow-hidden
+              ${team.length >= 6 
+                ? 'bg-neutral-800 text-white/20 cursor-not-allowed border-neutral-700' 
+                : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:border-emerald-400 hover:text-white'}`}
+            style={{ 
+              clipPath: "polygon(8% 0, 100% 0, 92% 100%, 0 100%)" 
+            }}
+          >
+            {/* Efeito de preenchimento lateral no hover */}
+            <div className="absolute inset-0 bg-emerald-500 translate-x-[-105%] group-hover/btn:translate-x-0 transition-transform duration-300 z-0" />
+            
+            <div className="relative z-10 flex items-center gap-1">
+              <ArrowUp className={`w-2.5 h-2.5 ${team.length >= 6 ? 'opacity-20' : 'animate-bounce'}`} />
+              <span className="text-[7px] font-black uppercase italic tracking-[0.15em]">
+                {team.length >= 6 ? "SEM VAGAS" : "TITULAR"}
+              </span>
+            </div>
+
+            {/* Pequeno detalhe decorativo no canto */}
+            <div className="absolute top-0 right-2 w-[2px] h-[2px] bg-white/30" />
+          </button>
       </div>
     </div>
   </div>
@@ -1252,7 +1269,7 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
             <motion.button
               whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(147, 197, 253, 0.5)" }}
               whileTap={{ scale: 0.98 }}
-              disabled={(useGameStore.getState().trainer.starDust ?? 0) < STAR_DUST_CONFIG.XP_TO_STARDUST_RATIO}
+              disabled={ amountToConvertT < 500}
               onClick={() => {
                 const trainerStarDust = useGameStore.getState().trainer.starDust ?? 0;
                 if (trainerStarDust < STAR_DUST_CONFIG.XP_TO_STARDUST_RATIO) return;
@@ -1309,12 +1326,23 @@ const habildade_especial = getBaseAttributes(pokemon.speciesId).especial ?? ''
                 >
                   <Star className="w-5 h-5 mr-3 text-yellow-300 fill-yellow-300 drop-shadow-[0_0_8px_rgba(253,224,71,0.8)]" />
                 </motion.div>
+                {amountToConvertT < 500?
+                <>
                 
-                <span className="text-sm">Star</span>
+                <span className="text-[10px] text-yellow-200 drop-shadow-[0_0_5px_rgba(254,240,138,0.5)]"> Insulficiente </span>
+                </>
+                :
+                 <>
+                     <span className="text-sm">Star</span>
                 <span className="mx-2 text-blue-300 opacity-50">|</span>
-                <span className="text-yellow-200 drop-shadow-[0_0_5px_rgba(254,240,138,0.5)]">
-                  {amountToConvertT} 
-                </span>
+                <span className="text-yellow-200 drop-shadow-[0_0_5px_rgba(254,240,138,0.5)]"> {amountToConvertT}  </span>
+                
+                </>
+                }
+                
+     
+
+
               </div>
 
               {/* BRILHO DE VARREDURA (SHINE EFFECT) */}

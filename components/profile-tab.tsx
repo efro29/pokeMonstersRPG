@@ -41,6 +41,8 @@ import {
   CheckCircle2,
   Circle,
   Calendar,
+  Settings2,
+  Info,
 } from "lucide-react";
 import { playBadgeObtained, playBadgeRemoved, playButtonClick } from "@/lib/sounds";
 import { TrainerAvatar } from "@/components/trainer-avatar";
@@ -132,8 +134,10 @@ export function ProfileTab() {
   return (
     <ScrollArea className="h-full">
       <div className="flex flex-col gap-2 p-2">
+
         {/* Trainer Card */}
         <div className="bg-card rounded-xl border border-border overflow-hidden">
+          
           <div className="relative bg-gradient-to-r from-primary/20 to-accent/20 p-4 ">
             <div className="absolute top-3 right-3 flex items-center gap-1 bg-card/80 backdrop-blur-sm rounded-full px-3 py-1">
               <Award className="w-3 h-3 text-accent" />
@@ -190,65 +194,98 @@ export function ProfileTab() {
               )}
             </div>
 
-            {/* Exploration Level & XP */}
-            <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Compass className="w-4 h-4 text-emerald-400" />
-                  <span className="text-sm font-medium text-foreground">Explorador Nivel {trainer.explorationLevel ?? 1}</span>
+              {/* Exploration Level & XP - Scout Radar Version */}
+              <div className="relative overflow-hidden bg-slate-950/90 border-l-4 border-emerald-500 shadow-[8px_0_15px_-5px_rgba(16,185,129,0.2)] rounded-r-xl group">
+                
+                {/* Header de Missão */}
+                <div className="px-3 py-2 bg-emerald-500/10 border-b border-emerald-500/20 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex items-center justify-center">
+                      <Compass className="w-4 h-4 text-emerald-400 animate-[spin_4s_linear_infinite]" />
+                      <div className="absolute inset-0 blur-sm bg-emerald-500/40 animate-pulse" />
+                    </div>
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-emerald-500 italic">
+                      Exploration_Module
+                    </h3>
+                  </div>
+                  <div className="flex items-baseline gap-1 bg-black/40 px-2 py-0.5 border border-emerald-500/30 rounded-sm">
+                    <span className="text-[8px] font-bold text-emerald-500/60 uppercase">Rank</span>
+                    <span className="text-xs font-mono font-black text-emerald-400">
+                      {trainer.explorationLevel ?? 1}
+                    </span>
+                  </div>
                 </div>
-                <span className="text-[10px] text-emerald-400 font-mono font-bold">
-                  Nv.{trainer.explorationLevel ?? 1}
-                </span>
-              </div>
-              {/* Exploration XP Progress Bar */}
-              {(() => {
-                const currentLevel = trainer.explorationLevel ?? 1;
-                const currentXp = trainer.explorationXp ?? 0;
-                const xpCurrent = explorationXpForLevel(currentLevel);
-                const xpNext = explorationXpForLevel(currentLevel + 1);
-                const xpInLevel = currentXp - xpCurrent;
-                const xpNeeded = xpNext - xpCurrent;
-                const xpPercent = xpNeeded > 0 ? Math.min(100, (xpInLevel / xpNeeded) * 100) : 100;
-                return (
-                  <>
-                    <div className="flex-1 h-2.5 bg-background rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${xpPercent}%`, backgroundColor: "#10B981" }}
-                      />
-                    </div>
-                    <div className="flex justify-between mt-1">
-                      <span className="text-[10px] text-muted-foreground font-mono">
-                        XP: {currentXp.toLocaleString("pt-BR")}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground font-mono">
-                        Proximo: {xpNext.toLocaleString("pt-BR")}
-                      </span>
-                    </div>
-                  </>
-                );
-              })()}
-              <p className="text-[9px] text-muted-foreground mt-1.5 leading-relaxed">
-                Ganhe XP capturando Pokemon no radar. Bonus por capturar com menos pokebolas!
-              </p>
-            </div>
 
-            {/* Daily Streak / Ofensiva */}
+                <div className="p-3">
+                  {/* XP Info Display */}
+                  <div className="flex justify-between items-end mb-2 px-0.5">
+                    <div className="flex flex-col">
+                      <span className="text-[8px] font-black text-emerald-500/40 uppercase tracking-tighter">Current_Data_Sync</span>
+                      <span className="text-sm font-mono font-black text-white">
+                        {(trainer.explorationXp ?? 0).toLocaleString()} <span className="text-[9px] text-emerald-500/50">XP</span>
+                      </span>
+                    </div>
+                    {/* Mini Radar Pulse Decorator */}
+                    <div className="flex gap-1 mb-1">
+                      <div className="w-1 h-1 bg-emerald-500 animate-ping rounded-full" />
+                      <div className="w-1 h-1 bg-emerald-500/40 rounded-full" />
+                      <div className="w-1 h-1 bg-emerald-500/20 rounded-full" />
+                    </div>
+                  </div>
+
+                  {/* Barra de XP Estilo "Recon Scan" */}
+                  {(() => {
+                    const currentLevel = trainer.explorationLevel ?? 1;
+                    const currentXp = trainer.explorationXp ?? 0;
+                    const xpCurrent = explorationXpForLevel(currentLevel);
+                    const xpNext = explorationXpForLevel(currentLevel + 1);
+                    const xpPercent = Math.min(100, ((currentXp - xpCurrent) / (xpNext - xpCurrent)) * 100);
+                    
+                    return (
+                      <div className="space-y-1.5">
+                        <div className="relative h-2 bg-black/60 border border-emerald-500/20 rounded-sm overflow-hidden p-[1px]">
+                          {/* Linhas de grade de fundo para dar aspecto técnico */}
+                          <div className="absolute inset-0 flex justify-between px-2 opacity-20 pointer-events-none">
+                              {[...Array(5)].map((_, i) => <div key={i} className="w-[1px] h-full bg-emerald-500" />)}
+                          </div>
+                          
+                          <div 
+                            className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.6)] relative"
+                            style={{ width: `${xpPercent}%` }}
+                          >
+                              {/* Efeito de brilho na ponta da barra */}
+                              <div className="absolute right-0 top-0 bottom-0 w-1 bg-white shadow-[0_0_8px_white]" />
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between text-[8px] font-mono font-bold text-emerald-500/60 uppercase italic">
+                          <span>Sector_{currentLevel}</span>
+                          <span>Next_Node: {xpNext.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Dica de Jogo com Estilo de Log de Sistema */}
+                  <div className="mt-3 py-1.5 px-2 bg-emerald-500/5 border-t border-emerald-500/10 flex gap-2 items-start group-hover:bg-emerald-500/10 transition-colors">
+                    <div className="w-1 h-1 bg-emerald-400 mt-1 shrink-0 shadow-[0_0_4px_#10B981]" />
+                    <p className="text-[9px] text-emerald-200/60 leading-tight font-medium">
+                      CAPTURA COM RADAR DETECTADA: Bônus de eficiência aplicado para arremessos precisos.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            {/* Daily Streak - Ignition HUD Version (Fixed) */}
             {(() => {
               const streak = trainer.dailyStreak ?? 0;
               const lastDate = trainer.lastCaptureDate ?? null;
-              const unlockedDays = trainer.legendaryUnlockedDays ?? [];
               const today = getTodayDateStr();
               const capturedToday = lastDate === today;
 
-              // Next milestone calculation
               const nextMilestone = Math.ceil((streak + 1) / 30) * 30;
-              const daysToNextMilestone = nextMilestone - streak;
               const milestoneProgress = streak % 30;
               const milestonePercent = (milestoneProgress / 30) * 100;
 
-              // Calculate which day of the week we're on
               const weekStart = trainer.weekStartDate || getWeekStartDate();
               const daysIntoCycle: number[] = [];
               for (let i = 0; i < 7; i++) {
@@ -258,231 +295,232 @@ export function ProfileTab() {
                 daysIntoCycle.push(checkDateStr === lastDate ? 1 : 0);
               }
               
-              // Current day of week (0 = Monday, 6 = Sunday)
               const d = new Date();
               const dayOfWeek = d.getDay();
               const currentDayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 
-              // Check if streak is still active (captured today or yesterday)
               let streakActive = capturedToday;
               if (!capturedToday && lastDate) {
                 const last = new Date(lastDate + "T12:00:00");
                 const now = new Date(today + "T12:00:00");
                 const diffDays = Math.round((now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24));
-                if (diffDays === 1) {
-                  streakActive = true; // Captured yesterday, streak still alive
-                }
+                if (diffDays === 1) streakActive = true;
               }
 
-              const streakColor = !streakActive && streak > 0 ? "#EF4444" : streak >= 7 ? "#F97316" : "#F59E0B";
+              // Cores dinâmicas baseadas no estado
+              const statusColorClass = !streakActive && streak > 0 ? "text-red-500" : "text-orange-500";
+              const statusBorderClass = !streakActive && streak > 0 ? "border-red-500/40" : "border-orange-500/40";
 
               return (
-                <div className="rounded-xl overflow-hidden border border-orange-500/20" style={{ background: "rgba(249,115,22,0.04)" }}>
-                  {/* Header */}
-                  <div className="flex items-center justify-between px-3 pt-3 pb-2">
+                <div className="relative overflow-hidden bg-slate-950 border border-white/10 rounded-xl shadow-2xl">
+                  {/* Header com Status de Ignição */}
+                  <div className="flex items-center justify-between px-3 py-2 bg-white/[0.03] border-b border-white/5">
                     <div className="flex items-center gap-2">
-                      <Flame className="w-4 h-4" style={{ color: streakColor }} />
-                      <span className="text-sm font-bold text-foreground">Ofensiva Diaria</span>
+                      <Flame className={`w-4 h-4 ${statusColorClass} drop-shadow-[0_0_5px_rgba(249,115,22,0.5)]`} />
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-white italic">Ofensivas</h3>
                     </div>
+                    
                     <div className="flex items-center gap-1.5">
-                      {!streakActive && streak > 0 && (
-                        <span className="text-[10px] text-red-400 font-medium">Quebrada</span>
-                      )}
-                      {capturedToday && (
-                        <span className="text-[10px] text-emerald-400 font-medium">Hoje</span>
-                      )}
-                      <div
-                        className="flex items-center gap-1 px-2 py-0.5 rounded-full"
-                        style={{ background: `${streakColor}20`, border: `1px solid ${streakColor}40` }}
-                      >
-                        <Flame className="w-3 h-3" style={{ color: streakColor }} />
-                        <span className="text-sm font-black font-mono" style={{ color: streakColor }}>
-                          {streak}
-                        </span>
+                      <div className={`px-1.5 py-0.5 rounded-sm text-[8px] font-black uppercase border ${
+                        capturedToday ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400" : "bg-red-500/10 border-red-500/40 text-red-400 animate-pulse"
+                      }`}>
+                        {capturedToday ? "Synced" : "Warning"}
+                      </div>
+                      <div className={`bg-black/60 px-2 py-0.5 border ${statusBorderClass} rounded-sm flex items-center gap-1`}>
+                        <span className="text-xs font-mono font-black text-white">{streak}</span>
+                        <span className="text-[8px] font-bold text-orange-500 uppercase italic">D</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Streak mini-dots (7 days of week visualization) */}
-                  <div className="px-3 pb-2">
-                    <div className="flex gap-1.5 items-center">
+                  <div className="p-3 space-y-4">
+                    {/* Weekly Micro-Tracker */}
+                    <div className="grid grid-cols-7 gap-1">
                       {Array.from({ length: 7 }).map((_, i) => {
                         const active = daysIntoCycle[i] === 1;
-                        const isToday = i === currentDayOfWeek && capturedToday;
-                        const streakColor2 = !streakActive && streak > 0 ? "#EF4444" : streak >= 7 ? "#F97316" : "#F59E0B";
+                        const isToday = i === currentDayOfWeek;
+                        
                         return (
-                          <div
-                            key={i}
-                            className="flex-1 flex flex-col items-center gap-0.5"
-                          >
-                            <div
-                              className="w-full h-5 rounded-md flex items-center justify-center transition-all"
-                              style={{
-                                background: active
-                                  ? isToday
-                                    ? `${streakColor2}30`
-                                    : `${streakColor2}18`
-                                  : "rgba(255,255,255,0.04)",
-                                border: `1px solid ${active ? streakColor2 + "40" : "rgba(255,255,255,0.06)"}`,
-                              }}
+                          <div key={i} className="flex flex-col items-center gap-1">
+                            <div 
+                              className={`w-full h-5 rounded-sm border transition-all duration-300 relative ${
+                                active 
+                                  ? "bg-orange-500/20 border-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.2)]" 
+                                  : isToday ? "bg-white/5 border-white/20 border-dashed" : "bg-white/[0.02] border-white/5"
+                              }`}
                             >
-                              {active && (
-                                <Flame className="w-2.5 h-2.5" style={{ color: isToday ? streakColor2 : streakColor2 + "80" }} />
-                              )}
+                              {active && <div className="absolute inset-0 flex items-center justify-center"><div className="w-0.5 h-2 bg-orange-400 rounded-full animate-pulse" /></div>}
                             </div>
-                            <span className="text-[8px] text-muted-foreground font-mono">
-                              {["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"][i]}
+                            <span className={`text-[7px] font-black uppercase ${isToday ? "text-orange-400" : "text-white/30"}`}>
+                              {["S", "T", "Q", "Q", "S", "S", "D"][i]}
                             </span>
                           </div>
                         );
                       })}
                     </div>
+
+                    {/* Milestone Progress Bar */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-end px-0.5">
+                        <span className="text-[8px] font-black text-white/40 uppercase tracking-widest italic">Dias</span>
+                        <span className="text-[9px] font-mono font-bold text-orange-400">{milestoneProgress} <span className="text-white/20">/</span> 30</span>
+                      </div>
+                      
+                      <div className="h-1.5 bg-black/60 rounded-full border border-white/5 overflow-hidden">
+                        <div 
+                            className="h-full bg-gradient-to-r from-orange-600 to-yellow-400 transition-all duration-1000" 
+                            style={{ width: `${milestonePercent}%` }} 
+                        />
+                      </div>
+                    </div>
+
+                    {/* Alerta de captura pendente */}
+                    {!capturedToday && (
+                      <div className="flex items-center gap-2 p-1.5 bg-red-500/5 border border-red-500/10 rounded-md">
+                        <div className="w-1 h-1 bg-red-500 rounded-full animate-ping" />
+                        <p className="text-[8px] font-bold text-red-400/80 uppercase tracking-tighter">
+                          Ação Necessária: Capture um Pokémon para estabilizar.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+{/* Weekly Event - Tactical Operation HUD */}
+        {(() => {
+          const event = getCurrentWeeklyEvent();
+          const weekKey = getCurrentWeekKey();
+          const progress = trainer.weeklyEventProgress;
+          const isCurrentWeek = progress?.weekKey === weekKey && progress?.eventId === event.id;
+          const missionProgress = isCurrentWeek ? (progress?.missionProgress ?? {}) : {};
+          const allCompleted = isCurrentWeek ? (progress?.completed ?? false) : false;
+          const rewardClaimed = isCurrentWeek ? (progress?.rewardClaimed ?? false) : false;
+          const rewardPokemon = getPokemon(event.rewardPokemonId);
+          const claimReward = useGameStore.getState().claimWeeklyEventReward;
+
+          return (
+            <div className="relative overflow-hidden bg-slate-950 border border-cyan-500/30 rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.1)]">
+              {/* Decoração de Canto (Triângulo de Interface) */}
+              <div className="absolute top-0 right-0 w-16 h-16 bg-cyan-500/5 [clip-path:polygon(100%_0,0_0,100%_100%)] pointer-events-none" />
+
+              {/* Header Estilo Missão */}
+              <div className="flex items-center justify-between px-3 py-2 bg-cyan-500/10 border-b border-cyan-500/20">
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Calendar className="w-4 h-4 text-cyan-400" />
+                    <div className="absolute inset-0 blur-sm bg-cyan-400/50 animate-pulse" />
+                  </div>
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-100 italic">
+                    Op_Weekly.sys
+                  </h3>
+                </div>
+                <span className="text-[9px] font-mono font-bold text-cyan-500/70 bg-black/40 px-1.5 rounded border border-cyan-500/20">
+                  {weekKey}
+                </span>
+              </div>
+
+              {/* Título do Evento - Scanner Box */}
+              <div className="p-3">
+                <div className="relative flex items-center gap-2 px-3 py-2 bg-cyan-950/40 border-l-2 border-cyan-400 mb-4 overflow-hidden">
+                  <Target className="w-4 h-4 text-cyan-300 animate-pulse" />
+                  <div className="flex flex-col">
+                    <span className="text-[7px] font-black text-cyan-500/60 uppercase tracking-tighter">Objetivo Principal</span>
+                    <span className="text-xs font-black text-white uppercase tracking-tight">{event.title}</span>
+                  </div>
+                  {/* Efeito de scan line */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/5 to-transparent w-1/2 -skew-x-12 animate-[move_3s_infinite]" />
+                </div>
+
+                {/* Missões Estilo Checkpoint */}
+                <div className="space-y-3 mb-4">
+                  {event.missions.map((mission) => {
+                    const current = missionProgress[mission.id] ?? 0;
+                    const done = current >= mission.target;
+                    const pct = Math.min(100, (current / mission.target) * 100);
+                    
+                    return (
+                      <div key={mission.id} className="group/mission">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <div className={`w-3.5 h-3.5 flex items-center justify-center rounded-sm border ${
+                            done ? "bg-emerald-500 border-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : "bg-black/40 border-white/20"
+                          }`}>
+                            {done && <CheckCircle2 className="w-2.5 h-2.5 text-black" />}
+                          </div>
+                          <span className={`text-[10px] font-bold flex-1 tracking-tight ${done ? "text-emerald-400 italic opacity-60" : "text-slate-200"}`}>
+                            {mission.description}
+                          </span>
+                          <span className="text-[9px] font-mono font-black text-cyan-400">
+                            {Math.min(current, mission.target)}<span className="text-white/20">/</span>{mission.target}
+                          </span>
+                        </div>
+                        {/* Barra de Progresso Segmentada (Gamer Style) */}
+                        <div className="ml-5 h-1 flex gap-0.5 bg-white/5 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full transition-all duration-700 ${done ? "bg-emerald-500" : "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]"}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Seção de Recompensas - Loot Box Style */}
+                <div className="pt-3 border-t border-white/5">
+                  <div className="flex items-center gap-1.5 mb-2 px-1">
+                    <Gift className="w-3 h-3 text-amber-400" />
+                    <span className="text-[9px] font-black uppercase text-amber-400/80 tracking-widest">Recompensas de Missão</span>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded text-amber-400 text-[9px] font-bold italic">
+                      $ {event.rewardMoney.toLocaleString("pt-BR")}
+                    </div>
+                    {event.rewardItems.map((item, i) => (
+                      <div key={i} className="flex items-center gap-1 px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/30 rounded text-cyan-300 text-[9px] font-bold italic">
+                        {item.itemName} <span className="text-white/40 font-mono">x{item.quantity}</span>
+                      </div>
+                    ))}
+                    {rewardPokemon && (
+                      <div className="flex items-center gap-1 px-2 py-0.5 bg-purple-500/10 border border-purple-500/30 rounded text-purple-400 text-[9px] font-black italic uppercase">
+                        {rewardPokemon.name} <span className="text-[8px] opacity-60">NV.{event.rewardPokemonLevel}</span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Progress to next milestone */}
-                  <div className="px-3 pb-2">
-                    <div className="flex items-center justify-between mb-1">
+                  {/* Botão de Resgate - Estilo Retro-Gamer */}
+                  {allCompleted && !rewardClaimed && (
+                    <button
+                      onClick={() => claimReward()}
+                      className="w-full py-2 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-sm transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      <Gift className="w-3.5 h-3.5" />
+                      Resgatar Recompensas
+                    </button>
+                  )}
 
+                  {rewardClaimed && (
+                    <div className="flex items-center justify-center gap-2 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded text-emerald-400">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span className="text-[9px] font-black uppercase tracking-widest italic">Status: Finalizado</span>
+                    </div>
+                  )}
 
-                    </div>
-                    <div className="h-2 bg-background rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${milestonePercent}%`, background: "linear-gradient(90deg, #F59E0B, #F97316)" }}
-                      />
-                    </div>
-                    <div className="flex justify-between mt-0.5">
-                      <span className="text-[9px] text-muted-foreground font-mono">{milestoneProgress}/30 dias</span>
-                      <span className="text-[9px] text-muted-foreground font-mono">Marco: {nextMilestone} dias</span>
-                    </div>
-                  </div>
-
-                  {/* No capture today warning */}
-                  {!capturedToday && (
-                    <div className="mx-3 mb-3 px-2 py-1.5 rounded-lg" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
-                      <p className="text-[10px] text-red-400 text-center">
-                        Capture um Pokemon hoje para manter a ofensiva!
+                  {!allCompleted && (
+                    <div className="flex items-center justify-center gap-1.5 opacity-40 italic">
+                      <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">
+                        Aguardando conclusão de todos os objetivos...
                       </p>
                     </div>
                   )}
                 </div>
-              );
-            })()}
-
-            {/* Weekly Event / Evento Semanal */}
-            {(() => {
-              const event = getCurrentWeeklyEvent();
-              const weekKey = getCurrentWeekKey();
-              const progress = trainer.weeklyEventProgress;
-              const isCurrentWeek = progress?.weekKey === weekKey && progress?.eventId === event.id;
-              const missionProgress = isCurrentWeek ? (progress?.missionProgress ?? {}) : {};
-              const allCompleted = isCurrentWeek ? (progress?.completed ?? false) : false;
-              const rewardClaimed = isCurrentWeek ? (progress?.rewardClaimed ?? false) : false;
-              const rewardPokemon = getPokemon(event.rewardPokemonId);
-              const claimReward = useGameStore.getState().claimWeeklyEventReward;
-
-              return (
-                <div className="rounded-xl overflow-hidden border border-cyan-500/20" style={{ background: "rgba(6,182,212,0.04)" }}>
-                  {/* Header */}
-                  <div className="flex items-center justify-between px-3 pt-3 pb-2">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-cyan-400" />
-                      <span className="text-sm font-bold text-foreground">Evento Semanal</span>
-                    </div>
-                    <span className="text-[10px] text-cyan-400/70 font-mono">{weekKey}</span>
-                  </div>
-
-                  {/* Event title */}
-                  <div className="px-3 pb-2">
-                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background: "rgba(6,182,212,0.08)", border: "1px solid rgba(6,182,212,0.15)" }}>
-                      <Target className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                      <span className="text-xs font-semibold text-cyan-300">{event.title}</span>
-                    </div>
-                  </div>
-
-                  {/* Missions */}
-                  <div className="px-3 pb-2 flex flex-col gap-1.5">
-                    {event.missions.map((mission) => {
-                      const current = missionProgress[mission.id] ?? 0;
-                      const done = current >= mission.target;
-                      const pct = Math.min(100, (current / mission.target) * 100);
-                      return (
-                        <div key={mission.id} className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            {done ? (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                            ) : (
-                              <Circle className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                            )}
-                            <span className={`text-[11px] flex-1 ${done ? "text-emerald-400 line-through" : "text-foreground"}`}>
-                              {mission.description}
-                            </span>
-                            <span className="text-[10px] font-mono text-muted-foreground">
-                              {Math.min(current, mission.target)}/{mission.target}
-                            </span>
-                          </div>
-                          <div className="ml-5.5 h-1 bg-background rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all duration-500"
-                              style={{
-                                width: `${pct}%`,
-                                backgroundColor: done ? "#10B981" : "#06B6D4",
-                              }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Rewards section */}
-                  <div className="px-3 pb-3">
-                    <div className="flex items-center gap-1 mb-1.5">
-                      <Gift className="w-3 h-3 text-amber-400" />
-                      <span className="text-[10px] font-semibold text-amber-400">Recompensas</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5 mb-2">
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", color: "#F59E0B" }}>
-                        ${event.rewardMoney.toLocaleString("pt-BR")}
-                      </span>
-                      {event.rewardItems.map((item, i) => (
-                        <span key={i} className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(6,182,212,0.12)", border: "1px solid rgba(6,182,212,0.3)", color: "#06B6D4" }}>
-                          {item.itemName} x{item.quantity}
-                        </span>
-                      ))}
-                      {rewardPokemon && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold capitalize" style={{ background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.3)", color: "#A855F7" }}>
-                          {rewardPokemon.name} Nv.{event.rewardPokemonLevel}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Claim button */}
-                    {allCompleted && !rewardClaimed && (
-                      <Button
-                        onClick={() => claimReward()}
-                        className="w-full h-8 text-xs font-bold"
-                        style={{ background: "linear-gradient(90deg, #06B6D4, #A855F7)", color: "#fff" }}
-                      >
-                        <Gift className="w-3.5 h-3.5 mr-1.5" />
-                        Resgatar Recompensas
-                      </Button>
-                    )}
-                    {rewardClaimed && (
-                      <div className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg" style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)" }}>
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-[11px] font-semibold text-emerald-400">Recompensas Resgatadas!</span>
-                      </div>
-                    )}
-                    {!allCompleted && (
-                      <p className="text-[9px] text-muted-foreground text-center leading-relaxed">
-                        Complete todas as missoes para desbloquear as recompensas!
-                      </p>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
+              </div>
+            </div>
+          );
+})()}
 
             {/* <div className="flex items-center justify-between bg-secondary/50 rounded-lg p-3">
               <div className="flex items-center gap-2">
@@ -522,199 +560,210 @@ export function ProfileTab() {
             </Button> */}
           </div>
         </div>
+{/* Trainer RPG Status - Gamer Elite HUD */}
+<div className="relative overflow-hidden bg-slate-950 border-l-4 border-primary shadow-[10px_0_20px_-10px_rgba(var(--primary),0.3)] rounded-r-2xl">
+  
+  {/* Header Estilizado com "Glow" */}
+  <div className="px-4 py-3 bg-gradient-to-r from-primary/20 via-primary/5 to-transparent border-b border-white/10 flex items-center justify-between">
+    <div className="flex items-center gap-3">
+      <div className="relative">
+        <Star className="w-5 h-5 text-primary animate-pulse" />
+        <div className="absolute inset-0 blur-sm bg-primary/50 animate-pulse" />
+      </div>
+      <h3 className="font-black text-xs uppercase tracking-[0.2em] text-white italic">
+        Trainer_Status.exe
+      </h3>
+    </div>
+    <div className="flex items-center gap-2 bg-black/60 px-3 py-1 border border-primary/50 skew-x-[-12deg]">
+      <span className="text-[10px] font-black text-primary uppercase skew-x-[12deg]">LVL</span>
+      <span className="text-sm font-mono font-black text-white skew-x-[12deg]">{trainer.level ?? 1}</span>
+    </div>
+  </div>
 
-        {/* Trainer RPG Stats */}
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <div className="p-4 border-b border-border flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Star className="w-5 h-5 text-accent" />
-              <h3 className="font-semibold text-foreground">Status RPG</h3>
-            </div>
-            <span className="text-xs text-muted-foreground font-mono">Nivel {trainer.level ?? 1}</span>
+  <div className="p-4 flex flex-col gap-4">
+    
+    {/* Grid Compacto */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      
+      {/* CARD DE XP - NEON STYLE */}
+      <div className="relative group bg-slate-900/50 p-3 border border-white/5 rounded-lg overflow-hidden">
+        <div className="flex justify-between items-start mb-2">
+          <span className="text-[9px] font-black text-primary/70 uppercase tracking-widest">Experience_Log</span>
+          <div className="flex gap-1">
+             <button 
+                onClick={() => { setLevelInput(String(trainer.level ?? 1)); setLevelDialog(true); }}
+                className="p-1 hover:bg-primary/20 text-muted-foreground hover:text-primary transition-colors"
+             >
+                <Settings2 className="w-3 h-3" />
+             </button>
+             <button 
+                onClick={() => setXpDialog(true)}
+                className="px-2 py-0.5 bg-primary text-black text-[9px] font-black uppercase hover:brightness-125 transition-all"
+             >
+                + XP
+             </button>
           </div>
-          <div className="p-4 flex flex-col gap-3">
-            {/* Level & XP */}
-            <div className="bg-secondary/50 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <ArrowUp className="w-4 h-4 text-accent" />
-                  <span className="text-sm font-medium text-foreground">Nivel {trainer.level ?? 1}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setLevelInput(String(trainer.level ?? 1));
-                      setLevelDialog(true);
-                    }}
-                    className="h-6 text-[10px] px-2 border-border text-muted-foreground bg-transparent hover:bg-secondary"
-                  >
-                    Editar Nivel
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setXpDialog(true)}
-                    className="h-6 text-[10px] px-2 border-accent/50 text-accent bg-transparent hover:bg-accent/10"
-                  >
-                    <Plus className="w-3 h-3 mr-0.5" />XP
-                  </Button>
-                </div>
-              </div>
-              {/* XP Progress Bar */}
-              {(() => {
-                const currentLevel = trainer.level ?? 1;
-                const currentXp = trainer.xp ?? 0;
-                const xpCurrent = trainerXpForLevel(currentLevel);
-                const xpNext = trainerXpForLevel(currentLevel + 1);
-                const xpInLevel = currentXp - xpCurrent;
-                const xpNeeded = xpNext - xpCurrent;
-                const xpPercent = xpNeeded > 0 ? Math.min(100, (xpInLevel / xpNeeded) * 100) : 100;
-                return (
-                  <>
-                    <div className="flex-1 h-2.5 bg-background rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-accent transition-all duration-300"
-                        style={{ width: `${xpPercent}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between mt-1">
-                      <span className="text-[10px] text-muted-foreground font-mono">
-                        XP: {currentXp.toLocaleString("pt-BR")}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground font-mono">
-                        Proximo: {xpNext.toLocaleString("pt-BR")}
-                      </span>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
+        </div>
+        
+        <div className="text-lg font-mono font-black text-white mb-2 leading-none">
+          {(trainer.xp ?? 0).toLocaleString()} <span className="text-primary/50 text-[10px]">XP</span>
+        </div>
 
-            {/* HP */}
-            <div className="bg-secondary/50 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Heart className="w-4 h-4 text-red-400" />
-                  <span className="text-sm font-medium text-foreground">HP</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-bold font-mono text-foreground">
-                    {trainer.currentHp ?? 20}/{trainer.maxHp ?? 20}
+        {/* Barra de XP Gamer (Segmentada) */}
+        {(() => {
+          const currentLevel = trainer.level ?? 1;
+          const currentXp = trainer.xp ?? 0;
+          const xpCurrent = trainerXpForLevel(currentLevel);
+          const xpNext = trainerXpForLevel(currentLevel + 1);
+          const xpPercent = Math.min(100, ((currentXp - xpCurrent) / (xpNext - xpCurrent)) * 100);
+          return (
+            <div className="relative h-1.5 w-full bg-black/40 rounded-full overflow-hidden border border-white/5">
+              <div 
+                className="h-full bg-primary transition-all duration-1000 shadow-[0_0_15px_rgba(var(--primary),0.8)]" 
+                style={{ width: `${xpPercent}%` }} 
+              />
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* CARD DE COMBATE - BATTLE HUD */}
+      <div className="bg-slate-900/50 p-3 border border-white/5 rounded-lg space-y-3">
+        {/* HP Bar Style Jogo de Luta */}
+        <div className="space-y-1">
+          <div className="flex justify-between items-center text-[9px] font-black uppercase">
+            <div className="flex items-center gap-1 text-red-500">
+              <Heart className="w-3 h-3 fill-current" />
+              <span>Vitality</span>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => { setHpMode("damage"); setHpAmount(""); setHpDialog(true); }} className="text-red-400 hover:text-red-200 underline decoration-red-500/50">DMG</button>
+              <button onClick={() => { setHpMode("heal"); setHpAmount(""); setHpDialog(true); }} className="text-emerald-400 hover:text-emerald-200 underline decoration-emerald-500/50">HEAL</button>
+            </div>
+          </div>
+          
+          <div className="relative h-4 bg-black/60 border border-white/10 group">
+            <div 
+              className="h-full bg-gradient-to-r from-red-600 via-red-500 to-orange-400 transition-all duration-500 shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]" 
+              style={{ 
+                width: `${((trainer.currentHp ?? 20) / (trainer.maxHp ?? 20)) * 100}%`,
+                clipPath: "polygon(0 0, 100% 0, 98% 100%, 0 100%)"
+              }} 
+            />
+            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-white italic tracking-tighter drop-shadow-md">
+              {trainer.currentHp ?? 20} <span className="text-white/40 mx-1">/</span> {trainer.maxHp ?? 20}
+            </span>
+          </div>
+        </div>
+
+        {/* DEFESA - TACTICAL SHIELD */}
+        <div className="flex items-center justify-between bg-blue-500/5 border border-blue-500/20 p-2 rounded-sm">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-blue-400 drop-shadow-[0_0_5px_rgba(96,165,250,0.5)]" />
+            <span className="text-[10px] font-black uppercase text-blue-200/70 tracking-tighter text-foreground">Armor_Class</span>
+          </div>
+          <span className="text-xl font-black font-mono text-blue-400 italic">
+            {trainer.defesa ?? 10}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    {/* Footer Minimalista */}
+    <div className="flex items-center gap-2 px-1 opacity-50">
+      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+      <p className="text-[8px] font-bold text-white uppercase tracking-[0.3em]">Scalable_Systems_Active</p>
+      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+    </div>
+  </div>
+</div>
+
+{/* Attributes Section - Cyberpunk HUD Version */}
+      <div className="relative group overflow-hidden bg-slate-950/80  rounded border-primary/40 rounded-br-3xl shadow-[5px_5px_0px_0px_rgba(var(--primary),0.2)]">
+        
+        {/* Header Estilizado (Corte diagonal fake) */}
+        <div className="relative flex items-center justify-between px-3 py-1.5 bg-primary/20 border-b border-primary/30">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-4 bg-primary animate-pulse" /> {/* Detalhe de luz */}
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-foreground italic">
+              Systems.Attributes
+            </h3>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] font-bold text-primary/70 uppercase">Available</span>
+            <span className="text-xs font-mono font-black text-primary drop-shadow-[0_0_5px_rgba(var(--primary),0.8)]">
+              {totalPoints}P
+            </span>
+          </div>
+        </div>
+
+        <div className="p-3 grid grid-cols-2 gap-x-4 gap-y-3">
+          {(Object.keys(ATTRIBUTE_INFO) as (keyof TrainerAttributes)[]).map((attr) => {
+            const value = trainer.attributes?.[attr] ?? 0;
+            const info = ATTRIBUTE_INFO[attr];
+
+            return (
+              <div key={attr} className="relative group/item">
+                {/* Label e Valor com Fonte Estilizada */}
+                <div className="flex justify-between items-end mb-1 px-0.5">
+                  <span className="text-[8px] font-black uppercase text-primary/60 tracking-wider">
+                    {info.name}
                   </span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => { setHpMode("damage"); setHpAmount(""); setHpDialog(true); }}
-                    className="h-6 text-[10px] px-2 border-destructive/50 text-destructive bg-transparent hover:bg-destructive/10"
+                  <span className="text-[10px] font-mono font-bold text-white leading-none">
+                    {value.toString().padStart(2, '0')}
+                  </span>
+                </div>
+
+                {/* Controle HUD */}
+                <div className="flex items-center gap-1.5 bg-slate-900/50 p-1 rounded-sm border border-white/5 shadow-inner">
+                  <button
+                    onClick={() => handleAttrChange(attr, -1)}
+                    disabled={value <= 0}
+                    className="w-4 h-4 flex items-center justify-center bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white disabled:opacity-10 transition-all rounded-[2px]"
                   >
-                    Dano
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => { setHpMode("heal"); setHpAmount(""); setHpDialog(true); }}
-                    className="h-6 text-[10px] px-2 border-green-500/50 text-green-500 bg-transparent hover:bg-green-500/10"
+                    <Minus className="w-2.5 h-2.5" />
+                  </button>
+                  
+                  {/* Barra de Segmentos (Estilo "Energy Bar") */}
+                  <div className="flex-1 flex gap-[2px] h-2">
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className={`flex-1 transition-all duration-300 ${
+                          i < value 
+                            ? "bg-primary shadow-[0_0_5px_rgba(var(--primary),0.5)] scale-y-110" 
+                            : "bg-white/5"
+                        }`}
+                        style={{
+                          clipPath: "polygon(20% 0%, 100% 0%, 80% 100%, 0% 100%)" // Inclinação gamer
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => handleAttrChange(attr, 1)}
+                    disabled={value >= 10}
+                    className="w-4 h-4 flex items-center justify-center bg-primary/20 text-primary hover:bg-primary hover:text-black disabled:opacity-10 transition-all rounded-[2px]"
                   >
-                    Cura
-                  </Button>
+                    <Plus className="w-2.5 h-2.5" />
+                  </button>
                 </div>
               </div>
-              {/* HP Bar */}
-              {(() => {
-                const maxHp = trainer.maxHp ?? 20;
-                const currentHp = trainer.currentHp ?? 20;
-                const hpPercent = maxHp > 0 ? (currentHp / maxHp) * 100 : 0;
-                const hpColor = hpPercent > 50 ? "#22C55E" : hpPercent > 25 ? "#EAB308" : "#EF4444";
-                return (
-                  <div className="flex-1 h-3 bg-background rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-300"
-                      style={{ width: `${hpPercent}%`, backgroundColor: hpColor }}
-                    />
-                  </div>
-                );
-              })()}
-            </div>
-
-            {/* Defense */}
-            <div className="flex items-center justify-between bg-secondary/50 rounded-lg p-3">
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-blue-400" />
-                <span className="text-sm font-medium text-foreground">Defesa (AC)</span>
-              </div>
-              <span className="text-lg font-bold font-mono text-blue-400">{trainer.defesa ?? 10}</span>
-            </div>
-
-            <p className="text-[10px] text-muted-foreground leading-relaxed">
-              HP e Defesa escalam com o nivel e os atributos do treinador. Combate aumenta HP e AC, Furtividade aumenta AC.
-            </p>
-          </div>
+            );
+          })}
         </div>
 
-        {/* Attributes Section */}
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <div className="p-4 border-b border-border flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Swords className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold text-foreground">Atributos</h3>
-            </div>
-            <span className="text-xs text-muted-foreground font-mono">{totalPoints} pts</span>
+        {/* Footer com Decorador Técnico */}
+        <div className="px-3 py-1 bg-white/5 flex justify-between items-center border-t border-white/5">
+          <div className="flex gap-3 text-[7px] font-black text-white/40 tracking-tighter uppercase">
+            <span className="hover:text-primary transition-colors cursor-help">CBT: ROLL+1/2P</span>
+            <span className="hover:text-primary transition-colors cursor-help">LUK: CRIT+</span>
+            <span className="hover:text-primary transition-colors cursor-help">AFN: +3HP/P</span>
           </div>
-          <div className="p-4 flex flex-col gap-2.5">
-            {(Object.keys(ATTRIBUTE_INFO) as (keyof TrainerAttributes)[]).map((attr) => {
-              const info = ATTRIBUTE_INFO[attr];
-              const value = trainer.attributes?.[attr] ?? 0;
-              return (
-                <div key={attr} className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 w-28 shrink-0">
-                    <span className="text-primary">{ATTR_ICONS[attr]}</span>
-                    <span className="text-sm font-medium text-foreground">{info.name}</span>
-                  </div>
-                  <div className="flex-1 flex items-center gap-1.5">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleAttrChange(attr, -1)}
-                      disabled={value <= 0}
-                      className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-secondary"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </Button>
-                    <div className="flex-1 flex gap-0.5">
-                      {Array.from({ length: 10 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="flex-1 h-3 rounded-sm transition-colors"
-                          style={{
-                            backgroundColor: i < value
-                              ? "hsl(var(--primary))"
-                              : "hsl(var(--secondary))",
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleAttrChange(attr, 1)}
-                      disabled={value >= 10}
-                      className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-secondary"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </Button>
-                    <span className="text-xs font-mono text-muted-foreground w-5 text-right">{value}</span>
-                  </div>
-                </div>
-              );
-            })}
-            <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">
-              Combate: +1 na rolagem a cada 2pts | Sorte: crit expandido a cada 2pts | Afinidade: +3 HP de cura por pt
-            </p>
-          </div>
+          <div className="w-2 h-2 bg-primary/40 rotate-45 animate-bounce" />
         </div>
-
+      </div>
         {/* Kanto Badges */}
         <BadgeRegionCard
           title="Kanto"
@@ -1010,52 +1059,114 @@ export function ProfileTab() {
           </DialogContent>
         </Dialog>
 
-        {/* Trainer Battle History */}
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
-          <div className="p-3 border-b border-border flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-amber-400" />
-            <h3 className="font-semibold text-sm text-foreground">Historico de Batalhas</h3>
-            <span className="ml-auto text-xs text-muted-foreground">
-              {(trainer.battleHistory || []).length} registro(s)
-            </span>
-          </div>
-          <div className="p-3">
-            {(!trainer.battleHistory || trainer.battleHistory.length === 0) ? (
-              <p className="text-xs text-muted-foreground text-center py-4">
-                Nenhuma vitoria de equipe registrada.
-              </p>
-            ) : (
-              <div className="flex flex-col gap-1.5 max-h-[250px] overflow-y-auto">
-                {[...(trainer.battleHistory || [])].reverse().map((entry) => {
-                  const date = new Date(entry.date);
-                  const formatted = `${date.toLocaleDateString("pt-BR")} ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
-                  return (
-                    <div
-                      key={entry.id}
-                      className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2"
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                        <span className="text-xs font-medium text-foreground">Vitoria da Equipe</span>
-                        {entry.xpPerPokemon && entry.xpPerPokemon > 0 && (
-                          <span className="text-[10px] text-amber-400 font-mono">+{entry.xpPerPokemon} XP/cada</span>
-                        )}
-                        <span className="ml-auto text-[9px] text-muted-foreground">{formatted}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {entry.teamSnapshot.map((name, i) => (
-                          <span key={i} className="text-[9px] bg-secondary rounded px-1.5 py-0.5 text-muted-foreground">
-                            {name}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
+{/* Trainer Battle History - Gamer Victory Log */}
+<div className="relative overflow-hidden bg-slate-950 border border-white/10 rounded-xl shadow-2xl">
+  {/* Header Estilo Terminal */}
+  <div className="p-3 bg-amber-500/10 border-b border-amber-500/20 flex items-center justify-between">
+    <div className="flex items-center gap-2">
+      <div className="relative">
+        <Trophy className="w-4 h-4 text-amber-500 animate-bounce" />
+        <div className="absolute inset-0 blur-[6px] bg-amber-500/30" />
+      </div>
+      <h3 className="font-black text-[10px] uppercase tracking-[0.2em] text-amber-500 italic">
+        Match_History.log
+      </h3>
+    </div>
+    <div className="bg-amber-500/20 px-2 py-0.5 rounded-sm border border-amber-500/30">
+      <span className="text-[9px] font-mono font-bold text-amber-500 uppercase">
+        {trainer.battleHistory?.length ?? 0} NODES
+      </span>
+    </div>
+  </div>
+
+  <div className="p-3">
+    {(!trainer.battleHistory || trainer.battleHistory.length === 0) ? (
+      <div className="flex flex-col items-center py-8 opacity-40">
+        <Trophy className="w-8 h-8 text-slate-700 mb-2" />
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+          No combat data found.
+        </p>
+      </div>
+    ) : (
+      <div className="flex flex-col gap-3 max-h-[280px] overflow-y-auto pr-2 custom-scrollbar">
+        {[...(trainer.battleHistory || [])].reverse().map((entry) => {
+          const date = new Date(entry.date);
+          const formatted = `${date.toLocaleDateString("pt-BR")} | ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+          
+          return (
+            <div
+              key={entry.id}
+              className="relative group bg-slate-900/40 border-l-2 border-amber-500/50 p-3 transition-all hover:bg-amber-500/5"
+            >
+              {/* Overlay Decorativo de Fundo */}
+              <div className="absolute top-0 right-0 p-1 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+                <Trophy size={40} className="-rotate-12" />
               </div>
-            )}
-          </div>
-        </div>
+
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-black px-1.5 py-0.5 bg-amber-500 text-black skew-x-[-15deg]">
+                      VICTORY
+                    </span>
+                    {entry.xpPerPokemon && (
+                      <span className="text-[10px] font-mono font-bold text-amber-400 drop-shadow-glow">
+                        +{entry.xpPerPokemon} XP
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[8px] font-mono text-slate-500 uppercase">
+                    {formatted}
+                  </span>
+                </div>
+
+                {/* Team Roster Estilizado */}
+                <div className="flex flex-wrap gap-1">
+                  {entry.teamSnapshot.map((name, i) => (
+                    <div 
+                      key={i} 
+                      className="flex items-center gap-1 text-[9px] font-bold text-slate-300 bg-white/5 border border-white/5 px-2 py-0.5 rounded-sm hover:border-amber-500/30 transition-colors"
+                    >
+                      <div className="w-1 h-1 bg-amber-500 rounded-full" />
+                      {name.toUpperCase()}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+
+  {/* Footer Gamer */}
+  <div className="bg-amber-500/5 px-3 py-1 flex items-center gap-2">
+    <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+    <span className="text-[7px] font-black text-amber-500/50 uppercase tracking-tighter">
+      End-to-end combat encryption active // session_{Math.random().toString(36).substring(7)}
+    </span>
+  </div>
+</div>
+
+<style jsx>{`
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(245, 158, 11, 0.2);
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(245, 158, 11, 0.5);
+  }
+  .drop-shadow-glow {
+    filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.6));
+  }
+`}</style>
       </div>
     </ScrollArea>
   );
@@ -1076,72 +1187,128 @@ interface BadgeRegionCardProps {
 
 function BadgeRegionCard({ title, badges, iconMap, obtained, region, onToggle, gradientFrom, gradientTo }: BadgeRegionCardProps) {
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden">
-      {/* Region header */}
-      <div
-        className="p-3 flex items-center justify-between"
-        style={{
-          background: `linear-gradient(135deg, ${gradientFrom}22 0%, ${gradientTo}22 100%)`,
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <Award className="w-5 h-5" style={{ color: gradientFrom }} />
-          <h3 className="font-semibold text-foreground">{title}</h3>
-        </div>
-        <div
-          className="flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold"
-          style={{
-            backgroundColor: `${gradientFrom}20`,
-            color: gradientFrom,
-          }}
-        >
-          {obtained}/8
-        </div>
-      </div>
+<div className="relative group overflow-hidden bg-neutral-950 border-2 border-white/10 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+  {/* Efeito de Scanline de Fundo (Gamer Detail) */}
+  <div className="absolute inset-0 pointer-events-none opacity-5 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[size:100%_4px]" />
 
-      {/* Badges grid */}
-      <div className="grid grid-cols-4 gap-3 p-4">
-        {badges.map((badge) => {
-          const IconComponent = iconMap[badge.id];
-          return (
-            <button
-              key={badge.id}
-              type="button"
-              onClick={() => onToggle(badge.id, badge.obtained, region)}
-              className="flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all hover:bg-secondary/50"
-              style={{
-                opacity: badge.obtained ? 1 : 0.4,
-              }}
-              title={`${badge.name}\n${badge.gym}\nClique para ${badge.obtained ? "remover" : "obter"}`}
-            >
-              <div className="w-11 h-11 flex items-center justify-center">
-                {IconComponent ? (
-                  <IconComponent size={44} obtained={badge.obtained} />
-                ) : (
-                  <div
-                    className="w-10 h-10 rounded-full border-2 flex items-center justify-center"
-                    style={{
-                      borderColor: badge.obtained ? gradientFrom : "hsl(var(--border))",
-                      backgroundColor: badge.obtained ? gradientFrom : "transparent",
-                    }}
-                  >
-                    <Award className="w-5 h-5" style={{ color: badge.obtained ? "#fff" : "hsl(var(--muted-foreground))" }} />
-                  </div>
-                )}
-              </div>
-              <span
-                className="text-[8px] font-medium text-center leading-tight"
-                style={{ color: badge.obtained ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))" }}
-              >
-                {badge.name.replace(" Badge", "")}
-              </span>
-            </button>
-          );
-        })}
+  {/* Region Header: Estilo Terminal */}
+  <div
+    className="relative p-3 border-b-2 border-white/5 flex items-center justify-between"
+    style={{
+      background: `linear-gradient(90deg, ${gradientFrom}33 0%, transparent 100%)`,
+    }}
+  >
+    <div className="flex items-center gap-3">
+      {/* Ícone de Troféu com Glow */}
+      <div 
+        className="p-1.5 rounded-sm rotate-45 border"
+        style={{ borderColor: gradientFrom, boxShadow: `0 0 10px ${gradientFrom}66` }}
+      >
+        <Award className="w-4 h-4 -rotate-45" style={{ color: gradientFrom }} />
       </div>
-      <p className="text-[10px] text-muted-foreground text-center pb-3 px-4">
-        Toque em uma insignia para marcar como obtida
-      </p>
+      <div>
+        <h3 className="text-xs font-black italic uppercase tracking-widest text-white">
+          {title} <span className="text-[10px] opacity-40 not-italic font-mono">Sector_Alpha</span>
+        </h3>
+      </div>
     </div>
+
+    {/* Contador Digital */}
+    <div
+      className="font-mono text-sm font-bold px-3 py-0.5 rounded border-l-2 skew-x-[-12deg]"
+      style={{
+        backgroundColor: `${gradientFrom}15`,
+        borderColor: gradientFrom,
+        color: gradientFrom,
+        textShadow: `0 0 8px ${gradientFrom}`,
+      }}
+    >
+      <span className="skew-x-[12deg] inline-block">{obtained} / 8</span>
+    </div>
+  </div>
+
+  {/* Badges Grid */}
+  <div className="grid grid-cols-4 gap-4 p-5 relative">
+    {badges.map((badge) => {
+      const IconComponent = iconMap[badge.id];
+      const isObtained = badge.obtained;
+      
+      return (
+        <button
+          key={badge.id}
+          type="button"
+          onClick={() => onToggle(badge.id, isObtained, region)}
+          className={`
+            relative flex flex-col items-center justify-center p-2 rounded-lg 
+            transition-all duration-300 group/badge
+            ${isObtained ? 'scale-100' : 'grayscale opacity-30 hover:grayscale-0 hover:opacity-100'}
+          `}
+          title={`${badge.name}\n${badge.gym}`}
+        >
+          {/* Fundo do Slot (Estilo Inventário) */}
+          <div className="absolute inset-0 bg-white/[0.03] border border-white/5 rounded-lg group-hover/badge:border-white/20 transition-colors" />
+
+          {/* Container do Ícone */}
+          <div className={`
+            relative w-12 h-12 flex items-center justify-center z-10
+            ${isObtained ? 'drop-shadow-[0_0_12px_rgba(255,255,255,0.4)]' : ''}
+          `}>
+            {IconComponent ? (
+              <div className="transform transition-transform group-hover/badge:scale-110 duration-500">
+                <IconComponent size={42} obtained={isObtained} />
+              </div>
+            ) : (
+              <div
+                className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all`}
+                style={{
+                  borderColor: isObtained ? gradientFrom : "#333",
+                  backgroundColor: isObtained ? `${gradientFrom}33` : "transparent",
+                  boxShadow: isObtained ? `0 0 15px ${gradientFrom}44` : "none"
+                }}
+              >
+                <Award className="w-5 h-5" style={{ color: isObtained ? "#fff" : "#444" }} />
+              </div>
+            )}
+            
+            {/* Brilho de "Novo Item" se obtido */}
+            {isObtained && (
+              <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full animate-ping" />
+            )}
+          </div>
+
+          {/* Nome da Insígnia (Fonte Estilo HUD) */}
+          <span
+            className={`
+              mt-2 text-[7px] font-black uppercase tracking-tighter text-center leading-none z-10
+              transition-colors duration-300
+              ${isObtained ? 'text-white' : 'text-neutral-600'}
+            `}
+          >
+            {badge.name.replace(" Badge", "")}
+          </span>
+
+          {/* Detalhe de Canto Tático */}
+          <div className="absolute bottom-1 right-1 w-1 h-1 bg-white/10 rotate-45 group-hover/badge:bg-white/40" />
+        </button>
+      );
+    })}
+  </div>
+
+  {/* Footer: Barra de progresso visual fina */}
+  <div className="h-1 w-full bg-white/5">
+    <div 
+      className="h-full transition-all duration-1000 ease-out"
+      style={{ 
+        width: `${(obtained / 8) * 100}%`,
+        background: `linear-gradient(90deg, transparent, ${gradientFrom}, ${gradientTo})`,
+        boxShadow: `0 0 10px ${gradientFrom}`
+      }}
+    />
+  </div>
+  
+  <p className="text-[9px] font-mono text-white/20 text-center py-2 uppercase tracking-[0.2em]">
+    System_Status: {obtained === 8 ? "All_Badges_Detected" : "Synchronizing_Data..."}
+  </p>
+</div>
   );
 }

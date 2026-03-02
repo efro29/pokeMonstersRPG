@@ -626,7 +626,7 @@ export default function Page() {
       />
       
       {/* Daily Streak Toast */}
-      {/* {streakToast && (
+      {streakToast && (
         <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[101] animate-in fade-in slide-in-from-top-4 duration-300 w-[300px]">
           {streakToast.milestone ? (
             // Milestone unlocked - special legendary toast
@@ -663,7 +663,7 @@ export default function Page() {
             </div>
           )}
         </div>
-      )} */}
+      )}
 
       {/* Exploration XP Toast */}
       {/* {explorationRewardToast && (
@@ -835,7 +835,7 @@ export default function Page() {
        
                 borderTopWidth:1,
                 display: "grid",
-                gridTemplateColumns: "repeat(8, minmax(0,1fr))"
+                gridTemplateColumns: "repeat(7, minmax(0,1fr))"
               }}
             >
             {([
@@ -846,7 +846,7 @@ export default function Page() {
             { id: "team", label: "Equipe", icon: TeamIcon },
             { id: "profile", label: "Perfil", icon: ProfileIcon },
             { id: "duels", label: "Duelos", icon: MovesIcon },
-            { id: "moves", label: "Golpes", icon: MovesIcon },
+
             { id: "pokedex", label: "Pokedex", icon: PokedexIcon },
             { id: "settings", label: "Config", icon: SettingsIcon },
         ]).map(({ id, label, icon: Icon }) => {

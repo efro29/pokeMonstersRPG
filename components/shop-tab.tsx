@@ -29,6 +29,7 @@ import {
   Gift,
 } from "lucide-react";
 import { playBuy, playGift, playButtonClick } from "@/lib/sounds";
+import { motion } from "framer-motion";
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   pokeball: <CircleDot className="w-5 h-5 text-red-400" />,
@@ -104,237 +105,202 @@ export function ShopTab() {
   const canAfford = totalCost <= trainer.money;
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header with money display */}
-      <div className="p-4 border-b border-border flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ShoppingCart className="w-5 h-5 text-foreground" />
-          <h2 className="font-semibold text-foreground">Loja</h2>
-        </div>
-        <div className="flex items-center gap-3">
-          {!economyLocked && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowGifts(true)}
-              className="border-accent/50 text-accent bg-transparent hover:bg-accent/10"
-            >
-              <Gift className="w-4 h-4 mr-1" />
-              <span className="text-xs">Mestre</span>
-            </Button>
-          )}
-          <div className="flex items-center gap-1.5 bg-secondary/50 rounded-full px-3 py-1.5">
-            <Coins className="w-4 h-4 text-accent" />
-            <span className="text-sm font-bold font-mono text-accent">
-              {"$"}{trainer.money.toLocaleString("pt-BR")}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-5 p-4">
-          {categories.map((cat) => {
-            const items = SHOP_ITEMS.filter((i) => i.category === cat);
-            if (items.length === 0) return null;
-
-            return (
-              <div key={cat}>
-                <div className="flex items-center gap-2 mb-2">
-                  {CATEGORY_ICONS[cat]}
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    {CATEGORY_LABELS[cat]}
-                  </h3>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  {items.map((item) => {
-                    const owned = bag.find((b) => b.itemId === item.id);
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => {
-                          setBuyDialog(item);
-                          setQty(1);
-                          setResult(null);
-                        }}
-                        className="flex items-center justify-between bg-card rounded-lg border border-border p-3 transition-colors hover:border-primary/50 text-left"
-                      >
-                        <div className="flex flex-col gap-0.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-foreground">
-                              {item.name}
-                            </span>
-                            {owned && (
-                              <span className="text-[10px] bg-secondary text-muted-foreground rounded-full px-2 py-0.5">
-                                x{owned.quantity}
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-[10px] text-muted-foreground">
-                            {item.description}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0 ml-3">
-                          <Coins className="w-3 h-3 text-accent" />
-                          <span className="text-sm font-mono font-medium text-accent">
-                            {"$"}{item.price.toLocaleString("pt-BR")}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+        <div className="flex flex-col h-full bg-[#0a0a0f] text-slate-200 font-sans select-none">
+          {/* Header Gamer - Estilo Status Bar */}
+          <div className="p-4 border-b-2 border-primary/20 bg-gradient-to-r from-primary/10 via-transparent to-transparent flex items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/20 rounded-sm border border-primary/50 shadow-[0_0_10px_rgba(59,130,246,0.3)]">
+                <ShoppingCart className="w-5 h-5 text-primary" />
               </div>
-            );
-          })}
-        </div>
-      </ScrollArea>
-
-      {/* Buy Dialog */}
-      <Dialog
-        open={!!buyDialog}
-        onOpenChange={() => {
-          setBuyDialog(null);
-          setQty(1);
-          setResult(null);
-        }}
-      >
-        {buyDialog && (
-          <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
-            <DialogHeader>
-              <DialogTitle className="text-foreground">
-                Comprar {buyDialog.name}
-              </DialogTitle>
-            </DialogHeader>
-
-            {result === "success" ? (
-              <div className="flex flex-col items-center gap-3 py-6">
-                <div className="w-14 h-14 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <Check className="w-7 h-7 text-green-400" />
-                </div>
-                <p className="text-sm font-medium text-green-400">
-                  Compra realizada!
-                </p>
+              <div>
+                <h2 className="text-xs font-black tracking-[0.3em] uppercase text-primary-foreground/50">Marketplace</h2>
+                <h2 className="font-black italic text-lg tracking-tighter text-white uppercase leading-none">PokeMart</h2>
               </div>
-            ) : result === "fail" ? (
-              <div className="flex flex-col items-center gap-3 py-6">
-                <div className="w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center">
-                  <X className="w-7 h-7 text-red-400" />
-                </div>
-                <p className="text-sm font-medium text-red-400">
-                  Dinheiro insuficiente!
-                </p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4">
-                <p className="text-sm text-muted-foreground">
-                  {buyDialog.description}
-                </p>
+            </div>
 
-                {/* Quantity selector */}
-                <div className="flex items-center justify-center gap-3">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setQty(Math.max(1, qty - 1))}
-                    className="h-10 w-10 p-0 border-border text-foreground bg-transparent hover:bg-secondary"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
-                  <span className="text-2xl font-bold font-mono text-foreground w-12 text-center">
-                    {qty}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setQty(qty + 1)}
-                    className="h-10 w-10 p-0 border-border text-foreground bg-transparent hover:bg-secondary"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                {/* Price breakdown */}
-                <div className="bg-secondary/50 rounded-lg p-3 flex flex-col gap-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Preco unitario</span>
-                    <span className="font-mono text-foreground">
-                      {"$"}{buyDialog.price.toLocaleString("pt-BR")}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm font-medium">
-                    <span className="text-foreground">Total</span>
-                    <span
-                      className={`font-mono font-bold ${canAfford ? "text-accent" : "text-red-400"}`}
-                    >
-                      {"$"}{totalCost.toLocaleString("pt-BR")}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs mt-1 pt-1 border-t border-border">
-                    <span className="text-muted-foreground">Seu saldo</span>
-                    <span className="font-mono text-muted-foreground">
-                      {"$"}{trainer.money.toLocaleString("pt-BR")}
-                    </span>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleBuy}
-                  disabled={!canAfford}
-                  className={`${
-                    canAfford
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                      : "bg-secondary text-muted-foreground cursor-not-allowed"
-                  }`}
-                >
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  {canAfford ? "Comprar" : "Saldo insuficiente"}
-                </Button>
-              </div>
-            )}
-          </DialogContent>
-        )}
-      </Dialog>
-
-      {/* Master Gift Dialog */}
-      <Dialog open={showGifts} onOpenChange={setShowGifts}>
-        <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-foreground">
-              <Gift className="w-5 h-5 text-accent" />
-              Presentes do Mestre
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            O mestre pode dar itens gratuitos durante a campanha. Toque para adicionar a bolsa do jogador.
-          </p>
-          <ScrollArea className="max-h-80">
-            <div className="grid grid-cols-2 gap-2">
-              {GIFT_ITEMS.map((gift) => (
+            <div className="flex items-center gap-4">
+              {!economyLocked && (
                 <button
-                  key={gift.id}
-                  type="button"
-                  onClick={() => handleGift(gift.id, gift.qty)}
-                  className={`flex flex-col items-center gap-1 p-3 rounded-lg border transition-all text-center ${
-                    giftFlash === gift.id
-                      ? "border-accent bg-accent/10"
-                      : "border-border bg-secondary/50 hover:border-accent/50"
-                  }`}
+                  onClick={() => setShowGifts(true)}
+                  className="group relative px-3 py-1.5 flex items-center gap-2 transition-all active:scale-95"
                 >
-                  {giftFlash === gift.id ? (
-                    <Check className="w-5 h-5 text-accent" />
-                  ) : (
-                    <Gift className="w-5 h-5 text-muted-foreground" />
-                  )}
-                  <span className="text-xs font-medium text-foreground">{gift.name}</span>
-                  <span className="text-[10px] text-muted-foreground">x{gift.qty}</span>
+                  <div className="absolute inset-0 bg-accent/20 skew-x-[-15deg] border border-accent/50 group-hover:bg-accent/30" />
+                  <Gift className="w-4 h-4 text-accent relative z-10" />
+                  <span className="text-[10px] font-black italic uppercase text-accent relative z-10">Mestre</span>
                 </button>
-              ))}
+              )}
+              
+              {/* Saldo Estilo HUD */}
+              <div className="relative px-4 py-2 flex items-center gap-2 bg-black/40 border-r-2 border-accent shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]">
+                <Coins className="w-4 h-4 text-accent animate-pulse" />
+                <div className="flex flex-col">
+                  <span className="text-[8px] font-bold text-accent/50 leading-none uppercase tracking-widest">Créditos</span>
+                  <span className="text-sm font-black font-mono text-white tracking-widest">
+                    {trainer.money.toLocaleString("pt-BR")}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <ScrollArea className="flex-1 px-4 py-6">
+            <div className="flex flex-col gap-8 pb-10">
+              {categories.map((cat) => {
+                const items = SHOP_ITEMS.filter((i) => i.category === cat);
+                if (items.length === 0) return null;
+
+                return (
+                  <div key={cat} className="relative">
+                    {/* Header da Categoria */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="text-primary opacity-80">{CATEGORY_ICONS[cat]}</div>
+                      <h3 className="text-[10px] font-black tracking-[0.4em] uppercase text-slate-500 italic">
+                        {CATEGORY_LABELS[cat]}
+                      </h3>
+                      <div className="flex-1 h-[1px] bg-gradient-to-r from-slate-800 to-transparent" />
+                    </div>
+
+                    <div className="grid gap-2">
+                      {items.map((item) => {
+                        const owned = bag.find((b) => b.itemId === item.id);
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                              setBuyDialog(item);
+                              setQty(1);
+                              setResult(null);
+                            }}
+                            className="group relative flex items-center justify-between p-4 bg-[#12121a] border border-white/5 hover:border-primary/50 transition-all hover:translate-x-1"
+                            style={{ clipPath: "polygon(0 0, 100% 0, 100% 70%, 95% 100%, 0 100%)" }}
+                          >
+                            {/* Efeito de hover no fundo */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-primary/0 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            
+                            <div className="flex flex-col gap-1 relative z-10 text-left">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-black italic uppercase text-white group-hover:text-primary transition-colors">
+                                  {item.name}
+                                </span>
+                                {owned && (
+                                  <span className="text-[9px] font-mono font-bold bg-white/10 text-white/50 px-2 py-0.5 rounded-sm border border-white/5">
+                                    INSTOQUE: {owned.quantity}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[10px] leading-tight text-slate-500 font-medium max-w-[200px]">
+                                {item.description}
+                              </span>
+                            </div>
+
+                            <div className="flex flex-col items-end gap-1 relative z-10 shrink-0">
+                              <div className="flex items-center gap-1.5 px-3 py-1 bg-black/40 border border-white/5 rounded-sm group-hover:border-accent/30 transition-all">
+                                <span className="text-[10px] font-black text-accent">$</span>
+                                <span className="text-sm font-black font-mono text-accent tracking-tighter">
+                                  {item.price.toLocaleString("pt-BR")}
+                                </span>
+                              </div>
+                              <span className="text-[8px] font-black text-white/20 uppercase italic tracking-widest">Comprar</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </ScrollArea>
-        </DialogContent>
-      </Dialog>
-    </div>
+
+          {/* Buy Dialog Estilo Cyberpunk */}
+          <Dialog open={!!buyDialog} onOpenChange={() => setBuyDialog(null)}>
+            {buyDialog && (
+              <DialogContent className="bg-[#0f0f15] border-2 border-primary/30 text-white max-w-sm rounded-none shadow-[0_0_50px_rgba(0,0,0,0.8)]">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent" />
+                
+                <DialogHeader>
+                  <DialogTitle className="text-white font-black italic uppercase tracking-tighter text-xl">
+                    Confirmar <span className="text-primary">Transação</span>
+                  </DialogTitle>
+                </DialogHeader>
+
+                {result ? (
+                  <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }} 
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="flex flex-col items-center gap-4 py-8"
+                  >
+                    <div className={`w-20 h-20 rounded-full flex items-center justify-center border-2 ${result === "success" ? "border-green-500 bg-green-500/10" : "border-red-500 bg-red-500/10"}`}>
+                      {result === "success" ? <Check className="w-10 h-10 text-green-500" /> : <X className="w-10 h-10 text-red-500" />}
+                    </div>
+                    <p className={`font-black uppercase tracking-[0.2em] ${result === "success" ? "text-green-500" : "text-red-500"}`}>
+                      {result === "success" ? "Sucesso no Sistema" : "Erro: Sem Créditos"}
+                    </p>
+                  </motion.div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="p-4 bg-white/5 border-l-4 border-primary italic text-xs text-slate-400 leading-relaxed uppercase tracking-wider">
+                      "{buyDialog.description}"
+                    </div>
+
+                    {/* Selector de Qtd Estilo HUD */}
+                    <div className="flex items-center justify-between p-2 bg-black/40 border border-white/5">
+                      <Button
+                        variant="ghost"
+                        onClick={() => setQty(Math.max(1, qty - 1))}
+                        className="h-12 w-12 text-primary hover:bg-primary/20 rounded-none border border-white/5"
+                      >
+                        <Minus className="w-6 h-6" />
+                      </Button>
+                      <div className="flex flex-col items-center">
+                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.3em]">Quantidade</span>
+                        <span className="text-3xl font-black font-mono text-white tracking-tighter leading-none">
+                          {qty.toString().padStart(2, '0')}
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        onClick={() => setQty(qty + 1)}
+                        className="h-12 w-12 text-primary hover:bg-primary/20 rounded-none border border-white/5"
+                      >
+                        <Plus className="w-6 h-6" />
+                      </Button>
+                    </div>
+
+                    {/* Resumo Estilo Recibo */}
+                    <div className="space-y-2 border-y border-white/5 py-4">
+                      <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                        <span>Custo Total</span>
+                        <span className={canAfford ? "text-accent" : "text-red-500"}>
+                          {"$"}{totalCost.toLocaleString("pt-BR")}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                        <span>Seu Saldo</span>
+                        <span className="text-white/40 italic">
+                          {"$"}{trainer.money.toLocaleString("pt-BR")}
+                        </span>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={handleBuy}
+                      disabled={!canAfford}
+                      className={`w-full h-14 rounded-none font-black italic uppercase tracking-widest transition-all ${
+                        canAfford 
+                        ? "bg-primary text-white hover:bg-primary/80 shadow-[0_0_20px_rgba(59,130,246,0.4)]" 
+                        : "bg-red-500/10 text-red-500/50 border border-red-500/20"
+                      }`}
+                      style={{ clipPath: "polygon(5% 0, 100% 0, 95% 100%, 0 100%)" }}
+                    >
+                      {canAfford ? "Confirmar Compra" : "Saldo Bloqueado"}
+                    </Button>
+                  </div>
+                )}
+              </DialogContent>
+            )}
+          </Dialog>
+        </div>
   );
 }

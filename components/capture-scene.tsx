@@ -651,7 +651,7 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
               animate={{ scale: [0, 1, 0], x: Math.cos(i) * 120, y: Math.sin(i) * 120, rotate: 360 }}
               transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 + i * 0.1 }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill={i % 2 === 0 ? "#FFD700" : mainColor}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill={i % 2 === 0 ? "#ffc801" : mainColor}>
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </svg>
             </motion.div>
@@ -681,7 +681,7 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
       )}
     </AnimatePresence>
   </div>
-{/* 3. Camada da Pokébola no chão (Raios Elétricos saindo do Centro) */}
+{/* 3. Camada da Pokébola no chão (Raios Elétricos + Estrelas) */}
 <AnimatePresence>
   {(phase === "hit" || phase === "shaking") && ballData && (
     <motion.div
@@ -698,12 +698,37 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
       }}
     >
       
-      {/* ─── RAIOS SAINDO DO CENTRO (CORE) ─── */}
+      {/* ─── EFEITOS VISUAIS: RAIOS E ESTRELAS ─── */}
       <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
         
-        {/* Geramos 12 raios para uma cobertura 360º mais densa */}
-        {[...Array(12)].map((_, i) => {
-          const angle = (i / 12) * 360 + (Math.random() * 15); // Ângulos distribuídos + variação
+        {/* NOVO: ESTRELAS EXPLODINDO DO CENTRO */}
+        {phase === "shaking" && [...Array(8)].map((_, i) => (
+          <motion.div
+            key={`sparkle-shake-${i}`}
+            className="absolute"
+            initial={{ scale: 0, x: 0, y: 0 }}
+            animate={{ 
+              scale: [0, 1, 0], 
+              x: Math.cos(i) * 140, // Um pouco mais longe para passar os raios
+              y: Math.sin(i) * 140, 
+              rotate: 360 
+            }}
+            transition={{ 
+              duration: 1.2, 
+              repeat: Infinity, 
+              delay: i * 0.15,
+              ease: "easeOut"
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill={i % 2 === 0 ? "#ffc801" : ballData.color}>
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          </motion.div>
+        ))}
+
+        {/* RAIOS ELÉTRICOS (Originais) */}
+        {/* {[...Array(12)].map((_, i) => {
+          const angle = (i / 12) * 360 + (Math.random() * 15);
           const isCyan = i % 2 === 0;
           
           return (
@@ -711,10 +736,9 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
               key={`lightning-bolt-${i}`}
               className="absolute h-[1px] origin-left"
               style={{
-                // O raio nasce exatamente no centro (50% 50%)
                 top: "50%",
                 left: "50%",
-                width: "100px", // Comprimento que ultrapassa a bola
+                width: "100px",
                 background: "linear-gradient(90deg, white 0%, rgba(255,255,255,0.8) 50%, transparent 100%)",
                 boxShadow: `0 0 8px ${isCyan ? "#00f2ff" : "#ff00e5"}, 0 0 2px white`,
                 transform: `rotate(${angle}deg)`,
@@ -722,10 +746,8 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
               }}
               initial={{ scaleX: 0, opacity: 0 }}
               animate={phase === "shaking" ? {
-                // Efeito de "disparo" elétrico do centro para fora
                 scaleX: [0, 1.2, 0],
                 opacity: [0, 1, 0],
-                // Pequeno tremor na posição do raio para parecer instável
                 skewY: [0, 2, -50, 0], 
               } : {}}
               transition={{
@@ -737,9 +759,9 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
               }}
             />
           );
-        })}
+        })} */}
 
-        {/* Aura de Choque Central (O "flash" no botão) */}
+        {/* Aura de Choque Central */}
         <motion.div
           className="absolute w-8 h-8 rounded-full bg-white blur-md"
           animate={phase === "shaking" ? {
@@ -777,50 +799,18 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
     </motion.div>
   )}
 </AnimatePresence>
-{/* 4. Pokébola em voo com Rastro de Movimento */}
+
+
+{/* 4. Pokébola em voo com Rastro de Movimento e Estrelas */}
 {ballFlight && ballData && (() => {
   const currentPos = getBallFlightPos();
-  
-  // Criamos um array para as "sombras" do rastro
-  // Quanto mais itens no array, mais longo o rastro
   const trailSteps = [0.02, 0.04, 0.06, 0.08]; 
 
   return (
     <>
-      {/* Camada do Rastro (Renderizada antes da bola principal para ficar atrás) */}
-      {trailSteps.map((offset, i) => {
-        // Calculamos a posição da bola alguns milissegundos atrás
-        const trailProgress = Math.max(0, ballFlight.progress - offset);
-        const trailPos = getBallFlightPos(trailProgress);
-        
-        // Se o progresso for 0, não desenhamos a partícula
-        if (trailProgress <= 0) return null;
+      {/* Camada do Rastro (Atrás da bola) */}
 
-        return (
-          <div
-            key={`trail-${i}`}
-            className="absolute z-30 pointer-events-none"
-            style={{
-              left: trailPos.x,
-              top: trailPos.y,
-              transform: `translate(-50%, -50%) scale(${trailPos.scale * (1 - offset * 5)})`,
-              opacity: (trailPos.opacity * 0.4) / (i + 1), // Vai sumindo
-              filter: `blur(${i * 2}px)`, // Fica mais borrado conforme se afasta
-            }}
-          >
-            {/* Um círculo brilhante da cor da bola como rastro */}
-            <div 
-              className="w-10 h-10 rounded-full" 
-              style={{ 
-                backgroundColor: ballData.color,
-                boxShadow: `0 0 20px ${ballData.color}` 
-              }} 
-            />
-          </div>
-        );
-      })}
-
-      {/* Pokébola Principal */}
+      {/* Pokébola Principal + Estrelas Explosivas */}
       <div
         className="absolute z-40 pointer-events-none"
         style={{
@@ -831,19 +821,22 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
           filter: `drop-shadow(0 ${10 * (1 - ballFlight.progress)}px 15px rgba(0,0,0,0.4))`,
         }}
       >
-        {/* Aura de brilho intenso na bola principal */}
+  
+        {/* --- FIM DO EFEITO DE ESTRELAS --- */}
+
+        {/* Aura de brilho intenso */}
         <motion.div 
           className="absolute -inset-4 rounded-full blur-xl opacity-60" 
           style={{ backgroundColor: ballData.color }}
           animate={{ scale: [1, 1.2, 1] }}
           transition={{ repeat: Infinity, duration: 0.2 }}
         />
+        
         <PokeballSVG color={ballData.color} size={56} />
       </div>
     </>
   );
 })()}
-
   {/* 5. Pokébola para arrastar (Ready State) */}
   <AnimatePresence>
     {phase === "ready" && ballData && !ballFlight && (

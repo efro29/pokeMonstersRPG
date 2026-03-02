@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Pill, CircleDot, Beaker, Package, Plus, Minus, Gem } from "lucide-react";
+import { Pill, CircleDot, Beaker, Package, Plus, Minus, Gem, Zap, Terminal, ChevronRight } from "lucide-react";
 import { playButtonClick, playHeal } from "@/lib/sounds";
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -47,238 +47,254 @@ export function BagTab() {
   const categories = ["potion", "pokeball", "status", "other"] as const;
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-border flex items-center justify-between">
-        <h2 className="font-semibold text-foreground">Bolsa</h2>
-        {!economyLocked && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setAddItemDialog(true)}
-            className="border-border text-foreground bg-transparent hover:bg-secondary"
-          >
-            <Plus className="w-4 h-4 mr-1" /> Adicionar
-          </Button>
-        )}
+<div className="flex flex-col h-full bg-[#08090d] text-slate-200 select-none">
+  {/* Header Estilo Inventário Tático */}
+  <div className="p-4 border-b-2 border-primary/30 bg-primary/5 flex items-center justify-between shadow-[0_4px_15px_rgba(0,0,0,0.4)]">
+    <div className="flex items-center gap-3">
+      <div className="relative">
+        <Package className="w-5 h-5 text-primary" />
+        <div className="absolute -inset-1 bg-primary/20 blur-sm rounded-full animate-pulse" />
       </div>
+      <div>
+        <h2 className="text-[10px] font-black tracking-[0.3em] uppercase text-primary/50 leading-none">Storage_v2.1</h2>
+        <h2 className="font-black italic text-lg tracking-tighter text-white uppercase">Sua Bolsa</h2>
+      </div>
+    </div>
 
-      <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-4 p-4">
-          {categories.map((cat) => {
-            const items = bag.filter((b) => {
-              const def = BAG_ITEMS.find((d) => d.id === b.itemId);
-              return def?.category === cat;
-            });
-            if (items.length === 0) return null;
+    {!economyLocked && (
+      <button
+        onClick={() => setAddItemDialog(true)}
+        className="group relative px-4 py-1.5 flex items-center gap-2 transition-all active:scale-95"
+      >
+        <div className="absolute inset-0 bg-white/5 skew-x-[-12deg] border border-white/20 group-hover:bg-primary/20 group-hover:border-primary/50 transition-all" />
+        <Plus className="w-4 h-4 text-primary relative z-10" />
+        <span className="text-[10px] font-bold uppercase tracking-widest text-white relative z-10">Add Item</span>
+      </button>
+    )}
+  </div>
 
-            return (
-              <div key={cat}>
-                <div className="flex items-center gap-2 mb-2">
-                  {CATEGORY_ICONS[cat]}
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    {CATEGORY_LABELS[cat]}
-                  </h3>
-                </div>
-                <div className="flex flex-col gap-1">
-                  {items.map((item) => {
-                    const def = BAG_ITEMS.find((d) => d.id === item.itemId);
-                    if (!def) return null;
-                    return (
-                      <div
-                        key={item.itemId}
-                        className="flex items-center justify-between bg-card rounded-lg border border-border p-3"
-                      >
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-foreground">
-                            {def.name}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {def.description}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-mono text-accent">
-                            x{item.quantity}
-                          </span>
-                          {(def.category === "potion" || def.category === "status") && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setUseTarget({ itemId: item.itemId, itemName: def.name });
-                              }}
-                              className="text-xs border-border text-foreground bg-transparent hover:bg-secondary"
-                            >
-                              Usar
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+  <ScrollArea className="flex-1 px-4">
+    <div className="flex flex-col gap-8 py-6 pb-20">
+      {categories.map((cat) => {
+        const items = bag.filter((b) => {
+          const def = BAG_ITEMS.find((d) => d.id === b.itemId);
+          return def?.category === cat;
+        });
+        if (items.length === 0) return null;
+
+        return (
+          <div key={cat} className="space-y-3">
+            {/* Header da Categoria com Linha de Scanner */}
+            <div className="flex items-center gap-3 group">
+              <div className="p-1.5 bg-white/5 border border-white/10 rounded-sm">
+                {CATEGORY_ICONS[cat]}
               </div>
-            );
-          })}
-
-          {bag.length === 0 && (
-            <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <Package className="w-12 h-12 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Bolsa vazia</p>
+              <h3 className="text-[10px] font-black tracking-[0.3em] uppercase text-slate-500 italic group-hover:text-primary transition-colors">
+                {CATEGORY_LABELS[cat]}
+              </h3>
+              <div className="flex-1 h-[1px] bg-gradient-to-r from-white/10 to-transparent" />
             </div>
-          )}
-        </div>
-      </ScrollArea>
 
-      {/* Use item target dialog */}
-      <Dialog open={!!useTarget} onOpenChange={() => setUseTarget(null)}>
-        {useTarget && (
-          <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
-            <DialogHeader>
-              <DialogTitle className="text-foreground">
-                Usar {useTarget.itemName}
-              </DialogTitle>
-            </DialogHeader>
-            <p className="text-sm text-muted-foreground mb-2">
-              {useTarget.itemId === "revive" ? "Escolha um Pokemon desmaiado:" : "Escolha um Pokemon:"}
-            </p>
-            <div className="flex flex-col gap-2">
-              {useTarget.itemId === "revive" ? (
-                // Filter for fainted Pokemon only for revive
-                team.filter((p) => p.currentHp <= 0).length > 0 ? (
-                  team
-                    .filter((p) => p.currentHp <= 0)
-                    .map((p) => (
-                      <Button
-                        key={p.uid}
-                        variant="outline"
-                        onClick={() => {
-                          useBagItem(useTarget.itemId, p.uid);
-                          setUseTarget(null);
-                          playHeal();
-                        }}
-                        className="flex items-center justify-start gap-3 h-auto py-2 border-border text-foreground bg-transparent hover:bg-secondary"
-                      >
-                        <img
-                          src={getSpriteUrl(p.speciesId) || "/placeholder.svg"}
-                          alt={p.name}
-                          width={40}
-                          height={40}
-                          className="pixelated opacity-50"
-                          crossOrigin="anonymous"
-                        />
-                        <div className="text-left">
-                          <span className="text-sm font-medium">{p.name}</span>
-                          <span className="text-[10px] block text-muted-foreground">
-                            HP: {p.currentHp}/{p.maxHp} (DESMAIADO)
-                          </span>
-                        </div>
-                      </Button>
-                    ))
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Nenhum Pokemon desmaiado na equipe.
-                  </p>
-                )
-              ) : (
-                // Show all Pokemon for other items
-                team.map((p) => (
-                  <Button
-                    key={p.uid}
-                    variant="outline"
-                    onClick={() => {
-                      useBagItem(useTarget.itemId, p.uid);
-                      setUseTarget(null);
-                      playHeal();
-                    }}
-                    className="flex items-center justify-start gap-3 h-auto py-2 border-border text-foreground bg-transparent hover:bg-secondary"
+            <div className="grid gap-2">
+              {items.map((item) => {
+                const def = BAG_ITEMS.find((d) => d.id === item.itemId);
+                if (!def) return null;
+                const canUse = def.category === "potion" || def.category === "status" || def.id === "revive";
+
+                return (
+                  <div
+                    key={item.itemId}
+                    className="relative flex items-center justify-between p-3 bg-white/[0.03] border border-white/5 transition-all hover:bg-white/[0.06]"
+                    style={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 8px 100%, 0 calc(100% - 8px))" }}
                   >
-                    <img
-                      src={getSpriteUrl(p.speciesId) || "/placeholder.svg"}
-                      alt={p.name}
-                      width={40}
-                      height={40}
-                      className="pixelated"
-                      crossOrigin="anonymous"
-                    />
-                    <div className="text-left">
-                      <span className="text-sm font-medium">{p.name}</span>
-                      <span className="text-[10px] block text-muted-foreground">
-                        HP: {p.currentHp}/{p.maxHp}
-                      </span>
-                    </div>
-                  </Button>
-                ))
-              )}
-              {team.length === 0 && useTarget.itemId !== "revive" && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Nenhum Pokemon na equipe.
-                </p>
-              )}
-            </div>
-          </DialogContent>
-        )}
-      </Dialog>
-
-      {/* Add item dialog */}
-      <Dialog open={addItemDialog} onOpenChange={setAddItemDialog}>
-        <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Adicionar Item</DialogTitle>
-          </DialogHeader>
-          <div className="flex items-center gap-2 mb-3">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setAddQty(Math.max(1, addQty - 1))}
-              className="border-border text-foreground bg-transparent hover:bg-secondary"
-            >
-              <Minus className="w-4 h-4" />
-            </Button>
-            <Input
-              type="number"
-              value={addQty}
-              onChange={(e) => setAddQty(Math.max(1, parseInt(e.target.value) || 1))}
-              className="w-16 text-center bg-secondary border-border text-foreground"
-            />
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setAddQty(addQty + 1)}
-              className="border-border text-foreground bg-transparent hover:bg-secondary"
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
-          </div>
-          <ScrollArea className="max-h-64">
-            <div className="flex flex-col gap-1">
-              {BAG_ITEMS.map((def) => (
-                <Button
-                  key={def.id}
-                  variant="ghost"
-                  onClick={() => {
-                    addBagItem(def.id, addQty);
-                    playButtonClick();
-                    setAddItemDialog(false);
-                    setAddQty(1);
-                  }}
-                  className="flex items-center justify-between h-auto py-2 text-foreground hover:bg-secondary"
-                >
-                  <div className="flex items-center gap-2">
-                    {CATEGORY_ICONS[def.category]}
-                    <div className="text-left">
-                      <span className="text-sm">{def.name}</span>
-                      <span className="text-[10px] block text-muted-foreground">
+                    <div className="flex flex-col gap-0.5 relative z-10">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-black italic uppercase text-slate-100">
+                          {def.name}
+                        </span>
+                        <div className="h-1 w-1 bg-primary/40 rounded-full" />
+                        <span className="text-xs font-mono font-bold text-primary">
+                          x{item.quantity.toString().padStart(2, '0')}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-500 font-medium leading-tight max-w-[180px]">
                         {def.description}
                       </span>
                     </div>
+
+                    {canUse && (
+                      <button
+                        onClick={() => setUseTarget({ itemId: item.itemId, itemName: def.name })}
+                        className="relative px-5 py-2 overflow-hidden group/btn active:scale-90 transition-transform"
+                      >
+                        <div className="absolute inset-0 bg-primary/10 border border-primary/30 skew-x-[-15deg] group-hover/btn:bg-primary/20" />
+                        <span className="relative z-10 text-[10px] font-black uppercase italic tracking-widest text-primary">
+                          Utilizar
+                        </span>
+                      </button>
+                    )}
                   </div>
-                </Button>
-              ))}
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      {bag.length === 0 && (
+        <div className="flex flex-col items-center justify-center gap-4 py-20 opacity-20">
+          <div className="relative">
+            <Package className="w-16 h-16 stroke-[1px]" />
+            <div className="absolute inset-0 border-2 border-dashed border-white/20 rounded-full animate-[spin_10s_linear_infinite]" />
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.4em]">Inventory_Empty</p>
+        </div>
+      )}
+    </div>
+  </ScrollArea>
+
+  {/* Dialog de Uso - Estilo Seleção de Unidade */}
+  <Dialog open={!!useTarget} onOpenChange={() => setUseTarget(null)}>
+    {useTarget && (
+      <DialogContent className="bg-[#0c0d12] border-2 border-primary/40 text-white max-w-sm rounded-none shadow-[0_0_40px_rgba(0,0,0,0.7)]">
+        <div className="absolute top-0 left-0 w-20 h-[2px] bg-primary shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+        
+        <DialogHeader>
+          <DialogTitle className="text-white font-black italic uppercase text-xl flex items-center gap-2">
+            <Zap className="w-5 h-5 text-primary" />
+            Deploy: <span className="text-primary">{useTarget.itemName}</span>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/10 pb-2">
+             Selecione o alvo para aplicação:
+          </p>
+          
+          <ScrollArea className="max-h-[350px] pr-2">
+            <div className="flex flex-col gap-2">
+              {team.length > 0 ? (
+                team.map((p) => {
+                  const isFainted = p.currentHp <= 0;
+                  const isRevive = useTarget.itemId === "revive";
+                  const isDisabled = isRevive ? !isFainted : isFainted;
+
+                  return (
+                    <button
+                      key={p.uid}
+                      disabled={isDisabled}
+                      onClick={() => {
+                        useBagItem(useTarget.itemId, p.uid);
+                        setUseTarget(null);
+                        playHeal();
+                      }}
+                      className={`group relative flex items-center gap-4 p-3 border transition-all ${
+                        isDisabled 
+                        ? "opacity-30 grayscale cursor-not-allowed border-white/5" 
+                        : "bg-white/5 border-white/10 hover:border-primary/50 hover:bg-primary/5"
+                      }`}
+                    >
+                      <div className="relative w-12 h-12 flex-shrink-0 bg-black/40 border border-white/5 rounded-sm overflow-hidden">
+                        <img
+                          src={getSpriteUrl(p.speciesId)}
+                          className={`w-full h-full object-contain pixelated relative z-10 ${isFainted ? 'opacity-40' : ''}`}
+                        />
+                        {isFainted && <div className="absolute inset-0 bg-red-900/20 z-0" />}
+                      </div>
+
+                      <div className="flex-1 text-left">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black uppercase italic tracking-tighter">{p.name}</span>
+                          <span className="text-[10px] font-mono text-slate-500">LV.{p.level || '??'}</span>
+                        </div>
+                        
+                        {/* HP Bar HUD */}
+                        <div className="mt-1 space-y-1">
+                          <div className="flex justify-between text-[8px] font-bold font-mono">
+                            <span className={isFainted ? "text-red-500" : "text-primary"}>HP MONITOR</span>
+                            <span>{p.currentHp} / {p.maxHp}</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-black/60 rounded-full overflow-hidden border border-white/5">
+                            <div 
+                              className={`h-full transition-all duration-500 ${isFainted ? 'bg-red-600' : 'bg-primary'}`}
+                              style={{ width: `${(p.currentHp / p.maxHp) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="text-center py-10 border border-dashed border-white/10">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-600 italic">No_Targets_Available</span>
+                </div>
+              )}
             </div>
           </ScrollArea>
-        </DialogContent>
-      </Dialog>
-    </div>
+        </div>
+      </DialogContent>
+    )}
+  </Dialog>
+
+  {/* Add Item Dialog (Mestre) - Estilo Admin Console */}
+  <Dialog open={addItemDialog} onOpenChange={setAddItemDialog}>
+    <DialogContent className="bg-[#0a0b0e] border-2 border-slate-700 text-white max-w-sm rounded-none shadow-2xl">
+      <div className="flex items-center gap-2 mb-4 p-2 bg-slate-900 border-l-4 border-slate-500">
+        <Terminal className="w-4 h-4 text-slate-400" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Admin_Console // Add_Inventory</span>
+      </div>
+
+      <div className="flex items-center justify-center gap-4 mb-6 p-4 bg-black/40 border border-white/5">
+        <Button
+          variant="ghost"
+          onClick={() => setAddQty(Math.max(1, addQty - 1))}
+          className="h-10 w-10 text-white hover:bg-white/10 border border-white/10"
+        >
+          <Minus className="w-4 h-4" />
+        </Button>
+        <div className="text-center">
+          <span className="text-[8px] font-black text-slate-500 uppercase block mb-1">Load_Qty</span>
+          <span className="text-3xl font-black font-mono text-white tracking-tighter">{addQty}</span>
+        </div>
+        <Button
+          variant="ghost"
+          onClick={() => setAddQty(addQty + 1)}
+          className="h-10 w-10 text-white hover:bg-white/10 border border-white/10"
+        >
+          <Plus className="w-4 h-4" />
+        </Button>
+      </div>
+
+      <ScrollArea className="max-h-[300px] border-t border-white/5 pt-4">
+        <div className="grid gap-1">
+          {BAG_ITEMS.map((def) => (
+            <button
+              key={def.id}
+              onClick={() => {
+                addBagItem(def.id, addQty);
+                playButtonClick();
+                setAddItemDialog(false);
+                setAddQty(1);
+              }}
+              className="flex items-center justify-between p-3 bg-white/[0.02] hover:bg-white/[0.08] transition-colors border border-transparent hover:border-white/10 text-left group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="text-slate-500 group-hover:text-primary transition-colors">
+                  {CATEGORY_ICONS[def.category]}
+                </div>
+                <div>
+                  <div className="text-xs font-black uppercase italic tracking-tight">{def.name}</div>
+                  <div className="text-[9px] text-slate-500 leading-none">{def.description}</div>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-700 group-hover:text-primary" />
+            </button>
+          ))}
+        </div>
+      </ScrollArea>
+    </DialogContent>
+  </Dialog>
+</div>
   );
 }

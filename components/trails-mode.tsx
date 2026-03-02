@@ -653,6 +653,8 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
     })}
   </div>
 </ScrollArea>
+
+
       {/* Selected Node Modal - Enhanced */}
       <AnimatePresence>
         {selectedNode && (

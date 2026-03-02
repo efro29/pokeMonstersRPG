@@ -424,11 +424,10 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture, onStartWi
                 ))}
               </div>
             ) : (
+
               /* Pokemon grid for selected generation */
               <div className="flex flex-col">
                 {/* Back button + search */}
-
-
                 {filtered.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-16 px-6 gap-3">
                     <div
@@ -666,174 +665,159 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture, onStartWi
                   </div>
                 )}
               </div>
+              
             )}
           </ScrollArea>
 
           {/* Detail dialog - only show for discovered pokemon */}
           <Dialog open={!!selectedPokemon} onOpenChange={() => setSelectedId(null)}>
             {selectedPokemon && (
-              <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-foreground">
-                    <span className="text-muted-foreground font-mono text-sm">
-                      #{String(selectedPokemon.id).padStart(3, "0")}
-                    </span>
-                    {selectedPokemon.name}
-                  </DialogTitle>
-                </DialogHeader>
+              <DialogContent 
+                className="bg-[#050505] border-0 text-white max-w-[340px] mx-auto overflow-hidden p-0 shadow-2xl"
+                style={{
+                  clipPath: "polygon(0 0, 100% 0, 100% 96%, 92% 100%, 0 100%)",
+                  boxShadow: `0 0 30px ${TYPE_COLORS[selectedPokemon.types[0]]}22`
+                }}
+              >
+                {/* HEADER COMPACTO */}
+                <div 
+                  className="relative p-3 border-b border-white/5"
+                  style={{ background: `linear-gradient(90deg, ${TYPE_COLORS[selectedPokemon.types[0]]}15 0%, transparent 100%)` }}
+                >
+                  <DialogHeader>
+                    <DialogTitle className="flex flex-col">
+                      <span className="text-[8px] font-mono text-white/30 tracking-[0.2em] uppercase">
+                        Análise de Espécime // ID_{String(selectedPokemon.id).padStart(3, "0")}
+                      </span>
+                      <span className="text-xl font-black italic uppercase tracking-tight text-white">
+                        {selectedPokemon.name}
+                      </span>
+                    </DialogTitle>
+                  </DialogHeader>
+                </div>
 
-                <div className="flex flex-col items-center gap-3">
-                  <img
-                    src={getSpriteUrl(selectedPokemon.id)}
-                    alt={selectedPokemon.name}
-                    width={96}
-                    height={96}
-                    className="pixelated"
-                    crossOrigin="anonymous"
-                  />
+                <div className="p-4 flex flex-col gap-4">
+                  {/* ÁREA DO SPRITE (REDUZIDA) */}
+                  <div className="relative w-full h-32 flex items-center justify-center bg-white/[0.02] border border-white/5">
+                    {/* Radar de fundo sutil */}
+                    <div className="absolute w-24 h-24 border border-dashed border-white/10 rounded-full animate-spin-slow" />
+                    
+                    <img
+                      src={getSpriteUrl(selectedPokemon.id)}
+                      alt={selectedPokemon.name}
+                      width={80}
+                      height={80}
+                      className="relative z-10 pixelated drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]"
+                      crossOrigin="anonymous"
+                    />
+                    
+                    {/* HP INDICATOR */}
+                    <div className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-black/60 px-2 py-0.5 border border-white/10">
+                      <Heart className="w-2.5 h-2.5 text-red-500 fill-red-500" />
+                      <span className="font-mono text-[10px] font-bold">{selectedPokemon.baseHp} <span className="text-[7px] opacity-40">HP</span></span>
+                    </div>
+                  </div>
 
-                  <div className="flex gap-2">
+                  {/* TIPOS */}
+                  <div className="flex gap-1.5 justify-center">
                     {selectedPokemon.types.map((t) => (
-                      <Badge
+                      <div
                         key={t}
-                        className="text-xs border-0"
-                        style={{ backgroundColor: TYPE_COLORS[t], color: "#ffffff" }}
+                        className="px-2 py-0.5 text-[8px] font-black uppercase tracking-widest border"
+                        style={{ 
+                          backgroundColor: `${TYPE_COLORS[t]}10`, 
+                          color: TYPE_COLORS[t],
+                          borderColor: `${TYPE_COLORS[t]}44`
+                        }}
                       >
-                        {t.toUpperCase()}
-                      </Badge>
+                        {t}
+                      </div>
                     ))}
                   </div>
 
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Heart className="w-4 h-4 text-red-400" />
-                      <span className="text-foreground">{selectedPokemon.baseHp} HP</span>
-                    </div>
-                  </div>
-
-                  {/* Starting moves */}
-                  <div className="w-full">
-                    <h4 className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                      <Swords className="w-3 h-3" /> Golpes Iniciais
-                    </h4>
-                    <div className="flex flex-col gap-1">
-                      {selectedPokemon.startingMoves.map((mId) => {
-                        const move = getMove(mId);
-                        if (!move) return null;
-                        return (
-                          <div
-                            key={mId}
-                            className="flex items-center justify-between bg-secondary rounded px-2 py-1"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="text-[8px] px-1 py-0.5 rounded font-medium"
-                                style={{ backgroundColor: TYPE_COLORS[move.type as PokemonType], color: "#ffffff" }}
-                              >
-                                {move.type.toUpperCase()}
-                              </span>
-                              <span className="text-xs text-foreground">{move.name}</span>
-                            </div>
-                            {move.power > 0 && (
-                              <span className="text-xs text-accent font-mono">{move.power} PWR</span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Learnable moves */}
-                  {selectedPokemon.learnableMoves.length > 0 && (
-                    <div className="w-full">
-                      <h4 className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                        <Zap className="w-3 h-3" /> Pode Aprender
-                      </h4>
-                      <div className="flex flex-wrap gap-1">
-                        {selectedPokemon.learnableMoves.map((mId) => {
+                  {/* LISTA DE ATAQUES (MAIS COMPACTA) */}
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-white/30 uppercase font-bold text-[8px] tracking-wider">
+                        <Swords className="w-2.5 h-2.5" /> 
+                        <span>Protocolos de Ataque</span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 gap-1">
+                        {selectedPokemon.startingMoves.slice(0, 4).map((mId) => {
                           const move = getMove(mId);
                           if (!move) return null;
                           return (
-                            <span
-                              key={mId}
-                              className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground"
-                            >
-                              {move.name}
-                            </span>
+                            <div key={mId} className="flex items-center justify-between bg-white/[0.03] px-2 py-1 border border-white/5">
+                              <span className="text-[9px] font-bold text-white/70 uppercase">{move.name}</span>
+                              {move.power > 0 && (
+                                <span className="text-[9px] font-mono text-white/30">{move.power} PWR</span>
+                              )}
+                            </div>
                           );
                         })}
                       </div>
                     </div>
-                  )}
+                  </div>
 
-                  {/* Add to team / capture buttons */}
-                  <div className="flex flex-col gap-2 w-full">
+                  {/* AÇÕES (BOTÕES EM GRADE SE NECESSÁRIO) */}
+                  <div className="flex flex-col gap-2 pt-2 border-t border-white/5">
                     {isInTeam(selectedPokemon.id) ? (
-                      <div className="flex items-center gap-2 text-sm text-primary">
-                        <Check className="w-4 h-4" />
-                        Ja esta na equipe
+                      <div className="py-2 text-center border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-[9px] font-black uppercase italic tracking-widest">
+                        UNIDADE REGISTRADA NA EQUIPE
                       </div>
                     ) : (
-                      <Button
+                      <button
                         onClick={() => {
                           addToTeam(selectedPokemon);
                           setSelectedId(null);
                         }}
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                        className="w-full py-2 bg-white text-black font-black uppercase italic text-[10px] tracking-wider hover:bg-emerald-400 transition-colors"
+                        style={{ clipPath: "polygon(3% 0, 100% 0, 97% 100%, 0 100%)" }}
                       >
-                        <Plus className="w-4 h-4 mr-2" />
-                        {teamFull ? "Adicionar nas Reservas" : "Adicionar a Equipe"}
-                      </Button>
+                        {teamFull ? "+ Enviar para Reserva" : "+ Alocar na Equipe"}
+                      </button>
                     )}
 
-                    {/* Capture button - trainer mode only */}
-                    {isTrainerMode && onStartCapture && (
-                      <Button
-                        onClick={() => {
-                          onStartCapture(selectedPokemon.id);
-                          setSelectedId(null);
-                        }}
-                        className="w-full text-white font-bold"
-                        style={{
-                          backgroundColor: "#EF4444",
-                        }}
-                      >
-                        <CircleDot className="w-4 h-4 mr-2" />
-                        Tentar Capturar
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* Battle button - master mode only */}
-                  {onStartBattleWithPokemon && (
-                    <div className="w-full flex flex-col gap-2 pt-2 border-t border-border">
-                      <label className="text-xs text-muted-foreground">Iniciar batalha rapida</label>
-                      <div className="flex gap-2">
-                        <div className="flex items-center gap-1 shrink-0">
-                          <span className="text-xs text-muted-foreground">Lv.</span>
-                          <Input
-                            type="number"
-                            value={battleLevel}
-                            onChange={(e) => setBattleLevel(e.target.value)}
-                            className="w-16 h-9 bg-secondary border-border text-foreground text-center text-sm"
-                            min={1}
-                            max={100}
-                          />
-                        </div>
-                        <Button
+                    {/* ÁREA DE CAPTURA/BATALHA */}
+                    <div className="flex flex-col gap-1.5">
+                      {isTrainerMode && onStartCapture && (
+                        <button
                           onClick={() => {
-                            const lv = parseInt(battleLevel) || 5;
-                            onStartBattleWithPokemon(selectedPokemon.id, Math.min(100, Math.max(1, lv)));
+                            onStartCapture(selectedPokemon.id);
                             setSelectedId(null);
                           }}
-                          className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          className="py-1.5 border border-red-500/50 text-red-500 font-bold text-[9px] uppercase hover:bg-red-500 hover:text-white transition-all"
                         >
-                          <Swords className="w-4 h-4 mr-1.5" />
-                          Batalhar
-                        </Button>
-                      </div>
+                          Iniciar Sequência de Captura
+                        </button>
+                      )}
+
+                      {onStartBattleWithPokemon && (
+                        <div className="flex gap-1.5 mt-1">
+                          <div className="flex items-center gap-1 bg-white/5 border border-white/10 px-2 h-8">
+                            <span className="text-[8px] font-mono text-white/30">LV</span>
+                            <input
+                              type="number"
+                              value={battleLevel}
+                              onChange={(e) => setBattleLevel(e.target.value)}
+                              className="bg-transparent border-0 text-white font-mono text-[10px] w-8 p-0 focus:ring-0"
+                            />
+                          </div>
+                          <button
+                            onClick={() => {
+                              const lv = parseInt(battleLevel) || 5;
+                              onStartBattleWithPokemon(selectedPokemon.id, Math.min(100, Math.max(1, lv)));
+                              setSelectedId(null);
+                            }}
+                            className="flex-1 bg-red-600 text-white text-[9px] font-black uppercase hover:bg-red-500 transition-colors"
+                          >
+                            Simulação de Combate
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </DialogContent>
             )}

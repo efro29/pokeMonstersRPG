@@ -1195,6 +1195,7 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
             )}
           </AnimatePresence>
         </div>
+        
       </div>
 
       {/* AREA DO JOGADOR */}
