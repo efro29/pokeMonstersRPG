@@ -833,19 +833,41 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
           </div>
 
           {/* Pokebolas do rival */}
-          <div className="flex items-center gap-1.5">
-            {rivalTeam.map((p, i) => (
-              <div
-                key={i}
-                className={`w-4 h-4 rounded-full border-2 ${
-                  p.currentHp > 0
-                    ? i === activeRivalIndex
-                      ? "bg-red-500 border-white shadow-md"
-                      : "bg-red-500 border-red-300"
-                    : "bg-gray-600 border-gray-400 opacity-40"
-                }`}
-              />
-            ))}
+          <div className="flex items-center gap-2 py-2">
+            {rivalTeam.map((p, i) => {
+              const isActive = i === activeRivalIndex;
+              const isFainted = p.currentHp <= 0;
+
+              return (
+                <motion.div
+                  key={i}
+                  initial={isActive ? { scale: 1 } : { scale: 0.9 }}
+                  animate={isActive ? { 
+                    scale: [1, 1.2, 1],
+                    boxShadow: ["0 0 0px rgba(239, 68, 68, 0)", "0 0 12px rgba(239, 68, 68, 0.8)", "0 0 0px rgba(239, 68, 68, 0)"]
+                  } : {}}
+                  transition={isActive ? { repeat: Infinity, duration: 1.5 } : {}}
+                  className={`relative w-5 h-5 rounded-full border-[1.5px] overflow-hidden shadow-sm
+                    ${isFainted ? "grayscale opacity-40 border-gray-500" : "border-black/40"}
+                  `}
+                >
+                  {/* Metade Superior (Vermelha) */}
+                  <div className={`absolute top-0 left-0 w-full h-[50%] ${isFainted ? "bg-gray-600" : "bg-red-500"}`} />
+                  
+                  {/* Metade Inferior (Branca) */}
+                  <div className={`absolute bottom-0 left-0 w-full h-[50%] ${isFainted ? "bg-gray-400" : "bg-white"}`} />
+                  
+                  {/* Linha Central e Botão */}
+                  <div className="absolute top-1/2 left-0 w-full h-[2px] bg-black/60 -translate-y-1/2 z-10" />
+                  <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full border-[1px] border-black/40 z-20
+                    ${isFainted ? "bg-gray-500" : isActive ? "bg-yellow-300 animate-pulse" : "bg-white"}
+                  `} />
+
+                  {/* Brilho de Reflexo (Estilo Vidro) */}
+                  <div className="absolute top-0.5 left-1 w-1.5 h-1 bg-white/30 rounded-full z-30" />
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -1196,23 +1218,61 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
             </div>
           </div>
 
-          {/* Pokebolas do jogador */}
-          <div className="flex items-center gap-1.5">
-            {team.map((p, i) => (
-              <button
-                key={p.uid}
-                onClick={() => isPlayerTurn && handleSwitchPokemon(p.uid)}
-                disabled={!isPlayerTurn || p.currentHp <= 0 || p.uid === battle.activePokemonUid}
-                className={`w-5 h-5 rounded-full border-2 transition-transform ${
-                  p.currentHp > 0
-                    ? p.uid === battle.activePokemonUid
-                      ? "bg-blue-500 border-white shadow-md scale-110"
-                      : "bg-blue-500 border-blue-300 hover:scale-110"
-                    : "bg-gray-600 border-gray-400 opacity-40"
-                }`}
-              />
-            ))}
-          </div>
+            {/* Pokebolas do jogador */}
+            <div className="flex items-center gap-2 py-2">
+              {team.map((p, i) => {
+                const isActive = p.uid === battle.activePokemonUid;
+                const isFainted = p.currentHp <= 0;
+                const canSwitch = isPlayerTurn && !isFainted && !isActive;
+
+                return (
+
+
+                  <motion.button
+                    key={p.uid}
+                    onClick={() => canSwitch && handleSwitchPokemon(p.uid)}
+                    disabled={!canSwitch}
+                    whileHover={canSwitch ? { scale: 1.2, rotate: 15 } : {}}
+                    whileTap={canSwitch ? { scale: 0.9 } : {}}
+                    initial={isActive ? { scale: 1.1 } : { scale: 1 }}
+                    animate={isActive ? { 
+                      boxShadow: ["0 0 0px rgba(59, 130, 246, 0)", "0 0 15px rgba(59, 130, 246, 0.8)", "0 0 0px rgba(59, 130, 246, 0)"]
+                    } : {}}
+                    transition={isActive ? { repeat: Infinity, duration: 2 } : {}}
+                    className={`relative w-6 h-6 rounded-full border-[1.5px] overflow-hidden transition-all
+                      ${isFainted ? "grayscale opacity-40 border-gray-500 cursor-not-allowed" : "border-black/50 shadow-sm"}
+                      ${canSwitch ? "cursor-pointer hover:border-blue-400" : ""}
+                      ${isActive ? "ring-2 ring-blue-400 ring-offset-2 ring-offset-slate-900" : ""}
+                    `}
+                  >
+                    {/* Metade Superior (Vermelha - Padrão Pokébola) */}
+                    <div className={`absolute top-0 left-0 w-full h-[50%] ${isFainted ? "bg-gray-600" : "bg-red-500"}`} />
+                    
+                    {/* Metade Inferior (Branca) */}
+                    <div className={`absolute bottom-0 left-0 w-full h-[50%] ${isFainted ? "bg-gray-400" : "bg-white"}`} />
+                    
+                    {/* Linha Central e Botão */}
+                    <div className="absolute top-1/2 left-0 w-full h-[2px] bg-black/60 -translate-y-1/2 z-10" />
+                    <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full border-[1px] border-black/40 z-20
+                      ${isFainted ? "bg-gray-500" : isActive ? "bg-blue-400 animate-pulse" : "bg-white"}
+                    `} />
+
+                    
+
+                    {/* Brilho de Reflexo Superior */}
+                    <div className="absolute top-0.5 left-1 w-2 h-1 bg-white/40 rounded-full z-30" />
+
+                    {/* Overlay de Seleção (Destaque Azul se for o ativo) */}
+                    {isActive && (
+                      <div className="absolute inset-0 bg-blue-500 z-0 animate-pulse" />
+                    )}
+               
+                  </motion.button>
+             
+       
+                );
+              })}
+            </div>
         </div>
       </div>
 
@@ -1462,66 +1522,122 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
 
           {/* Turno do rival */}
           {!isPlayerTurn && battle.phase === "menu" && (
+
             <motion.div
               key="rival-turn"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex flex-col items-center justify-center gap-4 mt-auto py-8"
+              initial={{ opacity: 0, scale: 1.2 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="flex flex-col items-center justify-center gap-6 mt-auto  h-full"
             >
-              <div className="flex items-center gap-3">
+              {/* 1. EFEITOS DE FUNDO ÉPICOS */}
+              {/* Vinheta Radial: Escurece as bordas para focar no centro */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle,_transparent_20%,_rgba(0,0,0,0.9)_100%)] z-0 pointer-events-none" />
 
-       
+              {/* Partículas de Poeira/Energia Subindo */}
+              <div className="absolute inset-0 z-0 pointer-events-none">
+                {[...Array(10)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute bg-red-500 rounded-full blur-sm"
+                    style={{
+                      width: Math.random() * 6 + 2 + 'px',
+                      height: Math.random() * 6 + 2 + 'px',
+                      bottom: '-20px',
+                      left: Math.random() * 100 + '%',
+                    }}
+                    animate={{
+                      y: ['0vh', '-50vh'], // Sobe
+                      opacity: [0, 0.6, 0], // Surge e some
+                    }}
+                    transition={{
+                      duration: Math.random() * 2 + 2,
+                      repeat: Infinity,
+                      ease: "linear",
+                      delay: Math.random() * 2,
+                    }}
+                  />
+                ))}
+              </div>
 
-                
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                >
-                  <RefreshCw className="w-6 h-6 text-red-400" />
-                </motion.div>
-                <span style={{zIndex:29}} className="bg-black text-red-400 font-bold">Turno do {npc.nome}...</span>
-                
-       
-              <motion.div
-          
-                 style={{position:"absolute",
-                    zIndex:0,
-                 
-           
-                }}
-          
+              {/* 2. INDICADOR DE TURNO CENTRAL */}
+              <motion.div 
+                className="relative z-10 flex flex-col items-center gap-3 px-8 py-4 bg-black/10 rounded-lg"
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3, type: "spring", damping: 15 }}
               >
-                {showRivalParticles && (
-                  <BattleParticles effectType="damage" isAnimating={true} />
-                )}
-                {/* Flash overlay on hit */}
-                <AnimatePresence>
-                  {rivalShake && (
-                    <motion.div
-                      className="absolute inset-0 bg-white rounded-full z-10"
-                      initial={{ opacity: 0.8 }}
-                      animate={{ opacity: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                    />
-                  )}
-                </AnimatePresence>
-                <motion.img
-                src={npc.imagem}
-                  alt={activeRival.nome}
-                  style={{
-                    imageRendering: "pixelated",
-                    width: 300,
-                    height: 150,
-                  }}
-      
-                  transition={{ duration: 0.3 }}
-                  crossOrigin="anonymous"
-                />
+                <div className="flex items-center gap-4">
+                  {/* Ícone de Recarregar com Glitch */}
+                  <motion.div
+                    animate={{ 
+                      rotate: 360,
+                      scale: [1, 1.2, 1], // Pulsa levemente
+                    }}
+                    transition={{ 
+                      rotate: { duration: 1.5, repeat: Infinity, ease: "linear" },
+                      scale: { duration: 0.5, repeat: Infinity, repeatType: "reverse" }
+                    }}
+                    className="relative"
+                  >
+                    <RefreshCw className="w-8 h-8 text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.7)]" />
+                    {/* Cópia fantasma para efeito Glitch (VPR) */}
+                    <RefreshCw className="absolute inset-0 w-8 h-8 text-cyan-400 opacity-40 blur-[1px] animate-pulse" />
+                  </motion.div>
+
+                  {/* Texto Épico */}
+                  <motion.span 
+                    className="text-white font-black text-3xl tracking-tighter uppercase italic"
+                    style={{
+                      textShadow: '0 0 10px rgba(239,68,68,1), 0 0 20px rgba(239,68,68,0.5), -2px -2px 0 #00000025, 2px 2px 0 #000'
+                    }}
+                    animate={{ opacity: [1, 0.8, 1] }}
+                    transition={{ duration: 0.2, repeat: Infinity }}
+                  >
+                    Turno de {npc.nome}...
+                  </motion.span>
+                </div>
                 
+                <div className="h-1 w-full bg-gradient-to-r from-transparent via-red-600 to-transparent mt-1" />
               </motion.div>
+
+              {/* 3. IMAGEM DO RIVAL (MANTIDA NO LUGAR ORIGINÁRIO) */}
+              <div className="absolute">
+                <motion.div
+       
+                >
+                  {showRivalParticles && (
+                    <BattleParticles effectType="damage" isAnimating={true} />
+                  )}
+                  {/* Flash overlay on hit */}
+                  <AnimatePresence>
+                    {rivalShake && (
+                      <motion.div
+                      style={{zIndex:300}}
+                        className="absolute inset-0 bg-white rounded-full"
+                        initial={{ opacity: 0.8 }}
+                        animate={{ opacity: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    )}
+                  </AnimatePresence>
+                  <motion.img
+                    src={npc.imagem}
+                    alt={activeRival.nome}
+                    style={{
+                      imageRendering: "pixelated",
+                      width: 300,
+                      height: 300,
+                    }}
+                    transition={{ duration: 0.3 }}
+                    crossOrigin="anonymous"
+                  />
+                </motion.div>
               </div>
             </motion.div>
+
+            
           )}
         </AnimatePresence>
       </div>

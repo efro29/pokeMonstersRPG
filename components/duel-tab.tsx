@@ -25,6 +25,7 @@ import {
   Inbox,
   Check,
   Clock,
+  Activity,
 } from "lucide-react";
 import { playButtonClick, playBattleMusic } from "@/lib/sounds";
 import { TrailsMode } from "./trails-mode";
@@ -184,36 +185,76 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
               exit={{ opacity: 0 }}
             >
               {/* Lado Esquerdo - Jogador (Azul) */}
-              <motion.div
-                className="flex-1 flex items-center justify-center relative overflow-hidden"
-                style={{ backgroundColor: "#1e3a8a" }}
-                initial={{ x: "-100%" }}
-                animate={{ x: 0 }}
-                transition={{ type: "spring", damping: 20, stiffness: 100 }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-blue-700" />
-                <motion.div
-                  className="relative z-10 flex flex-col items-center"
-                  initial={{ scale: 0, rotate: -45 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ delay: 0.3, type: "spring" }}
-                >
-                  <img
-                    src="/images/trainers/player.jpg"
-                    alt="Jogador"
-                    className="w-24 h-24 rounded-full border-4 border-white shadow-2xl object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
-                    }}
-                  />
-                  <span className="mt-3 text-white font-bold text-lg tracking-wider">
-                    {trainer.name || "JOGADOR"}
-                  </span>
-                  <span className="text-blue-200 text-xs uppercase tracking-widest">
-                    Treinador
-                  </span>
-                </motion.div>
-              </motion.div>
+<motion.div
+  className="flex-1 flex items-center justify-center relative overflow-hidden"
+  style={{ backgroundColor: "#1e3a8a" }}
+  initial={{ x: "-100%" }}
+  animate={{ x: 0 }}
+  transition={{ type: "spring", damping: 20, stiffness: 100 }}
+>
+  {/* Gradiente de Fundo Azul */}
+  <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-blue-700" />
+
+  {/* CAMADA DE PARTÍCULAS (ANIME SPEED LINES - SENTIDO OPOSTO) */}
+  <div className="absolute inset-0 pointer-events-none">
+    {[...Array(15)].map((_, i) => (
+      <motion.div
+        key={i}
+        className="absolute bg-white/20"
+        style={{
+          height: '2px',
+          width: Math.random() * 100 + 50 + 'px',
+          top: Math.random() * 100 + '%',
+          right: '-20%', // Começa da direita para cruzar para a esquerda
+        }}
+        animate={{
+          x: ['0vw', '-120vw'], // Move para a esquerda
+          opacity: [0, 1, 0],
+        }}
+        transition={{
+          duration: Math.random() * 0.5 + 0.3,
+          repeat: Infinity,
+          ease: "linear",
+          delay: Math.random() * 2,
+        }}
+      />
+    ))}
+  </div>
+
+                    {/* CONTEÚDO PRINCIPAL (JOGADOR) */}
+                    <motion.div
+                      className="relative z-10 flex flex-col items-center"
+                      initial={{ scale: 0, rotate: -45 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ delay: 0.3, type: "spring" }}
+                    >
+                      <div className="relative">
+                        {/* Aura de Energia Azul */}
+                        <motion.div 
+                          className="absolute inset-0 rounded-full bg-blue-400/30 blur-xl"
+                          animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0.8, 0.5] }}
+                          transition={{ repeat: Infinity, duration: 1.5 }}
+                        />
+                        
+                        <img
+                        style={{width:800}}
+                          src="/images/trainers/ash-unova.jpg"
+                          alt="Jogador"
+                          className="relative   object-cover z-10"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/images/trainers/ash-unova.jpg";
+                          }}
+                        />
+                      </div>
+
+                      <span className="mt-3 text-white font-bold text-lg tracking-wider drop-shadow-md">
+                        {trainer.name || "JOGADOR"}
+                      </span>
+                      <span className="text-blue-200 text-xs uppercase tracking-widest font-black">
+                        Treinador
+                      </span>
+                    </motion.div>
+                  </motion.div>
 
               {/* Raio Central */}
               <motion.div
@@ -234,174 +275,263 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ delay: 0.7, type: "spring", damping: 10 }}
               >
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center border-4 border-white shadow-2xl">
-                  <span className="text-2xl font-black text-white drop-shadow-lg">VS</span>
-                </div>
+            
               </motion.div>
 
               {/* Lado Direito - Desafiante (Vermelho) */}
-              <motion.div
-                className="flex-1 flex items-center justify-center relative overflow-hidden"
-                style={{ backgroundColor: "#991b1b" }}
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                transition={{ type: "spring", damping: 20, stiffness: 100 }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-l from-red-900 to-red-700" />
+            <motion.div
+  className="flex-1 flex items-center justify-center relative overflow-hidden"
+  style={{ backgroundColor: "#991b1b" }}
+  initial={{ x: "100%" }}
+  animate={{ x: 0 }}
+  transition={{ type: "spring", damping: 20, stiffness: 100 }}
+>
+  {/* Gradiente de Fundo */}
+  <div className="absolute inset-0 bg-gradient-to-l from-red-900 to-red-700" />
+
+  {/* CAMADA DE PARTÍCULAS (ANIME SPEED LINES) */}
+  <div className="absolute inset-0 pointer-events-none">
+    {[...Array(15)].map((_, i) => (
+      <motion.div
+        key={i}
+        className="absolute bg-white/20"
+        style={{
+          height: '2px',
+          width: Math.random() * 100 + 50 + 'px', // Comprimento variado
+          top: Math.random() * 100 + '%',        // Posição vertical aleatória
+          left: '-20%',
+        }}
+        animate={{
+          x: ['0vw', '120vw'], // Cruza a tela inteira
+          opacity: [0, 1, 0],   // Surge e some
+        }}
+        transition={{
+          duration: Math.random() * 0.5 + 0.3, // Velocidade alta e variada
+          repeat: Infinity,
+          ease: "linear",
+          delay: Math.random() * 2,
+        }}
+      />
+    ))}
+  </div>
+
+                {/* CONTEÚDO PRINCIPAL */}
                 <motion.div
                   className="relative z-10 flex flex-col items-center"
                   initial={{ scale: 0, rotate: 45 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ delay: 0.3, type: "spring" }}
                 >
-                  <img
-                    src={selectedChallenge.imagem}
-                    alt={selectedChallenge.nome}
-                    className="w-24 h-24 rounded-full border-4 border-white shadow-2xl object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
-                    }}
-                  />
-                  <span className="mt-3 text-white font-bold text-lg tracking-wider">
+                  <div className="relative">
+                    {/* Brilho pulsante atrás da imagem (aura) */}
+                    <img
+                    style={{width:800}}
+                      src={selectedChallenge.imagem}
+                      alt={selectedChallenge.nome}
+                      className="    object-cover z-10"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
+                      }}
+                    />
+                  </div>
+
+                  <span className="mt-3 text-white font-bold text-lg tracking-wider drop-shadow-md">
                     {selectedChallenge.nome}
                   </span>
-                  <span className="text-red-200 text-xs uppercase tracking-widest">
+                  <span className="text-red-200 text-xs uppercase tracking-widest font-black">
                     {getNivelLabel(selectedChallenge.nivel)}
                   </span>
                 </motion.div>
+
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Header do Email Aberto */}
-        <div className="p-4 border-b border-border bg-card">
-          <div className="flex items-center gap-3">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setSelectedChallenge(null)}
-              className="text-foreground hover:bg-secondary shrink-0"
-            >
-              <ChevronRight className="w-4 h-4 rotate-180" />
-            </Button>
-            <div
-              className="w-12 h-12 rounded-full border-2 flex items-center justify-center shrink-0 overflow-hidden"
-              style={{ borderColor: getNivelColor(selectedChallenge.nivel) }}
-            >
-              <img
-                src={selectedChallenge.imagem}
-                alt={selectedChallenge.nome}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
-                }}
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="font-bold text-foreground text-sm truncate">
-                {selectedChallenge.nome}
-              </h2>
-              <div className="flex items-center gap-2">
-                <span
-                  className="text-[10px] px-2 py-0.5 rounded-full font-bold text-white"
-                  style={{ backgroundColor: getNivelColor(selectedChallenge.nivel) }}
-                >
-                  {getNivelLabel(selectedChallenge.nivel)}
-                </span>
-                <span className="text-[10px] text-muted-foreground">
-                  {selectedChallenge.time.length} Pokemon
-                </span>
-              </div>
-            </div>
-          </div>
+<div className="relative p-4 bg-slate-900 border-b border-cyan-500/30 overflow-hidden">
+  {/* Elemento de Background: Grid Gamer */}
+  <div className="absolute inset-0 opacity-10 pointer-events-none bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:10px_10px]" />
+
+  <div className="flex items-center gap-4 relative z-10">
+    {/* Botão de Voltar - Quadrado e Minimalista */}
+    <Button
+      size="icon"
+      variant="ghost"
+      onClick={() => setSelectedChallenge(null)}
+      className="w-8 h-8 rounded-none border border-white/10 bg-white/5 hover:bg-cyan-500/20 hover:text-cyan-400 hover:border-cyan-500/50 transition-all shrink-0"
+    >
+      <ChevronRight className="w-5 h-5 rotate-180" />
+    </Button>
+
+    {/* Frame do Avatar - Estilo Scan de Alvo */}
+    <div className="relative group">
+      <div 
+        className="w-14 h-14 p-0.5" 
+        style={{ 
+          background: `linear-gradient(135deg, ${getNivelColor(selectedChallenge.nivel)}, transparent)`,
+          clipPath: "polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%)" 
+        }}
+      >
+        <div 
+          className="w-full h-full bg-slate-950 overflow-hidden relative"
+          style={{ clipPath: "polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%)" }}
+        >
+          <img
+            src={selectedChallenge.imagem}
+            alt={selectedChallenge.nome}
+            className="w-full h-full object-cover  brightness-125  transition-all duration-500"
+            onError={(e) => { (e.target as HTMLImageElement).src = "/images/trainers/player.jpg"; }}
+          />
+          {/* Scanline Overlay na foto */}
+          <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.3)_50%)] bg-[length:100%_4px] pointer-events-none opacity-20" />
         </div>
+      </div>
+      
+      {/* Badge de Nível colada no frame */}
+      <div 
+        className="absolute -bottom-1 -right-1 px-1.5 py-0.5 text-[8px] font-black italic uppercase tracking-tighter text-white shadow-lg rotate-2"
+        style={{ backgroundColor: getNivelColor(selectedChallenge.nivel) }}
+      >
+        RANK {selectedChallenge.nivel}
+      </div>
+    </div>
 
-        {/* Corpo do Email */}
-        <ScrollArea className="flex-1">
-          <div className="p-4 flex flex-col gap-4">
-            {/* Frase de Desafio */}
-            <div className="bg-secondary/50 rounded-lg p-4 border border-border">
-              <p className="text-sm text-foreground italic">
-                "{selectedChallenge.fraseDesafio}"
-              </p>
-            </div>
+    {/* Informações Táticas do Oponente */}
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-2">
+        <span className="text-[8px] font-black text-cyan-500 uppercase tracking-widest opacity-60">Identity Confirmed</span>
+        <div className="h-[1px] flex-1 bg-cyan-500/20" />
+      </div>
+      
+      <h2 className="font-black text-xl text-slate-100 uppercase italic tracking-tighter leading-none my-1 drop-shadow-[0_0_10px_rgba(34,211,238,0.3)]">
+        {selectedChallenge.nome}
+      </h2>
 
-            {/* Recompensas */}
-            <div className="bg-card border border-border rounded-lg p-4">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
-                Recompensas por Vitoria
-              </h3>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="flex flex-col items-center gap-1 p-2 bg-secondary/50 rounded-lg">
-                  <Coins className="w-5 h-5 text-amber-400" />
-                  <span className="text-sm font-bold text-foreground">
-                    ${selectedChallenge.recompensa}
-                  </span>
-                  <span className="text-[9px] text-muted-foreground">Dinheiro</span>
-                </div>
-                <div className="flex flex-col items-center gap-1 p-2 bg-secondary/50 rounded-lg">
-                  <Star className="w-5 h-5 text-blue-400" />
-                  <span className="text-sm font-bold text-foreground">
-                    {selectedChallenge.stardust}
-                  </span>
-                  <span className="text-[9px] text-muted-foreground">Stardust</span>
-                </div>
-                <div className="flex flex-col items-center gap-1 p-2 bg-secondary/50 rounded-lg">
-                  <Trophy className="w-5 h-5 text-emerald-400" />
-                  <span className="text-sm font-bold text-foreground">
-                    {selectedChallenge.xp}
-                  </span>
-                  <span className="text-[9px] text-muted-foreground">XP</span>
-                </div>
-              </div>
-            </div>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_5px_#22d3ee]" />
+          <span className="text-[10px] font-mono text-cyan-400 font-bold">
+            {selectedChallenge.time.length} UNIT DETECTED
+          </span>
+        </div>
+        <div className="h-3 w-px bg-white/10" />
+        <span className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">
+          {getNivelLabel(selectedChallenge.nivel)}
+        </span>
+      </div>
+    </div>
+  </div>
 
-            {/* Time do Oponente */}
-            <div className="bg-card border border-border rounded-lg p-4">
-              <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
-                Equipe do Desafiante
-              </h3>
-              <div className="grid grid-cols-3 gap-2">
-                {selectedChallenge.time.map((pokemon, index) => (
-                  <div
-                    key={index}
-                    className="flex flex-col items-center gap-1 p-2 bg-secondary/30 rounded-lg"
-                  >
-                    <img
-                      src={getSpriteUrl(pokemon.speciesId)}
-                      alt={pokemon.nome}
-                      width={48}
-                      height={48}
-                      className="pixelated"
-                      crossOrigin="anonymous"
-                    />
-                    <span className="text-[10px] font-medium text-foreground truncate w-full text-center">
-                      {pokemon.nome}
-                    </span>
-                    <span className="text-[9px] text-muted-foreground">
-                      Lv.{pokemon.level}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+  {/* Detalhe de Canto Tático */}
+  <div className="absolute top-0 right-0 w-12 h-12 pointer-events-none opacity-20">
+    <div className="absolute top-2 right-2 w-full h-full border-t-2 border-r-2 border-cyan-500" />
+  </div>
+</div>
 
-            {/* Espaço extra para padding quando scrollar */}
-            <div className="h-4"></div>
+<ScrollArea className="flex-1 bg-slate-950">
+  <div className="p-4 flex flex-col gap-6">
+    
+    {/* Frase de Desafio - Estilo Comms-Link */}
+    <div className="relative group">
+      <div className="absolute -left-2 top-0 bottom-0 w-1 bg-cyan-500 shadow-[0_0_10px_#22d3ee]" />
+      <div className="bg-slate-900/50 p-4 border border-white/5 backdrop-blur-sm">
+        <span className="text-[8px] font-black uppercase tracking-[0.3em] text-cyan-500/50 block mb-2">Incoming Transmission</span>
+        <p className="text-sm text-slate-200 italic font-medium leading-relaxed">
+          "{selectedChallenge.fraseDesafio}"
+        </p>
+      </div>
+    </div>
+
+    {/* Recompensas - Estilo Loot Preview */}
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/10" />
+        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Victory Rewards</h3>
+        <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/10" />
+      </div>
+      
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { icon: Coins, val: selectedChallenge.recompensa, label: 'Credits', color: 'text-amber-400', bg: 'bg-amber-400/5' },
+          { icon: Star, val: selectedChallenge.stardust, label: 'Dust', color: 'text-cyan-400', bg: 'bg-cyan-400/5' },
+          { icon: Trophy, val: selectedChallenge.xp, label: 'Exp', color: 'text-emerald-400', bg: 'bg-emerald-400/5' }
+        ].map((item, i) => (
+          <div key={i} className={`${item.bg} border border-white/5 p-3 flex flex-col items-center group hover:border-white/20 transition-colors`}>
+            <item.icon className={`w-5 h-5 ${item.color} mb-1 drop-shadow-[0_0_5px_currentColor]`} />
+            <span className="text-sm font-black font-mono">{item.val}</span>
+            <span className="text-[8px] uppercase font-bold text-slate-500 tracking-tighter">{item.label}</span>
           </div>
-        </ScrollArea>
+        ))}
+      </div>
+    </div>
 
-        {/* Botao Aceitar Desafio - Fixo na Parte Inferior */}
-        <div className="p-4 border-t border-border bg-card">
-          <Button
-            onClick={() => handleAcceptChallenge(selectedChallenge)}
-            className="w-full h-14 text-lg font-bold bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-orange-600 text-white shadow-lg"
+    {/* Time do Oponente - Estilo Squad Scan */}
+    <div className="space-y-3">
+      <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+        <Activity className="w-3 h-3 text-red-500" /> Hostile Squad Detected
+      </h3>
+      
+      <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
+        {selectedChallenge.time.map((pokemon, index) => (
+          <div
+            key={index}
+            className="relative flex flex-col items-center p-3 bg-slate-900 border border-white/5 overflow-hidden group hover:bg-slate-800/80 transition-all"
           >
-            <Swords className="w-6 h-6 mr-2" />
-            ACEITAR DESAFIO!
-          </Button>
-        </div>
+            {/* Background Decorativo de Nível */}
+            <div className="absolute top-0 right-0 px-1.5 py-0.5 bg-white/5 text-[8px] font-mono text-slate-500">
+              LV.{pokemon.level}
+            </div>
+            
+            <div className="relative w-16 h-16 mb-2">
+              <img
+                src={getSpriteUrl(pokemon.speciesId)}
+                alt={pokemon.nome}
+                className="w-full h-full object-contain pixelated relative z-10 group-hover:scale-110 transition-transform"
+                crossOrigin="anonymous"
+              />
+              <div className="absolute inset-0 bg-cyan-500/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+
+            <span className="text-[10px] font-black uppercase tracking-tighter text-slate-300 w-full text-center truncate">
+              {pokemon.nome}
+            </span>
+            
+            {/* Barra de Vida Decorativa (Estilo HUD) */}
+            <div className="w-full h-[2px] bg-slate-800 mt-2">
+              <div className="w-full h-full bg-red-600/40" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</ScrollArea>
+
+{/* Botao Aceitar Desafio - Estilo "SYSTEM OVERRIDE" */}
+<div className="p-4 bg-slate-950 border-t border-white/10 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+  <button
+    onClick={() => handleAcceptChallenge(selectedChallenge)}
+    className="group relative w-full h-16 bg-red-600 overflow-hidden transition-all active:scale-[0.98]"
+  >
+    {/* Efeito de Brilho que passa pelo botão */}
+    <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%)] bg-[length:250%_250%] animate-[shimmer_2s_infinite] pointer-events-none" />
+    
+    <div className="relative z-10 flex items-center justify-center gap-3">
+      <Swords className="w-6 h-6 text-white group-hover:rotate-12 transition-transform" />
+      <span className="text-xl font-black italic tracking-tighter text-white">
+        INICIAR CONFRONTO
+      </span>
+    </div>
+
+    {/* Detalhes nos cantos do botão */}
+    <div className="absolute top-0 left-0 p-1">
+      <div className="w-2 h-2 border-t-2 border-l-2 border-white/50" />
+    </div>
+    <div className="absolute bottom-0 right-0 p-1">
+      <div className="w-2 h-2 border-b-2 border-r-2 border-white/50" />
+    </div>
+  </button>
+</div>
       </div>
     );
   }
@@ -420,338 +550,153 @@ export function DuelTab({ onStartDuel, onStartCapture, duelMode, onDuelModeChang
 
   // Lista de Desafios (estilo Email)
   return (
-    <div className="flex flex-col h-full">
-      {/* Mode Selector Tabs */}
-      <div className="flex border-b border-border bg-card">
-        <button
-          onClick={() => {
-            playButtonClick();
-            onDuelModeChange("challenges");
-          }}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 transition-all relative ${
-            duelMode === "challenges"
-              ? "text-primary"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Inbox className="w-4 h-4" />
-          <span className="text-sm font-medium">Desafios</span>
-          {duelMode === "challenges" && (
-            <motion.div
-              layoutId="duel-tab-indicator"
-              className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-            />
-          )}
-        </button>
-        <button
-          onClick={() => {
-            playButtonClick();
-            onDuelModeChange("trails");
-          }}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 transition-all relative ${
-            duelMode === "trails"
-              ? "text-primary"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Map className="w-4 h-4" />
-          <span className="text-sm font-medium">Trilhas</span>
-          {duelMode === "trails" && (
-            <motion.div
-              layoutId="duel-tab-indicator"
-              className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
-            />
-          )}
-        </button>
-      </div>
+<div className="flex flex-col h-full bg-slate-950 text-slate-100 font-sans italic-stats">
+  {/* Mode Selector Tabs - Estilo HUD de Seleção */}
+  <div className="flex p-1 bg-black/40 backdrop-blur-md border-b border-blue-500/30">
+    {[
+      { id: 'challenges', label: 'Desafios', icon: Swords },
+      { id: 'trails', label: 'Trilhas', icon: Map }
+    ].map((tab) => (
+      <button
+        key={tab.id}
+        onClick={() => {
+          playButtonClick();
+          onDuelModeChange(tab.id as any);
+        }}
+        className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 transition-all duration-300 relative overflow-hidden
+          ${duelMode === tab.id ? "text-cyan-400" : "text-slate-500 hover:text-slate-300"}`}
+      >
+        <tab.icon className={`w-4 h-4 ${duelMode === tab.id ? "drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" : ""}`} />
+        <span className="text-xs font-black uppercase tracking-[0.2em]">{tab.label}</span>
+        
+        {duelMode === tab.id && (
+          <>
+            <motion.div layoutId="tab-glow" className="absolute inset-0 bg-cyan-500/10" />
+            <motion.div layoutId="duel-tab-indicator" className="absolute bottom-0 left-0 right-0 h-[3px] bg-cyan-400 shadow-[0_0_15px_#22d3ee]" />
+          </>
+        )}
+      </button>
+    ))}
+  </div>
 
-      {/* Header */}
-      <div className="p-4 border-b border-border bg-card">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h2 className="font-bold text-foreground flex items-center gap-2">
-              <Mail className="w-5 h-5 text-primary" />
-              Caixa de Desafios
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              {dailyChallengesCompleted 
-                ? "Volte amanha para mais desafios!" 
-                : `${DAILY_CHALLENGE_LIMIT - dailyChallengeWins} desafios restantes hoje`}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="text-right">
-              <p className="text-[10px] text-muted-foreground">Desafios de Hoje</p>
-              <p className="text-sm font-bold text-foreground">{dailyChallengeWins}/{DAILY_CHALLENGE_LIMIT}</p>
-            </div>
-            {dailyChallengesCompleted && (
-              <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                <Trophy className="w-4 h-4 text-emerald-500" />
-              </div>
-            )}
-          </div>
+  {/* Header com Barras de Progresso Neon */}
+  <div className="p-4 bg-gradient-to-b from-slate-900 to-slate-950 border-b border-white/5">
+    <div className="grid grid-cols-2 gap-4">
+      {/* Daily Progress */}
+      <div className="relative group">
+        <div className="flex justify-between items-end mb-1 px-1">
+          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Daily Mission</span>
+          <span className="text-[10px] font-mono text-cyan-400">{dailyChallengeWins}/{DAILY_CHALLENGE_LIMIT}</span>
         </div>
-
-        {/* Barras de Progresso lado a lado */}
-        <div className="grid grid-cols-2 gap-2">
-          {/* Desafios Diarios */}
-          <div className="bg-secondary/50 rounded-lg p-2 border border-border">
-            <div className="flex items-center gap-1.5 mb-1">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
-                dailyChallengesCompleted 
-                  ? "bg-gradient-to-br from-emerald-500 to-green-600" 
-                  : "bg-gradient-to-br from-amber-500 to-orange-600"
-              }`}>
-                <Swords className="w-3 h-3 text-white" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold text-foreground truncate">
-                  {dailyChallengesCompleted ? "Completo!" : "Diarios"}
-                </p>
-                <p className="text-[8px] text-muted-foreground">{dailyChallengeWins}/{DAILY_CHALLENGE_LIMIT}</p>
-              </div>
-            </div>
-            <div className="w-full h-2 bg-gray-700/50 rounded-full overflow-hidden">
-              <motion.div
-                className={`h-full rounded-full ${
-                  dailyChallengesCompleted 
-                    ? "bg-gradient-to-r from-emerald-500 to-green-500" 
-                    : "bg-gradient-to-r from-amber-500 to-orange-500"
-                }`}
-                initial={{ width: 0 }}
-                animate={{ width: `${(dailyChallengeWins / DAILY_CHALLENGE_LIMIT) * 100}%` }}
-                transition={{ duration: 0.5 }}
-              />
-            </div>
-          </div>
-
-          {/* Nivel de Batalha */}
-          <div className="bg-secondary/50 rounded-lg p-2 border border-border">
-            <div className="flex items-center gap-1.5 mb-1">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shrink-0">
-                <Trophy className="w-3 h-3 text-white" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold text-foreground truncate">Batalha</p>
-                <p className="text-[8px] text-muted-foreground">Lv.{battleLevel}</p>
-              </div>
-            </div>
-            <div className="w-full h-2 bg-gray-700/50 rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${xpProgress}%` }}
-                transition={{ duration: 0.5 }}
-              />
-            </div>
-          </div>
+        <div className="h-1.5 w-full bg-slate-800 rounded-none overflow-hidden border border-white/5">
+          <motion.div
+            className="h-full bg-gradient-to-r from-cyan-600 to-blue-400 shadow-[0_0_10px_#22d3ee]"
+            initial={{ width: 0 }}
+            animate={{ width: `${(dailyChallengeWins / DAILY_CHALLENGE_LIMIT) * 100}%` }}
+          />
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="flex flex-col">
-          {/* Boss Semanal (se disponivel) */}
-          {weeklyBoss && (
-            <button
-              onClick={() => {
-                playButtonClick();
-                setSelectedChallenge(weeklyBoss);
-              }}
-              className="flex items-center gap-3 p-4 border-b border-border bg-gradient-to-r from-orange-500/10 to-red-500/10 hover:from-orange-500/20 hover:to-red-500/20 transition-all text-left"
-            >
-              <div className="relative">
-                <div
-                  className="w-12 h-12 rounded-full border-2 flex items-center justify-center shrink-0 overflow-hidden"
-                  style={{ borderColor: getNivelColor(weeklyBoss.nivel) }}
-                >
-                  <img
-                    src={weeklyBoss.imagem}
-                    alt={weeklyBoss.nome}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
-                    }}
-                  />
-                </div>
-                <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center">
-                  <Crown className="w-3 h-3 text-white" />
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm text-orange-400 truncate">
-                    {weeklyBoss.nome}
-                  </span>
-                  <span
-                    className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white shrink-0"
-                    style={{ backgroundColor: getNivelColor(weeklyBoss.nivel) }}
-                  >
-                    BOSS
-                  </span>
-                </div>
-                <p className="text-[10px] text-muted-foreground truncate">
-                  {weeklyBoss.fraseDesafio}
-                </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-[9px] text-muted-foreground">
-                    {weeklyBoss.time.length} Pokemon
-                  </span>
-                  <span className="text-[9px] text-amber-400 font-bold">
-                    ${weeklyBoss.recompensa}
-                  </span>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-            </button>
-          )}
-
-          {/* Estado: Desafios Diarios Completos */}
-          {dailyChallengesCompleted && (
-            <div className="flex flex-col items-center justify-center py-16 px-6 gap-4">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", damping: 10 }}
-                className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg"
-              >
-                <Check className="w-12 h-12 text-white" />
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-center"
-              >
-                <h3 className="text-xl font-bold text-foreground mb-2">
-                  Desafios Completos!
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Voce venceu todos os {DAILY_CHALLENGE_LIMIT} desafios de hoje.
-                </p>
-                <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                  <Clock className="w-4 h-4" />
-                  <span className="text-xs">
-                    Novos desafios disponiveis amanha!
-                  </span>
-                </div>
-              </motion.div>
-              <div className="mt-4 p-4 bg-secondary/50 rounded-lg border border-border">
-                <p className="text-xs text-center text-muted-foreground">
-                  Enquanto isso, experimente o <strong>Modo Trilhas</strong> para mais batalhas e recompensas especiais!
-                </p>
-                <Button
-                  onClick={() => {
-                    playButtonClick();
-                    onDuelModeChange("trails");
-                  }}
-                  variant="outline"
-                  className="w-full mt-3"
-                >
-                  <Map className="w-4 h-4 mr-2" />
-                  Ir para Trilhas
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Lista de Desafios Normais */}
-          {!dailyChallengesCompleted && challenges.map((npc) => {
-            const isRead = readChallenges.has(npc.id);
-            return (
-              <button
-                key={npc.id}
-                onClick={() => {
-                  playButtonClick();
-                  setSelectedChallenge(npc);
-                }}
-                className={`flex items-center gap-3 p-4 border-b border-border transition-all text-left ${
-                  isRead
-                    ? "bg-card hover:bg-secondary/50"
-                    : "bg-primary/5 hover:bg-primary/10"
-                }`}
-              >
-                <div className="relative">
-                  <div
-                    className="w-12 h-12 rounded-full border-2 flex items-center justify-center shrink-0 overflow-hidden"
-                    style={{ borderColor: getNivelColor(npc.nivel) }}
-                  >
-                    <img
-                      src={npc.imagem}
-                      alt={npc.nome}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
-                      }}
-                    />
-                  </div>
-                  {!isRead && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-primary" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    {isRead ? (
-                      <MailOpen className="w-3.5 h-3.5 text-muted-foreground" />
-                    ) : (
-                      <Mail className="w-3.5 h-3.5 text-primary" />
-                    )}
-                    <span
-                      className={`font-medium text-sm truncate ${
-                        isRead ? "text-muted-foreground" : "text-foreground"
-                      }`}
-                    >
-                      {npc.nome}
-                    </span>
-                    <span
-                      className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white shrink-0"
-                      style={{ backgroundColor: getNivelColor(npc.nivel) }}
-                    >
-                      {getNivelLabel(npc.nivel)}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                    {npc.fraseDesafio}
-                  </p>
-                  <div className="flex items-center gap-3 mt-1">
-                    <div className="flex items-center gap-1">
-                      <Users className="w-3 h-3 text-muted-foreground" />
-                      <span className="text-[9px] text-muted-foreground">
-                        {npc.time.length}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Coins className="w-3 h-3 text-amber-400" />
-                      <span className="text-[9px] text-amber-400 font-bold">
-                        ${npc.recompensa}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-3 h-3 text-blue-400" />
-                      <span className="text-[9px] text-blue-400">
-                        {npc.stardust}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-              </button>
-            );
-          })}
-
-          {/* Empty State */}
-          {!dailyChallengesCompleted && challenges.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 px-6 gap-3">
-              <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center">
-                <Mail className="w-10 h-10 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground">Sem Desafios</h3>
-              <p className="text-sm text-muted-foreground text-center">
-                Nenhum treinador te desafiou ainda. Volte mais tarde!
-              </p>
-            </div>
-          )}
+      {/* Battle Level */}
+      <div className="relative group">
+        <div className="flex justify-between items-end mb-1 px-1">
+          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Battle Rank</span>
+          <span className="text-[10px] font-mono text-purple-400">LV.{battleLevel}</span>
         </div>
-      </ScrollArea>
+        <div className="h-1.5 w-full bg-slate-800 rounded-none overflow-hidden border border-white/5">
+          <motion.div
+            className="h-full bg-gradient-to-r from-purple-600 to-fuchsia-400 shadow-[0_0_10px_#a855f7]"
+            initial={{ width: 0 }}
+            animate={{ width: `${xpProgress}%` }}
+          />
+        </div>
+      </div>
     </div>
+  </div>
+
+  <ScrollArea className="flex-1 bg-slate-950">
+    <div className="flex flex-col p-2 gap-2">
+      
+      {/* BOSS SEMANAL - Visual de "Alerta de Intruso" */}
+      {weeklyBoss && (
+        <button
+          onClick={() => { playButtonClick(); setSelectedChallenge(weeklyBoss); }}
+          className="relative group flex items-center gap-4 p-4 bg-red-950/20 border border-red-500/30 hover:border-red-500 transition-all overflow-hidden"
+        >
+          {/* Scanline Effect */}
+          <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px] pointer-events-none opacity-10" />
+          
+          <div className="relative">
+            <div className="w-14 h-14 bg-slate-800 border-2 border-red-500 rotate-3 group-hover:rotate-0 transition-transform duration-500 overflow-hidden">
+              <img src={weeklyBoss.imagem} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
+            </div>
+            <div className="absolute -bottom-1 -right-1 bg-red-600 p-1 shadow-lg">
+              <Crown className="w-3 h-3 text-white" />
+            </div>
+          </div>
+
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black uppercase text-red-500 tracking-tighter">Emergency Event</span>
+              <div className="h-[1px] flex-1 bg-red-500/30" />
+            </div>
+            <h3 className="text-lg font-black italic uppercase leading-none my-1">{weeklyBoss.nome}</h3>
+            <div className="flex gap-3 mt-2">
+              <span className="text-[10px] font-mono text-red-400/80">REWARD: ${weeklyBoss.recompensa}</span>
+              <span className="text-[10px] font-mono text-red-400/80">SIZE: {weeklyBoss.time.length}PKM</span>
+            </div>
+          </div>
+          <Zap className="w-5 h-5 text-red-500 animate-pulse" />
+        </button>
+      )}
+
+      {/* LISTA DE DESAFIOS - Estilo "Data Logs" */}
+      {!dailyChallengesCompleted && challenges.map((npc) => {
+        const isRead = readChallenges.has(npc.id);
+        return (
+          <button
+            key={npc.id}
+            onClick={() => { playButtonClick(); setSelectedChallenge(npc); }}
+            className={`group relative flex items-center gap-4 p-3 border-l-4 transition-all
+              ${isRead 
+                ? "bg-slate-900/40 border-slate-700 hover:bg-slate-800/60" 
+                : "bg-blue-600/5 border-cyan-500 shadow-[inset_10px_0_20px_-10px_rgba(6,182,212,0.1)] hover:bg-blue-600/10"
+              }`}
+          >
+            <div className="w-12 h-12 shrink-0 bg-slate-800 border border-white/10 overflow-hidden relative">
+              <img src={npc.imagem} className={`w-full h-full object-cover ${!isRead ? "scale-110" : "opacity-60"}`} />
+              {!isRead && <div className="absolute top-0 right-0 w-2 h-2 bg-cyan-400 shadow-[0_0_8px_#22d3ee]" />}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-start">
+                <span className={`text-xs font-bold uppercase tracking-tight truncate ${isRead ? "text-slate-500" : "text-slate-100"}`}>
+                  {npc.nome}
+                </span>
+                <span className="text-[9px] font-mono px-1.5 py-0.5 border border-white/10 bg-black/40" 
+                      style={{ color: getNivelColor(npc.nivel) }}>
+                  LVL.{npc.nivel}
+                </span>
+              </div>
+              
+              <div className="flex gap-3 mt-2 opacity-70 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1">
+                  <Coins className="w-3 h-3 text-amber-500" />
+                  <span className="text-[10px] font-mono">${npc.recompensa}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Star className="w-3 h-3 text-cyan-400" />
+                  <span className="text-[10px] font-mono">{npc.stardust}</span>
+                </div>
+              </div>
+            </div>
+            
+            <ChevronRight className="w-4 h-4 text-slate-700 group-hover:text-cyan-400 transition-colors" />
+          </button>
+        );
+      })}
+    </div>
+  </ScrollArea>
+</div>
   );
 }

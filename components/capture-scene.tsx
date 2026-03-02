@@ -45,74 +45,119 @@ function getCaptureDC(baseHp: number, ballId: string): number {
   return Math.max(2, baseDC - (ballReduction[ballId] ?? 0));
 }
 
-// ─── Pokeball SVG component (Enhanced with glossy shine, beveled edge, and shadow) ────────────────────────────────
-function PokeballSVG({ color, size = 60 }: { color: string; size?: number; center?: boolean }) {
-  // Generate unique IDs for gradients to avoid conflicts when multiple pokeballs are rendered
+function PokeballSVG({ color, size = 60 }: { color: string; size?: number }) {
+  // react.useId() para garantir IDs únicos se houver múltiplas bolas na tela
   const id = React.useId().replace(/:/g, '');
   
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className="drop-shadow-[0_6px_12px_rgba(0,0,0,0.5)]">
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.5)] hover:scale-110 transition-transform duration-300">
       <defs>
-        {/* Clip paths for top and bottom halves */}
-        <clipPath id={`topHalf-${id}`}>
-          <rect x="0" y="0" width="100" height="50" />
-        </clipPath>
-        <clipPath id={`bottomHalf-${id}`}>
-          <rect x="0" y="50" width="100" height="50" />
-        </clipPath>
-        
-        {/* Shine gradient for glossy effect */}
-        <radialGradient id={`shine-${id}`} cx="30%" cy="30%">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
-          <stop offset="40%" stopColor="#FFFFFF" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+        {/* 1. Efeito Joia / Candy Coat (Metade Superior) */}
+        <radialGradient id={`topCandy-${id}`} cx="25%" cy="25%" r="80%" fx="25%" fy="25%">
+          <stop offset="0%" stopColor="white" stopOpacity="0.6" /> {/* Brilho Central */}
+          <stop offset="30%" stopColor={color} />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.7" /> {/* Sombra de profundidade */}
         </radialGradient>
-        
-        {/* Button shine gradient */}
-        <radialGradient id={`buttonShine-${id}`} cx="30%" cy="30%">
+
+        {/* 2. Metal Anodizado Escovado (Metade Inferior) */}
+        <radialGradient id={`bottomMetal-${id}`} cx="50%" cy="40%" r="60%">
           <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="60%" stopColor="#F0F0F0" />
-          <stop offset="100%" stopColor="#D0D0D0" />
+          <stop offset="60%" stopColor="#E5E7EB" /> {/* slate-200 */}
+          <stop offset="100%" stopColor="#9CA3AF" /> {/* slate-400 */}
         </radialGradient>
+        
+        {/* Textura de escovação metálica (Quase invisível, mas dá realismo) */}
+        <pattern id="brushedTexture" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="10" stroke="#000" strokeWidth="0.1" strokeOpacity="0.1" />
+        </pattern>
+
+        {/* 3. Brilho de Vidro Superior (Caustics) */}
+        <linearGradient id={`glassShine-${id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="white" stopOpacity="0.7" />
+          <stop offset="100%" stopColor="white" stopOpacity="0" />
+        </linearGradient>
+
+        {/* 4. Glow de Energia do Botão (Neon Effect) */}
+        <radialGradient id={`buttonGlow-${id}`}>
+          <stop offset="0%" stopColor="white" />
+          <stop offset="50%" stopColor={color} />
+          <stop offset="100%" stopColor="#111" />
+        </radialGradient>
+        
+        {/* Filtro de Desfoque para o Glow */}
+        <filter id={`neonBlur-${id}`} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
       </defs>
 
-      {/* TOP HALF - Colored (red, blue, etc.) */}
+      {/* Corpo Esférico Principal */}
+      <circle cx="50" cy="50" r="48" fill="#111" /> Contorno fino preto
+
+      {/* METADE INFERIOR - Metal Escovado */}
+      <path d="M2,50 A48,48 0 0,0 98,50 L98,52 L2,52 Z" fill={`url(#bottomMetal-${id})`} />
+      <path d="M2,50 A48,48 0 0,0 98,50 L98,52 L2,52 Z" fill="url(#brushedTexture)" opacity="0.4" />
+      
+      {/* METADE SUPERIOR - Efeito Joia */}
+      <path d="M2,50 A48,48 0 0,1 98,50 L98,48 L2,48 Z" fill={`url(#topCandy-${id})`} />
+
+      {/* Sombreamento de Volume (Dá o formato 3D final) */}
+      <circle cx="50" cy="50" r="48" fill="url(#baseOcclusion)" />
+      <radialGradient id="baseOcclusion">
+        <stop offset="85%" stopColor="#000" stopOpacity="0" />
+        <stop offset="100%" stopColor="#000" stopOpacity="0.4" />
+      </radialGradient>
+
+      {/* Linha de Fechamento Mecânica (Precisão) */}
+      <rect x="2" y="46.5" width="96" height="7" fill="#1A1A1A" rx="1" />
+      <rect x="2" y="49" width="96" height="1" fill="#000" fillOpacity="0.4" />
+      <rect x="2" y="51" width="96" height="0.5" fill="#FFF" fillOpacity="0.1" />
+
+      {/* Brilho de Vidro (Reflexo de Estúdio Curvo) */}
+      <path 
+        d="M25,20 C40,10 60,10 75,20" 
+        stroke={`url(#glassShine-${id})`} 
+        strokeWidth="4" 
+        strokeLinecap="round" 
+        fill="none" 
+        className="opacity-70"
+      />
+      <path 
+        d="M15,40 C10,35 10,25 15,20" 
+        stroke="white" 
+        strokeWidth="1" 
+        strokeLinecap="round" 
+        strokeOpacity="0.2"
+        fill="none" 
+      />
+
+      {/* MECANISMO DO BOTÃO CENTRAL (Premium) */}
+      {/* Anel de Glow (Neon) que ilumina a carcaça ao redor */}
       <circle 
-        cx="50" cy="50" r="46" 
-        fill={color}
-        clipPath={`url(#topHalf-${id})`}
+        cx="50" cy="50" r="14" 
+        fill="none" 
+        stroke={color} 
+        strokeWidth="3" 
+        filter={`url(#neonBlur-${id})`}
+        className="animate-pulse"
       />
       
-      {/* BOTTOM HALF - White */}
-      <circle 
-        cx="50" cy="50" r="46" 
-        fill="#FFFFFF"
-        clipPath={`url(#bottomHalf-${id})`}
-      />
+      {/* Carcaça do Botão (Polímero Escuro) */}
+      <circle cx="50" cy="50" r="14" fill="#1A1A1A" />
       
-      {/* Outer dark border */}
-      <circle cx="50" cy="50" r="46" fill="none" stroke="#222222" strokeWidth="4" />
+      {/* O Botão Físico com efeito Joia central */}
+      <circle cx="50" cy="50" r="8" fill="#F9FAFB" /> {/* slate-50 */}
+      <circle cx="50" cy="50" r="8" fill={`url(#topCandy-${id})`} opacity="0.3" /> {/* Tinge o botão levemente */}
+      <circle cx="50" cy="50" r="8" fill="none" stroke="#D1D5DB" strokeWidth="0.5" />
       
-      {/* Middle black band/divider */}
-      <rect x="4" y="46" width="92" height="8" fill="#222222" />
+      {/* O "Coração" do Botão (A Joia de Energia) */}
+      <circle cx="50" cy="50" r="5" fill={`url(#buttonGlow-${id})`} />
       
-      {/* Metallic highlight on band */}
-      <line x1="4" y1="47" x2="96" y2="47" stroke="#555555" strokeWidth="1" />
-      
-      {/* Glossy shine on top half */}
-      <ellipse cx="30" cy="24" rx="20" ry="14" fill={`url(#shine-${id})`} />
-      
-      {/* Center button - outer dark ring */}
-      <circle cx="50" cy="50" r="14" fill="#222222" />
-      
-      {/* Center button - white area with shine */}
-      <circle cx="50" cy="50" r="11" fill={`url(#buttonShine-${id})`} />
-      
-      {/* Center button - inner dark circle */}
-      <circle cx="50" cy="50" r="6" fill="#333333" />
-      
-      {/* Button highlight */}
-      <circle cx="47" cy="47" r="2.5" fill="#FFFFFF" opacity="0.9" />
+      {/* Micro-reflexo no centro */}
+      <circle cx="48.5" cy="48.5" r="1.5" fill="white" fillOpacity="0.9" />
     </svg>
   );
 }
@@ -463,508 +508,529 @@ export function CaptureScene({ pokemon, onClose, onCaptured }: CaptureSceneProps
         </div>
       </nav>
 
-      {/* Main capture area */}
-      <div
-        ref={containerRef}
-        className="flex-1 relative flex flex-col items-center select-none touch-none overflow-hidden"
-        style={{
-          background: `radial-gradient(ellipse at 50% 30%, ${mainColor}18 0%, transparent 60%), linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--card)) 100%)`,
+{/* Main capture area */}
+<div
+  ref={containerRef}
+  className="flex-1 relative flex flex-col items-center select-none touch-none overflow-hidden"
+  style={{
+    background: `radial-gradient(ellipse at 50% 30%, ${mainColor}18 0%, transparent 60%), linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--card)) 100%)`,
+  }}
+  onPointerDown={handlePointerDown}
+  onPointerMove={handlePointerMove}
+  onPointerUp={handlePointerUp}
+>
+{/* Fundo Decorativo Estilo ARENA DIGITAL / CYBER-GAMER */}
+<div className="absolute inset-0 pointer-events-none z-0 overflow-hidden bg-slate-950">
+  
+  {/* 1. Brilho de Fundo (Spotlight Central) */}
+  <div 
+    className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[150%] h-[150%] rounded-full opacity-20 blur-[120px]"
+    style={{ 
+      background: `radial-gradient(circle, ${mainColor} 0%, transparent 70%)` 
+    }}
+  />
+
+  {/* 2. Piso de Hexágonos Dinâmicos (HUD Gamer) */}
+  <div 
+    className="absolute bottom-[-10%] left-1/2 -translate-x-1/2 w-[200%] h-[500px] opacity-10"
+    style={{
+      backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='104' viewBox='0 0 60 104' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 104V88m0-72V0M0 78l15-8.5m30 0l15 8.5m-60-52L15 34.5m30 0L60 26' stroke='${encodeURIComponent(mainColor)}' fill='none' stroke-width='1'/%3E%3C/svg%3E")`,
+      transform: 'perspective(600px) rotateX(70deg)',
+      maskImage: 'linear-gradient(to top, black 20%, transparent 80%)',
+    }}
+  />
+
+  {/* 3. Scan Lines / Feixes de Dados (Animados) */}
+  <div className="absolute inset-0 opacity-20">
+    {[...Array(3)].map((_, i) => (
+      <motion.div
+        key={`scan-${i}`}
+        className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/40 to-transparent"
+        initial={{ top: '-10%' }}
+        animate={{ top: '110%' }}
+        transition={{ 
+          duration: 3, 
+          repeat: Infinity, 
+          delay: i * 1, 
+          ease: "linear" 
         }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
+      />
+    ))}
+  </div>
+
+  {/* 4. Moldura de Lentes (Vignette Gamer Estilizada) */}
+  <div className="absolute inset-0 pointer-events-none">
+    {/* Cantos estilo Interface de Usuário (HUD) */}
+    <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-white/10 rounded-tl-xl" />
+    <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-white/10 rounded-tr-xl" />
+    <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-white/10 rounded-bl-xl" />
+    <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-white/10 rounded-br-xl" />
+  </div>
+
+  {/* 5. Partículas de Energia no Chão */}
+  {[...Array(12)].map((_, i) => (
+    <motion.div
+      key={`energy-${i}`}
+      className="absolute bottom-10 left-1/2 w-1 h-3 rounded-full"
+      style={{ backgroundColor: mainColor }}
+      initial={{ x: (Math.random() - 0.5) * 300, y: 0, opacity: 0, scale: 0 }}
+      animate={{ 
+        y: -100 - Math.random() * 100, 
+        opacity: [0, 0.8, 0], 
+        scale: [0, 1, 0] 
+      }}
+      transition={{ 
+        duration: 2 + Math.random() * 2, 
+        repeat: Infinity, 
+        delay: Math.random() * 5 
+      }}
+    />
+  ))}
+
+  {/* 6. Glow de Base (Onde o Pokémon "pisa") */}
+  <div 
+    className="absolute top-[30%] left-1/2 -translate-x-1/2 w-48 h-12 rounded-full blur-2xl opacity-30"
+    style={{ backgroundColor: mainColor }}
+  />
+</div>
+
+  {/* 1. Camada de Mira (Target Ring) */}
+  <AnimatePresence>
+    {phase === "ready" && (
+      <motion.div
+        className="absolute z-10 flex items-center justify-center pointer-events-none"
+        style={{ top: "22%", left: "50%", x: "-50%", y: "-50%" }}
+        initial={{ opacity: 0, scale: 1.5 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.5 }}
       >
-        {/* Grass/ground */}
         <div
-          className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none"
+          className="absolute rounded-full border-2 opacity-40"
+          style={{ width: 140, height: 140, borderColor: mainColor }}
+        />
+        <div
+          className="rounded-full border-[3px] shadow-[0_0_15px_rgba(0,0,0,0.2)]"
           style={{
-            background:
-              "linear-gradient(180deg, transparent 0%, rgba(34,197,94,0.06) 30%, rgba(34,197,94,0.15) 100%)",
+            width: 140 * ringScale,
+            height: 140 * ringScale,
+            borderColor: ringColor,
+            backgroundColor: `${ringColor}10`,
           }}
         />
+      </motion.div>
+    )}
+  </AnimatePresence>
 
-        {/* Target ring around pokemon (Pokemon Go style) */}
-        <AnimatePresence>
-          {phase === "ready" && (
+  {/* 2. Camada do Pokémon */}
+  <div className="absolute w-full flex justify-center z-20" style={{ top: "12%" }}>
+    <AnimatePresence mode="wait">
+      {phase === "fled" ? (
+        <motion.div
+          key="fled"
+          initial={{ x: 0, opacity: 1 }}
+          animate={{ x: 400, opacity: 0, rotate: 15 }}
+          transition={{ duration: 0.7, ease: "easeIn" }}
+          className="relative"
+        >
+          <motion.div className="absolute bottom-0 left-0 text-2xl" animate={{ opacity: [1, 0], scale: [1, 2] }}>💨</motion.div>
+          <img src={getBattleSpriteUrl(pokemon.id)} alt={pokemon.name} className="w-32 h-32 object-contain" />
+        </motion.div>
+      ) : phase === "captured" ? (
+        <motion.div
+          key="captured"
+          className="flex flex-col items-center"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.4 }}
+        >
+          <div className="absolute w-64 h-64 rounded-full blur-[60px] opacity-40 -z-10 animate-pulse" style={{ backgroundColor: mainColor }} />
+          {[...Array(8)].map((_, i) => (
             <motion.div
-              className="absolute z-10 flex items-center justify-center"
-              style={{ top: "16%", left: "50%", transform: "translateX(-50%)" }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.8 }}
-              exit={{ opacity: 0 }}
+              key={`sparkle-${i}`}
+              className="absolute"
+              animate={{ scale: [0, 1, 0], x: Math.cos(i) * 120, y: Math.sin(i) * 120, rotate: 360 }}
+              transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 + i * 0.1 }}
             >
-              {/* Outer fixed circle */}
-              <div
-                className="absolute rounded-full border-2 opacity-30"
-                style={{ width: 160, height: 160, borderColor: mainColor }}
-              />
-              {/* Pulsing inner colored circle */}
-              <div
-                className="rounded-full border-[3px]"
-                style={{
-                  width: 160 * ringScale,
-                  height: 160 * ringScale,
-                  borderColor: ringColor,
-                  backgroundColor: `${ringColor}08`,
-                }}
-              />
+              <svg width="18" height="18" viewBox="0 0 24 24" fill={i % 2 === 0 ? "#FFD700" : mainColor}>
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
             </motion.div>
-          )}
-        </AnimatePresence>
+          ))}
+          <img src={getSpriteUrl(pokemon.id)} alt={pokemon.name} className="w-36 h-36 object-contain pixelated drop-shadow-2xl z-10" />
+          <motion.p className="mt-4 text-white font-black italic uppercase tracking-widest bg-black/40 px-6 py-2 rounded-full backdrop-blur-md border border-white/20">
+            {pokemon.name} CAPTURADO!
+          </motion.p>
+        </motion.div>
+      ) : (phase !== "hit" && phase !== "shaking") ? (
+        <motion.div
+          key="pokemon-idle"
+          className="relative flex flex-col items-center"
+          animate={{ y: Math.sin(pokemonBob) * 8 }}
+        >
+          <img src={getBattleSpriteUrl(pokemon.id)} alt={pokemon.name} className="w-32 h-32 object-contain drop-shadow-xl" />
+          <div className="w-20 h-3 bg-black/20 rounded-[100%] blur-sm mt-2" />
+        </motion.div>
+      ) : (
+        /* Efeito de sucção/impacto quando a bola atinge o pokémon */
+        <motion.div
+          key="impact"
+          initial={{ scale: 1.2, opacity: 1 }}
+          animate={{ scale: 0, opacity: 0, y: 60 }}
+          className="w-32 h-32 bg-white rounded-full blur-2xl"
+        />
+      )}
+    </AnimatePresence>
+  </div>
+{/* 3. Camada da Pokébola no chão (Raios Elétricos saindo do Centro) */}
+<AnimatePresence>
+  {(phase === "hit" || phase === "shaking") && ballData && (
+    <motion.div
+      className="absolute z-30 flex flex-col items-center"
+      style={{ top: "25%", left: "50%", x: "-50%" }}
+      initial={{ y: -150, scale: 0.5 }}
+      animate={{ 
+        y: 0, scale: 1,
+        rotate: phase === "shaking" ? [0, -7, 7, -7, 7, 0] : 0
+      }}
+      transition={{
+        y: { type: "spring", stiffness: 400, damping: 20 },
+        rotate: phase === "shaking" ? { duration: 0.25, repeat: Infinity } : {}
+      }}
+    >
+      
+      {/* ─── RAIOS SAINDO DO CENTRO (CORE) ─── */}
+      <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
+        
+        {/* Geramos 12 raios para uma cobertura 360º mais densa */}
+        {[...Array(12)].map((_, i) => {
+          const angle = (i / 12) * 360 + (Math.random() * 15); // Ângulos distribuídos + variação
+          const isCyan = i % 2 === 0;
+          
+          return (
+            <motion.div
+              key={`lightning-bolt-${i}`}
+              className="absolute h-[1px] origin-left"
+              style={{
+                // O raio nasce exatamente no centro (50% 50%)
+                top: "50%",
+                left: "50%",
+                width: "100px", // Comprimento que ultrapassa a bola
+                background: "linear-gradient(90deg, white 0%, rgba(255,255,255,0.8) 50%, transparent 100%)",
+                boxShadow: `0 0 8px ${isCyan ? "#00f2ff" : "#ff00e5"}, 0 0 2px white`,
+                transform: `rotate(${angle}deg)`,
+                filter: "blur(0.5px)",
+              }}
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={phase === "shaking" ? {
+                // Efeito de "disparo" elétrico do centro para fora
+                scaleX: [0, 1.2, 0],
+                opacity: [0, 1, 0],
+                // Pequeno tremor na posição do raio para parecer instável
+                skewY: [0, 2, -50, 0], 
+              } : {}}
+              transition={{
+                duration: 0.2,
+                repeat: Infinity,
+                repeatDelay: Math.random() * 0.6,
+                delay: i * 0.03,
+                ease: "easeOut"
+              }}
+            />
+          );
+        })}
 
-        {/* Pokemon sprite area */}
-        <div className="absolute" style={{ top: "10%", left: "50%", transform: "translateX(-50%)" }}>
-          <AnimatePresence mode="wait">
-            {phase === "fled" ? (
-              // Fled animation: pokemon runs away
-              <motion.div
-                key="fled"
-                initial={{ x: 0, opacity: 1 }}
-                animate={{ x: 300, opacity: 0, rotate: -15 }}
-                transition={{ duration: 0.6, ease: "easeIn" }}
-                className="relative"
-              >
-                <img
-                  src={getBattleSpriteUrl(pokemon.id)}
-                  alt={pokemon.name}
-                  width={130}
-                  height={130}
-                  style={{ imageRendering: "auto", minWidth: 100, minHeight: 100 }}
-                  crossOrigin="anonymous"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = getSpriteUrl(pokemon.id);
-                  }}
-                />
-              </motion.div>
-            ) : phase === "captured" ? (
-              // Captured celebration
+        {/* Aura de Choque Central (O "flash" no botão) */}
+        <motion.div
+          className="absolute w-8 h-8 rounded-full bg-white blur-md"
+          animate={phase === "shaking" ? {
+            scale: [1, 1.8, 1],
+            opacity: [0.2, 0.6, 0.2],
+          } : { opacity: 0 }}
+          transition={{ duration: 0.2, repeat: Infinity }}
+        />
+      </div>
+
+      {/* Pokébola Principal */}
+      <div className="relative z-10">
+        <PokeballSVG color={ballData.color} size={65} />
+      </div>
+      
+      {/* HUD de Progresso Gamer */}
+      <div className="flex items-center gap-3 mt-6 px-4 py-1.5 bg-black/40 border border-white/10 backdrop-blur-md rounded-lg z-10">
+        <div className="flex gap-1">
+          {[0, 1, 2].map((i) => (
             <motion.div
-              key="captured"
-              className="flex flex-col items-center gap-4"
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
-            >
-              {/* Bright radial glow background */}
-              <motion.div
-                className="absolute inset-0 rounded-full blur-3xl"
-                style={{
-                  width: 200,
-                  height: 200,
-                  backgroundColor: mainColor,
-                  left: "50%",
-                  top: "50%",
-                  transform: "translate(-50%, -50%)",
-                  zIndex: -1,
-                }}
-                animate={{ opacity: [0.4, 0.2, 0.4] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
-              
-              {/* Sparkle particles */}
-              {[...Array(12)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute w-2 h-2 rounded-full"
-                  style={{ backgroundColor: i % 2 === 0 ? mainColor : "#FFD700" }}
-                  initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
-                  animate={{
-                    x: Math.cos((i / 12) * Math.PI * 2) * 90,
-                    y: Math.sin((i / 12) * Math.PI * 2) * 90,
-                    opacity: 0,
-                    scale: 0,
-                  }}
-                  transition={{ duration: 1.2, delay: 0.4, ease: "easeOut" }}
-                />
-              ))}
-              {/* Star sparkles */}
-              {[...Array(6)].map((_, i) => (
-                <motion.div
-                  key={`star-${i}`}
-                  className="absolute text-yellow-400"
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{
-                    opacity: [0, 1, 0],
-                    scale: [0, 1.2, 0],
-                    x: Math.cos((i / 6) * Math.PI * 2) * 60,
-                    y: Math.sin((i / 6) * Math.PI * 2) * 60,
-                  }}
-                  transition={{ duration: 0.8, delay: 0.6 + i * 0.1 }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                </motion.div>
-              ))}
-              <img
-                src={getSpriteUrl(pokemon.id)}
-                alt={pokemon.name}
-                width={120}
-                height={120}
-                className="pixelated drop-shadow-[0_8px_20px_rgba(0,0,0,0.6)] relative z-10"
-                crossOrigin="anonymous"
-              />
-              <motion.p
-                className="text-lg font-bold text-foreground text-center relative z-10"
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.6 }}
-              >
-                {pokemon.name} foi capturado!
-              </motion.p>
-            </motion.div>
-            ) : phase !== "hit" && phase !== "shaking" ? (
-              // Normal pokemon display with idle bob
-              <motion.div
-                key="pokemon-idle"
-                className="relative"
-                initial={{ scale: 0.8, opacity: 0, y: 20 }}
-                animate={{
-                  scale: 1,
-                  opacity: 1,
-                  y: Math.sin(pokemonBob) * 6,
-                }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={{ scale: { duration: 0.5 }, opacity: { duration: 0.5 } }}
-              >
-                {/* Glow */}
-                <div
-                  className="absolute -inset-8 rounded-full blur-3xl opacity-25 -z-10"
-                  style={{ backgroundColor: mainColor }}
-                />
-                <img
-                  src={getBattleSpriteUrl(pokemon.id)}
-                  alt={pokemon.name}
-                  width={130}
-                  height={130}
-                  className="drop-shadow-[0_8px_20px_rgba(0,0,0,0.5)]"
-                  style={{ imageRendering: "auto", minWidth: 100, minHeight: 100 }}
-                  crossOrigin="anonymous"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = getSpriteUrl(pokemon.id);
-                  }}
-                />
-                {/* Shadow under pokemon */}
-                <div
-                  className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-20 h-3 rounded-full opacity-30 blur-sm"
-                  style={{ backgroundColor: "#000" }}
-                />
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
+              key={i}
+              className="w-1.5 h-3 rounded-sm"
+              style={{
+                backgroundColor: i < shakeCount ? ballData.color : "#334155",
+                boxShadow: i < shakeCount ? `0 0 10px ${ballData.color}` : "none",
+              }}
+              animate={i < shakeCount ? { opacity: [1, 0.4, 1] } : {}}
+            />
+          ))}
+        </div>
+        <span className="text-[9px] font-mono text-white/70 uppercase tracking-tighter">
+          {shakeCount < 3 ? `Analyzing... ${shakeCount * 33}%` : "Success_Locked"}
+        </span>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
+{/* 4. Pokébola em voo com Rastro de Movimento */}
+{ballFlight && ballData && (() => {
+  const currentPos = getBallFlightPos();
+  
+  // Criamos um array para as "sombras" do rastro
+  // Quanto mais itens no array, mais longo o rastro
+  const trailSteps = [0.02, 0.04, 0.06, 0.08]; 
+
+  return (
+    <>
+      {/* Camada do Rastro (Renderizada antes da bola principal para ficar atrás) */}
+      {trailSteps.map((offset, i) => {
+        // Calculamos a posição da bola alguns milissegundos atrás
+        const trailProgress = Math.max(0, ballFlight.progress - offset);
+        const trailPos = getBallFlightPos(trailProgress);
+        
+        // Se o progresso for 0, não desenhamos a partícula
+        if (trailProgress <= 0) return null;
+
+        return (
+          <div
+            key={`trail-${i}`}
+            className="absolute z-30 pointer-events-none"
+            style={{
+              left: trailPos.x,
+              top: trailPos.y,
+              transform: `translate(-50%, -50%) scale(${trailPos.scale * (1 - offset * 5)})`,
+              opacity: (trailPos.opacity * 0.4) / (i + 1), // Vai sumindo
+              filter: `blur(${i * 2}px)`, // Fica mais borrado conforme se afasta
+            }}
+          >
+            {/* Um círculo brilhante da cor da bola como rastro */}
+            <div 
+              className="w-10 h-10 rounded-full" 
+              style={{ 
+                backgroundColor: ballData.color,
+                boxShadow: `0 0 20px ${ballData.color}` 
+              }} 
+            />
+          </div>
+        );
+      })}
+
+      {/* Pokébola Principal */}
+      <div
+        className="absolute z-40 pointer-events-none"
+        style={{
+          left: currentPos.x,
+          top: currentPos.y,
+          transform: `translate(-50%, -50%) scale(${currentPos.scale}) rotate(${ballFlight.progress * 720}deg)`,
+          opacity: currentPos.opacity,
+          filter: `drop-shadow(0 ${10 * (1 - ballFlight.progress)}px 15px rgba(0,0,0,0.4))`,
+        }}
+      >
+        {/* Aura de brilho intenso na bola principal */}
+        <motion.div 
+          className="absolute -inset-4 rounded-full blur-xl opacity-60" 
+          style={{ backgroundColor: ballData.color }}
+          animate={{ scale: [1, 1.2, 1] }}
+          transition={{ repeat: Infinity, duration: 0.2 }}
+        />
+        <PokeballSVG color={ballData.color} size={56} />
+      </div>
+    </>
+  );
+})()}
+
+  {/* 5. Pokébola para arrastar (Ready State) */}
+  <AnimatePresence>
+    {phase === "ready" && ballData && !ballFlight && (
+      <motion.div
+        className="absolute z-40 flex flex-col items-center"
+        style={{
+          bottom: "10%",
+          left: "50%",
+          x: `calc(-50% + ${dragOffset.x}px)`,
+          y: dragOffset.y,
+        }}
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1, scale: isDragging ? 1.1 : 1 }}
+        exit={{ opacity: 0, scale: 0.5 }}
+        transition={{ type: "spring", stiffness: 200, damping: 20 }}
+      >
+        <motion.div 
+          className="absolute -inset-6 rounded-full blur-2xl opacity-40 -z-10" 
+          style={{ backgroundColor: ballData.color }}
+          animate={{ opacity: isDragging ? 0.2 : [0.3, 0.6, 0.3] }}
+          transition={{ repeat: Infinity, duration: 2 }}
+        />
+        <PokeballSVG color={ballData.color} size={64} />
+        {!isDragging && (
+          <motion.p className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter mt-4" animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
+            Arraste para lançar
+          </motion.p>
+        )}
+      </motion.div>
+    )}
+  </AnimatePresence>
+
+  {/* Indicador de Risco de Fuga */}
+  {phase === "ready" && (
+    <motion.div
+      className="absolute top-4 right-4 z-30 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10"
+      initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+    >
+      <div className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+      <span className="text-[10px] text-amber-400 font-black uppercase italic">Instável</span>
+    </motion.div>
+  )}
+
+{/* 6. Tela de Seleção de Mochila (Overlay) - ESTILO GAMER TECH */}
+<AnimatePresence>
+  {phase === "select-ball" && (
+    <motion.div
+      className="absolute inset-0 z-50 flex flex-col items-center justify-end bg-slate-950/40 backdrop-blur-md"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+    >
+      {/* Background Dimmer com efeito de Scanline */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] pointer-events-none" />
+
+      <motion.div 
+        className="w-full bg-slate-900/90 border-t-2 border-primary/50 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] p-6 relative overflow-hidden"
+        style={{ 
+          clipPath: "polygon(0 15px, 15px 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%)",
+        }}
+        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 250 }}
+      >
+        {/* Detalhes de HUD nos cantos do painel */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+        
+        <div className="flex justify-between items-end mb-6">
+          <div>
+            <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter flex items-center gap-2">
+              <span className="w-2 h-6 bg-primary animate-pulse" />
+              Inventory_System
+            </h2>
+            <p className="text-[10px] text-primary font-mono uppercase tracking-[0.2em] opacity-70">
+              Target_Selection: {pokemon.name}
+            </p>
+          </div>
+          <div className="text-right font-mono text-[10px] text-muted-foreground">
+            v4.0.2 // STABLE
+          </div>
         </div>
 
-        {/* Pokeball on ground shaking (after hit) */}
-        <AnimatePresence>
-          {(phase === "hit" || phase === "shaking") && ballData && (
-            <motion.div
-              className="absolute z-30 flex flex-col items-center"
-              style={{ top: "22%", left: "50%", transform: "translateX(-50%)" }}
-              initial={{ scale: 0.3, opacity: 0 }}
-              animate={{
-                scale: 1,
-                opacity: 1,
-                rotate: phase === "shaking" ? [0, -25, 25, -25, 25, 0] : 0,
-              }}
-              transition={
-                phase === "shaking"
-                  ? { rotate: { duration: 0.7, repeat: Infinity, repeatDelay: 0.4 } }
-                  : { type: "spring", stiffness: 300, damping: 15 }
-              }
-            >
-              <PokeballSVG color={ballData.color} size={56} />
-              {/* Shake progress dots */}
-              <div className="flex gap-2 mt-3">
-                {[0, 1, 2].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{
-                      backgroundColor: i < shakeCount ? ballData.color : "rgba(255,255,255,0.15)",
-                      boxShadow: i < shakeCount ? `0 0 8px ${ballData.color}` : "none",
-                    }}
-                    animate={i < shakeCount ? { scale: [1, 1.5, 1] } : {}}
-                    transition={{ duration: 0.3 }}
-                  />
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div className="flex flex-col gap-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+          {availableBalls.filter(b => b.quantity > 0).map((item) => {
+            const bd = POKEBALL_TYPES[item.itemId];
+            return (
+              <motion.button
+                key={item.itemId}
+                onClick={() => handleSelectBall(item.itemId)}
+                whileHover={{ x: 8 }}
+                className="relative flex items-center gap-4 p-4 rounded-lg bg-slate-800/50 border border-white/5 hover:border-primary/50 hover:bg-primary/10 transition-all group overflow-hidden"
+              >
+                {/* Efeito de Glitch/Scan no Hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none" />
+                
+                <div className="relative z-10 p-2 bg-black/40 rounded-md border border-white/5 group-hover:scale-110 group-hover:rotate-12 transition-transform">
+                  <PokeballSVG color={bd.color} size={40} />
+                </div>
 
-        {/* Ball in flight (thrown towards pokemon in arc) */}
-        {ballFlight && ballData && (() => {
-          const pos = getBallFlightPos();
-          return (
-            <div
-              className="absolute z-40 pointer-events-none"
-              style={{
-                left: pos.x - 28 * pos.scale,
-                top: pos.y - 28 * pos.scale,
-                transform: `scale(${pos.scale}) rotate(${ballFlight.progress * 360}deg)`,
-                opacity: pos.opacity,
-                transition: "none",
-                filter: `drop-shadow(0 ${6 + ballFlight.progress * 4}px ${20 + ballFlight.progress * 8}px rgba(0,0,0,0.7))`,
-              }}
+                <div className="flex-1 relative z-10">
+                  <div className="flex items-center gap-2">
+                    <p className="font-black text-white uppercase text-sm italic tracking-tight">{bd.name}</p>
+                    <div className="h-[2px] flex-1 bg-white/5" />
+                  </div>
+                  <p className="text-[9px] text-primary/80 font-mono uppercase mt-1">
+                    Capture_Rate: <span className="text-white">x{bd.multiplier.toFixed(1)}</span>
+                  </p>
+                </div>
+
+                <div className="text-right relative z-10">
+                  <p className="text-[10px] text-muted-foreground font-mono uppercase">Qty</p>
+                  <span className="text-2xl font-black text-white font-mono leading-none">
+                    {item.quantity < 10 ? `0${item.quantity}` : item.quantity}
+                  </span>
+                </div>
+              </motion.button>
+            );
+          })}
+        </div>
+
+        <Button 
+          onClick={onClose} 
+          variant="outline" 
+          className="w-full mt-6 border-primary/20 bg-transparent text-primary hover:bg-primary hover:text-black font-black uppercase italic tracking-widest transition-all"
+        >
+          [ Cancel_Operation ]
+        </Button>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
+
+  {/* 7. Overlay de Resultados e Mensagens */}
+  <AnimatePresence>
+    {(phase === "escaped" || phase === "captured" || phase === "fled") && (
+      <motion.div
+        className="absolute bottom-0 left-0 right-0 z-50 p-8 flex flex-col items-center gap-6"
+        style={{ background: "linear-gradient(0deg, hsl(var(--card)) 40%, transparent 100%)" }}
+        initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+      >
+        {/* Painel de Rolagem D20 */}
+        {lastRoll && phase !== "fled" && (
+          <div className="flex items-center gap-4 p-4 rounded-2xl bg-secondary/80 border border-white/5 backdrop-blur-md w-full max-w-xs">
+            <div 
+              className="w-14 h-14 rounded-xl flex items-center justify-center font-black text-2xl text-white shadow-lg"
+              style={{ backgroundColor: lastRoll.total >= lastRoll.dc ? "#22C55E" : "#EF4444" }}
             >
-              {/* Glow aura during flight */}
-              <div className="absolute -inset-3 rounded-full blur-xl opacity-60" style={{ backgroundColor: ballData.color }} />
-              <PokeballSVG color={ballData.color} size={56} />
+              {lastRoll.d20}
             </div>
-          );
-        })()}
-
-        {/* Throwable pokeball at bottom (when ready) */}
-        <AnimatePresence>
-          {phase === "ready" && ballData && !ballFlight && (
-            <motion.div
-              className="absolute z-40 flex flex-col items-center"
-              style={{
-                bottom: "10%",
-                left: "50%",
-                transform: `translate(calc(-50% + ${dragOffset.x}px), ${dragOffset.y}px)`,
-              }}
-              initial={{ y: 40, opacity: 0 }}
-              animate={{
-                y: 0,
-                opacity: 1,
-                scale: isDragging ? 1.2 : 1,
-              }}
-              exit={{ opacity: 0, transition: { duration: 0.1 } }}
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
-            >
-              {/* Pulsing glow when ready */}
-              <motion.div 
-                className="absolute -inset-4 rounded-full blur-2xl opacity-40" 
-                style={{ backgroundColor: ballData.color }}
-                animate={{ opacity: isDragging ? 0 : [0.3, 0.6, 0.3] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-              />
-              <PokeballSVG color={ballData.color} size={64} />
-              {!isDragging && (
-                <motion.p
-                  className="text-[10px] text-muted-foreground text-center mt-2 whitespace-nowrap"
-                  animate={{ y: [0, -4, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                >
-                  Arraste para cima para lancar
-                </motion.p>
-              )}
-              {isDragging && dragOffset.y < -20 && (
-                <motion.div
-                  className="absolute -top-16 left-1/2 -translate-x-1/2"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 0.6 }}
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground">
-                    <path d="M12 19V5M5 12l7-7 7 7" />
-                  </svg>
-                </motion.div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Flee warning indicator */}
-        {phase === "ready" && (
-          <motion.div
-            className="absolute top-3 right-3 z-30 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card/80 backdrop-blur-sm border border-border"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 2 }}
-          >
-            <motion.div
-              className="w-2 h-2 rounded-full bg-amber-400"
-              animate={{ opacity: [1, 0.3, 1] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-            />
-            <span className="text-[10px] text-amber-400 font-medium">Pode fugir</span>
-          </motion.div>
+            <div className="flex flex-col">
+              <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest italic">Resultado do Dado</span>
+              <span className="text-sm font-bold">Total: {lastRoll.total} <span className="text-muted-foreground font-normal">vs DC {lastRoll.dc}</span></span>
+              {lastRoll.d20 === 20 && <span className="text-[10px] text-green-400 font-bold uppercase">✨ Crítico!</span>}
+            </div>
+          </div>
         )}
 
-        {/* Ball selection screen */}
-        <AnimatePresence>
-          {phase === "select-ball" && (
-            <motion.div
-              className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm px-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+        {/* Botões de Ação Final */}
+        <div className="w-full max-w-xs flex flex-col gap-3">
+          {phase === "captured" ? (
+            <Button 
+              onClick={() => onCaptured(pokemon, ballsUsed)} 
+              className="w-full h-12 font-black italic uppercase tracking-widest text-white shadow-xl shadow-primary/20"
+              style={{ backgroundColor: mainColor }}
             >
-              <h2 className="text-lg font-bold text-foreground mb-1">Escolha a Pokebola</h2>
-              <p className="text-xs text-muted-foreground mb-6 text-center">
-                Selecione qual Pokebola usar para tentar capturar {pokemon.name}
-              </p>
-
-              {availableBalls.length === 0 ? (
-                <div className="flex flex-col items-center gap-4">
-                  <p className="text-sm text-destructive font-medium">Sem Pokebolas na bolsa!</p>
-                  <p className="text-xs text-muted-foreground text-center">
-                    Compre Pokebolas na Loja antes de tentar capturar.
-                  </p>
-                  <Button onClick={onClose} variant="outline" className="border-border text-foreground">
-                    Voltar
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3 w-full max-w-xs">
-                  {availableBalls.map((item) => {
-                    const bd = POKEBALL_TYPES[item.itemId];
-                    if (!bd) return null;
-                    return (
-                      <motion.button
-                        key={item.itemId}
-                        onClick={() => handleSelectBall(item.itemId)}
-                        className="flex items-center gap-4 p-4 rounded-xl border-2 bg-card hover:bg-secondary transition-all active:scale-95 cursor-pointer group"
-                        style={{ borderColor: `${bd.color}40` }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        {/* Glow background on hover */}
-                        <div 
-                          className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-30 transition-opacity blur-lg -z-10"
-                          style={{ backgroundColor: bd.color }}
-                        />
-                        <PokeballSVG color={bd.color} size={48} />
-                        <div className="flex flex-col items-start flex-1">
-                          <span className="text-sm font-bold text-foreground">{bd.name}</span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {item.itemId === "master-ball"
-                              ? "✨ Captura garantida"
-                              : `Multiplicador: x${bd.multiplier}`}
-                          </span>
-                        </div>
-                        <span
-                          className="text-sm font-bold font-mono px-3 py-1.5 rounded-lg font-semibold"
-                          style={{ backgroundColor: `${bd.color}30`, color: bd.color }}
-                        >
-                          x{item.quantity}
-                        </span>
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              )}
-            </motion.div>
+              Adicionar à Equipe
+            </Button>
+          ) : phase === "fled" ? (
+            <Button onClick={onClose} variant="secondary" className="w-full h-12 font-bold uppercase tracking-widest">
+              O Pokémon fugiu...
+            </Button>
+          ) : (
+            <>
+              <Button 
+                onClick={handleRetry} 
+                className="w-full h-12 font-black italic uppercase tracking-widest text-white"
+                style={{ backgroundColor: mainColor }}
+              >
+                Tentar Novamente
+              </Button>
+              <Button onClick={onClose} variant="ghost" className="text-muted-foreground uppercase text-xs font-bold">
+                Desistir do Encontro
+              </Button>
+            </>
           )}
-        </AnimatePresence>
-
-        {/* Result message overlay */}
-        <AnimatePresence>
-          {(phase === "escaped" || phase === "captured" || phase === "fled") && (
-            <motion.div
-              className="absolute bottom-0 left-0 right-0 z-50 p-6 flex flex-col items-center gap-4"
-              style={{
-                background: "linear-gradient(0deg, hsl(var(--card)) 0%, hsl(var(--card)) 60%, transparent 100%)",
-              }}
-              initial={{ y: 80, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 80, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 200, damping: 20 }}
-            >
-              {/* D20 Roll result (not on fled) */}
-              {lastRoll && phase !== "fled" && (
-                <motion.div
-                  className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border bg-secondary/80 backdrop-blur-sm"
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                >
-                  <div
-                    className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg text-white shrink-0"
-                    style={{
-                      backgroundColor:
-                        lastRoll.d20 === 20 ? "#22C55E" : lastRoll.d20 === 1 ? "#EF4444" : lastRoll.total >= lastRoll.dc ? "#22C55E" : "#EF4444",
-                      boxShadow: `0 0 12px ${
-                        lastRoll.d20 === 20 || lastRoll.total >= lastRoll.dc ? "rgba(34,197,94,0.4)" : "rgba(239,68,68,0.4)"
-                      }`,
-                    }}
-                  >
-                    {lastRoll.d20}
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs text-muted-foreground">
-                      D20: {lastRoll.d20}
-                      {lastRoll.sorteBonus > 0 && ` + ${lastRoll.sorteBonus} bonus`}
-                      {` = `}
-                      <span className="font-bold text-foreground">{lastRoll.total}</span>
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Dificuldade (DC): <span className="font-bold text-foreground">{lastRoll.dc}</span>
-                    </span>
-                    {lastRoll.d20 === 20 && (
-                      <span className="text-[10px] font-bold text-green-400">CRITICO! Captura garantida!</span>
-                    )}
-                    {lastRoll.d20 === 1 && (
-                      <span className="text-[10px] font-bold text-red-400">FALHA CRITICA!</span>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-
-              {phase === "captured" ? (
-                <Button
-                  onClick={() => onCaptured(pokemon, ballsUsed)}
-                  className="w-full max-w-xs font-bold text-sm"
-                  style={{ backgroundColor: mainColor, color: "#fff" }}
-                >
-                  Adicionar a Equipe
-                </Button>
-              ) : phase === "fled" ? (
-                <div className="flex flex-col items-center gap-3">
-                  <motion.div
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-amber-500/30 bg-amber-500/10"
-                    initial={{ scale: 0.8 }}
-                    animate={{ scale: 1 }}
-                  >
-                    <motion.span
-                      className="text-xl"
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{ repeat: 2, duration: 0.3 }}
-                    >
-                      {'💨'}
-                    </motion.span>
-                    <span className="text-sm font-medium text-amber-400">{message}</span>
-                  </motion.div>
-                  <Button
-                    onClick={onClose}
-                    variant="outline"
-                    className="w-full max-w-xs border-border text-foreground"
-                  >
-                    Voltar
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <p className="text-sm font-medium text-destructive">{message}</p>
-                  {availableBalls.length > 0 && !message.includes("Sem Pokebolas") ? (
-                    <div className="flex gap-3 w-full max-w-xs">
-                      <Button
-                        onClick={handleRetry}
-                        className="flex-1 font-bold text-sm"
-                        style={{ backgroundColor: mainColor, color: "#fff" }}
-                      >
-                        Tentar Novamente
-                      </Button>
-                      <Button onClick={onClose} variant="outline" className="border-border text-foreground">
-                        Desistir
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      onClick={onClose}
-                      variant="outline"
-                      className="w-full max-w-xs border-border text-foreground"
-                    >
-                      Sem Pokebolas - Voltar
-                    </Button>
-                  )}
-                </>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+</div>
 
       {/* Bottom info bar (when in ready phase) */}
       {phase === "ready" && ballData && (

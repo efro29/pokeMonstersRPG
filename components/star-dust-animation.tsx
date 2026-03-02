@@ -307,7 +307,7 @@ export function StarDustFullscreenAnimation({
       {/* Overlay escuro */}
       <div 
         className="absolute inset-0 transition-opacity duration-300"
-        style={{ backgroundColor: "rgba(0,0,0,0.75)" }}
+        style={{ backgroundColor: "rgba(0, 0, 0, 0.11)" }}
       />
 
       {/* Numero grande no centro (fase 1) */}

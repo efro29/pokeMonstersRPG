@@ -345,81 +345,108 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <motion.div
-              className="flex-1 flex items-center justify-center relative overflow-hidden"
-              style={{ backgroundColor: "#1e3a8a" }}
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              transition={{ type: "spring", damping: 20, stiffness: 100 }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-900 to-blue-700" />
-              <motion.div
-                className="relative z-10 flex flex-col items-center"
-                initial={{ scale: 0, rotate: -45 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 0.3, type: "spring" }}
-              >
-                <div className="w-20 h-20 rounded-full bg-blue-500/30 flex items-center justify-center border-4 border-white shadow-2xl">
-                  <Swords className="w-10 h-10 text-white" />
-                </div>
-                <span className="mt-3 text-white font-bold text-lg tracking-wider">
-                  DESAFIO
-                </span>
-              </motion.div>
-            </motion.div>
+          <motion.div
+  className="flex-1 flex items-center justify-center relative overflow-hidden"
+  style={{ backgroundColor: "#450a0a" }} // Vermelho bem escuro para contraste
+  initial={{ x: "100%", filter: "brightness(2) contrast(1.2)" }}
+  animate={{ x: 0, filter: "brightness(1) contrast(1)" }}
+  transition={{ type: "spring", damping: 15, stiffness: 120 }}
+>
+  {/* 1. FUNDO DINÂMICO */}
+  <div className="absolute inset-0 bg-gradient-to-bl from-red-900 via-red-950 to-black" />
+  
+  {/* Vinheta de foco (Escurece as bordas) */}
+  <div className="absolute inset-0 bg-[radial-gradient(circle,_transparent_30%,_rgba(0,0,0,0.8)_100%)] z-1" />
 
-            <motion.div
-              className="absolute left-1/2 top-0 bottom-0 w-4 -ml-2 z-20"
-              style={{
-                background: `linear-gradient(180deg, ${getStageColor(currentStageView)} 0%, #fbbf24 50%, ${getStageColor(currentStageView)} 100%)`,
-                clipPath: "polygon(50% 0%, 100% 10%, 80% 25%, 100% 40%, 70% 55%, 100% 70%, 80% 85%, 100% 100%, 0% 100%, 20% 85%, 0% 70%, 30% 55%, 0% 40%, 20% 25%, 0% 10%)"
-              }}
-              initial={{ scaleY: 0 }}
-              animate={{ scaleY: 1 }}
-              transition={{ delay: 0.5, duration: 0.3 }}
-            />
+  {/* 2. LINHAS DE VELOCIDADE ÉPICAS (Speed Lines) */}
+  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    {[...Array(25)].map((_, i) => (
+      <motion.div
+        key={i}
+        className="absolute bg-gradient-to-r from-transparent via-white/40 to-transparent"
+        style={{
+          height: Math.random() * 4 + 1 + 'px', // Linhas mais grossas e finas
+          width: Math.random() * 300 + 100 + 'px',
+          top: Math.random() * 100 + '%',
+          left: '-20%',
+          skewX: -20, // Inclinação para dar sensação de corte
+        }}
+        animate={{
+          x: ['-20vw', '120vw'],
+          opacity: [0, 0.8, 0],
+        }}
+        transition={{
+          duration: Math.random() * 0.4 + 0.2, // Muito rápido
+          repeat: Infinity,
+          ease: "easeIn",
+          delay: Math.random() * 1,
+        }}
+      />
+    ))}
+  </div>
 
+            {/* 3. CONTEÚDO DO PERSONAGEM COM AURA */}
             <motion.div
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30"
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ delay: 0.7, type: "spring", damping: 10 }}
+              className="relative z-10 flex flex-col items-center"
+              initial={{ scale: 2, opacity: 0, rotate: 10 }} // Entra "esmagando" a tela
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              transition={{ delay: 0.2, type: "spring", duration: 0.8 }}
             >
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center border-4 border-white shadow-2xl"
-                style={{ background: `linear-gradient(135deg, ${getStageColor(currentStageView)}, #f59e0b)` }}
-              >
-                <span className="text-2xl font-black text-white drop-shadow-lg">VS</span>
-              </div>
-            </motion.div>
+              <div className="relative group">
+                {/* Aura de Energia Pulsante (Atrás da imagem) */}
+                <motion.div 
+                  className="absolute -inset-4 rounded-full bg-red-600/40 blur-2xl z-0"
+                  animate={{ 
+                    scale: [1, 1.5, 1.2],
+                    opacity: [0.3, 0.7, 0.3],
+                    rotate: [0, 180, 360] 
+                  }}
+                  transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                />
+                
+                {/* Brilho de "Impacto" */}
+                <motion.div 
+                  className="absolute -inset-1 rounded-full bg-white blur-md z-0"
+                  initial={{ opacity: 1, scale: 2 }}
+                  animate={{ opacity: 0, scale: 1 }}
+                  transition={{ delay: 0.4, duration: 0.5 }}
+                />
 
-            <motion.div
-              className="flex-1 flex items-center justify-center relative overflow-hidden"
-              style={{ backgroundColor: "#991b1b" }}
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              transition={{ type: "spring", damping: 20, stiffness: 100 }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-l from-red-900 to-red-700" />
-              <motion.div
-                className="relative z-10 flex flex-col items-center"
-                initial={{ scale: 0, rotate: 45 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 0.3, type: "spring" }}
-              >
                 <img
+                style={{width:900}}
                   src={selectedNode.npc.imagem}
                   alt={selectedNode.npc.nome}
-                  className="w-20 h-20 rounded-full border-4 border-white shadow-2xl object-cover"
+                  className="relative   z-10"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
                   }}
                 />
-                <span className="mt-3 text-white font-bold text-lg tracking-wider">
+              </div>
+
+              {/* NOME COM SOMBRA ÉPICA */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="flex flex-col items-center"
+              >
+                <span className="mt-4 text-white font-black text-2xl tracking-tighter uppercase italic drop-shadow-[0_2px_10px_rgba(255,255,255,0.5)]">
                   {selectedNode.npc.nome}
                 </span>
+                <div className="h-1 w-full bg-gradient-to-r from-transparent via-red-500 to-transparent mt-1" />
+            
               </motion.div>
             </motion.div>
+
+            {/* Efeito de Flash Rápido na entrada */}
+            <motion.div 
+              className="absolute inset-0 bg-white z-50 pointer-events-none"
+              initial={{ opacity: 0.8 }}
+              animate={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            />
+          </motion.div>
+
           </motion.div>
         )}
       </AnimatePresence>
@@ -452,458 +479,279 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
       </div>
 
       {/* Trail Path - Todas as fases em lista continua estilo Duolingo */}
-      <ScrollArea className="flex-1 overflow-hidden" ref={scrollContainerRef}>
-        <div className="py-4 px-4">
-          {stages.map((stage, stageIdx) => {
-            const stageCompleted = stage.nodes.every(n => n.completed);
-            const hasProgress = stage.nodes.some(n => n.completed);
-            // Encontra o primeiro node pendente (disponivel) desta fase
-            const firstPendingIdx = stage.nodes.findIndex(n => !n.completed && !n.locked);
+<ScrollArea className="flex-1 bg-slate-950 overflow-hidden" ref={scrollContainerRef}>
+  {/* Overlay de Scanlines Global para a trilha */}
+  <div className="absolute inset-0 pointer-events-none opacity-5 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[size:100%_2px,2px_100%]" />
 
-            return (
-              <div key={stageIdx} className="mb-6">
-                {/* Header da Fase com Pokemon Premio */}
-                <div
-                  className={`relative overflow-hidden rounded-xl mb-4 ${
-                    isLegendaryStage(stageIdx) ? "ring-1 ring-yellow-400/30" : ""
-                  }`}
-                  style={{
-                    background: `linear-gradient(135deg, ${getStageColor(stageIdx)}15, ${getStageColor(stageIdx)}05)`,
-                    borderLeft: `3px solid ${getStageColor(stageIdx)}`
-                  }}
+  <div className="py-8 px-6 relative">
+    {stages.map((stage, stageIdx) => {
+      const stageCompleted = stage.nodes.every(n => n.completed);
+      const stageColor = getStageColor(stageIdx);
+
+      return (
+        <div key={stageIdx} className="mb-12 relative">
+          {/* Header da Fase - Estilo Terminal */}
+          <div className="relative mb-8 group">
+            <div 
+              className="absolute inset-0 opacity-20 blur-sm transition-opacity group-hover:opacity-40" 
+              style={{ backgroundColor: stageColor }} 
+            />
+            <div 
+              className="relative p-3 border-l-4 bg-slate-900/80 backdrop-blur-md flex items-center gap-4"
+              style={{ borderColor: stageColor }}
+            >
+              <div className="relative">
+                <div className="w-12 h-12 bg-slate-800 flex items-center justify-center border border-white/10"
+                     style={{ clipPath: "polygon(25% 0%, 100% 0%, 100% 75%, 75% 100%, 0% 100%, 0% 25%)" }}>
+                  <img src={getSpriteUrl(stage.pokemonReward.speciesId)} className="w-10 h-10 pixelated" crossOrigin="anonymous" />
+                </div>
+                {isLegendaryStage(stageIdx) && <Crown className="absolute -top-2 -left-2 w-4 h-4 text-yellow-400 drop-shadow-md" />}
+              </div>
+
+              <div className="flex-1">
+                <h3 className="font-black text-xs uppercase tracking-[0.2em] text-white/50 leading-none mb-1">Sector {stageIdx + 1}</h3>
+                <h2 className="font-black text-base text-white uppercase italic tracking-tighter leading-none">
+                  {stage.name}
+                </h2>
+              </div>
+              
+              <div className="text-right">
+                <p className="text-[9px] font-mono text-white/40 uppercase">Status</p>
+                <p className="text-xs font-black font-mono" style={{ color: stageColor }}>
+                   {stageCompleted ? "CLEARED" : "INFILTRATING"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Trilha de Nodes */}
+          <div className="relative flex flex-col items-center min-h-[400px]">
+            {/* SVG de Conexão entre nodes (O "Fio" do sistema) */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20">
+               {/* Aqui você pode renderizar linhas ligando o node atual ao próximo */}
+            </svg>
+
+            {/* Container de Conexões de Dados */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible">
+              <defs>
+                {/* Gradiente para a linha de energia */}
+                <linearGradient id={`lineGradient-${stageIdx}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor={stageColor} stopOpacity="0.8" />
+                  <stop offset="100%" stopColor={stageColor} stopOpacity="0.2" />
+                </linearGradient>
+              </defs>
+              
+              {stage.nodes.map((_, idx) => {
+                if (idx === stage.nodes.length - 1) return null;
+                
+                // Cálculo das posições baseado no seu offset de 50px
+                const isEven = idx % 2 === 0;
+                const nextIsEven = (idx + 1) % 2 === 0;
+                
+                // Centralizando os pontos (considerando o centro dos botões de 64px/w-16)
+                const x1 = isEven ? "calc(50% - 50px)" : "calc(50% + 50px)";
+                const x2 = nextIsEven ? "calc(50% - 50px)" : "calc(50% + 50px)";
+                
+                // O gap entre nodes é de 32px (mb-8) + altura do node (64px) = ~96px por node
+                const y1 = idx * 96 + 32; 
+                const y2 = (idx + 1) * 96 + 32;
+
+                return (
+                  <g key={`line-${idx}`}>
+                    {/* Linha de "Sombra" Glow */}
+                    <line
+                      x1={x1} y1={y1} x2={x2} y2={y2}
+                      stroke={stageColor}
+                      strokeWidth="6"
+                      strokeOpacity="0.1"
+                      strokeLinecap="round"
+                      className="blur-sm"
+                    />
+                    {/* Linha de Dados Principal */}
+                    <line
+                      x1={x1} y1={y1} x2={x2} y2={y2}
+                      stroke={`url(#lineGradient-${stageIdx})`}
+                      strokeWidth="2"
+                      strokeDasharray={stage.nodes[idx+1].locked ? "4 4" : "0"} // Pontilhado se estiver travado
+                      className={!stage.nodes[idx+1].locked ? "animate-pulse" : "opacity-30"}
+                    />
+                  </g>
+                );
+              })}
+            </svg>
+
+            {stage.nodes.map((node, idx) => {
+              const isEven = idx % 2 === 0;
+              const isAvailable = !node.locked && !node.completed;
+              const nodeColor = node.completed ? stageColor : (node.locked ? '#334155' : stageColor);
+
+              return (
+                <div 
+                  key={idx} 
+                  className="relative z-10 mb-8 flex flex-col items-center"
+                  style={{ transform: `translateX(${isEven ? '-50px' : '50px'})` }}
                 >
-                  <div className="p-3 flex items-center gap-3">
-                    {/* Pokemon Sprite */}
-                    <div
-                      className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
-                      style={{
-                        background: `linear-gradient(135deg, ${getStageColor(stageIdx)}30, ${getStageColor(stageIdx)}10)`
-                      }}
-                    >
-                      <img
-                        src={getSpriteUrl(stage.pokemonReward.speciesId)}
-                        alt={stage.pokemonReward.name}
-                        width={36}
-                        height={36}
-                        className="pixelated"
-                        crossOrigin="anonymous"
-                      />
-                    </div>
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold text-sm text-foreground truncate">{stage.name}</p>
-                        {isLegendaryStage(stageIdx) && (
-                          <Crown className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
-                        )}
-                      </div>
-                      <p className="text-[10px] text-muted-foreground">
-                        Premio: <span style={{ color: getStageColor(stageIdx) }}>{stage.pokemonReward.name}</span> Nv.{stage.pokemonReward.level}
-                      </p>
-                    </div>
-                    {/* Status */}
-                    <div className="shrink-0">
-                      {stageCompleted ? (
-                        <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center"
-                          style={{ backgroundColor: getStageColor(stageIdx) }}
-                        >
-                          <Check className="w-4 h-4 text-white" />
-                        </div>
-                      ) : hasProgress ? (
-                        <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                          style={{ backgroundColor: `${getStageColor(stageIdx)}80` }}
-                        >
-                          {stage.nodes.filter(n => n.completed).length}/{stage.nodes.length}
-                        </div>
+                  <motion.button
+                    whileHover={!node.locked ? { scale: 1.1, rotate: 5 } : {}}
+                    whileTap={!node.locked ? { scale: 0.9 } : {}}
+                    onClick={() => { setCurrentStageView(stageIdx); handleNodeClick(node); }}
+                    disabled={node.locked}
+                    className={`relative w-16 h-16 flex items-center justify-center transition-all`}
+                  >
+                    {/* Background do Node com Clip-Path de Octógono */}
+                    <div 
+                      className="absolute inset-0 transition-colors duration-500"
+                      style={{ 
+                        backgroundColor: node.locked ? '#1e293b' : `${nodeColor}${node.completed ? '' : '30'}`,
+                        clipPath: "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
+                        border: `2px solid ${node.completed ? '#fff' : nodeColor}`
+                      }} 
+                    />
+
+                    {/* Conteúdo do Node */}
+                    <div className="relative z-10">
+                      {node.locked ? (
+                        <Lock className="w-5 h-5 text-slate-600" />
+                      ) : node.completed ? (
+                        <Check className="w-8 h-8 text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                          <Lock className="w-3.5 h-3.5 text-muted-foreground" />
-                        </div>
+                         <div className="relative">
+                            <img 
+                              src={node.type === "pokemon" ? getSpriteUrl(node.pokemonReward!.speciesId) : node.npc!.imagem} 
+                              className={`w-10 h-10 object-cover ${node.type === "pokemon" ? 'pixelated' : 'rounded-full border border-white/20'}`}
+                            />
+                            {/* Efeito de glitch/scanline no node ativo */}
+                            {isAvailable && <div className="absolute inset-0 bg-cyan-500/20 animate-pulse" />}
+                         </div>
                       )}
                     </div>
+
+                    {/* Ring de Ativo */}
+                    {isAvailable && (
+                      <div 
+                        className="absolute inset-[-8px] border-2 border-dashed rounded-full animate-[spin_8s_linear_infinite] opacity-40"
+                        style={{ borderColor: stageColor }}
+                      />
+                    )}
+                  </motion.button>
+
+                  {/* Label Tático */}
+                  <div className={`mt-2 font-mono uppercase tracking-tighter ${isEven ? 'text-left' : 'text-right'}`}>
+                    <p className="text-[10px] font-black text-white leading-none">
+                      {node.type === "pokemon" ? node.pokemonReward!.name : node.npc!.nome}
+                    </p>
+                    <p className="text-[8px] opacity-50 font-bold" style={{ color: nodeColor }}>
+                      {node.completed ? "Mission Success" : node.locked ? "Signal Encrypted" : "Ready to Breach"}
+                    </p>
                   </div>
                 </div>
-
-                {/* Nodes da Fase */}
-                <div className="relative flex flex-col items-center">
-                  {stage.nodes.map((node, idx) => {
-                    const isEven = idx % 2 === 0;
-                    const offset = isEven ? -40 : 40;
-                    const isPokemonNode = node.type === "pokemon";
-                    const isAvailable = !node.locked && !node.completed;
-                    const isPending = idx === firstPendingIdx;
-
-                    return (
-                      <motion.div
-                        key={idx}
-                        ref={isPending ? pendingNodeRef : undefined}
-                        className="relative z-10 mb-3"
-                        style={{ marginLeft: offset }}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: idx * 0.03, type: "spring", damping: 15 }}
-                      >
-                        {/* Glow para node pendente */}
-                        {isAvailable && (
-                          <motion.div
-                            className="absolute inset-0 rounded-full"
-                            style={{
-                              background: `radial-gradient(circle, ${getStageColor(stageIdx)}40 0%, transparent 70%)`,
-                            }}
-                            animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0.2, 0.5] }}
-                            transition={{ duration: 2, repeat: Infinity }}
-                          />
-                        )}
-
-                        {/* Node Circle */}
-                        <motion.button
-                          onClick={() => {
-                            setCurrentStageView(stageIdx);
-                            handleNodeClick(node);
-                          }}
-                          disabled={node.locked}
-                          animate={isAvailable ? { y: [0, -6, 0] } : {}}
-                          transition={isAvailable ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" } : {}}
-                          className={`relative flex items-center justify-center transition-all ${
-                            isPokemonNode ? "w-16 h-16" : "w-14 h-14"
-                          } rounded-full ${
-                            node.locked
-                              ? "opacity-40 cursor-not-allowed grayscale"
-                              : node.completed
-                                ? "cursor-default"
-                                : "cursor-pointer hover:scale-110 active:scale-95"
-                          }`}
-                          style={{
-                            background: node.completed
-                              ? `linear-gradient(135deg, ${getStageColor(stageIdx)}, ${getStageColor(stageIdx)}cc)`
-                              : node.locked
-                                ? "hsl(var(--secondary))"
-                                : isPokemonNode
-                                  ? `linear-gradient(135deg, ${getStageColor(stageIdx)}50, ${getStageColor(stageIdx)}20)`
-                                  : `linear-gradient(135deg, ${getStageColor(stageIdx)}40, ${getStageColor(stageIdx)}15)`,
-                            border: `3px solid ${
-                              node.completed
-                                ? "#fff"
-                                : node.locked
-                                  ? "hsl(var(--border))"
-                                  : getStageColor(stageIdx)
-                            }`,
-                            boxShadow: node.completed
-                              ? `0 4px 16px ${getStageColor(stageIdx)}60`
-                              : node.locked
-                                ? "none"
-                                : `0 4px 12px ${getStageColor(stageIdx)}30`,
-                          }}
-                        >
-                          {node.locked ? (
-                            <Lock className="w-5 h-5 text-muted-foreground" />
-                          ) : node.completed ? (
-                            <Check className="w-7 h-7 text-white" />
-                          ) : node.type === "pokemon" ? (
-                            <img
-                              src={getSpriteUrl(node.pokemonReward!.speciesId)}
-                              alt={node.pokemonReward!.name}
-                              width={36}
-                              height={36}
-                              className="pixelated"
-                              crossOrigin="anonymous"
-                            />
-                          ) : (
-                            <div className="relative w-10 h-10 rounded-full overflow-hidden ring-1 ring-white/30">
-                              <img
-                                src={node.npc!.imagem}
-                                alt={node.npc!.nome}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
-                                }}
-                              />
-                            </div>
-                          )}
-
-                          {/* Badge de numero ou coroa */}
-                          {isAvailable && (
-                            <motion.div
-                              className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
-                              style={{
-                                background: isPokemonNode
-                                  ? "linear-gradient(135deg, #FBBF24, #F59E0B)"
-                                  : getStageColor(stageIdx)
-                              }}
-                              animate={{ scale: [1, 1.1, 1] }}
-                              transition={{ duration: 1.5, repeat: Infinity }}
-                            >
-                              {isPokemonNode ? <Crown className="w-3 h-3" /> : idx + 1}
-                            </motion.div>
-                          )}
-
-                          {/* Estrelas para completo */}
-                          {node.completed && (
-                            <div className="absolute -bottom-2 flex gap-0.5">
-                              {[1, 2, 3].map((s) => (
-                                <Star key={s} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                              ))}
-                            </div>
-                          )}
-                        </motion.button>
-
-                        {/* Label do Node */}
-                        <div className={`mt-2 text-center ${isEven ? "text-left -ml-1" : "text-right -mr-1"}`}>
-                          {node.type === "npc" ? (
-                            <>
-                              <p className="text-[10px] font-medium text-foreground truncate max-w-[70px]">
-                                {node.npc!.nome}
-                              </p>
-                              <p
-                                className="text-[9px] font-bold uppercase"
-                                style={{ color: getDifficultyColor(node.npc!.nivel) }}
-                              >
-                                {node.npc!.nivel}
-                              </p>
-                            </>
-                          ) : (
-                            <>
-                              <p className="text-[10px] font-medium text-foreground">
-                                {node.pokemonReward!.name}
-                              </p>
-                              <p className="text-[9px] text-muted-foreground">Capturar</p>
-                            </>
-                          )}
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </ScrollArea>
-
+      );
+    })}
+  </div>
+</ScrollArea>
       {/* Selected Node Modal - Enhanced */}
       <AnimatePresence>
         {selectedNode && (
           <motion.div
-            className="fixed inset-0 flex items-center justify-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            className="fixed inset-0 flex items-center justify-center z-50 p-2"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setSelectedNode(null)}
           >
-            {/* Backdrop with blur */}
-            <motion.div
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            />
+            <motion.div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" />
 
             <motion.div
-              className="relative w-full max-w-md bg-gradient-to-b from-card to-background rounded-2xl overflow-hidden flex flex-col max-h-[85vh] z-50"
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-sm bg-slate-900 border border-cyan-500/30 flex flex-col max-h-[80vh] z-50 shadow-2xl"
+              style={{ clipPath: "polygon(0 0, 100% 0, 100% 95%, 95% 100%, 0 100%)" }}
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Top gradient accent */}
-              <div
-                className="absolute top-0 left-0 right-0 h-1"
-                style={{ background: `linear-gradient(90deg, ${getStageColor(currentStageView)}, ${getStageColor(currentStageView)}80)` }}
-              />
-
-              {/* Scrollable Content */}
-              <ScrollArea className="flex-1 overflow-hidden">
-                <div className="p-6">
+              <ScrollArea className="flex-1">
+                <div className="p-4 space-y-4">
                   {selectedNode.type === "npc" && selectedNode.npc && (
                     <>
-                      <div className="flex items-center gap-4 mb-5">
-                        <div className="relative">
-                          <div
-                            className="absolute inset-0 rounded-full opacity-30 blur-md"
-                            style={{ backgroundColor: getDifficultyColor(selectedNode.npc.nivel) }}
-                          />
+                      {/* Header Compacto */}
+                      <div className="flex gap-3 items-center">
+                        <div className="relative shrink-0 w-16 h-16 bg-slate-800 border-l-2 border-cyan-500 overflow-hidden">
                           <img
                             src={selectedNode.npc.imagem}
-                            alt={selectedNode.npc.nome}
-                            className="relative w-20 h-20 rounded-full object-cover ring-4"
-                            style={{
-                              ringColor: getDifficultyColor(selectedNode.npc.nivel),
-                              boxShadow: `0 4px 20px ${getDifficultyColor(selectedNode.npc.nivel)}40`
-                            }}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = "/images/trainers/player.jpg";
-                            }}
+                            className="w-full h-full object-cover  hover:grayscale-0 transition-all"
+                            onError={(e) => { (e.target as HTMLImageElement).src = "/images/trainers/player.jpg"; }}
                           />
+                          <div className="absolute bottom-0 right-0 bg-cyan-500 text-[8px] px-1 font-black text-slate-900">
+                            LV.{selectedNode.npc.nivel}
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <h3 className="font-bold text-xl text-foreground mb-1">
+                        <div className="min-w-0">
+                          <p className="text-[8px] font-black text-cyan-500 uppercase tracking-widest leading-none">Target Identified</p>
+                          <h3 className="font-black text-lg text-white italic tracking-tighter truncate uppercase leading-tight">
                             {selectedNode.npc.nome}
                           </h3>
-                          <span
-                            className="inline-block text-xs font-bold uppercase px-3 py-1 rounded-full"
-                            style={{
-                              backgroundColor: `${getDifficultyColor(selectedNode.npc.nivel)}20`,
-                              color: getDifficultyColor(selectedNode.npc.nivel)
-                            }}
-                          >
-                            {selectedNode.npc.nivel}
-                          </span>
                         </div>
                       </div>
 
-                      <p className="text-sm text-muted-foreground italic mb-5 pl-4 border-l-2 border-border">
-                        "{selectedNode.npc.fraseDesafio}"
-                      </p>
-
-                      <div className="grid grid-cols-3 gap-3 mb-5">
-                        <div className="bg-gradient-to-br from-amber-500/20 to-amber-600/5 rounded-xl p-3 text-center border border-amber-500/20">
-                          <p className="text-xl font-bold text-amber-400">${selectedNode.npc.recompensa}</p>
-                          <p className="text-[10px] text-amber-400/60 font-medium">DINHEIRO</p>
-                        </div>
-                        <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/5 rounded-xl p-3 text-center border border-blue-500/20">
-                          <p className="text-xl font-bold text-blue-400">{selectedNode.npc.stardust}</p>
-                          <p className="text-[10px] text-blue-400/60 font-medium">STARDUST</p>
-                        </div>
-                        <div className="bg-gradient-to-br from-green-500/20 to-green-600/5 rounded-xl p-3 text-center border border-green-500/20">
-                          <p className="text-xl font-bold text-green-400">{selectedNode.npc.xp}</p>
-                          <p className="text-[10px] text-green-400/60 font-medium">XP</p>
-                        </div>
+                      {/* Recompensas em Linha Única */}
+                      <div className="grid grid-cols-3 gap-1.5 py-2 border-y border-white/5">
+                        {[
+                          { val: `$${selectedNode.npc.recompensa}`, color: "text-amber-400" },
+                          { val: selectedNode.npc.stardust, color: "text-blue-400" },
+                          { val: selectedNode.npc.xp, color: "text-emerald-400" }
+                        ].map((item, i) => (
+                          <div key={i} className="bg-white/5 p-1 text-center">
+                            <p className={`text-xs font-black font-mono ${item.color}`}>{item.val}</p>
+                          </div>
+                        ))}
                       </div>
 
-                      <div className="pb-5">
-                        <p className="text-xs text-muted-foreground mb-3 font-medium">EQUIPE ADVERSARIA ({selectedNode.npc.time.length})</p>
-                        <div className="flex gap-2 overflow-x-auto pb-2">
-                          {selectedNode.npc.time.map((p, i) => (
-                            <div
-                              key={i}
-                              className="flex-shrink-0 flex flex-col items-center bg-secondary/30 rounded-xl p-2"
-                            >
-                              <img
-                                src={getSpriteUrl(p.speciesId)}
-                                alt={p.nome}
-                                width={44}
-                                height={44}
-                                className="pixelated"
-                                crossOrigin="anonymous"
-                              />
-                              <p className="text-[10px] text-muted-foreground font-medium mt-1">Lv.{p.level}</p>
-                            </div>
-                          ))}
-                        </div>
+                      {/* Squad Mini Scan */}
+                      <div className="flex gap-1.5 overflow-x-auto pb-2">
+                        {selectedNode.npc.time.map((p, i) => (
+                          <div key={i} className="shrink-0 w-12 h-14 bg-slate-950 border border-white/5 flex flex-col items-center justify-center">
+                            <img src={getSpriteUrl(p.speciesId)} className="w-8 h-8 pixelated" crossOrigin="anonymous" />
+                            <span className="text-[7px] font-mono text-slate-500">L.{p.level}</span>
+                          </div>
+                        ))}
                       </div>
                     </>
                   )}
 
                   {selectedNode.type === "pokemon" && selectedNode.pokemonReward && (
-                    <>
-                      <div className="flex flex-col items-center mb-5">
-                        <motion.div
-                          className="relative"
-                          animate={{ y: [0, -8, 0] }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        >
-                          <div
-                            className="absolute inset-0 rounded-full blur-xl opacity-50"
-                            style={{ backgroundColor: getStageColor(currentStageView) }}
+                    <div className="flex flex-col items-center py-2 text-center">
+                      <div className="relative w-24 h-24 mb-3 flex items-center justify-center bg-cyan-500/5 border border-cyan-500/20 rotate-45">
+                        <div className="-rotate-45">
+                          <img
+                            src={getSpriteUrl(selectedNode.pokemonReward.speciesId)}
+                            className="w-16 h-16 pixelated drop-shadow-md"
+                            crossOrigin="anonymous"
                           />
-                          <div
-                            className={`relative w-28 h-28 rounded-full flex items-center justify-center ${isLegendaryStage(selectedNode.stageIndex) ? "ring-4 ring-yellow-400" : ""
-                              }`}
-                            style={{
-                              background: `linear-gradient(135deg, ${getStageColor(currentStageView)}50, ${getStageColor(currentStageView)}20)`,
-                              boxShadow: `0 8px 32px ${getStageColor(currentStageView)}40`
-                            }}
-                          >
-                            <img
-                              src={getSpriteUrl(selectedNode.pokemonReward.speciesId)}
-                              alt={selectedNode.pokemonReward.name}
-                              width={80}
-                              height={80}
-                              className="pixelated drop-shadow-lg"
-                              crossOrigin="anonymous"
-                            />
-                          </div>
-                          {isLegendaryStage(selectedNode.stageIndex) && (
-                            <motion.div
-                              className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center"
-                              animate={{ scale: [1, 1.1, 1] }}
-                              transition={{ duration: 1.5, repeat: Infinity }}
-                            >
-                              <Crown className="w-5 h-5 text-yellow-900" />
-                            </motion.div>
-                          )}
-                        </motion.div>
-                        <h3 className="font-bold text-2xl text-foreground mt-4">
-                          {selectedNode.pokemonReward.name}
-                        </h3>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span
-                            className="text-xs font-medium px-3 py-1 rounded-full"
-                            style={{
-                              backgroundColor: `${getStageColor(currentStageView)}30`,
-                              color: getStageColor(currentStageView)
-                            }}
-                          >
-                            Nivel {selectedNode.pokemonReward.level}
-                          </span>
-                          {isLegendaryStage(selectedNode.stageIndex) && (
-                            <span className="text-xs font-bold px-3 py-1 rounded-full bg-yellow-400/20 text-yellow-400">
-                              LENDARIO
-                            </span>
-                          )}
                         </div>
                       </div>
-
-                      <div
-                        className="p-5 rounded-2xl mb-5 text-center border"
-                        style={{
-                          backgroundColor: `${getStageColor(currentStageView)}10`,
-                          borderColor: `${getStageColor(currentStageView)}30`
-                        }}
-                      >
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                        >
-                          <Sparkles className="w-10 h-10 mx-auto mb-3" style={{ color: getStageColor(currentStageView) }} />
-                        </motion.div>
-                        <p className="text-sm text-foreground font-medium">
-                          {isLegendaryStage(selectedNode.stageIndex)
-                            ? "Um Pokemon lendario aguarda! Prepare sua melhor equipe para esta captura epica!"
-                            : "Parabens! Voce completou todos os desafios desta fase. Capture seu premio!"
-                          }
-                        </p>
-                      </div>
-                    </>
+                      <h3 className="font-black text-xl text-white uppercase italic tracking-tighter leading-none mb-1">
+                        {selectedNode.pokemonReward.name}
+                      </h3>
+                      <span className="text-[9px] font-black px-2 py-0.5 bg-cyan-500 text-slate-900 uppercase">
+                        Level {selectedNode.pokemonReward.level}
+                      </span>
+                    </div>
                   )}
                 </div>
               </ScrollArea>
 
-              {/* Button - Fixed at Bottom */}
-              <div className="p-6 pt-4 border-t border-border bg-card flex-shrink-0">
-                <Button
+              {/* Botão de Ação Ultra Compacto */}
+              <div className="p-3 bg-slate-950/50 border-t border-white/5">
+                <button
                   onClick={handleStartChallenge}
-                  className="w-full h-14 text-lg font-bold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98]"
-                  style={{
-                    background: `linear-gradient(135deg, ${getStageColor(currentStageView)}, ${getStageColor(currentStageView)}cc)`,
-                    boxShadow: `0 8px 24px ${getStageColor(currentStageView)}40`
-                  }}
+                  className="group relative w-full h-12 bg-red-600 hover:bg-red-500 active:scale-[0.98] transition-all overflow-hidden flex items-center justify-center gap-2"
                 >
-                  {selectedNode.type === "npc" ? (
-                    <>
-                      <Swords className="w-6 h-6 mr-2" />
-                      BATALHAR!
-                    </>
-                  ) : (
-                    <>
-                      <Star className="w-6 h-6 mr-2" />
-                      CAPTURAR!
-                    </>
-                  )}
-                </Button>
+                  <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.2)_50%,transparent_75%)] bg-[length:250%_250%] animate-[shimmer_2s_infinite]" />
+                  <span className="relative z-10 text-sm font-black italic tracking-tighter text-white uppercase">
+                    {selectedNode.type === "npc" ? "ENGAGE BATTLE" : "CLAIM REWARD"}
+                  </span>
+                  <Swords className="w-4 h-4 text-white/50 group-hover:text-white" />
+                </button>
               </div>
             </motion.div>
           </motion.div>

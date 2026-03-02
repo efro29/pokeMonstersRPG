@@ -880,7 +880,55 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
   }, [weather]);
 
 
+  // ── Iniciar scan ──
+  const startScanAgain = useCallback(() => {
 
+
+ 
+  if (scanning) return;
+    if (energy.charges <= 0) {
+      setScanMessage("Sem energia! Aguarde a recarga.");
+      setTimeout(() => setScanMessage(null), 1000);
+      return;
+    }
+
+    playButtonClick();
+
+    // Gastar energia
+    const newCharges = energy.charges - 1;
+    const batteryJustDepleted = energy.batteryActive && newCharges <= 0;
+    const next: RadarEnergy = {
+      charges: batteryJustDepleted ? MAX_ENERGY : newCharges,
+      lastUsed: Date.now(),
+      batteryActive: batteryJustDepleted ? false : energy.batteryActive,
+    };
+    setEnergy(next);
+    saveEnergy(next);
+
+    setScanning(true);
+    setScanProgress(0);
+    setBlips([]);
+    setSelectedBlip(null);
+    setClaimedGift(null);
+    setScanMessage(null);
+
+    // Progresso do scan
+    const start = Date.now();
+    scanInterval.current = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const pct = Math.min(1, elapsed / SCAN_DURATION_MS);
+      setScanProgress(pct);
+      if (pct >= 1) {
+        if (scanInterval.current) clearInterval(scanInterval.current);
+        finishScan();
+      }
+    }, 50);
+
+
+
+
+  
+  }, [scanning, energy, finishScan]);
 
 
   // ── Iniciar scan ──
@@ -1012,396 +1060,241 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
   const center = radarSize / 2;
 
   return (
-    <div className="flex flex-col items-center h-full overflow-auto py-4 px-3 gap-4">
-
-      {/* Titulo + Energia + Clima */}
-      <div className="flex items-center justify-between w-full max-w-sm">
-        {/* Indicador de clima e localizacao */}
-        <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background: "rgba(0,0,0,0.3)" }}>
-          <span className="text-base">
-            {weather.condition === "clear" && "☀️"}
-            {weather.condition === "rain" && "🌧️"}
-            {weather.condition === "thunderstorm" && "⛈️"}
-            {weather.condition === "clouds" && "☁️"}
-            {weather.condition === "snow" && "❄️"}
-            {weather.condition === "unknown" && "🌡️"}
+<div className="flex flex-col items-center h-full overflow-auto py-4 px-3 gap-4 bg-slate-950 font-mono text-cyan-400">
+  
+  {/* TOP HUD: Weather & Energy */}
+  <div className="flex items-center justify-between w-full max-w-sm border-b border-cyan-900/50 pb-2 mb-2">
+    <div className="flex items-center gap-3 px-3 py-1 bg-black/60 border-l-2 border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.1)]">
+      <span className="text-xl animate-pulse">
+        {weather.condition === "clear" && "☀️"}
+        {weather.condition === "rain" && "🌧️"}
+        {weather.condition === "thunderstorm" && "⛈️"}
+        {weather.condition === "clouds" && "☁️"}
+        {weather.condition === "unknown" && "📡"}
+      </span>
+      <div className="flex flex-col">
+        <span className="text-[10px] uppercase tracking-tighter text-cyan-500/70">Location_Signal</span>
+        <span className="text-xs font-black text-white uppercase truncate max-w-[100px]">
+          {weather.city || "Searching..."}
+        </span>
+      </div>
+      
+      <div className="flex gap-1">
+        {(weather.condition === "rain" || weather.condition === "thunderstorm") && (
+          <span className="text-[9px] px-1.5 py-0.5 bg-blue-600/20 border border-blue-500 text-blue-400 font-bold animate-pulse">
+            WATER_UP
           </span>
-          <div className="flex flex-col">
-            {/* Nome da cidade em destaque */}
-            <span className="text-[11px] font-bold text-foreground leading-tight">
-              {weather.city || "Localizando..."}
-            </span>
-            <span className="text-[9px] text-muted-foreground leading-tight">
-              {weather.description}
-              {weather.temperature > 0 && ` - ${weather.temperature}°C`}
-            </span>
-          </div>
-          {/* Bonus indicator */}
-          <div className="flex flex-col gap-0.5">
-            {(weather.condition === "rain" || weather.condition === "thunderstorm") && (
-              <span className="text-[8px] px-1 py-0.5 rounded font-bold" style={{ background: "rgba(59,130,246,0.3)", color: "#60A5FA" }}>
-                +Agua
-              </span>
-            )}
-            {weather.condition === "clear" && (
-              <span className="text-[8px] px-1 py-0.5 rounded font-bold" style={{ background: "rgba(239,68,68,0.3)", color: "#F87171" }}>
-                +Fogo
-              </span>
-            )}
-            {isNightTime() && (
-              <span className="text-[8px] px-1 py-0.5 rounded font-bold" style={{ background: "rgba(139,92,246,0.3)", color: "#A78BFA" }}>
-                +Noturno
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Bateria com raio */}
-        <div className="flex items-center">
-          {recoveryTimer && !energy.batteryActive && (
-            <span style={{ paddingRight: 5 }} className="text-[10px] text-muted-foreground font-mono">{recoveryTimer}</span>
-          )}
-          <BatteryIcon charges={energy.charges} max={energy.batteryActive ? BATTERY_ENERGY : MAX_ENERGY} />
-          {energy.batteryActive
-            ? <span style={{ color: "#EAB308", fontSize: 10, paddingLeft: 2 }}>{energy.charges / BATTERY_ENERGY * 100}%</span>
-            : <span style={{ color: "#595753", fontSize: 10, paddingLeft: 2 }}>{energy.charges / MAX_ENERGY * 100}%</span>
-          }
-        </div>
-
+        )}
+        {weather.condition === "clear" && (
+          <span className="text-[9px] px-1.5 py-0.5 bg-red-600/20 border border-red-500 text-red-400 font-bold animate-pulse">
+            FIRE_UP
+          </span>
+        )}
       </div>
+    </div>
 
-      {/* Mensagem */}
-      <AnimatePresence>
-        {scanMessage && (
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="absolute text-xs font-medium text-center px-3 py-1.5 rounded-lg"
-            style={{ backgroundColor: "rgb(0, 3, 1)", color: "#22C55E", top: 270, zIndex: 77 }}
-          >
-            {scanMessage}
-          </motion.p>
+    <div className="flex flex-col items-end">
+      <span className="text-[9px] uppercase text-cyan-500/50 mb-1">Power_Core</span>
+      <div className="flex items-center gap-2">
+        {recoveryTimer && !energy.batteryActive && (
+          <span className="text-[10px] text-cyan-600 animate-pulse">{recoveryTimer}</span>
         )}
-      </AnimatePresence>
+        <div className="relative">
+             <BatteryIcon charges={energy.charges} max={energy.batteryActive ? BATTERY_ENERGY : MAX_ENERGY} />
+             <div className="absolute inset-0 shadow-[0_0_10px_rgba(34,197,94,0.3)] pointer-events-none" />
+        </div>
+        <span className={`text-xs font-bold ${energy.batteryActive ? 'text-yellow-400' : 'text-cyan-400'}`}>
+          {Math.floor((energy.charges / (energy.batteryActive ? BATTERY_ENERGY : MAX_ENERGY)) * 100)}%
+        </span>
+      </div>
+    </div>
+  </div>
 
-      {/* Radar circular */}
-      <div
-          onClick={startScan}
-        className="z-20 relative shrink-0"
-        style={{ width: radarSize, height: radarSize }}
-      >
-        {/* Fundo do radar */}
-        <svg
-          width={radarSize}
-          height={radarSize}
-          viewBox={`0 0 ${radarSize} ${radarSize}`}
-          className="absolute inset-0 "
-        >
-          {/* Círculos concêntricos */}
-          {[0.25, 0.5, 0.75, 1].map((r) => (
-            <circle
-              key={r}
-              cx={center}
-              cy={center}
-              r={center * r - 2}
-              fill="none"
-              stroke="rgba(34,197,94,0.15)"
-              strokeWidth={1}
-            />
-          ))}
-          {/* Cruz central */}
-          <line x1={center} y1={4} x2={center} y2={radarSize - 4} stroke="rgba(34,197,94,0.1)" strokeWidth={1} />
-          <line x1={4} y1={center} x2={radarSize - 4} y2={center} stroke="rgba(34,197,94,0.1)" strokeWidth={1} />
-          {/* Ponto central (treinador) */}
-          <circle cx={center} cy={center} r={4} fill="#1a3c26" opacity={0.9} />
-          <circle cx={center} cy={center} r={7} fill="none" stroke="#102216" strokeWidth={1} opacity={0.4} />
-        </svg>
+  {/* MAIN RADAR AREA */}
+  <div 
+    onClick={startScan}
+    className="z-20 relative shrink-0 cursor-crosshair group"
+    style={{ width: radarSize, height: radarSize }}
+  >
+    <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,_#061b1b_0%,_#000000_100%)] border border-cyan-500/30 overflow-hidden">
+        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,118,0.06))] bg-[length:100%_2px,3px_100%]" />
+    </div>
 
-        {/* Sweep de scan (linha giratória) */}
-        {scanning && (
-          <motion.div
-            className="absolute inset-0 pointer-events-none"
-            style={{ transformOrigin: "center center" }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          >
-            <svg width={radarSize} height={radarSize} viewBox={`0 0 ${radarSize} ${radarSize}`}>
-              <defs>
-                <linearGradient id="sweep-grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#22C55E" stopOpacity="0.6" />
-                  <stop offset="100%" stopColor="#22C55E" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {/* Sweep cone */}
-              <path
-                d={`M ${center} ${center} L ${center} 4 A ${center - 4} ${center - 4} 0 0 1 ${center + (center - 4) * Math.sin(Math.PI / 6)} ${center - (center - 4) * Math.cos(Math.PI / 6)} Z`}
-                fill="url(#sweep-grad)"
-                opacity={0.5}
-              />
-              {/* Sweep line */}
-              <line
-                x1={center}
-                y1={center}
-                x2={center}
-                y2={4}
-                stroke="#22C55E"
-                strokeWidth={2}
-                opacity={0.8}
-              />
-            </svg>
-          </motion.div>
-        )}
-
-        {/* Paw prints trail */}
-        <svg
-          className="absolute inset-0 pointer-events-none z-[5]"
-          width={radarSize}
-          height={radarSize}
-          viewBox={`0 0 ${radarSize} ${radarSize}`}
-        >
-          {blips.flatMap((blip) =>
-            blip.pawPrints.map((paw) => (
-              <g
-                key={paw.id}
-                opacity={paw.opacity}
-                transform={`translate(${paw.x}, ${paw.y}) rotate(${paw.rotation})`}
-              >
-                {/* Small paw - 3 toes + pad */}
-                <circle cx={-2.5} cy={-3} r={1.2} fill="rgba(34,197,94,0.7)" />
-                <circle cx={0} cy={-4} r={1.2} fill="rgba(34,197,94,0.7)" />
-                <circle cx={2.5} cy={-3} r={1.2} fill="rgba(34,197,94,0.7)" />
-                <ellipse cx={0} cy={0} rx={2.5} ry={2} fill="rgba(34,197,94,0.6)" />
-              </g>
-            ))
-          )}
-        </svg>
-
-        {/* Blips (pontos de pokemon) */}
-        <AnimatePresence>
-          {blips.map((blip) => {
-            const rad = (blip.angle * Math.PI) / 180;
-            const maxR = center - 16;
-            const x = center + Math.cos(rad) * maxR * blip.distance;
-            const y = center + Math.sin(rad) * maxR * blip.distance;
-            const color = blip.isEgg
-              ? (EGG_TIER_COLORS[blip.egg?.tier || "green"].bg)
-              : blip.isGift
-                ? (blip.giftKit?.color || "#F59E0B")
-                : TYPE_COLORS[(blip.pokemon?.types[0] || "normal") as PokemonType] || "#22C55E";
-
-            return (
-              <motion.button
-                key={blip.id}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1, left: x - 12, top: y - 12 }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={{ delay: blip.delay, type: "spring", stiffness: 300, damping: 20, left: { duration: 0.35, ease: "easeOut", delay: 0 }, top: { duration: 0.35, ease: "easeOut", delay: 0 } }}
-                className="absolute z-10 group"
-                style={{ zIndex:100,
-                  width: 24,
-                  height: 24,
-                }}
-                onClick={() => handleBlipClick(blip)}
-              >
-                {/* Glow ring */}
-                <motion.div
-                  className="absolute inset-0 rounded-full"
-                  style={{
-                    backgroundColor: color,
-                    opacity: 0.25,
-                    boxShadow: `0 0 12px ${color}`,
-                  }}
-                  animate={{ scale: [1, 1.6, 1], opacity: [0.25, 0.1, 0.25] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: blip.delay }}
-                />
-                {/* Dot */}
-                <div
-                  className="absolute inset-1 rounded-full flex items-center justify-center"
-                  style={{
-                    backgroundColor: color,
-                    boxShadow: `0 0 6px ${color}`,
-                  }}
-                >
-                  {blip.isEgg ? (
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="white">
-                      <ellipse cx="12" cy="13" rx="8" ry="10" fill="white" opacity="0.9" />
-                    </svg>
-                  ) : blip.isGift ? (
-                    <svg width="8" height="8" viewBox="0 0 24 24" fill="white">
-                      <path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 110-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 100-5C13 2 12 7 12 7z" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  ) : null}
-                </div>
-                {/* Hover/selected indicator */}
-                {selectedBlip?.id === blip.id && (
-                  <motion.div
-                    className="absolute -inset-1 rounded-full border-2"
-                    style={{ borderColor: color }}
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                  />
-                )}
-              </motion.button>
-            );
-          })}
-        </AnimatePresence>
-
-        {/* Borda exterior do radar */}
-        <div
-          className="absolute inset-0 rounded-full pointer-events-none"
-          style={{
-            border: "2px solid rgba(118, 255, 6, 0.3)",
-            boxShadow: "0 0 20px rgba(34,197,94,0.1), inset 0 0 30px rgba(0,0,0,0.4)",
-          }}
+    <svg width={radarSize} height={radarSize} className="absolute inset-0">
+      {[0.25, 0.5, 0.75, 1].map((r) => (
+        <circle
+          key={r}
+          cx={center} cy={center} r={center * r - 2}
+          fill="none"
+          stroke="rgba(6, 182, 212, 0.2)"
+          strokeWidth={1}
+          strokeDasharray={r === 1 ? "0" : "4 4"}
         />
-      </div>
+      ))}
+      <line x1={center} y1="0" x2={center} y2={radarSize} stroke="rgba(6, 182, 212, 0.3)" strokeWidth={0.5} />
+      <line x1="0" y1={center} x2={radarSize} y2={center} stroke="rgba(6, 182, 212, 0.3)" strokeWidth={0.5} />
+    </svg>
 
-      {/* Progress bar during scan */}
-      {/* {scanning && (
-        <div className="w-full max-w-sm">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] text-muted-foreground">Escaneando...</span>
-            <span className="text-[10px] text-muted-foreground font-mono">
-              {Math.round(scanProgress * 100)}%
-            </span>
-          </div>
-          <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
-            <motion.div
-              className="h-full rounded-full"
-              style={{ backgroundColor: "#22C55E" }}
-              animate={{ width: `${scanProgress * 100}%` }}
-              transition={{ duration: 0.1 }}
-            />
-          </div>
-        </div>
-      )} */}
-
-
-
-      {/* Botão de scan */}
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, width: '100%' }}>
-        {/* <Button
-          onClick={startScan}
-          disabled={scanning || energy.charges <= 0}
-          className="w-full  h-12 text-sm font-bold relative overflow-hidden"
-          style={{
-            backgroundColor: scanning ? "rgba(16, 80, 148, 0.15)" : energy.charges > 0 ? "#22C55E" : "rgba(255,255,255,0.08)",
-            color: energy.charges > 0 ? "#fff" : "rgba(255,255,255,0.4)",
-          }}
-        >
-          {scanning ? (
-            <span className="flex items-center gap-2">
-              <motion.div
-                className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              />
-              Escaneando
-            </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <RadarIcon />
-              {energy.charges > 0 ? "Iniciar" : "Sem Energia"}
-            </span>
-          )}
-        </Button> */}
-
-
-        <>
-          <Button
-            disabled={!selectedBlip || !selectedBlip.pokemon}
-            onClick={handleBattle}
-            className="w-full max-w-sm h-12 text-sm font-bold relative overflow-hidden"
-            style={{ backgroundColor: selectedBlip && selectedBlip.pokemon ? "#0a8c61" : "#333645" }}
+    {/* PAW PRINTS LAYER (Adicionadas aqui no estilo anterior) */}
+    <svg
+      className="absolute inset-0 pointer-events-none z-[5]"
+      width={radarSize}
+      height={radarSize}
+      viewBox={`0 0 ${radarSize} ${radarSize}`}
+    >
+      {blips.flatMap((blip) =>
+        blip.pawPrints.map((paw) => (
+          <g
+            key={paw.id}
+            opacity={paw.opacity}
+            transform={`translate(${paw.x}, ${paw.y}) rotate(${paw.rotation})`}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-              <path d="M14.5 17.5L3 6V3h3l11.5 11.5" />
-              <path d="M13 19l6-6" />
-              <path d="M16 16l4 4" />
-              <path d="M19 21l2-2" />
-            </svg>
-            {selectedBlip && selectedBlip.pokemon ? "Batalhar" : ""}
-          </Button>
-          <Button
-            disabled={!selectedBlip || !selectedBlip.pokemon}
-            onClick={handleCapture}
-            className="w-full max-w-sm h-12 text-sm font-bold relative overflow-hidden"
-            style={{ backgroundColor: selectedBlip && selectedBlip.pokemon ? "#0a8c61" : "#333645" }}
-          >
-            <svg width="16" height="16" viewBox="0 0 100 100" className="mr-1">
-              <circle cx="50" cy="50" r="48" fill={selectedBlip && selectedBlip.pokemon ? "#EF4444" : "#1E293B"} stroke="#1E293B" strokeWidth="3" />
-              <rect x="2" y="48" width="96" height="4" fill="#1E293B" />
-              <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#F1F5F9" />
-              <circle cx="50" cy="50" r="14" fill="#F1F5F9" stroke="#1E293B" strokeWidth="3" />
-              <circle cx="50" cy="50" r="7" fill="#1E293B" />
-            </svg>
-            {selectedBlip && selectedBlip.pokemon ? "Capturar" : ""}
-          </Button>
-        </>
-      </div>
+            {/* Paw visual - Estilo minimalista combinando com o radar */}
+            <circle cx={-2.5} cy={-3} r={1.2} fill="rgba(6, 182, 212, 0.6)" />
+            <circle cx={0} cy={-4} r={1.2} fill="rgba(6, 182, 212, 0.6)" />
+            <circle cx={2.5} cy={-3} r={1.2} fill="rgba(6, 182, 212, 0.6)" />
+            <ellipse cx={0} cy={0} rx={2.5} ry={2} fill="rgba(6, 182, 212, 0.4)" />
+          </g>
+        ))
+      )}
+    </svg>
 
+{/* Scanning Sweep - Radar Clássico */}
+{/* Scanning Sweep - Radar Clássico Alinhado */}
+{scanning && (
+  <motion.div
+    className="absolute inset-0 pointer-events-none z-10"
+    style={{ transformOrigin: "center center" }}
+    animate={{ rotate: 360 }}
+    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+  >
+    {/* O Rastro (Fatia de Luz) - Ajustado para alinhar com o topo */}
+    <div 
+      className="absolute inset-0 rounded-full"
+      style={{ 
+        // "from 0deg" começa no topo (12h), exatamente onde a linha está
+        // O rastro de 25% (90 graus) fica "atrás" da linha no sentido horário
+        background: `conic-gradient(from 0deg at 50% 50%, rgba(34, 211, 238, 0.14) 1%, transparent 60%)`,
+        maskImage: 'radial-gradient(circle, black 35%, transparent 100%)',
+        WebkitMaskImage: 'radial-gradient(circle, black 35%, transparent 100%)',
+        transform: 'rotate(-90deg)' // Compensação para o gradiente colar na linha
+      }}
+    />
 
-      {/* Painel do presente coletado */}
-      <AnimatePresence>
-        {claimedGift && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            className=" w-full max-w-sm rounded-xl border-2 p-4 flex flex-col items-center gap-3"
-            style={{
-              borderColor: claimedGift.color,
-              background: `linear-gradient(135deg, rgb(0, 0, 0) 0%, ${claimedGift.color}20 100%)`,
+    {/* A Linha do Ponteiro (O Scanner Laser) */}
+    <div 
+      className="absolute top-0 left-1/2 w-[2px] h-1/2 bg-cyan-400" 
+      style={{ 
+        transform: "translateX(-50%)",
+        boxShadow: "0 0 15px #22d3ee, 0 0 5px #fff" 
+      }}
+    />
+    
+    {/* Ponto de luz na ponta (Efeito lente) */}
+    <div 
+      className="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_12px_#22d3ee]" 
+    />
+  </motion.div>
+)}
+
+    {/* Blips & Entities */}
+    {/* Blips & Entities */}
+    <AnimatePresence>
+      {blips.map((blip) => {
+        const rad = (blip.angle * Math.PI) / 180;
+        const maxR = center - 20;
+        const x = center + Math.cos(rad) * maxR * blip.distance;
+        const y = center + Math.sin(rad) * maxR * blip.distance;
+        
+        // Verifica se este blip é o alvo selecionado
+        const isSelected = selectedBlip?.id === blip.id;
+
+        // Lógica de cores original
+        const color = blip.isEgg
+          ? (EGG_TIER_COLORS[blip.egg?.tier || "green"].bg)
+          : blip.isGift
+            ? (blip.giftKit?.color || "#F59E0B")
+            : TYPE_COLORS[(blip.pokemon?.types[0] || "normal")];
+
+        return (
+          <motion.button
+            key={blip.id}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ 
+              scale: 1, 
+              opacity: 1, 
+              left: x - 12, 
+              top: y - 12,
+              zIndex: isSelected ? 50 : 30 // Alvo clicado fica por cima de tudo
+            }}
+            exit={{ scale: 0, opacity: 0 }}
+            className="absolute group transition-transform active:scale-90"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleBlipClick(blip);
             }}
           >
-            {/* Gift icon */}
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1, rotate: [0, -10, 10, -5, 5, 0] }}
-              transition={{ duration: 0.6 }}
-              className="w-14 h-14 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: `${claimedGift.color}30` }}
-            >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={claimedGift.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 110-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 100-5C13 2 12 7 12 7z" />
-              </svg>
-            </motion.div>
+            <div className="relative w-7 h-7 flex items-center justify-center">
+                
+                {/* DESTAQUE DE ALVO CLICADO (Target Lock Brackets) */}
+                {isSelected && (
+                  <>
+                    {/* Cantoneiras de Mira Estilo Sniper */}
+                    <motion.div 
+                      initial={{ scale: 1.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="absolute inset-0 pointer-events-none"
+                    >
+                      <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2" style={{ borderColor: color }} />
+                      <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2" style={{ borderColor: color }} />
+                      <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2" style={{ borderColor: color }} />
+                      <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2" style={{ borderColor: color }} />
+                    </motion.div>
 
-            <div className="text-center">
-              <span className="text-xs font-bold tracking-wider" style={{ color: claimedGift.color }}>
-                {claimedGift.label.toUpperCase()}
-              </span>
+                    {/* Pulso de Radar Circular no Alvo */}
+                    <motion.div 
+                      animate={{ scale: [1, 2], opacity: [0.5, 0] }}
+                      transition={{ repeat: Infinity, duration: 1.2, ease: "easeOut" }}
+                      className="absolute inset-0 rounded-full border-2"
+                      style={{ borderColor: color }}
+                    />
+                  </>
+                )}
+
+                {/* Anel Giratório Padrão (Fica mais opaco se selecionado) */}
+                <div 
+                  className={`absolute inset-1 border border-dashed rounded-full animate-spin-slow ${isSelected ? 'opacity-100 border-2' : 'opacity-40 border-1'}`} 
+                  style={{ borderColor: color }} 
+                />
+
+                {/* Ponto Central (Blip) */}
+                <div 
+                  className={`w-2.5 h-2.5 rounded-full shadow-[0_0_10px_currentColor] transition-all duration-300`} 
+                  style={{ 
+                    backgroundColor: color, 
+                    color: color,
+                    boxShadow: isSelected ? `0 0 20px ${color}` : `0 0 8px ${color}`,
+                    transform: isSelected ? 'scale(1.2)' : 'scale(1)'
+                  }} 
+                />
+                
+                {/* Indicador visual para itens especiais */}
+                {(blip.isEgg || blip.isGift) && !isSelected && (
+                  <span className="absolute -top-1 -right-1 text-[8px] drop-shadow-md">
+                    {blip.isEgg ? "🥚" : "🎁"}
+                  </span>
+                )}
             </div>
+          </motion.button>
+        );
+      })}
+    </AnimatePresence>
 
-            {/* Rewards list */}
-            <div className="flex flex-col gap-1.5 w-full">
-              {claimedGift.rewards.map((r, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.15 }}
-                  className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-1.5"
-                >
-                  {r.type === "money" ? (
-                    <>
-                      <span className="text-amber-400 text-sm">$</span>
-                      <span className="text-xs font-bold text-amber-400">{r.quantity.toLocaleString("pt-BR")}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-xs text-foreground">{r.itemName}</span>
-                      <span className="text-[10px] text-muted-foreground ml-auto">x{r.quantity}</span>
-                    </>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+    <div className="absolute -inset-2 border-2 border-cyan-500/20 rounded-full pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-950 px-2 text-[8px] text-cyan-500 font-bold">RADAR_V3.0</div>
+  
+    </div>
+  </div>
       {/* Botão de ativar bateria */}
       {canActivateBattery && (
         <button
@@ -1419,122 +1312,112 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
           Ativar Super Bateria ({bagBatteryCount} na bolsa)
         </button>
       )}
-      {energy.batteryActive && bagBatteryCount > 0 && (
-        <p className="text-[10px] text-muted-foreground text-center max-w-sm">
-          Proxima bateria disponivel apos esgotar a atual ({bagBatteryCount} aguardando)
-        </p>
-      )}
-
-      {/* Painel do ovo coletado */}
-      <AnimatePresence>
-        {claimedEgg && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            className="w-full max-w-sm rounded-xl border-2 p-4 flex flex-col items-center gap-3"
-            style={{
-              borderColor: EGG_TIER_COLORS[claimedEgg.tier].bg,
-              background: `linear-gradient(135deg, rgba(0,0,0,0.7) 0%, ${EGG_TIER_COLORS[claimedEgg.tier].bg}20 100%)`,
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1, rotate: [0, -8, 8, -4, 4, 0] }}
-              transition={{ duration: 0.6 }}
-              className="w-14 h-14 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: `${EGG_TIER_COLORS[claimedEgg.tier].bg}25` }}
-            >
-              <svg width="32" height="32" viewBox="0 0 40 48" fill="none">
-                <ellipse cx="20" cy="26" rx="14" ry="18" fill={EGG_TIER_COLORS[claimedEgg.tier].bg} opacity="0.9" />
-                <ellipse cx="20" cy="26" rx="14" ry="18" fill="none" stroke="white" strokeWidth="1.5" opacity="0.4" />
-                <ellipse cx="15" cy="20" rx="3" ry="4" fill="white" opacity="0.25" transform="rotate(-15 15 20)" />
-              </svg>
-            </motion.div>
-            <div className="text-center">
-              <span className="text-xs font-bold tracking-wider" style={{ color: EGG_TIER_COLORS[claimedEgg.tier].bg }}>
-                OVO ENCONTRADO!
-              </span>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                Ovo {EGG_TIER_COLORS[claimedEgg.tier].label} - Veja na aba Ovos da Pokedex
-              </p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Painel do pokemon selecionado */}
-      <AnimatePresence mode="wait">
-        {selectedBlip && selectedBlip.pokemon && (
-          <motion.div
-            key={selectedBlip.id}
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="absolute z-0  w-full max-w-sm rounded-xl  p-4 flex flex-col items-center gap-3"
-            style={{
-              background: ` ${TYPE_COLORS[selectedBlip.pokemon.types[0] as PokemonType]}15 100%)`,
-            }} >
-            {/* Pokemon sprite */}
-            <div className="relative">
-              <div
-                className="absolute -inset-6 rounded-full blur-2xl opacity-60"
-                style={{ backgroundColor: TYPE_COLORS[selectedBlip.pokemon.types[0] as PokemonType], top: 70 }}
-              />
-              <img
-                src={getSpriteUrl(selectedBlip.pokemon.id)}
-                alt={selectedBlip.pokemon.name}
-                width={100}
-                height={100}
-                className="relative z-0  pixelated drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)]"
-                style={isDiscovered(selectedBlip.pokemon.id) ? { top: 70 } : { filter: "saturate(0%) brightness(0.0)", top: 70 }}
-                crossOrigin="anonymous"
-                loading="lazy"
-              />
-            </div>
-
-            {/* Info */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-xs text-muted-foreground font-mono">
-                {isDiscovered(selectedBlip.pokemon.id) ? `#${String(selectedBlip.pokemon.id).padStart(3, "0")}` : ""}
-              </span>
-              <span style={{ top: 8, zIndex: 0 }} className="absolute text-base font-bold text-foreground capitalize">
-                {isDiscovered(selectedBlip.pokemon.id) ? selectedBlip.pokemon.name : ""}
-              </span>
 
 
-            </div>
+{/* POKEMON DATA OVERLAY */}
+<AnimatePresence mode="wait">
+  {selectedBlip && selectedBlip.pokemon && (
+    <motion.div
+      key={selectedBlip.id}
+      initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      exit={{ opacity: 0, y: 20, filter: "blur(10px)" }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className="absolute bottom-20 bg-black/90 border-t-2 border-b-2 border-cyan-500 py-2 w-full max-w-sm flex items-center px-3 gap-2 backdrop-blur-md z-[100] shadow-[0_0_30px_rgba(6,182,212,0.2)]"
+    >
+      {/* NOVO: Botão Start Scan integrado ao Card */}
+<Button
+  onClick={(e) => { e.stopPropagation(); startScanAgain(); }}
+  disabled={scanning}
+  // Adicionado !bg-transparent e active:!bg-cyan-500/20 para travar a cor
+  className={`
+    relative shrink-0 w-12 h-16 flex flex-col items-center justify-center gap-1 
+    border-r border-cyan-500/30 pr-3 transition-all duration-200
+    !bg-transparent hover:!bg-cyan-500/10 active:!bg-cyan-500/20 
+    !text-cyan-400 focus:ring-0 focus:outline-none outline-none
+    ${scanning ? 'opacity-40 grayscale' : 'opacity-100'}
+  `}
+>
+  {/* Glow Effect de fundo (Só aparece quando não está escaneando) */}
+  {!scanning && (
+    <div className="absolute inset-0 bg-cyan-500/5 animate-pulse -z-10" />
+  )}
 
-            {/* Botão capturar */}
+  {/* Ícone 📡 */}
+  <div className="relative">
+    <span className={`text-xl block leading-none ${scanning ? 'animate-spin opacity-50' : 'text-cyan-400'}`}>
+      📡
+    </span>
+    {/* Sombra interna do ícone */}
+    {!scanning && (
+       <div className="absolute inset-0 blur-[6px] bg-cyan-400/40 rounded-full -z-10" />
+    )}
+  </div>
 
+  {/* Texto Scan */}
+  <span className={`
+    text-[8px] font-black uppercase tracking-[0.15em] mt-1
+    ${scanning ? 'text-cyan-800' : 'text-cyan-500'}
+  `}>
+    {scanning ? 'Wait' : 'Scan'}
+  </span>
 
+  {/* Pequeno detalhe de "LED" na base do botão */}
+  <div className={`
+    w-4 h-[2px] mt-1 rounded-full
+    ${scanning ? 'bg-cyan-900' : 'bg-cyan-400 shadow-[0_0_5px_#22d3ee]'}
+  `} />
+</Button>
+      {/* Sprite Slot */}
+      <div className="relative shrink-0 w-14 h-14 bg-cyan-950/30 border border-cyan-500/50 rounded overflow-hidden p-1">
+        <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,191,255,0.1)_50%)] bg-[length:100%_4px] pointer-events-none z-10" />
+        <img
+          src={getSpriteUrl(selectedBlip.pokemon.id)}
+          className={`w-full h-full pixelated object-contain relative z-0 ${!isDiscovered(selectedBlip.pokemon.id) && 'brightness-0 opacity-70'}`}
+          alt="target"
+        />
+        <div className="absolute top-0 left-0 w-1 h-1 border-t border-l border-cyan-400" />
+        <div className="absolute bottom-0 right-0 w-1 h-1 border-b border-r border-cyan-400" />
+      </div>
 
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Legenda */}
-      {/* <div className="w-full max-w-sm mt-auto pt-3 border-t border-border">
-        <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <BatteryIcon charges={1} max={4} size={14} />
-            <span>1 energia por scan</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
-            <span>Recarga em 5 min</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-yellow-500 shrink-0" />
-            <span>Caixas presente</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
-            <span>Noturnos: 18h-6h</span>
-          </div>
+      {/* Info Group */}
+      <div className="flex flex-col min-w-[65px] max-w-[80px]">
+        <span className="text-[7px] text-cyan-500/70 font-black tracking-tighter leading-none">ID:{String(selectedBlip.pokemon.id).padStart(3, '0')}</span>
+        <span className="text-[11px] font-black text-white uppercase italic truncate mt-0.5">
+          {isDiscovered(selectedBlip.pokemon.id) ? selectedBlip.pokemon.name : "UNK_DATA"}
+        </span>
+        <div className="flex gap-1 mt-1">
+          <span className="text-[6px] px-1 bg-cyan-500 text-black font-black uppercase">
+            {isDiscovered(selectedBlip.pokemon.id) ? selectedBlip.pokemon.types[0] : "???"}
+          </span>
         </div>
-      </div> */}
-    </div>
+      </div>
+
+      {/* Action Buttons Group */}
+      <div className="flex flex-1 gap-1 items-center pl-1 border-l border-cyan-900/50">
+        <Button
+          onClick={(e) => { e.stopPropagation(); handleBattle(); }}
+          className="flex-1 h-9 px-0 bg-red-600/10 border border-red-600/50 text-red-500 text-[8px] font-black uppercase skew-x-[-12deg] hover:bg-red-600 hover:text-white transition-all active:scale-95"
+        >
+          <span className="skew-x-[12deg]">⚔️ BATTLE</span>
+        </Button>
+
+        <Button
+          onClick={(e) => { e.stopPropagation(); handleCapture(); }}
+          className="flex-1 h-9 px-0 bg-cyan-600/10 border border-cyan-600/50 text-cyan-400 text-[8px] font-black uppercase skew-x-[-12deg] hover:bg-cyan-600 hover:text-white transition-all active:scale-95"
+        >
+          <span className="skew-x-[12deg]">🎯 GET</span>
+        </Button>
+      </div>
+
+      {/* Decorative Line */}
+      <div className="absolute top-0 right-4 -translate-y-full">
+        <div className="h-[1px] w-6 bg-cyan-500/40" />
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
+</div>
   );
 }
 

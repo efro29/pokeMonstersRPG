@@ -187,7 +187,7 @@ export default function Page() {
   // Create audio player ONCE
   useEffect(() => {
     const audio = new Audio();
-    audio.volume = 0.4;
+    audio.volume = 0.01;
     audioRef.current = audio;
 
     // When a home track ends, play another random one (not looped)
@@ -626,7 +626,7 @@ export default function Page() {
       />
       
       {/* Daily Streak Toast */}
-      {streakToast && (
+      {/* {streakToast && (
         <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[101] animate-in fade-in slide-in-from-top-4 duration-300 w-[300px]">
           {streakToast.milestone ? (
             // Milestone unlocked - special legendary toast
@@ -663,10 +663,10 @@ export default function Page() {
             </div>
           )}
         </div>
-      )}
+      )} */}
 
       {/* Exploration XP Toast */}
-      {explorationRewardToast && (
+      {/* {explorationRewardToast && (
         <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
           <div className="bg-card border border-border rounded-xl shadow-2xl p-3 min-w-[260px] max-w-[320px]">
             <div className="flex items-center gap-2 mb-2">
@@ -707,7 +707,7 @@ export default function Page() {
             )}
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Header */}
       <header className="flex items-center justify-between p-3 border-b border-border bg-[#011a3b] ">

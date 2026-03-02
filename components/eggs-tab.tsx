@@ -8,36 +8,109 @@ import { getSpriteUrl } from "@/lib/pokemon-data";
 import { useModeStore } from "@/lib/mode-store";
 import { Button } from "@/components/ui/button";
 import { Egg, Clock, Sparkles, Timer } from "lucide-react";
+import React from "react";
 
 // ── Egg SVG Component ──
 function EggIcon({ tier, size = 64, wobble = false }: { tier: EggTier; size?: number; wobble?: boolean }) {
   const colors = EGG_TIER_COLORS[tier];
+  const id = React.useId().replace(/:/g, '');
+
   return (
     <motion.svg
       width={size}
       height={size * 1.2}
-      viewBox="0 0 40 48"
-      animate={wobble ? { rotate: [-3, 3, -3, 3, 0] } : {}}
-      transition={wobble ? { duration: 0.4, repeat: Infinity, repeatDelay: 1.5 } : {}}
+      viewBox="0 0 40 50"
+      className="filter drop-shadow-[0_0_8px_rgba(0,0,0,0.3)]"
+      animate={wobble ? { 
+        rotate: [-3, 3, -3, 3, 0],
+        y: [0, -4, 0],
+        scale: [1, 1.05, 1]
+      } : {}}
+      transition={wobble ? { 
+        duration: 0.5, 
+        repeat: Infinity, 
+        repeatDelay: 1,
+        ease: "easeInOut"
+      } : {}}
     >
-      {/* Shadow */}
-      <ellipse cx="20" cy="44" rx="10" ry="3" fill="black" opacity="0.15" />
-      {/* Egg body */}
-      <ellipse cx="20" cy="26" rx="13" ry="17" fill={colors.bg} />
-      {/* Darker bottom half */}
-      <clipPath id={`egg-clip-${tier}`}>
-        <rect x="0" y="30" width="40" height="18" />
-      </clipPath>
-     
-      {/* Spots */}
-      <circle cx="14" cy="22" r="2.5" fill="white" opacity="0.1" />
-      <circle cx="24" cy="18" r="2" fill="white" opacity="0.15" />
-      <circle cx="18" cy="32" r="1.8" fill="white" opacity="0.12" />
-      <circle cx="26" cy="28" r="2.2" fill="white" opacity="0.18" />
-      {/* Highlight */}
-      <ellipse cx="15" cy="19" rx="3" ry="5" fill="white" opacity="0.2" transform="rotate(-15 15 19)" />
-      {/* Outline */}
-      <ellipse cx="20" cy="26" rx="13" ry="17" fill="none" stroke="white" strokeWidth="0.8" opacity="0.2" />
+      <defs>
+        {/* Gradiente do Corpo (Profundidade 3D) */}
+        <radialGradient id={`eggGrad-${id}`} cx="35%" cy="35%" r="65%">
+
+          <stop offset="10%" stopColor={colors.bg} />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.6" />
+        </radialGradient>
+
+        {/* Brilho do Núcleo (Energia Vital) */}
+        <radialGradient id={`coreGlow-${id}`}>
+          <stop offset="0%" stopColor="white" stopOpacity="0.8" />
+          <stop offset="50%" stopColor={colors.bg} stopOpacity="0.4" />
+          <stop offset="100%" stopColor={colors.bg} stopOpacity="0" />
+        </radialGradient>
+
+        {/* Reflexo de Vidro Curvo */}
+        <linearGradient id={`glassReflex-${id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="white" stopOpacity="0.5" />
+          <stop offset="40%" stopColor="white" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      {/* Sombra no Chão */}
+      <ellipse cx="20" cy="46" rx="12" ry="3" fill="black" opacity="0.2" />
+
+      {/* CORPO DO OVO (Base) */}
+      <ellipse cx="20" cy="25" rx="14" ry="19" fill={`url(#eggGrad-${id})`} />
+
+      {/* NÚCLEO DE ENERGIA (O que está lá dentro) */}
+      <motion.circle 
+        cx="20" cy="28" r="8" 
+        fill={`url(#coreGlow-${id})`}
+        animate={{ 
+          scale: [1, 1.2, 1],
+          opacity: [0.3, 0.7, 0.3]
+        }}
+        transition={{ duration: 2, repeat: Infinity }}
+      />
+
+      {/* MANCHAS ESTILIZADAS (Hexágonos ou Círculos Tech) */}
+      <g opacity="0.2" fill="white">
+        <circle cx="12" cy="20" r="3" />
+        <circle cx="28" cy="18" r="2" />
+        <circle cx="22" cy="35" r="2.5" />
+      </g>
+
+      {/* REFLEXO DE SUPERFÍCIE (Glass Effect) */}
+      <path 
+        d="M10,18 C12,10 28,10 30,18" 
+        stroke={`url(#glassReflex-${id})`} 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        fill="none" 
+      />
+
+      {/* ANEL DE CONTENÇÃO (Base Tech) */}
+      <path 
+        d="M8,35 A15,5 0 0,0 32,35" 
+        fill="none" 
+        stroke="white" 
+        strokeWidth="0.5" 
+        strokeOpacity="0.2" 
+      />
+
+      {/* BRILHO DE PONTO (Highlights) */}
+      <circle cx="14" cy="15" r="1.5" fill="white" opacity="0.6" />
+      
+      {/* INDICADOR DE STATUS (Ready Glow) */}
+      {wobble && (
+        <ellipse 
+          cx="20" cy="25" rx="14" ry="19" 
+          fill="none" 
+          stroke={colors.bg} 
+          strokeWidth="1.5" 
+          className="animate-pulse"
+          style={{ filter: `blur(2px)` }}
+        />
+      )}
     </motion.svg>
   );
 }
@@ -204,161 +277,171 @@ export function EggsTab() {
   ];
 
   return (
-    <div className="flex flex-col gap-4 p-3 pb-20">
-      {/* Hatch animation overlay */}
-      <AnimatePresence>
-        {hatchingEgg && (
-          <HatchAnimation egg={hatchingEgg} onComplete={completeHatch} />
-        )}
-      </AnimatePresence>
+<div className="flex flex-col gap-6 p-4 pb-24 bg-slate-950 min-h-screen text-slate-200">
+  {/* Overlay de Eclosão */}
+  <AnimatePresence>
+    {hatchingEgg && (
+      <HatchAnimation egg={hatchingEgg} onComplete={completeHatch} />
+    )}
+  </AnimatePresence>
 
-      {/* Active eggs section */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Egg className="w-4 h-4 text-amber-400" />
-            <span className="text-sm font-bold text-foreground">Ovos</span>
-          </div>
-          <span className="text-[10px] text-muted-foreground font-mono">{eggs.length}/{MAX_EGGS}</span>
+  {/* Header da Seção de Ovos */}
+  <header>
+    <div className="flex items-center justify-between mb-4 px-1">
+      <div className="flex items-center gap-3">
+        <div className="p-2 bg-amber-500/10 rounded-lg border border-amber-500/20">
+          <Egg className="w-5 h-5 text-amber-400 animate-pulse" />
         </div>
+        <div>
+          <h2 className="text-lg font-black uppercase italic tracking-tighter text-white">Laboratório</h2>
+          <p className="text-[10px] text-slate-500 font-mono uppercase tracking-widest">Active_Incubators</p>
+        </div>
+      </div>
+      <div className="px-3 py-1 bg-slate-900 border border-white/5 rounded-md shadow-inner">
+        <span className="text-xs font-mono font-bold text-amber-400">
+          {eggs.length.toString().padStart(2, '0')}<span className="text-slate-600">/</span>{MAX_EGGS.toString().padStart(2, '0')}
+        </span>
+      </div>
+    </div>
 
-        {eggs.length === 0 ? (
-          <div className="rounded-xl border border-border/50 p-6 flex flex-col items-center gap-2" style={{ background: "rgba(255,255,255,0.02)" }}>
-            <Egg className="w-8 h-8 text-muted-foreground/40" />
-            <p className="text-xs text-muted-foreground text-center">
-              Nenhum ovo encontrado. Use o Radar para encontrar ovos!
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {eggs.map((egg) => {
-              const ready = isEggReady(egg);
-              const remainingMs = getEggRemainingMs(egg);
-              const totalMs = egg.hatchTimeMs;
-              const progressPct = Math.min(100, ((totalMs - remainingMs) / totalMs) * 100);
-              const colors = EGG_TIER_COLORS[egg.tier];
+    {eggs.length === 0 ? (
+      <motion.div 
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+        className="rounded-2xl border-2 border-dashed border-slate-800 p-10 flex flex-col items-center gap-4 bg-slate-900/20"
+      >
+        <div className="relative">
+          <Egg className="w-12 h-12 text-slate-800" />
+          <div className="absolute inset-0 bg-amber-500/5 blur-xl rounded-full" />
+        </div>
+        <div className="text-center">
+          <p className="text-sm font-bold text-slate-400 italic uppercase">Sem sinal biológico</p>
+          <p className="text-[10px] text-slate-600 font-mono mt-1">USE O RADAR PARA ESCANEAR NOVOS OVOS</p>
+        </div>
+      </motion.div>
+    ) : (
+      <div className="grid grid-cols-2 gap-4">
+        {eggs.map((egg) => {
+          const ready = isEggReady(egg);
+          const remainingMs = getEggRemainingMs(egg);
+          const totalMs = egg.hatchTimeMs;
+          const progressPct = Math.min(100, ((totalMs - remainingMs) / totalMs) * 100);
+          const colors = EGG_TIER_COLORS[egg.tier];
 
-              return (
-                <motion.div
-                  key={egg.id}
-                  layout
-                  className="rounded-xl border p-3 flex flex-col items-center gap-2 relative overflow-hidden"
-                  style={{
-                    borderColor: ready ? colors.bg : `${colors.bg}40`,
-                    background: `linear-gradient(180deg, rgba(0,0,0,0.3) 0%, ${colors.bg}10 100%)`,
-                    boxShadow: ready ? `0 0 20px ${colors.glow}` : "none",
-                  }}
+          return (
+            <motion.div
+              key={egg.id}
+              layout
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="relative group p-[1px] overflow-hidden rounded-tr-3xl rounded-bl-3xl"
+              style={{
+                background: ready 
+                  ? `linear-gradient(135deg, ${colors.bg}, transparent)` 
+                  : 'linear-gradient(135deg, rgba(255,255,255,0.05), transparent)'
+              }}
+            >
+              <div 
+                className="bg-slate-900/90 backdrop-blur-md p-4 flex flex-col items-center gap-3 relative z-10 rounded-tr-[22px] rounded-bl-[22px]"
+                style={{
+                  boxShadow: ready ? `inset 0 0 20px ${colors.bg}20` : 'none'
+                }}
+              >
+                {/* Badge de Tier */}
+                <div 
+                  className="absolute top-0 left-0 px-2 py-0.5 text-[8px] font-mono font-bold uppercase tracking-tighter"
+                  style={{ backgroundColor: colors.bg, color: '#000' }}
                 >
-                  {/* Ready sparkle indicator */}
-                  {ready && (
-                    <motion.div
-                      className="absolute top-1 right-1"
-                      animate={{ scale: [1, 1.3, 1], opacity: [1, 0.6, 1] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                    >
-                      <Sparkles className="w-4 h-4" style={{ color: colors.bg }} />
-                    </motion.div>
-                  )}
+                  {colors.label}
+                </div>
 
-                  {/* Egg visual */}
-                  <EggIcon tier={egg.tier} size={90} wobble={ready} />
+                {/* Efeito de Scanner para Ready */}
+                {ready && (
+                  <motion.div 
+                    className="absolute inset-0 pointer-events-none opacity-20"
+                    style={{ background: `linear-gradient(to bottom, transparent, ${colors.bg}, transparent)`, height: '20%' }}
+                    animate={{ top: ['0%', '100%', '0%'] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                  />
+                )}
 
-                  {/* Info */}
-                  <span className="text-[10px] font-medium text-muted-foreground">???</span>
+                {/* Visual do Ovo */}
+                <div className="relative mt-2">
+                  <div className={`transition-all duration-500 ${ready ? 'drop-shadow-[0_0_15px_' + colors.glow + ']' : 'grayscale-[0.5]'}`}>
+                    <EggIcon tier={egg.tier} size={85} wobble={ready} />
+                  </div>
+                </div>
 
-                  {/* Progress bar */}
-                  <div className="w-full h-1.5 bg-background rounded-full overflow-hidden">
-                    <motion.div
-                      className="h-full rounded-full"
-                      style={{ backgroundColor: colors.bg }}
-                      animate={{ width: `${progressPct}%` }}
-                      transition={{ duration: 0.5 }}
-                    />
+                {/* Info Container */}
+                <div className="w-full space-y-2">
+                  <div className="flex justify-between items-end">
+                    <span className="text-[9px] font-mono text-slate-500 italic uppercase">Trace_ID: ???</span>
+                    <span className="text-[9px] font-mono text-white font-bold">{Math.round(progressPct)}%</span>
                   </div>
 
-                  {/* Timer or hatch button */}
+                  {/* Gamer Progress Bar */}
+                  <div className="w-full h-1.5 bg-black rounded-full overflow-hidden border border-white/5 relative">
+                    <motion.div
+                      className="h-full relative z-10"
+                      style={{ 
+                        backgroundColor: colors.bg,
+                        boxShadow: `0 0 10px ${colors.bg}`
+                      }}
+                      animate={{ width: `${progressPct}%` }}
+                      transition={{ duration: 1, ease: "easeOut" }}
+                    >
+                      {/* Efeito de brilho animado na barra */}
+                      <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.4),transparent)] w-1/2 animate-[shimmer_2s_infinite]" />
+                    </motion.div>
+                  </div>
+
+                  {/* Action / Timer */}
                   {ready ? (
                     <Button
                       onClick={() => handleHatch(egg)}
-                      className="w-full h-7 text-[10px] font-bold"
-                      style={{ background: colors.bg, color: "#fff" }}
+                      className="w-full h-8 text-[10px] font-black uppercase italic tracking-widest group relative overflow-hidden transition-all active:scale-95"
+                      style={{ background: colors.bg, color: "#000" }}
                     >
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      Chocar!
+                      <Sparkles className="w-3 h-3 mr-2 fill-current" />
+                      Iniciando Parto
                     </Button>
                   ) : (
-                    <div className="flex items-center gap-1">
-                      <Timer className="w-3 h-3 text-muted-foreground" />
-                      <span className="text-[10px] font-mono text-muted-foreground">
+                    <div className="flex items-center justify-center gap-2 py-1 bg-black/40 rounded border border-white/5 font-mono">
+                      <Timer className="w-3 h-3 text-slate-500" />
+                      <span className="text-[10px] text-slate-300">
                         {formatEggTime(remainingMs)}
                       </span>
                     </div>
                   )}
-                </motion.div>
-              );
-            })}
-
-            {/* Empty slots */}
-            {Array.from({ length: MAX_EGGS - eggs.length }).map((_, i) => (
-              <div
-                key={`empty-${i}`}
-                className="rounded-xl border border-dashed border-border/30 p-3 flex flex-col items-center justify-center gap-1 min-h-[140px]"
-                style={{ background: "rgba(255,255,255,0.01)" }}
-              >
-                <Egg className="w-6 h-6 text-muted-foreground/20" />
-                <span className="text-[9px] text-muted-foreground/40">Vazio</span>
+                </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Baby Pokemon catalog */}
-      {/*}  <div>
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-sm font-bold text-foreground">Catalogo de Ovos</span>
-        </div>
-
-        {tiers.map(({ tier, label }) => {
-          const colors = EGG_TIER_COLORS[tier];
-          const pokemonList = EGG_POKEMON.filter((e) => e.tier === tier);
-
-          return (
-            <div key={tier} className="mb-3">
-              <div className="flex items-center gap-2 mb-1.5">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.bg }} />
-                <span className="text-xs font-semibold" style={{ color: colors.bg }}>
-                  {colors.label} - {label}
-                </span>
-                <span className="text-[10px] text-muted-foreground ml-auto">+{EGG_HATCH_XP[tier]} XP</span>
-              </div>
-              <div className="grid grid-cols-4 gap-1.5">
-                {pokemonList.map((p) => (
-                  <div
-                    key={p.speciesId}
-                    className="rounded-lg border p-1.5 flex flex-col items-center gap-0.5"
-                    style={{
-                      borderColor: `${colors.bg}25`,
-                      background: `${colors.bg}08`,
-                    }}
-                  >
-                    <img
-                      src={getSpriteUrl(p.speciesId)}
-                      alt={p.name}
-                      className="w-10 h-10 object-contain"
-                      crossOrigin="anonymous"
-                      loading="lazy"
-                    />
-                    <span className="text-[8px] font-medium text-muted-foreground capitalize leading-tight text-center">
-                      {p.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            </motion.div>
           );
         })}
-      </div>*/}
-    </div>
+
+        {/* Empty slots - Cyber Style */}
+        {Array.from({ length: MAX_EGGS - eggs.length }).map((_, i) => (
+          <div
+            key={`empty-${i}`}
+            className="rounded-tr-2xl rounded-bl-2xl border border-white/5 p-4 flex flex-col items-center justify-center gap-2 min-h-[160px] bg-slate-900/10 relative group"
+          >
+             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.02)_0%,transparent_70%)]" />
+             <div className="p-3 rounded-full bg-slate-800/20 border border-white/5 opacity-30 group-hover:opacity-50 transition-opacity">
+                <Egg className="w-6 h-6 text-slate-600" />
+             </div>
+             <span className="text-[8px] font-mono text-slate-700 uppercase tracking-[0.3em]">Incubator_Offline</span>
+          </div>
+        ))}
+      </div>
+    )}
+  </header>
+
+  {/* CSS para o Shimmer Effect (Colocar no seu CSS global) */}
+  <style jsx>{`
+    @keyframes shimmer {
+      from { transform: translateX(-100%); }
+      to { transform: translateX(200%); }
+    }
+  `}</style>
+</div>
   );
 }

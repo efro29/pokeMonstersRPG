@@ -114,31 +114,31 @@ export const STAR_DUST_CONFIG = {
   
   // Recompensas de captura (base)
   CAPTURE_REWARDS: {
-    common: 500,
-    rare: 800,
-    legendary: 2000,
+    common: 250,
+    rare: 500,
+    legendary: 1000,
   },
   
   // Bônus de captura
   CAPTURE_BONUSES: {
-    weather_sun: 200,
-    night_time: 500,
+    weather_sun: 100,
+    night_time: 150,
     special_event: 300,
   },
   
   // Transferência para professor
-  TRANSFER_REWARD: 1100, // Fixo, equivalente a 1 XP
+  TRANSFER_REWARD: 125, // Fixo, equivalente a 1 XP
   
   // Batalhas
   BATTLE_REWARDS: {
-    wild: 1000,
+    wild: 340,
   },
   
   // Chocar ovos
   EGG_HATCH_REWARDS: {
-    green: 800,
-    yellow: 1500,
-    red: 2500,
+    green: 250,
+    yellow: 700,
+    red: 1000,
   },
 } as const;
 
