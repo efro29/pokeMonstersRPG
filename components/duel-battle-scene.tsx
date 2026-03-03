@@ -403,6 +403,32 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
     }
   }, [activeRival?.currentHp]);
 
+  // Funcao para disparar animacao anime de ataque
+  const triggerAnimeAttack = useCallback((
+    moveType: PokemonType,
+    moveName: string,
+    attackerSprite: string,
+    defenderSprite: string,
+    isPlayerAttacking: boolean,
+    onComplete: () => void
+  ) => {
+    // So dispara animacao anime para golpes nao-normais
+    if (moveType === "normal") {
+      onComplete();
+      return;
+    }
+
+    setAnimeAttackData({
+      moveType,
+      moveName,
+      attackerSprite,
+      defenderSprite,
+      isPlayerAttacking,
+      onComplete,
+    });
+    setAnimeAttackPhase("attacker");
+  }, []);
+
   // Turno do rival (IA classica de Pokemon)
   const executeRivalTurn = useCallback(() => {
     if (!activeRival || activeRival.currentHp <= 0) {
@@ -634,32 +660,6 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
     },
     [resolveDiceRoll, activeRival, activeRivalIndex, pokemon, addLog]
   );
-
-  // Funcao para disparar animacao anime de ataque
-  const triggerAnimeAttack = useCallback((
-    moveType: PokemonType,
-    moveName: string,
-    attackerSprite: string,
-    defenderSprite: string,
-    isPlayerAttacking: boolean,
-    onComplete: () => void
-  ) => {
-    // So dispara animacao anime para golpes nao-normais
-    if (moveType === "normal") {
-      onComplete();
-      return;
-    }
-
-    setAnimeAttackData({
-      moveType,
-      moveName,
-      attackerSprite,
-      defenderSprite,
-      isPlayerAttacking,
-      onComplete,
-    });
-    setAnimeAttackPhase("attacker");
-  }, []);
 
   // Handler de selecao de ataque
   const handleAttackSelect = (moveId: string) => {
