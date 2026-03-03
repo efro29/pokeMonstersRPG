@@ -289,6 +289,16 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
   const [playerShake, setPlayerShake] = useState(false);
   const [rivalShake, setRivalShake] = useState(false);
   const [attackEffect, setAttackEffect] = useState<{ type: PokemonType | null; side: "player" | "rival" } | null>(null);
+  
+  // Animacao estilo anime para golpes nao-normais
+  const [animeAttackPhase, setAnimeAttackPhase] = useState<"idle" | "attacker" | "impact" | "done">("idle");
+  const [animeAttackData, setAnimeAttackData] = useState<{
+    moveType: PokemonType;
+    moveName: string;
+    attackerSprite: string;
+    defenderSprite: string;
+    isPlayerAttacking: boolean;
+  } | null>(null);
 
   const ARENAS = ["campo"];
   const [arena] = useState(() => ARENAS[Math.floor(Math.random() * ARENAS.length)]);
@@ -415,97 +425,122 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
         return;
       }
       
-      setRivalAction(`${activeRival.nome} usou ${chosenMove.name}!`);
-      playAttack();
+      const moveType = chosenMove.type as PokemonType;
       
-      // Animacao de ataque do rival
-      setRivalAttacking(true);
-      setAttackEffect({ type: chosenMove.type as PokemonType, side: "player" });
-      setTimeout(() => {
-        setRivalAttacking(false);
-        setAttackEffect(null);
-      }, 600);
-      
-      setTimeout(() => {
-        // Rola D20 para acerto
-        const roll = Math.floor(Math.random() * 20) + 1;
-        const hit = roll >= chosenMove.accuracy;
-        const isCrit = roll >= 19;
+      // Funcao que executa o ataque apos animacao (ou direto se for normal)
+      const executeAttack = () => {
+        setRivalAction(`${activeRival.nome} usou ${chosenMove.name}!`);
         
-        if (!hit) {
-          addLog(`${activeRival.nome} usou ${chosenMove.name} mas errou! (D20: ${roll})`);
-          playMiss();
-          setRivalAction(`Errou! (${roll})`);
+        // Animacao de ataque do rival
+        setRivalAttacking(true);
+        setAttackEffect({ type: moveType, side: "player" });
+        setTimeout(() => {
+          setRivalAttacking(false);
+          setAttackEffect(null);
+        }, 600);
+        
+        setTimeout(() => {
+          // Rola D20 para acerto
+          const roll = Math.floor(Math.random() * 20) + 1;
+          const hit = roll >= chosenMove.accuracy;
+          const isCrit = roll >= 19;
+          
+          if (!hit) {
+            addLog(`${activeRival.nome} usou ${chosenMove.name} mas errou! (D20: ${roll})`);
+            playMiss();
+            setRivalAction(`Errou! (${roll})`);
+            setTimeout(() => {
+              setRivalAction(null);
+              setIsPlayerTurn(true);
+              useGameStore.setState((state) => ({
+                battle: { ...state.battle, pa: state.battle.maxPa },
+              }));
+            }, 1500);
+            return;
+          }
+          
+          // Calcula dano com efetividade de tipos e balanceamento por nivel
+          const defenderTypes = (pokemonTypes || []) as PokemonType[];
+          const defenderDefesa = pokemonAttrs?.defesa || 10;
+          const defenderLevel = pokemon?.level || 1;
+          
+          const { damage: baseDamage, typeMultiplier, levelMultiplier } = rollRivalDamage(
+            chosenMoveId, 
+            activeRival.level, 
+            defenderLevel,
+            defenderTypes,
+            defenderDefesa
+          );
+          
+          // Aplica critico
+          let finalDamage = baseDamage;
+          if (isCrit) {
+            finalDamage = Math.floor(finalDamage * 1.5);
+            playCriticalHit();
+          } else {
+            playAttackHit();
+          }
+          
+          // Monta label de efetividade
+          const typeLabel = getTypeEffectivenessLabel(typeMultiplier);
+          const hitLabel = isCrit ? "CRITICO!" : "Acertou!";
+          
+          // Log com informações de balanceamento
+          let logMsg = `${activeRival.nome} usou ${chosenMove.name}: ${hitLabel} ${finalDamage} de dano! (D20: ${roll})`;
+          if (typeLabel) {
+            logMsg += ` [${typeLabel}]`;
+          }
+          if (levelMultiplier !== 1.0) {
+            logMsg += ` [Nv: x${levelMultiplier.toFixed(1)}]`;
+          }
+          addLog(logMsg);
+          
+          setRivalDamage(finalDamage);
+          const actionLabel = typeLabel ? `${hitLabel} ${finalDamage} (${typeLabel})` : `${hitLabel} ${finalDamage} dano!`;
+          setRivalAction(actionLabel);
+          
+          // Aplica dano ao pokemon do jogador com animacao de shake
+          setPlayerShake(true);
+          setShowParticles(true);
+          playDamageReceived();
+          
           setTimeout(() => {
+            setPlayerShake(false);
+            setShowParticles(false);
+            applyOpponentDamage(finalDamage);
+            setRivalDamage(null);
             setRivalAction(null);
             setIsPlayerTurn(true);
+            // Restaura PA do jogador
             useGameStore.setState((state) => ({
               battle: { ...state.battle, pa: state.battle.maxPa },
             }));
-          }, 1500);
-          return;
-        }
+          }, 800);
+        }, 1000);
+      };
+      
+      // Se nao for golpe normal, dispara animacao anime primeiro
+      if (moveType !== "normal" && pokemon) {
+        const attackerSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${activeRival.speciesId}.png`;
+        const defenderSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.speciesId}.png`;
         
-        // Calcula dano com efetividade de tipos e balanceamento por nivel
-        const defenderTypes = (pokemonTypes || []) as PokemonType[];
-        const defenderDefesa = pokemonAttrs?.defesa || 10;
-        const defenderLevel = pokemon?.level || 1;
+        playAttack();
         
-        const { damage: baseDamage, typeMultiplier, levelMultiplier } = rollRivalDamage(
-          chosenMoveId, 
-          activeRival.level, 
-          defenderLevel,
-          defenderTypes,
-          defenderDefesa
+        triggerAnimeAttack(
+          moveType,
+          chosenMove.name,
+          attackerSprite,
+          defenderSprite,
+          false,
+          executeAttack
         );
-        
-        // Aplica critico
-        let finalDamage = baseDamage;
-        if (isCrit) {
-          finalDamage = Math.floor(finalDamage * 1.5);
-          playCriticalHit();
-        } else {
-          playAttackHit();
-        }
-        
-        // Monta label de efetividade
-        const typeLabel = getTypeEffectivenessLabel(typeMultiplier);
-        const hitLabel = isCrit ? "CRITICO!" : "Acertou!";
-        
-        // Log com informações de balanceamento
-        let logMsg = `${activeRival.nome} usou ${chosenMove.name}: ${hitLabel} ${finalDamage} de dano! (D20: ${roll})`;
-        if (typeLabel) {
-          logMsg += ` [${typeLabel}]`;
-        }
-        if (levelMultiplier !== 1.0) {
-          logMsg += ` [Nv: x${levelMultiplier.toFixed(1)}]`;
-        }
-        addLog(logMsg);
-        
-        setRivalDamage(finalDamage);
-        const actionLabel = typeLabel ? `${hitLabel} ${finalDamage} (${typeLabel})` : `${hitLabel} ${finalDamage} dano!`;
-        setRivalAction(actionLabel);
-        
-        // Aplica dano ao pokemon do jogador com animacao de shake
-        setPlayerShake(true);
-        setShowParticles(true);
-        playDamageReceived();
-        
-        setTimeout(() => {
-          setPlayerShake(false);
-          setShowParticles(false);
-          applyOpponentDamage(finalDamage);
-          setRivalDamage(null);
-          setRivalAction(null);
-          setIsPlayerTurn(true);
-          // Restaura PA do jogador
-          useGameStore.setState((state) => ({
-            battle: { ...state.battle, pa: state.battle.maxPa },
-          }));
-        }, 800);
-      }, 1000);
+      } else {
+        // Golpe normal - executa direto
+        playAttack();
+        executeAttack();
+      }
     }, 1000);
-  }, [activeRival, pokemonTypes, npc.ia, pokemonAttrs, pokemon, addLog, applyOpponentDamage]);
+  }, [activeRival, pokemonTypes, npc.ia, pokemonAttrs, pokemon, addLog, applyOpponentDamage, triggerAnimeAttack]);
 
   // Handler de troca de pokemon
   const handleSwitchPokemon = (uid: string) => {
@@ -598,6 +633,46 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
     [resolveDiceRoll, activeRival, activeRivalIndex, pokemon, addLog]
   );
 
+  // Funcao para disparar animacao anime de ataque
+  const triggerAnimeAttack = useCallback((
+    moveType: PokemonType,
+    moveName: string,
+    attackerSprite: string,
+    defenderSprite: string,
+    isPlayerAttacking: boolean,
+    onComplete: () => void
+  ) => {
+    // So dispara animacao anime para golpes nao-normais
+    if (moveType === "normal") {
+      onComplete();
+      return;
+    }
+
+    setAnimeAttackData({
+      moveType,
+      moveName,
+      attackerSprite,
+      defenderSprite,
+      isPlayerAttacking,
+    });
+    setAnimeAttackPhase("attacker");
+
+    // Fase 1: Mostra atacante (1.2s)
+    setTimeout(() => {
+      setAnimeAttackPhase("impact");
+      // Fase 2: Mostra impacto no defensor (1s)
+      setTimeout(() => {
+        setAnimeAttackPhase("done");
+        // Limpa e continua
+        setTimeout(() => {
+          setAnimeAttackPhase("idle");
+          setAnimeAttackData(null);
+          onComplete();
+        }, 200);
+      }, 1000);
+    }, 1200);
+  }, []);
+
   // Handler de selecao de ataque
   const handleAttackSelect = (moveId: string) => {
     const moveDef = getMove(moveId);
@@ -605,20 +680,52 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
     if (!usesCards) {
       if (!spendPA("attack")) return;
     }
-    selectMove(moveId);
-    setIsRolling(true);
-    playAttack();
-    playDiceRoll();
     
-    // Animacao de ataque do jogador
-    setPlayerAttacking(true);
-    if (moveDef) {
-      setAttackEffect({ type: moveDef.type as PokemonType, side: "rival" });
+    const moveType = moveDef?.type as PokemonType || "normal";
+    
+    // Se nao for golpe normal, dispara animacao anime primeiro
+    if (moveType !== "normal" && moveDef && pokemon && activeRival) {
+      const attackerSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.speciesId}.png`;
+      const defenderSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${activeRival.speciesId}.png`;
+      
+      playAttack();
+      
+      triggerAnimeAttack(
+        moveType,
+        moveDef.name,
+        attackerSprite,
+        defenderSprite,
+        true,
+        () => {
+          // Apos animacao anime, continua com o fluxo normal
+          selectMove(moveId);
+          setIsRolling(true);
+          playDiceRoll();
+          
+          setPlayerAttacking(true);
+          setAttackEffect({ type: moveType, side: "rival" });
+          setTimeout(() => {
+            setPlayerAttacking(false);
+            setAttackEffect(null);
+          }, 600);
+        }
+      );
+    } else {
+      // Golpe normal - fluxo original
+      selectMove(moveId);
+      setIsRolling(true);
+      playAttack();
+      playDiceRoll();
+      
+      setPlayerAttacking(true);
+      if (moveDef) {
+        setAttackEffect({ type: moveDef.type as PokemonType, side: "rival" });
+      }
+      setTimeout(() => {
+        setPlayerAttacking(false);
+        setAttackEffect(null);
+      }, 600);
     }
-    setTimeout(() => {
-      setPlayerAttacking(false);
-      setAttackEffect(null);
-    }, 600);
   };
 
   // Handler do fim do turno do jogador
@@ -753,6 +860,299 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
 
   return (
     <div className="flex flex-col h-full bg-background">
+      {/* OVERLAY DE ANIMACAO ANIME */}
+      <AnimatePresence>
+        {animeAttackPhase !== "idle" && animeAttackData && (
+          <motion.div
+            className="fixed inset-0 z-[100] overflow-hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {/* Fundo animado baseado no tipo */}
+            <div 
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(135deg, ${ATTACK_EFFECT_ICONS[animeAttackData.moveType]?.color || "#333"}CC 0%, #000 50%, ${ATTACK_EFFECT_ICONS[animeAttackData.moveType]?.color || "#333"}99 100%)`,
+              }}
+            />
+            
+            {/* Linhas de velocidade estilo anime */}
+            <div className="absolute inset-0 overflow-hidden">
+              {[...Array(20)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute h-[2px] bg-white/30"
+                  style={{
+                    top: `${5 + i * 5}%`,
+                    left: "-10%",
+                    width: `${30 + Math.random() * 40}%`,
+                    transform: `rotate(${-15 + Math.random() * 10}deg)`,
+                  }}
+                  initial={{ x: "100vw", opacity: 0 }}
+                  animate={{ 
+                    x: "-100vw", 
+                    opacity: [0, 0.8, 0.8, 0],
+                  }}
+                  transition={{
+                    duration: 0.4,
+                    delay: i * 0.02,
+                    repeat: animeAttackPhase === "attacker" ? Infinity : 0,
+                    repeatDelay: 0.3,
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Particulas de energia */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {[...Array(15)].map((_, i) => (
+                <motion.div
+                  key={`particle-${i}`}
+                  className="absolute rounded-full"
+                  style={{
+                    width: 8 + Math.random() * 16,
+                    height: 8 + Math.random() * 16,
+                    backgroundColor: ATTACK_EFFECT_ICONS[animeAttackData.moveType]?.color || "#fff",
+                    boxShadow: `0 0 20px ${ATTACK_EFFECT_ICONS[animeAttackData.moveType]?.color || "#fff"}`,
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                  }}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ 
+                    scale: [0, 1.5, 0],
+                    opacity: [0, 1, 0],
+                  }}
+                  transition={{
+                    duration: 0.8,
+                    delay: i * 0.1,
+                    repeat: Infinity,
+                    repeatDelay: 0.5,
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* FASE ATACANTE */}
+            <AnimatePresence mode="wait">
+              {animeAttackPhase === "attacker" && (
+                <motion.div
+                  key="attacker-phase"
+                  className="absolute inset-0 flex items-center justify-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0, scale: 1.5 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {/* Aura de poder */}
+                  <motion.div
+                    className="absolute rounded-full"
+                    style={{
+                      width: 300,
+                      height: 300,
+                      background: `radial-gradient(circle, ${ATTACK_EFFECT_ICONS[animeAttackData.moveType]?.color || "#fff"}66 0%, transparent 70%)`,
+                    }}
+                    animate={{
+                      scale: [1, 1.3, 1],
+                      opacity: [0.5, 0.8, 0.5],
+                    }}
+                    transition={{
+                      duration: 0.5,
+                      repeat: Infinity,
+                    }}
+                  />
+                  
+                  {/* Sprite do atacante */}
+                  <motion.div
+                    className="relative z-10"
+                    initial={{ scale: 0, rotate: -20 }}
+                    animate={{ 
+                      scale: [0, 1.2, 1],
+                      rotate: [-20, 5, 0],
+                    }}
+                    transition={{ 
+                      duration: 0.5,
+                      type: "spring",
+                      damping: 10,
+                    }}
+                  >
+                    <motion.img
+                      src={animeAttackData.attackerSprite}
+                      alt="Atacante"
+                      className="w-48 h-48 object-contain drop-shadow-[0_0_30px_rgba(255,255,255,0.8)]"
+                      style={{
+                        filter: `drop-shadow(0 0 20px ${ATTACK_EFFECT_ICONS[animeAttackData.moveType]?.color || "#fff"})`,
+                      }}
+                      animate={{
+                        y: [0, -10, 0],
+                      }}
+                      transition={{
+                        duration: 0.3,
+                        repeat: Infinity,
+                      }}
+                      crossOrigin="anonymous"
+                    />
+                  </motion.div>
+
+                  {/* Nome do golpe */}
+                  <motion.div
+                    className="absolute bottom-[20%] left-0 right-0 flex justify-center"
+                    initial={{ x: -200, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.3, type: "spring", damping: 12 }}
+                  >
+                    <div 
+                      className="px-8 py-3 rounded-lg font-bold text-2xl text-white uppercase tracking-wider"
+                      style={{
+                        background: `linear-gradient(90deg, transparent, ${ATTACK_EFFECT_ICONS[animeAttackData.moveType]?.color || "#333"}CC, transparent)`,
+                        textShadow: `0 0 20px ${ATTACK_EFFECT_ICONS[animeAttackData.moveType]?.color || "#fff"}, 0 2px 4px rgba(0,0,0,0.8)`,
+                      }}
+                    >
+                      {animeAttackData.moveName}
+                    </div>
+                  </motion.div>
+
+                  {/* Icone do tipo */}
+                  <motion.div
+                    className="absolute top-[15%] right-[15%] text-6xl"
+                    initial={{ scale: 0, rotate: 180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: 0.2, type: "spring" }}
+                  >
+                    {ATTACK_EFFECT_ICONS[animeAttackData.moveType]?.icon || ""}
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {/* FASE IMPACTO */}
+              {animeAttackPhase === "impact" && (
+                <motion.div
+                  key="impact-phase"
+                  className="absolute inset-0 flex items-center justify-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  {/* Flash de impacto */}
+                  <motion.div
+                    className="absolute inset-0 bg-white"
+                    initial={{ opacity: 1 }}
+                    animate={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  />
+
+                  {/* Ondas de impacto */}
+                  {[...Array(3)].map((_, i) => (
+                    <motion.div
+                      key={`shockwave-${i}`}
+                      className="absolute rounded-full border-4"
+                      style={{
+                        borderColor: ATTACK_EFFECT_ICONS[animeAttackData.moveType]?.color || "#fff",
+                      }}
+                      initial={{ width: 50, height: 50, opacity: 1 }}
+                      animate={{ 
+                        width: 400 + i * 100, 
+                        height: 400 + i * 100, 
+                        opacity: 0,
+                      }}
+                      transition={{
+                        duration: 0.6,
+                        delay: i * 0.15,
+                        ease: "easeOut",
+                      }}
+                    />
+                  ))}
+
+                  {/* Sprite do defensor tremendo */}
+                  <motion.div
+                    className="relative z-10"
+                    initial={{ scale: 1.2 }}
+                    animate={{ 
+                      scale: 1,
+                      x: [0, -15, 15, -10, 10, -5, 5, 0],
+                      filter: [
+                        "brightness(1)",
+                        "brightness(3)",
+                        "brightness(1)",
+                        "brightness(2)",
+                        "brightness(1)",
+                      ],
+                    }}
+                    transition={{ 
+                      duration: 0.6,
+                      x: { duration: 0.5, repeat: 1 },
+                    }}
+                  >
+                    <motion.img
+                      src={animeAttackData.defenderSprite}
+                      alt="Defensor"
+                      className="w-44 h-44 object-contain"
+                      style={{
+                        filter: `drop-shadow(0 0 10px ${ATTACK_EFFECT_ICONS[animeAttackData.moveType]?.color || "#fff"})`,
+                      }}
+                      crossOrigin="anonymous"
+                    />
+                    
+                    {/* Efeito de dano */}
+                    <motion.div
+                      className="absolute inset-0 flex items-center justify-center"
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: [0, 1, 0], scale: [0.5, 1.5, 2] }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      <span className="text-7xl">
+                        {ATTACK_EFFECT_ICONS[animeAttackData.moveType]?.icon || ""}
+                      </span>
+                    </motion.div>
+                  </motion.div>
+
+                  {/* Texto de IMPACTO */}
+                  <motion.div
+                    className="absolute top-[20%] font-black text-5xl text-white uppercase"
+                    style={{
+                      textShadow: `0 0 30px ${ATTACK_EFFECT_ICONS[animeAttackData.moveType]?.color || "#fff"}, 0 4px 8px rgba(0,0,0,0.9)`,
+                      WebkitTextStroke: `2px ${ATTACK_EFFECT_ICONS[animeAttackData.moveType]?.color || "#333"}`,
+                    }}
+                    initial={{ scale: 0, rotate: -10 }}
+                    animate={{ scale: [0, 1.3, 1], rotate: [-10, 5, 0] }}
+                    transition={{ type: "spring", damping: 8 }}
+                  >
+                    HIT!
+                  </motion.div>
+
+                  {/* Particulas de impacto */}
+                  {[...Array(12)].map((_, i) => {
+                    const angle = (i / 12) * Math.PI * 2;
+                    return (
+                      <motion.div
+                        key={`impact-particle-${i}`}
+                        className="absolute w-4 h-4 rounded-full"
+                        style={{
+                          backgroundColor: ATTACK_EFFECT_ICONS[animeAttackData.moveType]?.color || "#fff",
+                          boxShadow: `0 0 10px ${ATTACK_EFFECT_ICONS[animeAttackData.moveType]?.color || "#fff"}`,
+                        }}
+                        initial={{ x: 0, y: 0, opacity: 1 }}
+                        animate={{ 
+                          x: Math.cos(angle) * 200,
+                          y: Math.sin(angle) * 200,
+                          opacity: 0,
+                          scale: [1, 0.5],
+                        }}
+                        transition={{
+                          duration: 0.5,
+                          ease: "easeOut",
+                        }}
+                      />
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Barra de navegacao superior */}
       <nav className="flex items-center justify-between px-2 py-1.5 bg-card border-b border-border gap-1">
         {/* Esquerda: Voltar + Turno */}
