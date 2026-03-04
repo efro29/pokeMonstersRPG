@@ -9,7 +9,8 @@ import { useGameStore, BABY_POKEMON_IDS, rollRandomEgg, MAX_EGGS, EGG_TIER_COLOR
 import type { PokemonEgg } from "@/lib/game-store";
 import { useModeStore } from "@/lib/mode-store";
 import { playButtonClick, playGift, playBuy } from "@/lib/sounds";
-import { ScanIcon } from "lucide-react";
+import { ScanIcon, Star } from "lucide-react";
+import { StarDustFullscreenAnimation } from "@/components/star-dust-animation";
 
 // ─── Regras do Radar ───────────────────────────────────────
 const MAX_ENERGY = 4;
@@ -625,6 +626,20 @@ interface PawPrint {
   opacity: number;
 }
 
+// ─── Estrela cadente de Stardust ────────────────────────────
+interface StardustMeteor {
+  id: string;
+  startAngle: number; // angulo inicial (graus)
+  startDistance: number; // distancia inicial do centro (0-1)
+  angle: number; // angulo atual
+  distance: number; // distancia atual
+  speed: number; // velocidade do movimento
+  direction: number; // direcao do movimento (angulo em graus)
+  stardust: number; // quantidade de stardust (100-700)
+  opacity: number; // opacidade atual
+  collected: boolean; // se ja foi coletada
+}
+
 interface RadarBlip {
   id: string;
   pokemon?: PokemonSpecies;
@@ -647,7 +662,7 @@ interface ExplorationRadarProps {
 }
 
 export function ExplorationRadar({ onStartCapture, onStartWildBattle }: ExplorationRadarProps) {
-  const { addMoney, addBagItem, addEgg, eggs, bag } = useGameStore();
+  const { addMoney, addBagItem, addEgg, eggs, bag, addStarDust } = useGameStore();
   const { activeProfileId, getDiscoveredForProfile } = useModeStore();
   const [energy, setEnergy] = useState<RadarEnergy>(loadEnergy);
   const [scanning, setScanning] = useState(false);
@@ -658,7 +673,10 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
   const [recoveryTimer, setRecoveryTimer] = useState<string>("");
   const [claimedGift, setClaimedGift] = useState<GiftKit | null>(null);
   const [claimedEgg, setClaimedEgg] = useState<PokemonEgg | null>(null);
+  const [stardustMeteors, setStardustMeteors] = useState<StardustMeteor[]>([]);
+  const [stardustAnimation, setStardustAnimation] = useState<{ active: boolean; amount: number }>({ active: false, amount: 0 });
   const scanInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const meteorInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Estado do clima
   const [weather, setWeather] = useState<WeatherState>({
@@ -678,6 +696,106 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
     }, 10 * 60 * 1000);
     return () => clearInterval(weatherInterval);
   }, []);
+
+  // ── Spawn de estrelas cadentes de Stardust ──
+  useEffect(() => {
+    // Chance de spawn a cada 8-15 segundos
+    const spawnMeteor = () => {
+      if (Math.random() > 0.4) return; // 40% chance de spawn
+      
+      // Posicao inicial: borda do radar em um angulo aleatorio
+      const startAngle = Math.random() * 360;
+      // Direcao de movimento: atravessa o radar (angulo oposto + variacao)
+      const direction = (startAngle + 180 + (Math.random() - 0.5) * 60) % 360;
+      
+      const newMeteor: StardustMeteor = {
+        id: `meteor-${Date.now()}-${Math.random()}`,
+        startAngle,
+        startDistance: 0.95, // Comeca na borda
+        angle: startAngle,
+        distance: 0.95,
+        speed: 0.015 + Math.random() * 0.01, // Velocidade variavel
+        direction,
+        stardust: Math.floor(Math.random() * 601) + 100, // 100-700
+        opacity: 1,
+        collected: false,
+      };
+      
+      setStardustMeteors(prev => [...prev, newMeteor]);
+    };
+
+    const spawnInterval = setInterval(spawnMeteor, 8000 + Math.random() * 7000);
+    
+    // Spawn inicial apos 3 segundos
+    const initialSpawn = setTimeout(() => {
+      if (Math.random() < 0.5) spawnMeteor();
+    }, 3000);
+
+    return () => {
+      clearInterval(spawnInterval);
+      clearTimeout(initialSpawn);
+    };
+  }, []);
+
+  // ── Movimento das estrelas cadentes ──
+  useEffect(() => {
+    if (stardustMeteors.length === 0) return;
+
+    meteorInterval.current = setInterval(() => {
+      setStardustMeteors(prev => {
+        return prev
+          .map(meteor => {
+            if (meteor.collected) return meteor;
+            
+            // Calcular nova posicao baseada na direcao
+            const dirRad = (meteor.direction * Math.PI) / 180;
+            const currentRad = (meteor.angle * Math.PI) / 180;
+            
+            // Posicao cartesiana atual
+            const currentX = Math.cos(currentRad) * meteor.distance;
+            const currentY = Math.sin(currentRad) * meteor.distance;
+            
+            // Nova posicao cartesiana
+            const newX = currentX + Math.cos(dirRad) * meteor.speed;
+            const newY = currentY + Math.sin(dirRad) * meteor.speed;
+            
+            // Converter de volta para polar
+            const newDistance = Math.sqrt(newX * newX + newY * newY);
+            const newAngle = (Math.atan2(newY, newX) * 180) / Math.PI;
+            
+            return {
+              ...meteor,
+              angle: newAngle,
+              distance: newDistance,
+              // Fade out quando se aproxima da borda oposta
+              opacity: newDistance > 0.8 ? Math.max(0, 1 - (newDistance - 0.8) / 0.2) : 1,
+            };
+          })
+          // Remover meteoros que sairam do radar ou foram coletados
+          .filter(meteor => meteor.distance < 1.1 && !meteor.collected);
+      });
+    }, 50);
+
+    return () => {
+      if (meteorInterval.current) clearInterval(meteorInterval.current);
+    };
+  }, [stardustMeteors.length]);
+
+  // ── Handler de clique na estrela cadente ──
+  const handleMeteorClick = useCallback((meteor: StardustMeteor) => {
+    if (meteor.collected) return;
+    
+    // Marcar como coletada
+    setStardustMeteors(prev => prev.filter(m => m.id !== meteor.id));
+    
+    // Adicionar stardust
+    addStarDust(meteor.stardust);
+    
+    // Mostrar animacao
+    setStardustAnimation({ active: true, amount: meteor.stardust });
+    
+    playGift();
+  }, [addStarDust]);
 
   // ── Movimentacao dos blips com rastro de patinhas ──
   // ── Movimentacao dos blips com rastro de patinhas ──
@@ -1260,6 +1378,71 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
           </motion.div>
         )}
 
+        {/* Stardust Meteors - Estrelas Cadentes */}
+        <AnimatePresence>
+          {stardustMeteors.map((meteor) => {
+            const rad = (meteor.angle * Math.PI) / 180;
+            const maxR = center - 10;
+            const x = center + Math.cos(rad) * maxR * meteor.distance;
+            const y = center + Math.sin(rad) * maxR * meteor.distance;
+            
+            // Calcular rotacao baseada na direcao do movimento
+            const rotation = meteor.direction + 45;
+            
+            return (
+              <motion.button
+                key={meteor.id}
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{
+                  scale: 1,
+                  opacity: meteor.opacity,
+                  left: x - 10,
+                  top: y - 10,
+                }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ duration: 0.1 }}
+                className="absolute z-40 cursor-pointer group"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMeteorClick(meteor);
+                }}
+              >
+                <div 
+                  className="relative w-5 h-5 flex items-center justify-center"
+                  style={{ transform: `rotate(${rotation}deg)` }}
+                >
+                  {/* Rastro da estrela cadente */}
+                  <div 
+                    className="absolute w-8 h-[2px] -left-6 top-1/2 -translate-y-1/2"
+                    style={{
+                      background: "linear-gradient(to right, transparent, rgba(253,224,71,0.3), rgba(253,224,71,0.8))",
+                    }}
+                  />
+                  
+                  {/* Estrela principal */}
+                  <Star 
+                    className="w-4 h-4 text-yellow-400 animate-pulse" 
+                    fill="currentColor"
+                    style={{
+                      filter: "drop-shadow(0 0 8px rgba(253,224,71,1)) drop-shadow(0 0 4px rgba(255,255,255,0.9))",
+                    }}
+                  />
+                  
+                  {/* Brilho extra */}
+                  <div className="absolute inset-0 rounded-full bg-yellow-400/30 blur-sm animate-ping" />
+                </div>
+                
+                {/* Tooltip com valor */}
+                <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <div className="bg-black/80 border border-yellow-500/50 px-2 py-0.5 rounded text-[9px] text-yellow-400 font-bold whitespace-nowrap">
+                    +{meteor.stardust} Stardust
+                  </div>
+                </div>
+              </motion.button>
+            );
+          })}
+        </AnimatePresence>
+
         {/* Blips & Entities */}
         {/* Blips & Entities */}
         <AnimatePresence>
@@ -1480,6 +1663,14 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Stardust Animation */}
+      <StarDustFullscreenAnimation
+        amount={stardustAnimation.amount}
+        isActive={stardustAnimation.active}
+        type="gain"
+        onComplete={() => setStardustAnimation({ active: false, amount: 0 })}
+      />
     </div>
   );
 }
