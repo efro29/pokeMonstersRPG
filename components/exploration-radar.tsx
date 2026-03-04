@@ -699,9 +699,9 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
 
   // ── Spawn de estrelas cadentes de Stardust ──
   useEffect(() => {
-    // Chance de spawn a cada 8-15 segundos
+    // Chance de spawn a cada 20-35 segundos
     const spawnMeteor = () => {
-      if (Math.random() > 0.4) return; // 40% chance de spawn
+      if (Math.random() > 0.25) return; // 25% chance de spawn
       
       // Posicao inicial: borda do radar em um angulo aleatorio
       const startAngle = Math.random() * 360;
@@ -724,12 +724,12 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
       setStardustMeteors(prev => [...prev, newMeteor]);
     };
 
-    const spawnInterval = setInterval(spawnMeteor, 8000 + Math.random() * 7000);
+    const spawnInterval = setInterval(spawnMeteor, 20000 + Math.random() * 15000);
     
-    // Spawn inicial apos 3 segundos
+    // Spawn inicial apos 8 segundos
     const initialSpawn = setTimeout(() => {
-      if (Math.random() < 0.5) spawnMeteor();
-    }, 3000);
+      if (Math.random() < 0.3) spawnMeteor();
+    }, 8000);
 
     return () => {
       clearInterval(spawnInterval);
@@ -1386,8 +1386,9 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
             const x = center + Math.cos(rad) * maxR * meteor.distance;
             const y = center + Math.sin(rad) * maxR * meteor.distance;
             
-            // Calcular rotacao baseada na direcao do movimento
-            const rotation = meteor.direction + 45;
+            // Calcular rotacao da cauda: oposta a direcao do movimento
+            // A cauda deve apontar para onde a estrela VEIO, nao para onde vai
+            const tailRotation = meteor.direction + 180;
             
             return (
               <motion.button
@@ -1396,8 +1397,8 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
                 animate={{
                   scale: 1,
                   opacity: meteor.opacity,
-                  left: x - 10,
-                  top: y - 10,
+                  left: x - 12,
+                  top: y - 12,
                 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ duration: 0.1 }}
@@ -1407,21 +1408,32 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
                   handleMeteorClick(meteor);
                 }}
               >
-                <div 
-                  className="relative w-5 h-5 flex items-center justify-center"
-                  style={{ transform: `rotate(${rotation}deg)` }}
-                >
-                  {/* Rastro da estrela cadente */}
+                <div className="relative w-6 h-6 flex items-center justify-center">
+                  {/* Rastro da estrela cadente - aponta para tras */}
                   <div 
-                    className="absolute w-8 h-[2px] -left-6 top-1/2 -translate-y-1/2"
+                    className="absolute w-10 h-[3px] origin-right"
                     style={{
-                      background: "linear-gradient(to right, transparent, rgba(253,224,71,0.3), rgba(253,224,71,0.8))",
+                      transform: `rotate(${tailRotation}deg)`,
+                      right: '50%',
+                      background: "linear-gradient(to left, rgba(253,224,71,0.9), rgba(253,224,71,0.4), transparent)",
+                      borderRadius: "2px",
+                    }}
+                  />
+                  
+                  {/* Rastro secundario mais longo e suave */}
+                  <div 
+                    className="absolute w-14 h-[2px] origin-right"
+                    style={{
+                      transform: `rotate(${tailRotation}deg)`,
+                      right: '50%',
+                      background: "linear-gradient(to left, rgba(253,224,71,0.5), rgba(255,255,255,0.2), transparent)",
+                      borderRadius: "2px",
                     }}
                   />
                   
                   {/* Estrela principal */}
                   <Star 
-                    className="w-4 h-4 text-yellow-400 animate-pulse" 
+                    className="w-4 h-4 text-yellow-400 animate-pulse relative z-10" 
                     fill="currentColor"
                     style={{
                       filter: "drop-shadow(0 0 8px rgba(253,224,71,1)) drop-shadow(0 0 4px rgba(255,255,255,0.9))",
@@ -1429,7 +1441,7 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
                   />
                   
                   {/* Brilho extra */}
-                  <div className="absolute inset-0 rounded-full bg-yellow-400/30 blur-sm animate-ping" />
+                  <div className="absolute w-4 h-4 rounded-full bg-yellow-400/40 blur-sm animate-ping" />
                 </div>
                 
                 {/* Tooltip com valor */}
