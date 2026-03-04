@@ -25,7 +25,7 @@ const GENERATIONS = [
     label: "G1",
     range: [1, 151] as [number, number],
     color: "#3B82F6",
-    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/7.svg" // Squirtle
+    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png" // Squirtle
   },
   {
     id: 2,
@@ -33,7 +33,7 @@ const GENERATIONS = [
     label: "G2",
     range: [152, 251] as [number, number],
     color: "#2563EB",
-    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/158.svg" // Totodile
+    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/158.png" // Totodile
   },
   {
     id: 3,
@@ -41,7 +41,7 @@ const GENERATIONS = [
     label: "G3",
     range: [252, 386] as [number, number],
     color: "#0EA5E9",
-    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/258.svg" // Mudkip
+    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/258.png" // Mudkip
   },
   {
     id: 4,
@@ -49,7 +49,7 @@ const GENERATIONS = [
     label: "G4",
     range: [387, 493] as [number, number],
     color: "#38BDF8",
-    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/393.svg" // Piplup
+    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/393.png" // Piplup
   },
   {
     id: 5,
@@ -57,7 +57,7 @@ const GENERATIONS = [
     label: "G5",
     range: [494, 649] as [number, number],
     color: "#14B8A6",
-    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/501.svg" // Oshawott
+    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/501.png" // Oshawott
   },
   {
     id: 6,
@@ -65,7 +65,7 @@ const GENERATIONS = [
     label: "G6",
     range: [650, 721] as [number, number],
     color: "#06B6D4",
-    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/656.svg" // Froakie
+    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/656.png" // Froakie
   },
   {
     id: 7,
@@ -73,7 +73,7 @@ const GENERATIONS = [
     label: "G7",
     range: [722, 809] as [number, number],
     color: "#0EA5E9",
-    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/728.svg" // Popplio
+    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/728.png" // Popplio
   },
   {
     id: 8,
@@ -81,7 +81,7 @@ const GENERATIONS = [
     label: "G8",
     range: [810, 905] as [number, number],
     color: "#1D4ED8",
-    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/816.svg" // Sobble
+    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/816.png" // Sobble
   },
   {
     id: 9,
@@ -89,7 +89,7 @@ const GENERATIONS = [
     label: "G9",
     range: [906, 1009] as [number, number],
     color: "#0284C7",
-    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/912.svg" // Quaxly
+    icon: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/912.png" // Quaxly
   },
 ];
 
@@ -527,8 +527,8 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture, onStartWi
                           <img
                             src={gen.icon}
                             alt={gen.name}
-                            width={25}
-                            height={25}
+                            width={100}
+                            height={100}
                             /* Mudei a drop-shadow para azul claro e adicionei opacity-80 
                               para que o azul não fique muito agressivo.
                             */
@@ -585,228 +585,187 @@ export function PokedexTab({ onStartBattleWithPokemon, onStartCapture, onStartWi
                       </p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-3 gap-1 p-1">
-                      {filtered.map((pokemon) => {
-                        const isDiscovered = !isTrainerMode || discovered.includes(pokemon.id);
-                        const isRevealing = revealingId === pokemon.id;
-                        const inTeam = isInTeam(pokemon.id);
-                        const mainType = pokemon.types[0];
-                        const mainColor = TYPE_COLORS[mainType];
+<div className="grid grid-cols-4 gap-2 p-1 bg-[#020203]">
+  {filtered.map((pokemon) => {
+    const isDiscovered = !isTrainerMode || discovered.includes(pokemon.id);
+    const isRevealing = revealingId === pokemon.id;
+    const inTeam = isInTeam(pokemon.id);
+    const mainType = pokemon.types[0];
+    const mainColor = TYPE_COLORS[mainType];
 
-                        // Undiscovered card
-                        if (!isDiscovered && !isRevealing) {
-                          return (
-                            <div
-                              key={pokemon.id}
-                              ref={(el) => { cardRefs.current[pokemon.id] = el; }}
-                              className="relative flex flex-col items-center justify-center p-4 h-56 rounded-2xl border border-neutral-800 bg-neutral-950/90 overflow-hidden"
-                            >
-                              {/* Badge ID */}
-                              <div className="absolute top-2 bg-neutral-800/60 px-2 py-0.5 rounded-md text-[10px] font-mono text-neutral-500">
-                                #{String(pokemon.id).padStart(3, "0")}
-                              </div>
+    // 1. CARD NÃO DESCOBERTO (ESTILO CRIPTOGRAFADO)
+    if (!isDiscovered && !isRevealing) {
+      return (
+        <div
+          key={pokemon.id}
+          ref={(el) => { cardRefs.current[pokemon.id] = el; }}
+          className="relative flex flex-col items-center justify-center h-40 rounded-lg border border-white/5 bg-neutral-950/50 overflow-hidden"
+          style={{ clipPath: 'polygon(0 0, 85% 0, 100% 15%, 100% 100%, 0 100%)' }}
+        >
+          <div className="absolute top-1 left-1 font-mono text-[8px] text-white/20">
+            #{String(pokemon.id).padStart(3, "0")}
+          </div>
+          <HelpCircle className="w-6 h-6 text-white/10" />
+          <div className="mt-2 h-1 w-12 bg-white/5 rounded-full overflow-hidden">
+            <div className="h-full bg-white/10 animate-[loading_2s_infinite]" style={{ width: '30%' }} />
+          </div>
+          <span className="mt-1 font-mono text-[7px] text-white/10 tracking-widest uppercase">Locked</span>
+        </div>
+      );
+    }
 
-                              {/* Pokeball silhouette */}
-                              <div className="relative flex items-center justify-center flex-1 w-full">
-                                <div className="absolute w-20 h-20 rounded-full bg-neutral-800/30" />
-                                <svg width="48" height="48" viewBox="0 0 100 100" className="relative z-10 opacity-15">
-                                  <circle cx="50" cy="50" r="48" fill="#333" stroke="#222" strokeWidth="3" />
-                                  <rect x="2" y="48" width="96" height="4" fill="#222" />
-                                  <path d="M 2 50 A 48 48 0 0 0 98 50" fill="#555" />
-                                  <circle cx="50" cy="50" r="14" fill="#444" stroke="#222" strokeWidth="3" />
-                                  <circle cx="50" cy="50" r="7" fill="#222" />
-                                </svg>
-                                <HelpCircle className="absolute z-20 w-10 h-10 text-neutral-600" />
-                              </div>
+    // 2. CARD REVELANDO (ANIMAÇÃO DE SCAN)
+// 2. CARD REVELANDO (ANIMAÇÃO DE SCAN TÁTICO)
+if (isRevealing) {
+  return (
+    <div
+      key={pokemon.id}
+      ref={(el) => { cardRefs.current[pokemon.id] = el; }}
+      className="relative flex flex-col items-center justify-center h-40 rounded-lg border-2 overflow-hidden z-50 bg-black"
+      style={{ 
+        borderColor: mainColor,
+        boxShadow: `0 0 30px ${mainColor}aa, inset 0 0 20px ${mainColor}44`,
+      }}
+    >
+      {/* 1. FLASH DE ENTRADA (OVERLAY) */}
+      <motion.div 
+        className="absolute inset-0 z-50 bg-white"
+        initial={{ opacity: 1 }}
+        animate={{ opacity: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      />
 
-                              <div className="flex flex-col gap-1 mt-2 items-center">
-                                <span className="text-sm font-semibold text-neutral-600">???</span>
-                                <div className="flex gap-1 mt-2">
-                                  <span className="text-[9px] px-2 rounded-full font-semibold tracking-wide bg-neutral-800 text-neutral-600">
-                                    ???
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        }
+      {/* 2. LINHA DE SCAN LASER */}
+      <motion.div 
+        className="absolute left-0 right-0 z-30 h-[2px] shadow-[0_0_15px_2px_currentColor]"
+        style={{ color: mainColor, backgroundColor: mainColor }}
+        initial={{ top: "0%" }}
+        animate={{ top: "100%" }}
+        transition={{ 
+          duration: 1.5, 
+          repeat: Infinity, 
+          ease: "linear" 
+        }}
+      />
 
-                        // Revealing card (animated)
-                        if (isRevealing) {
-                          return (
-                            <div
-                              key={pokemon.id}
-                              ref={(el) => { cardRefs.current[pokemon.id] = el; }}
-                              className="relative flex flex-col items-center p-4 h-56 rounded-2xl border overflow-hidden"
-                              style={{
-                                borderColor: mainColor,
-                                borderWidth: "2px",
-                                boxShadow: `0 0 30px ${mainColor}88, 0 0 60px ${mainColor}44`,
-                              }}
-                            >
-                              {/* White flash overlay */}
-                              <motion.div
-                                className="absolute inset-0 z-40 rounded-2xl"
-                                style={{ backgroundColor: "#fff" }}
-                                initial={{ opacity: 0.9 }}
-                                animate={{ opacity: 0 }}
-                                transition={{ duration: 0.6, delay: 0.1 }}
-                              />
+      {/* 3. PARTÍCULAS E GRID DE FUNDO */}
+      <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] animate-pulse" />
+      <RevealParticles color={mainColor} />
 
-                              {/* Particles */}
-                              <RevealParticles color={mainColor} />
+      {/* 4. SPRITE COM EFEITO DE "MATERIALIZAÇÃO" */}
+      <motion.div
+        initial={{ scale: 0.5, opacity: 0, filter: 'brightness(2) contrast(2)' }}
+        animate={{ scale: 1.1, opacity: 1, filter: 'brightness(1) contrast(1)' }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="relative z-10"
+      >
+        <img
+          src={getSpriteUrl2(pokemon.id)}
+          alt={pokemon.name}
+          className="w-20 h-20 pixelated drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]"
+          crossOrigin="anonymous"
+        />
+      </motion.div>
 
-                              {/* Background glow */}
-                              <motion.div
-                                className="absolute inset-0 z-0"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ duration: 0.5 }}
-                                style={{
-                                  background: `radial-gradient(circle at center, ${mainColor}30 0%, transparent 70%)`,
-                                }}
-                              />
+      {/* 5. TEXTO DE REGISTRO (GLITCH) */}
+      <div className="absolute bottom-2 left-0 right-0 flex flex-col items-center z-20">
+        <motion.span 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 0, 1] }}
+          transition={{ duration: 0.2, repeat: 5 }}
+          className="font-mono text-[8px] font-black tracking-[0.2em] text-white uppercase"
+        >
+          Analyzing DNA...
+        </motion.span>
+        <div className="w-16 h-0.5 mt-1 bg-white/20 rounded-full overflow-hidden">
+          <motion.div 
+            className="h-full" 
+            style={{ backgroundColor: mainColor }}
+            initial={{ width: "0%" }}
+            animate={{ width: "100%" }}
+            transition={{ duration: 1.5 }}
+          />
+        </div>
+      </div>
 
-                              {/* Badge ID */}
-                              <motion.div
-                                className="absolute top-2 z-20 bg-black/40 backdrop-blur px-2 py-0.5 rounded-md text-[10px] font-mono text-white"
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.4 }}
-                              >
-                                #{String(pokemon.id).padStart(3, "0")}
-                              </motion.div>
+      {/* 6. OVERLAY DE RUÍDO DIGITAL */}
+      <div className="absolute inset-0 pointer-events-none opacity-10 bg-[url('https://media.giphy.com/media/oEI9uWUicKgH6/giphy.gif')] mix-blend-screen" />
+    </div>
+  );
+}
 
-                              {/* Sprite */}
-                              <div className="relative flex items-center justify-center flex-1 w-full z-10">
-                                <motion.div
-                                  className="absolute w-28 h-28 rounded-full blur-2xl"
-                                  initial={{ opacity: 0, scale: 0.3 }}
-                                  animate={{ opacity: 0.4, scale: 1 }}
-                                  transition={{ duration: 0.6, delay: 0.2 }}
-                                  style={{
-                                    background: `radial-gradient(circle, ${mainColor} 0%, transparent 70%)`,
-                                  }}
-                                />
-                                <div className="absolute w-24 h-24 rounded-full bg-white/10" />
-                                <motion.img
-                                  src={getSpriteUrl(pokemon.id) || "/placeholder.svg"}
-                                  alt={pokemon.name}
-                                  width={60}
-                                  height={60}
-                                  className="relative z-10 pixelated drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)]"
-                                  crossOrigin="anonymous"
-                                  initial={{ scale: 0, opacity: 0, rotate: -15 }}
-                                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                                  transition={{
-                                    type: "spring",
-                                    stiffness: 260,
-                                    damping: 15,
-                                    delay: 0.3,
-                                  }}
-                                />
-                              </div>
+    // 3. CARD DESCOBERTO (ESTILO TÁTICO HUD)
+    return (
+      <button
+        key={pokemon.id}
+        ref={(el) => { cardRefs.current[pokemon.id] = el as unknown as HTMLDivElement; }}
+        onClick={() => setSelectedId(pokemon.id)}
+        className="relative flex flex-col items-center h-40 w-full p-0 transition-all duration-300 group overflow-hidden border-b"
+        style={{
+          backgroundColor: '#0a0a0c',
+          borderColor: `${mainColor}66`,
+          clipPath: 'polygon(0 0, 88% 0, 100% 12%, 100% 100%, 0 100%)',
+        }}
+      >
+        {/* Camada de Scanlines decorativa */}
+        <div className="absolute inset-0 pointer-events-none opacity-5 bg-[linear-gradient(transparent_50%,black_50%)] bg-[size:100%_2px]" />
 
-                              {/* Name and types */}
-                              <motion.div
-                                className="flex flex-col gap-1 mt-2 items-center"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.5, duration: 0.3 }}
-                              >
-                                <span className="text-sm font-semibold text-white capitalize mt-1">
-                                  {pokemon.name}
-                                </span>
-                                <div className="flex justify-between gap-1 mt-2">
-                                  {pokemon.types.map((t) => (
-                                    <span
-                                      key={t}
-                                      className="text-[9px] px-1 rounded-full font-semibold tracking-wide"
-                                      style={{
-                                        backgroundColor: TYPE_COLORS[t],
-                                        color: "#fff",
-                                      }}
-                                    >
-                                      {t.toUpperCase()}
-                                    </span>
-                                  ))}
-                                </div>
-                              </motion.div>
-                            </div>
-                          );
-                        }
+        {/* Top Header: ID e Team Indicator */}
+        <div className="relative z-10 w-full flex justify-between items-start">
+          <span className="font-mono text-[9px] font-black px-1.5 py-0.5 rounded-br" 
+                style={{ backgroundColor: mainColor, color: '#000' }}>
+            #{String(pokemon.id).padStart(3, "0")}
+          </span>
+          {inTeam && (
+            <div className="mr-1 mt-1 flex items-center gap-1">
+              <div className="w-1.5 h-1.5 rounded-full animate-pulse shadow-[0_0_5px_currentColor]" style={{ color: mainColor, backgroundColor: 'currentColor' }} />
+            </div>
+          )}
+        </div>
 
-                        // Normal discovered card
-                        return (
-                          <button
-                            key={pokemon.id}
-                            ref={(el) => { cardRefs.current[pokemon.id] = el as unknown as HTMLDivElement; }}
-                            onClick={() => setSelectedId(pokemon.id)}
-                            className="relative flex flex-col items-center p-4 h-56 rounded-2xl border transition-all bg-neutral-900/90 overflow-hidden group"
-                            style={{
-                              borderColor: mainColor,
-                              borderWidth: "1px",
-                              boxShadow: `0 0 18px ${mainColor}55`,
-                            }}
-                          >
-                            {/* Badge ID */}
-                            <div className="absolute top-2 bg-black/40 backdrop-blur px-2 py-0.5 rounded-md text-[10px] font-mono text-white">
-                              #{String(pokemon.id).padStart(3, "0")}
-                            </div>
+        {/* Sprite: Com brilho neon de fundo */}
+        <div className="relative flex-1 flex items-center justify-center w-full min-h-0">
+          <div 
+            className="absolute w-12 h-12 blur-xl opacity-20 group-hover:opacity-50 transition-opacity duration-500"
+            style={{ backgroundColor: mainColor }}
+          />
+          <img
+            src={getSpriteUrl2(pokemon.id)}
+            alt={pokemon.name}
+            className="relative z-10 pixelated w-16 h-16 group-hover:scale-110 transition-transform duration-500 drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]"
+            crossOrigin="anonymous"
+            loading="lazy"
+          />
+        </div>
 
-                            {/* Indicator (in team) */}
-                            {inTeam && (
-                              <div
-                                className="absolute top-2 right-2 w-3 h-3 rounded-full"
-                                style={{
-                                  backgroundColor: mainColor,
-                                  boxShadow: `0 0 10px ${mainColor}`,
-                                }}
-                              />
-                            )}
+        {/* Footer: Nome e Tipos Simplificados */}
+        <div className="relative z-10 w-full bg-black/60 p-1.5 border-t border-white/5">
+          <h3 className="text-[9px] font-black text-white uppercase truncate tracking-tight mb-1">
+            {pokemon.name}
+          </h3>
+          <div className="flex gap-0.5">
+            {pokemon.types.map((t) => (
+              <span
+                key={t}
+                className="text-[6px] px-1 py-[1px] rounded-[1px] font-bold border"
+                style={{
+                  borderColor: `${TYPE_COLORS[t]}44`,
+                  color: TYPE_COLORS[t],
+                  backgroundColor: `${TYPE_COLORS[t]}11`,
+                }}
+              >
+                {t.substring(0, 3).toUpperCase()}
+              </span>
+            ))}
+          </div>
+        </div>
 
-                            <div className="relative flex items-center justify-center flex-1 w-full">
-                              <div
-                                className="absolute w-28 h-28 rounded-full blur-2xl opacity-40"
-                                style={{
-                                  background: `radial-gradient(circle, ${mainColor} 0%, transparent 70%)`,
-                                }}
-                              />
-                              <div className="absolute w-24 h-24 rounded-full bg-white/10" />
-                              <img
-                                src={getSpriteUrl2(pokemon.id)}
-                                alt={pokemon.name}
-                                width={100}
-                                height={100}
-                                className="relative z-10 pixelated drop-shadow-[0_6px_10px_rgba(0,0,0,0.6)] group-hover:scale-110 transition-transform duration-300"
-                                crossOrigin="anonymous"
-                                loading="lazy"
-                              />
-                            </div>
-
-                            <div className="flex flex-col gap-1 mt-2">
-                              <span className="text-sm font-semibold text-white capitalize mt-1">
-                                {pokemon.name}
-                              </span>
-                              <div className="flex justify-between gap-1 mt-2">
-                                {pokemon.types.map((t) => (
-                                  <span
-                                    key={t}
-                                    className="text-[9px] px-1 rounded-full font-semibold tracking-wide"
-                                    style={{
-                                      backgroundColor: TYPE_COLORS[t],
-                                      color: "#fff",
-                                    }}
-                                  >
-                                    {t.toUpperCase()}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
+        {/* Borda lateral direita tática */}
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[1px] h-1/2 opacity-30" style={{ backgroundColor: mainColor }} />
+      </button>
+    );
+  })}
+</div>
                   )}
                 </div>
 

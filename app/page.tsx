@@ -35,7 +35,7 @@ import { calculateExplorationXp, calculateCaptureStarDust, STAR_DUST_CONFIG } fr
 import type { ExplorationReward, StreakUpdateResult } from "@/lib/game-store";
 import { StarDustFullscreenAnimation, StarDustCounter } from "@/components/star-dust-animation";
 
-import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords, Crosshair, Settings, Plus, StarIcon } from "lucide-react";
+import { Users, Backpack, BookOpen, User, ShoppingCart, Coins, LogOut, Swords, Crosshair, Settings, Plus, StarIcon, Star } from "lucide-react";
 import { playTabSwitch, playButtonClick } from "@/lib/sounds";
 import { useImagePreloader } from "@/hooks/use-image-preloader";
 import {
@@ -49,6 +49,7 @@ import {
   SettingsIcon,
 } from "@/components/game-icons";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 type Tab = "team" | "bag" | "pokedex" | "profile" | "shop" | "npcs" | "moves" | "settings" | "duels";
 type Screen = "loading" | "mode-select" | "profile-select" | "start" | "game";
 
@@ -335,6 +336,8 @@ export default function Page() {
     // Calculate final level with weighted distribution
     const levelRange = maxLevel - minLevel;
     const wildLevel = Math.floor(minLevel + adjustedRoll * levelRange);
+
+
     
     wildLevelRef.current = Math.max(1, Math.min(100, wildLevel));
     setWildBattleTarget(speciesId);
@@ -415,7 +418,7 @@ export default function Page() {
       const alreadyCapturedToday = lastCaptureBefore === todayStr;
 
       const streakResult = useGameStore.getState().registerDailyCapture();
-
+   
       // Track weekly event progress
       useGameStore.getState().trackWeeklyCapture(species.types, ballsUsed);
 
@@ -749,12 +752,44 @@ export default function Page() {
          <div 
            id="stardust-counter-target"
            className="flex items-center gap-1.5 justify-between bg-secondary/50 rounded-full px-2.5 py-1"
-         >
-            <StarIcon className="w-4 h-4 text-blue-300" />
+         >     
+              {Math.max( STAR_DUST_CONFIG.XP_TO_STARDUST_RATIO, Math.floor(trainer.starDust * 0.25)) < 500 ?
+              
+                <Star className="w-3 h-3 mr-3 text-blue-500 " />
+              :<motion.div
+                  animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                >
+                               {/* PARTÍCULAS DE POEIRA ESTELAR (STARDUST) */}
+                                <div className="absolute inset-0 pointer-events-none">
+                                  {[...Array(6)].map((_, i) => (
+                                    <motion.div
+                                      key={i}
+                                      className="absolute w-1 h-1 bg-white rounded-full shadow-[0_0_8px_#fff]"
+                                      style={{
+                                        top: Math.random() * 100 + "%",
+                                        left: Math.random() * 100 + "%",
+                                      }}
+                                      animate={{
+                                        y: [0, -20],
+                                        opacity: [0, 1, 0],
+                                        scale: [0, 1.5, 0],
+                                      }}
+                                      transition={{
+                                        duration: Math.random() * 2 + 1,
+                                        repeat: Infinity,
+                                        delay: Math.random() * 2,
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                  <Star className="w-5 h-5 mr-3 text-yellow-300 fill-yellow-300 drop-shadow-[0_0_8px_rgba(253,224,71,0.8)]" />
+                </motion.div>}
             <StarDustCounter 
               value={trainer.starDust ?? 0} 
               previousValue={prevStarDust}
-              className="text-xs font-bold font-mono text-blue-300"
+              
+              className={`text-xs font-bold font-mono ${Math.max( STAR_DUST_CONFIG.XP_TO_STARDUST_RATIO, Math.floor(trainer.starDust * 0.25)) < 500?"text-blue-500":"text-yellow-500"}`}
             />
           </div>
           <div className="flex items-center gap-1.5 bg-secondary/50 rounded-full px-2.5 py-1">

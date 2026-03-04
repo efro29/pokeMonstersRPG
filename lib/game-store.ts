@@ -541,6 +541,7 @@ export const EGG_POKEMON: EggPokemonDef[] = [
   { speciesId: 298, name: "Azurill", tier: "green" },
   { speciesId: 406, name: "Budew", tier: "green" },
   { speciesId: 440, name: "Happiny", tier: "green" },
+
   // Yellow eggs (6h) - intermediate babies
   { speciesId: 236, name: "Tyrogue", tier: "yellow" },
   { speciesId: 238, name: "Smoochum", tier: "yellow" },
@@ -549,10 +550,13 @@ export const EGG_POKEMON: EggPokemonDef[] = [
   { speciesId: 360, name: "Wynaut", tier: "yellow" },
   { speciesId: 433, name: "Chingling", tier: "yellow" },
   { speciesId: 438, name: "Bonsly", tier: "yellow" },
+  { speciesId: 439, name: "Mime Jr.", tier: "yellow" }, // Adicionado (Gen 4)
+
   // Red eggs (10h) - rare babies
   { speciesId: 446, name: "Munchlax", tier: "red" },
   { speciesId: 447, name: "Riolu", tier: "red" },
   { speciesId: 458, name: "Mantyke", tier: "red" },
+  { speciesId: 848, name: "Toxel", tier: "red" },      // Adicionado (Gen 8 - Galar)
 ];
 
 // Set of all egg-exclusive Pokemon IDs (to exclude from radar)

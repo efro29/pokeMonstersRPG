@@ -101,7 +101,7 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
 
 
       
-  const [selectedUid, setSelectedUid] = useState<string | null>(null);
+  const [selectedUid, setSelectedUid] = useState<string | null>( );
   const [xpInput, setXpInput] = useState("");
   const [levelInput, setLevelInput] = useState("");
 
@@ -287,10 +287,10 @@ export function TeamTab({ onStartBattle, onSwitchToPokedex }: TeamTabProps) {
       {/* HEADER TÉCNICO */}
       <div className="flex justify-between items-center border-b border-white/10 pb-1 mb-1 relative z-10">
         <div className="flex flex-col">
-          <div className="text-[10px] font-black italic text-white truncate leading-none uppercase tracking-tighter">
+          <div className="text-[6px] font-black italic text-white truncate leading-none uppercase tracking-tighter">
             {pokemon.name}
           </div>
-          <span className="text-[5px] font-bold text-cyan-400/60 tracking-widest uppercase">Bio_Link_Stable</span>
+          <span className="text-[5px] font-bold text-cyan-400/60 tracking-widest uppercase">pokemon</span>
         </div>
 
         <div className="flex gap-[2px]">

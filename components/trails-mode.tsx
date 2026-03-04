@@ -588,10 +588,12 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
               return (
                 <div 
                   key={idx} 
+                  
                   className="relative z-10 mb-8 flex flex-col items-center"
                   style={{ transform: `translateX(${isEven ? '-50px' : '50px'})` }}
                 >
                   <motion.button
+                  
                     whileHover={!node.locked ? { scale: 1.1, rotate: 5 } : {}}
                     whileTap={!node.locked ? { scale: 0.9 } : {}}
                     onClick={() => { setCurrentStageView(stageIdx); handleNodeClick(node); }}
@@ -600,6 +602,7 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                   >
                     {/* Background do Node com Clip-Path de Octógono */}
                     <div 
+                    
                       className="absolute inset-0 transition-colors duration-500"
                       style={{ 
                         backgroundColor: node.locked ? '#1e293b' : `${nodeColor}${node.completed ? '' : '30'}`,
@@ -629,6 +632,7 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                     {/* Ring de Ativo */}
                     {isAvailable && (
                       <div 
+                         ref={pendingNodeRef }
                         className="absolute inset-[-8px] border-2 border-dashed rounded-full animate-[spin_8s_linear_infinite] opacity-40"
                         style={{ borderColor: stageColor }}
                       />
@@ -636,7 +640,7 @@ export function TrailsMode({ onStartDuel, onStartCapture, onBack, onNodeStart }:
                   </motion.button>
 
                   {/* Label Tático */}
-                  <div className={`mt-2 font-mono uppercase tracking-tighter ${isEven ? 'text-left' : 'text-right'}`}>
+                  <div  className={`mt-2 font-mono uppercase tracking-tighter ${isEven ? 'text-left' : 'text-right'}`}>
                     <p className="text-[10px] font-black text-white leading-none">
                       {node.type === "pokemon" ? node.pokemonReward!.name : node.npc!.nome}
                     </p>
