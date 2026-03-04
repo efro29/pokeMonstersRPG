@@ -110,6 +110,7 @@ const ATTACK_EFFECT_ICONS: Record<string, { icon: string; color: string }> = {
 import { BattleCards } from "./battle-cards";
 import { BattleParticles } from "./battle-particles";
 import { kantoPokemonSizes } from "@/lib/kantoPokemonSizes";
+import { AnimeAttackAnimation } from "./anime-attack-animation";
 
 // Element icon map for energy cost display
 const ENERGY_ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
@@ -289,6 +290,17 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
   const [playerShake, setPlayerShake] = useState(false);
   const [rivalShake, setRivalShake] = useState(false);
   const [attackEffect, setAttackEffect] = useState<{ type: PokemonType | null; side: "player" | "rival" } | null>(null);
+  
+  // Animacao estilo anime para golpes nao-normais
+  const [animeAttackPhase, setAnimeAttackPhase] = useState<"idle" | "attacker" | "impact" | "done">("idle");
+  const [animeAttackData, setAnimeAttackData] = useState<{
+    moveType: PokemonType;
+    moveName: string;
+    attackerSprite: string;
+    defenderSprite: string;
+    isPlayerAttacking: boolean;
+    onComplete: () => void;
+  } | null>(null);
 
   const ARENAS = ["campo"];
   const [arena] = useState(() => ARENAS[Math.floor(Math.random() * ARENAS.length)]);
@@ -391,6 +403,32 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
     }
   }, [activeRival?.currentHp]);
 
+  // Funcao para disparar animacao anime de ataque
+  const triggerAnimeAttack = useCallback((
+    moveType: PokemonType,
+    moveName: string,
+    attackerSprite: string,
+    defenderSprite: string,
+    isPlayerAttacking: boolean,
+    onComplete: () => void
+  ) => {
+    // So dispara animacao anime para golpes nao-normais
+    if (moveType === "normal") {
+      onComplete();
+      return;
+    }
+
+    setAnimeAttackData({
+      moveType,
+      moveName,
+      attackerSprite,
+      defenderSprite,
+      isPlayerAttacking,
+      onComplete,
+    });
+    setAnimeAttackPhase("attacker");
+  }, []);
+
   // Turno do rival (IA classica de Pokemon)
   const executeRivalTurn = useCallback(() => {
     if (!activeRival || activeRival.currentHp <= 0) {
@@ -415,97 +453,122 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
         return;
       }
       
-      setRivalAction(`${activeRival.nome} usou ${chosenMove.name}!`);
-      playAttack();
+      const moveType = chosenMove.type as PokemonType;
       
-      // Animacao de ataque do rival
-      setRivalAttacking(true);
-      setAttackEffect({ type: chosenMove.type as PokemonType, side: "player" });
-      setTimeout(() => {
-        setRivalAttacking(false);
-        setAttackEffect(null);
-      }, 600);
-      
-      setTimeout(() => {
-        // Rola D20 para acerto
-        const roll = Math.floor(Math.random() * 20) + 1;
-        const hit = roll >= chosenMove.accuracy;
-        const isCrit = roll >= 19;
+      // Funcao que executa o ataque apos animacao (ou direto se for normal)
+      const executeAttack = () => {
+        setRivalAction(`${activeRival.nome} usou ${chosenMove.name}!`);
         
-        if (!hit) {
-          addLog(`${activeRival.nome} usou ${chosenMove.name} mas errou! (D20: ${roll})`);
-          playMiss();
-          setRivalAction(`Errou! (${roll})`);
+        // Animacao de ataque do rival
+        setRivalAttacking(true);
+        setAttackEffect({ type: moveType, side: "player" });
+        setTimeout(() => {
+          setRivalAttacking(false);
+          setAttackEffect(null);
+        }, 600);
+        
+        setTimeout(() => {
+          // Rola D20 para acerto
+          const roll = Math.floor(Math.random() * 20) + 1;
+          const hit = roll >= chosenMove.accuracy;
+          const isCrit = roll >= 19;
+          
+          if (!hit) {
+            addLog(`${activeRival.nome} usou ${chosenMove.name} mas errou! (D20: ${roll})`);
+            playMiss();
+            setRivalAction(`Errou! (${roll})`);
+            setTimeout(() => {
+              setRivalAction(null);
+              setIsPlayerTurn(true);
+              useGameStore.setState((state) => ({
+                battle: { ...state.battle, pa: state.battle.maxPa },
+              }));
+            }, 1500);
+            return;
+          }
+          
+          // Calcula dano com efetividade de tipos e balanceamento por nivel
+          const defenderTypes = (pokemonTypes || []) as PokemonType[];
+          const defenderDefesa = pokemonAttrs?.defesa || 10;
+          const defenderLevel = pokemon?.level || 1;
+          
+          const { damage: baseDamage, typeMultiplier, levelMultiplier } = rollRivalDamage(
+            chosenMoveId, 
+            activeRival.level, 
+            defenderLevel,
+            defenderTypes,
+            defenderDefesa
+          );
+          
+          // Aplica critico
+          let finalDamage = baseDamage;
+          if (isCrit) {
+            finalDamage = Math.floor(finalDamage * 1.5);
+            playCriticalHit();
+          } else {
+            playAttackHit();
+          }
+          
+          // Monta label de efetividade
+          const typeLabel = getTypeEffectivenessLabel(typeMultiplier);
+          const hitLabel = isCrit ? "CRITICO!" : "Acertou!";
+          
+          // Log com informações de balanceamento
+          let logMsg = `${activeRival.nome} usou ${chosenMove.name}: ${hitLabel} ${finalDamage} de dano! (D20: ${roll})`;
+          if (typeLabel) {
+            logMsg += ` [${typeLabel}]`;
+          }
+          if (levelMultiplier !== 1.0) {
+            logMsg += ` [Nv: x${levelMultiplier.toFixed(1)}]`;
+          }
+          addLog(logMsg);
+          
+          setRivalDamage(finalDamage);
+          const actionLabel = typeLabel ? `${hitLabel} ${finalDamage} (${typeLabel})` : `${hitLabel} ${finalDamage} dano!`;
+          setRivalAction(actionLabel);
+          
+          // Aplica dano ao pokemon do jogador com animacao de shake
+          setPlayerShake(true);
+          setShowParticles(true);
+          playDamageReceived();
+          
           setTimeout(() => {
+            setPlayerShake(false);
+            setShowParticles(false);
+            applyOpponentDamage(finalDamage);
+            setRivalDamage(null);
             setRivalAction(null);
             setIsPlayerTurn(true);
+            // Restaura PA do jogador
             useGameStore.setState((state) => ({
               battle: { ...state.battle, pa: state.battle.maxPa },
             }));
-          }, 1500);
-          return;
-        }
+          }, 800);
+        }, 1000);
+      };
+      
+      // Se nao for golpe normal, dispara animacao anime primeiro
+      if (moveType !== "normal" && pokemon) {
+        const attackerSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${activeRival.speciesId}.png`;
+        const defenderSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.speciesId}.png`;
         
-        // Calcula dano com efetividade de tipos e balanceamento por nivel
-        const defenderTypes = (pokemonTypes || []) as PokemonType[];
-        const defenderDefesa = pokemonAttrs?.defesa || 10;
-        const defenderLevel = pokemon?.level || 1;
+        playAttack();
         
-        const { damage: baseDamage, typeMultiplier, levelMultiplier } = rollRivalDamage(
-          chosenMoveId, 
-          activeRival.level, 
-          defenderLevel,
-          defenderTypes,
-          defenderDefesa
+        triggerAnimeAttack(
+          moveType,
+          chosenMove.name,
+          attackerSprite,
+          defenderSprite,
+          false,
+          executeAttack
         );
-        
-        // Aplica critico
-        let finalDamage = baseDamage;
-        if (isCrit) {
-          finalDamage = Math.floor(finalDamage * 1.5);
-          playCriticalHit();
-        } else {
-          playAttackHit();
-        }
-        
-        // Monta label de efetividade
-        const typeLabel = getTypeEffectivenessLabel(typeMultiplier);
-        const hitLabel = isCrit ? "CRITICO!" : "Acertou!";
-        
-        // Log com informações de balanceamento
-        let logMsg = `${activeRival.nome} usou ${chosenMove.name}: ${hitLabel} ${finalDamage} de dano! (D20: ${roll})`;
-        if (typeLabel) {
-          logMsg += ` [${typeLabel}]`;
-        }
-        if (levelMultiplier !== 1.0) {
-          logMsg += ` [Nv: x${levelMultiplier.toFixed(1)}]`;
-        }
-        addLog(logMsg);
-        
-        setRivalDamage(finalDamage);
-        const actionLabel = typeLabel ? `${hitLabel} ${finalDamage} (${typeLabel})` : `${hitLabel} ${finalDamage} dano!`;
-        setRivalAction(actionLabel);
-        
-        // Aplica dano ao pokemon do jogador com animacao de shake
-        setPlayerShake(true);
-        setShowParticles(true);
-        playDamageReceived();
-        
-        setTimeout(() => {
-          setPlayerShake(false);
-          setShowParticles(false);
-          applyOpponentDamage(finalDamage);
-          setRivalDamage(null);
-          setRivalAction(null);
-          setIsPlayerTurn(true);
-          // Restaura PA do jogador
-          useGameStore.setState((state) => ({
-            battle: { ...state.battle, pa: state.battle.maxPa },
-          }));
-        }, 800);
-      }, 1000);
+      } else {
+        // Golpe normal - executa direto
+        playAttack();
+        executeAttack();
+      }
     }, 1000);
-  }, [activeRival, pokemonTypes, npc.ia, pokemonAttrs, pokemon, addLog, applyOpponentDamage]);
+  }, [activeRival, pokemonTypes, npc.ia, pokemonAttrs, pokemon, addLog, applyOpponentDamage, triggerAnimeAttack]);
 
   // Handler de troca de pokemon
   const handleSwitchPokemon = (uid: string) => {
@@ -605,20 +668,52 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
     if (!usesCards) {
       if (!spendPA("attack")) return;
     }
-    selectMove(moveId);
-    setIsRolling(true);
-    playAttack();
-    playDiceRoll();
     
-    // Animacao de ataque do jogador
-    setPlayerAttacking(true);
-    if (moveDef) {
-      setAttackEffect({ type: moveDef.type as PokemonType, side: "rival" });
+    const moveType = moveDef?.type as PokemonType || "normal";
+    
+    // Se nao for golpe normal, dispara animacao anime primeiro
+    if (moveType !== "normal" && moveDef && pokemon && activeRival) {
+      const attackerSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.speciesId}.png`;
+      const defenderSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${activeRival.speciesId}.png`;
+      
+      playAttack();
+      
+      triggerAnimeAttack(
+        moveType,
+        moveDef.name,
+        attackerSprite,
+        defenderSprite,
+        true,
+        () => {
+          // Apos animacao anime, continua com o fluxo normal
+          selectMove(moveId);
+          setIsRolling(true);
+          playDiceRoll();
+          
+          setPlayerAttacking(true);
+          setAttackEffect({ type: moveType, side: "rival" });
+          setTimeout(() => {
+            setPlayerAttacking(false);
+            setAttackEffect(null);
+          }, 600);
+        }
+      );
+    } else {
+      // Golpe normal - fluxo original
+      selectMove(moveId);
+      setIsRolling(true);
+      playAttack();
+      playDiceRoll();
+      
+      setPlayerAttacking(true);
+      if (moveDef) {
+        setAttackEffect({ type: moveDef.type as PokemonType, side: "rival" });
+      }
+      setTimeout(() => {
+        setPlayerAttacking(false);
+        setAttackEffect(null);
+      }, 600);
     }
-    setTimeout(() => {
-      setPlayerAttacking(false);
-      setAttackEffect(null);
-    }, 600);
   };
 
   // Handler do fim do turno do jogador
@@ -753,6 +848,24 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
 
   return (
     <div className="flex flex-col h-full bg-background">
+      {/* OVERLAY DE ANIMACAO ANIME EPICA */}
+      {animeAttackPhase !== "idle" && animeAttackData && (
+        <AnimeAttackAnimation
+          attackerSprite={animeAttackData.attackerSprite}
+          defenderSprite={animeAttackData.defenderSprite}
+          attackerName={animeAttackData.isPlayerAttacking ? pokemon?.nome || "" : activeRival?.nome || ""}
+          defenderName={animeAttackData.isPlayerAttacking ? activeRival?.nome || "" : pokemon?.nome || ""}
+          moveName={animeAttackData.moveName}
+          moveType={animeAttackData.moveType}
+          onComplete={() => {
+            const callback = animeAttackData.onComplete;
+            setAnimeAttackPhase("idle");
+            setAnimeAttackData(null);
+            callback();
+          }}
+        />
+      )}
+
       {/* Barra de navegacao superior */}
       <nav className="flex items-center justify-between px-2 py-1.5 bg-card border-b border-border gap-1">
         {/* Esquerda: Voltar + Turno */}
