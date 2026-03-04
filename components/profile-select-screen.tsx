@@ -55,236 +55,173 @@ export function ProfileSelectScreen({ onSelectProfile, onBack }: ProfileSelectSc
   };
 
   return (
-    <div
-      className="flex flex-col h-dvh max-w-md mx-auto relative overflow-hidden"
-      style={{
-        background: "linear-gradient(180deg, #0c1220 0%, #1a1a3e 40%, #2d1b4e 70%, #0c1220 100%)",
-      }}
+<div
+  className="flex flex-col h-dvh max-w-md mx-auto relative overflow-hidden font-mono"
+  style={{
+    backgroundColor: "#050505",
+    background: "radial-gradient(circle at top, #0c1a2e 0%, #050505 100%)",
+  }}
+>
+  {/* SCANLINES & GRID DE FUNDO TÁTICO */}
+  <div className="absolute inset-0 pointer-events-none z-0 opacity-10" 
+    style={{ backgroundImage: `linear-gradient(#334155 1px, transparent 1px), linear-gradient(90deg, #334155 1px, transparent 1px)`, backgroundSize: '40px 40px' }} 
+  />
+  <div className="absolute inset-0 pointer-events-none z-50 opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px]" />
+
+  {/* BACK BUTTON - ESTILO TÉCNICO */}
+  <motion.div
+    initial={{ x: -20, opacity: 0 }}
+    animate={{ x: 0, opacity: 1 }}
+    className="absolute top-6 left-6 z-20"
+  >
+    <button
+      onClick={() => { playButtonClick(); onBack(); }}
+      className="group flex items-center gap-2 text-cyan-500/60 hover:text-cyan-400 transition-colors"
     >
-      {/* Back button */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="absolute top-4 left-4 z-20"
-      >
-        <button
-          onClick={() => {
-            playButtonClick();
-            onBack();
-          }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all hover:bg-white/10 active:scale-95"
-          style={{ color: "rgba(255,255,255,0.6)" }}
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-xs font-pixel tracking-wider">VOLTAR</span>
-        </button>
-      </motion.div>
+      <div className="p-1 border border-cyan-500/30 group-hover:border-cyan-400 group-hover:shadow-[0_0_10px_#22d3ee]">
+        <ArrowLeft className="w-4 h-4" />
+      </div>
+      <span className="text-[10px] font-pixel tracking-tighter">DISCONNECT</span>
+    </button>
+  </motion.div>
 
-      <div className="flex-1 flex flex-col items-center pt-16 px-6 relative z-10">
-        {/* Title */}
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="text-center mb-8"
-        >
-          <h1 className="font-pixel text-sm leading-relaxed tracking-wider" style={{ color: "#3B82F6" }}>
-            QUEM VAI JOGAR?
-          </h1>
-          <p className="text-xs mt-2" style={{ color: "rgba(255,255,255,0.4)" }}>
-            Selecione seu perfil ou crie um novo
-          </p>
-        </motion.div>
+  <div className="flex-1 flex flex-col items-center pt-20 px-6 relative z-10">
+    {/* TITLE HUD */}
+    <motion.div
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      className="text-center mb-10 w-full"
+    >
+      <div className="inline-block px-3 py-1 border-x-2 border-cyan-500 mb-2">
+        <h1 className="font-pixel text-lg tracking-[0.2em] text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">
+          IDENTIFICATION
+        </h1>
+      </div>
+      <p className="text-[9px] font-mono text-cyan-500/50 uppercase tracking-[0.3em]">
+        Accessing trainer database... [SECURE_CONNECTION]
+      </p>
+    </motion.div>
 
-        {/* Profiles grid */}
-        <div className="grid grid-cols-2 gap-4 w-full max-w-xs mb-6">
-          <AnimatePresence>
-            {profiles.map((profile, index) => (
-              <motion.div
-                key={profile.id}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={{ delay: 0.3 + index * 0.1, type: "spring", damping: 15 }}
-                className="relative group"
-              >
-                <button
-                  onClick={() => {
-                    playStartGame();
-                    onSelectProfile(profile.id);
-                  }}
-                  className="w-full flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all hover:scale-[1.03] active:scale-[0.97]"
-                  style={{
-                    borderColor: "rgba(255,255,255,0.1)",
-                    background: "rgba(255,255,255,0.03)",
-                  }}
-                >
-                  <TrainerAvatar avatarId={profile.avatarId} size={72} />
-                  <span className="text-xs font-medium tracking-wide truncate w-full text-center" style={{ color: "#ffffff" }}>
-                    {profile.name}
-                  </span>
-                </button>
-
-                {/* Delete button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    playButtonClick();
-                    setDeleteTarget(profile);
-                  }}
-                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{ backgroundColor: "#EF4444" }}
-                >
-                  <Trash2 className="w-3 h-3" style={{ color: "#ffffff" }} />
-                </button>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-
-          {/* Add profile card */}
-          {profiles.length < 6 && (
-            <motion.button
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.3 + profiles.length * 0.1, type: "spring", damping: 15 }}
-              onClick={() => {
-                playButtonClick();
-                setCreating(true);
-              }}
-              className="w-full flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed transition-all hover:scale-[1.03] active:scale-[0.97]"
+    {/* PROFILES GRID - BRUTALIST STYLE */}
+    <div className="grid grid-cols-2 gap-5 w-full max-w-xs mb-10">
+      <AnimatePresence>
+        {profiles.map((profile, index) => (
+          <motion.div
+            key={profile.id}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="relative group"
+          >
+            <button
+              onClick={() => { playStartGame(); onSelectProfile(profile.id); }}
+              className="w-full flex flex-col items-center gap-3 p-4 bg-black/40 border-b-2 transition-all relative overflow-hidden"
               style={{
-                borderColor: "rgba(255,255,255,0.15)",
-                background: "rgba(255,255,255,0.02)",
-                minHeight: "120px",
+                borderColor: "#22d3ee44",
+                clipPath: "polygon(0 0, 100% 0, 100% 85%, 85% 100%, 0 100%)",
               }}
             >
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: "rgba(255,255,255,0.08)" }}
-              >
-                <Plus className="w-6 h-6" style={{ color: "rgba(255,255,255,0.5)" }} />
+              {/* Efeito de brilho no hover */}
+              <div className="absolute inset-0 bg-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              
+              <div className="relative border-2 border-white/5 p-1 group-hover:border-cyan-400 transition-colors">
+                <TrainerAvatar avatarId={profile.avatarId} size={72} />
               </div>
-              <span className="text-[10px] font-pixel tracking-wider" style={{ color: "rgba(255,255,255,0.4)" }}>
-                NOVO PERFIL
+
+              <span className="text-[10px] font-pixel tracking-tighter text-white/70 group-hover:text-cyan-400 truncate w-full">
+                {profile.name.toUpperCase()}
               </span>
-            </motion.button>
-          )}
-        </div>
-      </div>
+              
+              {/* Decoração técnica minúscula */}
+              <div className="absolute bottom-1 right-3 text-[7px] text-cyan-500/20 font-mono">ID: {profile.id.slice(0,4)}</div>
+            </button>
 
-      {/* Create profile dialog */}
-      <Dialog open={creating} onOpenChange={setCreating}>
-        <DialogContent
-          className="max-w-sm mx-auto border-0"
-          style={{
-            backgroundColor: "#1E293B",
-            color: "#F8FAFC",
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle style={{ color: "#F8FAFC" }}>Novo Perfil de Treinador</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-4">
-            {/* Avatar selection */}
-            <div>
-              <label className="text-xs mb-2 block" style={{ color: "rgba(248,250,252,0.6)" }}>
-                Escolha seu avatar
-              </label>
-              <div className="grid grid-cols-4 gap-2">
-                {TRAINER_AVATARS.map((avatar) => (
-                  <button
-                    key={avatar.id}
-                    onClick={() => setSelectedAvatar(avatar.id)}
-                    className="flex flex-col items-center gap-1 p-2  transition-all"
-                    style={{
-                      borderColor: selectedAvatar === avatar.id ? "#3B82F6" : "rgba(255,255,255,0.1)",
-                      backgroundColor: selectedAvatar === avatar.id ? "rgba(59,130,246,0.1)" : "transparent",
-                    }}
-                  >
-                    <TrainerAvatar avatarId={avatar.id} size={75} />
-                    {selectedAvatar === avatar.id && (
-                      <Check className="w-3 h-3" style={{ color: "#3B82F6" }} />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Name input */}
-            <div>
-              <label className="text-xs mb-1 block" style={{ color: "rgba(248,250,252,0.6)" }}>
-                Nome do treinador
-              </label>
-              <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Ex: Ash, Misty, Brock..."
-                maxLength={20}
-                className="border-0 text-sm"
-                style={{
-                  backgroundColor: "rgba(255,255,255,0.08)",
-                  color: "#F8FAFC",
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCreate();
-                }}
-              />
-            </div>
-
-            <Button
-              onClick={handleCreate}
-              disabled={!newName.trim()}
-              className="w-full"
-              style={{
-                backgroundColor: "#3B82F6",
-                color: "#ffffff",
-              }}
+            {/* DELETE BUTTON - ALERTA */}
+            <button
+              onClick={(e) => { e.stopPropagation(); playButtonClick(); setDeleteTarget(profile); }}
+              className="absolute -top-1 -right-1 w-6 h-6 bg-red-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:scale-110 z-30"
+              style={{ clipPath: "polygon(20% 0, 100% 0, 100% 80%, 80% 100%, 0 100%, 0 20%)" }}
             >
-              CRIAR PERFIL
-            </Button>
+              <Trash2 className="w-3 h-3 text-white" />
+            </button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+
+      {/* ADD PROFILE - ESTILO WIREFRAME */}
+      {profiles.length < 6 && (
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          onClick={() => { playButtonClick(); setCreating(true); }}
+          className="w-full flex flex-col items-center justify-center gap-2 p-4 border-2 border-dashed border-cyan-500/20 bg-cyan-500/5 transition-all hover:bg-cyan-500/10 group h-full min-h-[135px]"
+          style={{ clipPath: "polygon(0 0, 85% 0, 100% 15%, 100% 100%, 15% 100%, 0 85%)" }}
+        >
+          <div className="w-10 h-10 border border-cyan-500/40 rounded-full flex items-center justify-center group-hover:shadow-[0_0_15px_#22d3ee44]">
+            <Plus className="w-5 h-5 text-cyan-500/60 group-hover:text-cyan-400" />
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
-        <AlertDialogContent
-          className="max-w-sm mx-auto border-0"
-          style={{
-            backgroundColor: "#1E293B",
-            color: "#F8FAFC",
-          }}
-        >
-          <AlertDialogHeader>
-            <AlertDialogTitle style={{ color: "#F8FAFC" }}>Remover perfil?</AlertDialogTitle>
-            <AlertDialogDescription style={{ color: "rgba(248,250,252,0.6)" }}>
-              Todos os dados de {deleteTarget?.name} serao perdidos. Essa acao nao pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              className="border-0"
-              style={{ backgroundColor: "rgba(255,255,255,0.08)", color: "#F8FAFC" }}
-            >
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteTarget && handleDelete(deleteTarget)}
-              style={{ backgroundColor: "#EF4444", color: "#ffffff" }}
-            >
-              Remover
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Footer */}
-      <div className="pb-6 text-center">
-        <p className="text-[10px] font-pixel" style={{ color: "rgba(255,255,255,0.15)" }}>
-          MODO TREINADOR - ATE 6 PERFIS
-        </p>
-      </div>
+          <span className="text-[8px] font-pixel tracking-widest text-cyan-500/40 group-hover:text-cyan-400">
+            NEW_PROFILE
+          </span>
+        </motion.button>
+      )}
     </div>
+  </div>
+
+  {/* DIALOGS ESTILIZADOS CYBERPUNK (Red e Cyan) */}
+  <Dialog open={creating} onOpenChange={setCreating}>
+    <DialogContent className="max-w-sm mx-auto border-2 border-cyan-500 bg-[#0a0a0f] text-white p-6 shadow-[0_0_30px_rgba(34,211,238,0.2)]">
+      <DialogHeader className="border-b border-cyan-500/20 pb-4">
+        <DialogTitle className="font-pixel text-cyan-400 text-sm italic tracking-widest">INITIALIZE_TRAINER_PROTOCOL</DialogTitle>
+      </DialogHeader>
+      
+      <div className="flex flex-col gap-6 py-4">
+        <div>
+          <label className="text-[9px] font-pixel text-cyan-500/60 block mb-3">SELECT_AVATAR_MODEL</label>
+          <div className="grid grid-cols-4 gap-3">
+            {TRAINER_AVATARS.map((avatar) => (
+              <button
+                key={avatar.id}
+                onClick={() => setSelectedAvatar(avatar.id)}
+                className={`p-1 border transition-all ${selectedAvatar === avatar.id ? 'border-cyan-400 bg-cyan-400/20 shadow-[0_0_10px_#22d3ee]' : 'border-white/5 bg-white/5'}`}
+              >
+                <TrainerAvatar avatarId={avatar.id} size={60} />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative">
+          <label className="text-[9px] font-pixel text-cyan-500/60 block mb-2">IDENTIFICATION_STRING</label>
+          <Input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value.toUpperCase())}
+            placeholder="INPUT NAME..."
+            className="bg-black/50 border-cyan-500/30 text-cyan-400 font-mono placeholder:text-cyan-900"
+          />
+        </div>
+
+        <Button
+          onClick={handleCreate}
+          disabled={!newName.trim()}
+          className="w-full font-pixel text-xs h-12 bg-cyan-600 hover:bg-cyan-400 text-black transition-all"
+          style={{ clipPath: "polygon(5% 0, 100% 0, 95% 100%, 0 100%)" }}
+        >
+          CONFIRM_CREATION
+        </Button>
+      </div>
+    </DialogContent>
+  </Dialog>
+
+  {/* FOOTER - SYSTEM LOG */}
+  <div className="pb-6 px-10 flex justify-between items-center opacity-20">
+    <div className="h-[1px] flex-1 bg-cyan-500/30" />
+    <p className="px-4 text-[8px] font-pixel text-cyan-500 whitespace-nowrap">
+      MAX_CAPACITY: 06_PROFILES
+    </p>
+    <div className="h-[1px] flex-1 bg-cyan-500/30" />
+  </div>
+</div>
   );
 }

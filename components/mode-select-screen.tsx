@@ -44,215 +44,179 @@ export function ModeSelectScreen({ onSelectMode }: ModeSelectScreenProps) {
   }, []);
 
   return (
-    <div
-      className="flex flex-col h-dvh max-w-md mx-auto relative overflow-hidden"
+<div
+      className="flex flex-col h-dvh max-w-md mx-auto relative overflow-hidden bg-[#050505] font-mono"
       style={{
-        background: "linear-gradient(180deg, #0c1220 0%, #1a1a3e 40%, #2d1b4e 70%, #0c1220 100%)",
+        background: "radial-gradient(circle at center, #0a1a2f 0%, #050505 100%)",
       }}
     >
-      {/* Stars */}
-      {stars.map((star, i) => (
-        <motion.div
-          key={i}
-          className="absolute rounded-full"
-          style={{
-            left: `${star.x}%`,
-            top: `${star.y}%`,
-            width: star.size,
-            height: star.size,
-            backgroundColor: "#ffffff",
-          }}
-          animate={{ opacity: [0.2, 1, 0.2] }}
-          transition={{ duration: 2, delay: star.delay, repeat: Infinity, ease: "easeInOut" }}
-        />
-      ))}
+      {/* HUD Decorativo de Fundo */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none" 
+        style={{ backgroundImage: `linear-gradient(#334155 1px, transparent 1px), linear-gradient(90deg, #334155 1px, transparent 1px)`, backgroundSize: '30px 30px' }} 
+      />
 
-      {/* Pokeball bg */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.04]">
-        <svg width="400" height="400" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="48" fill="none" stroke="white" strokeWidth="2" />
-          <rect x="2" y="48" width="96" height="4" fill="white" />
-          <circle cx="50" cy="50" r="14" fill="none" stroke="white" strokeWidth="2" />
-        </svg>
-      </div>
-
-      <div className="flex-1 flex flex-col items-center justify-center px-6 relative z-10 gap-6">
-        {/* Title */}
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="text-center mb-2"
-        >
-          <h1 className="font-pixel text-lg leading-relaxed tracking-wider" style={{ color: "#ffffff" }}>
-            ESCOLHA O MODO
+      {/* Título Estilo Terminal */}
+      <div className="absolute top-12 left-0 w-full z-30 text-center pointer-events-none">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <h1 className="font-pixel text-xl tracking-[0.3em] text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+            ESCOLHA UM MODO
           </h1>
-          <p className="text-xs mt-2" style={{ color: "rgba(255,255,255,0.4)" }}>
-            Como deseja jogar?
+          <p className="text-[10px] text-cyan-500/50 mt-1 uppercase tracking-widest font-bold">
+            Waiting for authorization...
           </p>
         </motion.div>
-
-        {/* Mode cards */}
-        <div className="flex flex-col gap-4 w-full max-w-xs">
-          {/* Master mode */}
-          <motion.button
-            initial={{ x: -30, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-            onClick={() => {
-              playButtonClick();
-              setShowMasterPassword(true);
-              setMasterPasswordInput("");
-              setMasterPasswordError(false);
-            }}
-            className="relative w-full rounded-xl border-2 p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
-            style={{
-              borderColor: "#EF4444",
-              background: "rgba(239, 68, 68, 0.08)",
-            }}
-          >
-            <div className="flex items-start gap-3">
-              <div
-                className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
-                style={{ backgroundColor: "rgba(239, 68, 68, 0.2)" }}
-              >
-                <Shield className="w-6 h-6" style={{ color: "#EF4444" }} />
-              </div>
-              <div className="flex-1">
-                <h2 className="font-pixel text-xs tracking-wider mb-2" style={{ color: "#EF4444" }}>
-                  MODO MESTRE
-                </h2>
-                <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
-                  Acesso completo a todos os  Pokemon da Pokedex. Ideal para quem conduz a campanha.
-                </p>
-              </div>
-            </div>
-          </motion.button>
-
-          {/* Trainer mode */}
-          <motion.button
-            initial={{ x: 30, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
-            onClick={() => {
-              playStartGame();
-              onSelectMode("trainer");
-            }}
-            className="relative w-full rounded-xl border-2 p-5 text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
-            style={{
-              borderColor: "#3B82F6",
-              background: "rgba(59, 130, 246, 0.08)",
-            }}
-          >
-            <div className="flex items-start gap-3">
-              <div
-                className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
-                style={{ backgroundColor: "rgba(59, 130, 246, 0.2)" }}
-              >
-                <Eye className="w-6 h-6" style={{ color: "#3B82F6" }} />
-              </div>
-              <div className="flex-1">
-                <h2 className="font-pixel text-xs tracking-wider mb-2" style={{ color: "#3B82F6" }}>
-                  MODO TREINADOR
-                </h2>
-                <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
-                  Pokemon ficam escondidos na Pokedex. Descubra-os inserindo o numero que o Mestre revelar durante a campanha.
-                </p>
-              </div>
-            </div>
-          </motion.button>
-        </div>
       </div>
 
-      {/* Footer */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
-        className="pb-8 text-center"
-      >
-        <p className="text-[10px] font-pixel" style={{ color: "rgba(255,255,255,0.2)" }}>
-          POKEMON RPG MANAUS
-        </p>
-      </motion.div>
+      {/* CONTAINER DOS BOTÕES QUE PEGAM A TELA INTEIRA */}
+      <div className="flex-1 flex flex-col relative z-10 h-full">
+        
+        {/* MODO MESTRE (METADE SUPERIOR) */}
+        <motion.button
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          onClick={() => {
+            playButtonClick();
+            setShowMasterPassword(true);
+            setMasterPasswordInput("");
+            setMasterPasswordError(false);
+          }}
+          className="group relative w-full h-1/2 overflow-hidden outline-none border-b border-red-500/30"
+          style={{
+            background: "linear-gradient(180deg, rgba(153, 27, 27, 0.4) 0%, transparent 100%)",
+            clipPath: "polygon(0 0, 100% 0, 100% 85%, 0% 100%)",
+          }}
+        >
+          <div className="absolute inset-0 group-hover:bg-red-600/10 transition-colors duration-300" />
+          <div className="absolute left-10 top-1/2 -translate-y-1/2 flex items-center gap-6">
+            <div className="p-4 bg-red-600/20 border border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.4)]">
+              <Shield className="w-10 h-10 text-red-500" />
+            </div>
+            <div className="text-left">
+              <h2 className="font-pixel text-3xl text-red-500 group-hover:text-red-400">MESTRE</h2>
+              <p className="text-[10px] text-red-300/50 max-w-[150px] leading-tight mt-1 uppercase">
+               Pokedex Completa
+              </p>
+            </div>
+          </div>
+          {/* Label Vertical */}
+          <div className="absolute right-4 top-20 rotate-90 text-[8px] font-bold text-red-500/30 tracking-[0.5em]">ROOT_ACCESS</div>
+        </motion.button>
 
-      {/* Master Password Modal */}
+        {/* MODO TREINADOR (METADE INFERIOR) */}
+        <motion.button
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          onClick={() => {
+            playStartGame();
+            onSelectMode("trainer");
+          }}
+          className="group relative w-full h-1/2 overflow-hidden outline-none"
+          style={{
+            background: "linear-gradient(0deg, rgba(59, 130, 246, 0.3) 0%, transparent 100%)",
+            clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0% 100%)",
+          }}
+        >
+          <div className="absolute inset-0 group-hover:bg-blue-600/10 transition-colors duration-300" />
+          <div className="absolute right-10 top-1/2 -translate-y-1/2 flex flex-row-reverse items-center gap-6">
+            <div className="p-4 bg-blue-600/20 border border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.4)]">
+              <Eye className="w-10 h-10 text-blue-400" />
+            </div>
+            <div className="text-right">
+              <h2 className="font-pixel text-3xl text-blue-400 group-hover:text-blue-300">TRAINER</h2>
+              <p className="text-[10px] text-blue-300/50 max-w-[150px] ml-auto leading-tight mt-1 uppercase">
+                Descubra pokemons e venca batalhas
+              </p>
+            </div>
+          </div>
+          <div className="absolute left-4 bottom-20 -rotate-90 text-[8px] font-bold text-blue-500/30 tracking-[0.5em]">FIELD_OP_SYNC</div>
+        </motion.button>
+      </div>
+
+      {/* POPUP DE SENHA ESTILIZADA */}
       <AnimatePresence>
         {showMasterPassword && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-center justify-center px-6"
-            style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
+            className="absolute inset-0 z-50 flex items-center justify-center px-6 bg-black/80 backdrop-blur-md"
             onClick={() => setShowMasterPassword(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-xs rounded-xl border-2 p-5 flex flex-col gap-4"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="w-full max-w-xs border-2 p-6 flex flex-col gap-5 relative overflow-hidden"
               style={{
                 borderColor: "#EF4444",
-                background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
+                background: "#0a0a0f",
+                boxShadow: "0 0 40px rgba(239, 68, 68, 0.2)",
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between">
+              {/* Scanline no Modal */}
+              <div className="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px]" />
+
+              <div className="flex items-center justify-between relative">
                 <div className="flex items-center gap-2">
-                  <Lock className="w-4 h-4" style={{ color: "#EF4444" }} />
-                  <h3 className="font-pixel text-xs tracking-wider" style={{ color: "#EF4444" }}>
-                    MODO MESTRE
+                  <Lock className="w-4 h-4 text-red-500 animate-pulse" />
+                  <h3 className="font-pixel text-xs tracking-widest text-red-500">
+                    AUTH_REQUIRED
                   </h3>
                 </div>
-                <button
-                  onClick={() => setShowMasterPassword(false)}
-                  className="p-1 rounded-full hover:bg-white/10 transition-colors"
-                >
-                  <X className="w-4 h-4" style={{ color: "rgba(255,255,255,0.5)" }} />
+                <button onClick={() => setShowMasterPassword(false)} className="hover:bg-red-500/20 p-1">
+                  <X className="w-5 h-5 text-white/40" />
                 </button>
               </div>
 
-              <p className="text-xs leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
-                Digite a senha do Mestre para acessar o modo completo.
+              <div className="h-[1px] w-full bg-red-500/30" />
+
+              <p className="text-[10px] font-mono leading-tight text-white/60 tracking-tighter">
+                Enter MASTER_KEY to bypass standard encryption and unlock full database access.
               </p>
 
               <Input
                 type="password"
-                placeholder="Senha..."
+                placeholder="PROMPT_PASS..."
                 value={masterPasswordInput}
                 onChange={(e) => {
-                  setMasterPasswordInput(e.target.value);
+                  setMasterPasswordInput(e.target.value.toUpperCase());
                   setMasterPasswordError(false);
                 }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleMasterPasswordSubmit();
-                }}
-                className="bg-white/5 border-white/10 text-white placeholder:text-white/30 h-10"
+                onKeyDown={(e) => { if (e.key === "Enter") handleMasterPasswordSubmit(); }}
+                className="bg-black border-red-500/40 text-red-500 placeholder:text-red-900 font-mono h-12 rounded-none focus-visible:ring-red-500"
                 autoFocus
               />
 
               {masterPasswordError && (
-                <p className="text-xs font-medium" style={{ color: "#EF4444" }}>
-                  Senha incorreta. Tente novamente.
-                </p>
+                <motion.p initial={{ x: -10 }} animate={{ x: 0 }} className="text-[10px] font-bold text-red-600 uppercase tracking-widest italic">
+                  &gt; ACCESS_DENIED: Invalid Key
+                </motion.p>
               )}
 
               <Button
                 onClick={handleMasterPasswordSubmit}
                 disabled={!masterPasswordInput}
-                className="w-full font-bold text-sm h-10"
+                className="w-full font-pixel text-sm h-12 rounded-none transition-all"
                 style={{
-                  backgroundColor: masterPasswordInput ? "#EF4444" : "rgba(239,68,68,0.3)",
-                  color: "#fff",
+                  backgroundColor: masterPasswordInput ? "#EF4444" : "#450a0a",
+                  color: masterPasswordInput ? "#000" : "#ef4444",
+                  clipPath: "polygon(5% 0, 100% 0, 95% 100%, 0 100%)",
                 }}
               >
-                Entrar
+                AUTHORIZE
               </Button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Footer */}
+      <div className="absolute bottom-4 w-full text-center z-30 pointer-events-none opacity-30">
+        <p className="text-[8px] font-pixel tracking-[0.5em] text-white">
+          POKEMON_RPG_MANAUS // V.4.0
+        </p>
+      </div>
     </div>
   );
 }

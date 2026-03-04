@@ -134,6 +134,9 @@ export function ProfileTab() {
   return (
     <ScrollArea className="h-full">
       <div className="flex flex-col gap-2 p-2">
+                    <div className="absolute inset-0 opacity-10 pointer-events-none" 
+        style={{ backgroundImage: `linear-gradient(#334155 1px, transparent 1px), linear-gradient(90deg, #334155 1px, transparent 1px)`, backgroundSize: '30px 30px' }} 
+      />
 
         {/* Trainer Card */}
         <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -790,109 +793,153 @@ export function ProfileTab() {
 
         {/* Edit Trainer Dialog */}
         <Dialog open={editing} onOpenChange={setEditing}>
-          <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
-            <DialogHeader>
-              <DialogTitle className="text-foreground">Ficha do Treinador</DialogTitle>
-            </DialogHeader>
-            <div className="flex flex-col gap-3">
-              <div>
-                <label htmlFor="trainer-name" className="text-xs text-muted-foreground mb-1 block">Nome</label>
+          <DialogContent 
+            className="max-w-[320px] mx-auto border-2 bg-[#0a0a14] p-0 overflow-hidden"
+            style={{ borderColor: "#22d3ee" }}
+          >
+            {/* Header Estreito Estilo HUD */}
+            <div className="bg-cyan-500/10 border-b border-cyan-500/30 px-4 py-3 flex justify-between items-center">
+              {/* O DialogTitle resolve o erro do Console e mantém o estilo */}
+              <DialogTitle className="font-pixel text-[10px] tracking-widest text-cyan-400">
+                EDIT_TRAINER_DATA
+              </DialogTitle>
+              
+              <div className="flex gap-1">
+                <div className="w-1.5 h-1.5 bg-cyan-500 animate-pulse" />
+                <div className="w-1.5 h-1.5 bg-cyan-500/30" />
+              </div>
+            </div>
+
+            <div className="p-5 flex flex-col gap-4 relative z-10">
+              {/* Campo: Nome */}
+              <div className="space-y-1">
+                <label className="text-[8px] font-pixel text-cyan-500/50 uppercase">Name_String</label>
                 <Input
-                  id="trainer-name"
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  placeholder="Ash Ketchum"
-                  className="bg-secondary border-border text-foreground"
+                  className="h-9 bg-black/40 border-cyan-500/20 text-white text-xs font-mono rounded-none focus-visible:ring-1 focus-visible:ring-cyan-500"
                 />
               </div>
-              <div>
-                <label htmlFor="trainer-age" className="text-xs text-muted-foreground mb-1 block">Idade</label>
-                <Input
-                  id="trainer-age"
-                  value={editForm.age}
-                  onChange={(e) => setEditForm({ ...editForm, age: e.target.value })}
-                  placeholder="10"
-                  className="bg-secondary border-border text-foreground"
-                />
+
+              {/* Grid: Idade e Cidade */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[8px] font-pixel text-cyan-500/50 uppercase">Age_Cycle</label>
+                  <Input
+                    value={editForm.age}
+                    onChange={(e) => setEditForm({ ...editForm, age: e.target.value })}
+                    className="h-9 bg-black/40 border-cyan-500/20 text-white text-xs font-mono rounded-none focus-visible:ring-1 focus-visible:ring-cyan-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[8px] font-pixel text-cyan-500/50 uppercase">Home_Sector</label>
+                  <Input
+                    value={editForm.hometown}
+                    onChange={(e) => setEditForm({ ...editForm, hometown: e.target.value })}
+                    className="h-9 bg-black/40 border-cyan-500/20 text-white text-xs font-mono rounded-none focus-visible:ring-1 focus-visible:ring-cyan-500"
+                  />
+                </div>
               </div>
-              <div>
-                <label htmlFor="trainer-hometown" className="text-xs text-muted-foreground mb-1 block">Cidade Natal</label>
-                <Input
-                  id="trainer-hometown"
-                  value={editForm.hometown}
-                  onChange={(e) => setEditForm({ ...editForm, hometown: e.target.value })}
-                  placeholder="Pallet Town"
-                  className="bg-secondary border-border text-foreground"
-                />
-              </div>
-              <div>
-                <label htmlFor="trainer-class" className="text-xs text-muted-foreground mb-1 block">Classe</label>
-                <div className="flex flex-wrap gap-2">
+
+              {/* Selector: Classe */}
+              <div className="space-y-2">
+                <label className="text-[8px] font-pixel text-cyan-500/50 uppercase">Specialization</label>
+                <div className="flex flex-wrap gap-1.5">
                   {TRAINER_CLASSES.map((cls) => (
                     <button
                       key={cls}
                       type="button"
                       onClick={() => setEditForm({ ...editForm, trainerClass: cls })}
-                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${editForm.trainerClass === cls
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-secondary text-muted-foreground border-border hover:text-foreground"
-                        }`}
+                      className={`text-[9px] px-2 py-1 border transition-all ${
+                        editForm.trainerClass === cls
+                          ? "bg-cyan-500 text-black border-cyan-400"
+                          : "bg-white/5 text-white/40 border-white/10 hover:border-cyan-500/40"
+                      }`}
                     >
                       {cls}
                     </button>
                   ))}
                 </div>
               </div>
-              <Button onClick={handleSave} className="bg-primary text-primary-foreground hover:bg-primary/90 mt-2">
-                Salvar
+
+              {/* Botão de Ação */}
+              <Button 
+                onClick={handleSave} 
+                className="w-full mt-2 font-pixel text-[10px] h-10 rounded-none bg-cyan-500 text-black hover:bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.3)] border-none"
+              >
+                SAVE_CHANGES_
               </Button>
             </div>
           </DialogContent>
         </Dialog>
 
-        {/* Add XP Dialog */}
+        {/* Edit XP Dialog */}
         <Dialog open={xpDialog} onOpenChange={setXpDialog}>
-          <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
-            <DialogHeader>
-              <DialogTitle className="text-foreground">Adicionar Experiencia</DialogTitle>
-            </DialogHeader>
-            <p className="text-sm text-muted-foreground">Quanto XP o treinador ganhou?</p>
-            <div className="flex gap-2 flex-wrap">
-              {[50, 100, 250, 500, 1000].map((val) => (
-                <Button
-                  key={val}
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setXpAmount(String(val))}
-                  className={`border-border bg-transparent hover:bg-secondary ${xpAmount === String(val) ? "text-accent border-accent" : "text-foreground"
-                    }`}
-                >
-                  +{val}
-                </Button>
-              ))}
+          <DialogContent 
+            className="max-w-[320px] mx-auto border-2 bg-[#0a0a14] p-0 overflow-hidden"
+            style={{ borderColor: "#10b981" }} // Cor Esmeralda para XP
+          >
+            {/* Cabeçalho Estilo HUD */}
+            <div className="bg-emerald-500/10 border-b border-emerald-500/30 px-4 py-3 flex justify-between items-center">
+              <DialogTitle className="font-pixel text-[10px] tracking-widest text-emerald-400 uppercase">
+                PROTOCOLO_DE_EXPERIENCIA
+              </DialogTitle>
+              <div className="flex gap-1">
+                <div className="w-1.5 h-1.5 bg-emerald-500 animate-pulse" />
+              </div>
             </div>
-            <Input
-              type="number"
-              value={xpAmount}
-              onChange={(e) => setXpAmount(e.target.value)}
-              placeholder="Valor personalizado"
-              className="bg-secondary border-border text-foreground"
-            />
-            <Button
-              onClick={() => {
-                const amount = parseInt(xpAmount);
-                if (amount > 0) {
-                  addTrainerXp(amount);
-                  setXpAmount("");
-                  setXpDialog(false);
-                }
-              }}
-              disabled={!xpAmount || parseInt(xpAmount) <= 0}
-              className="bg-accent text-accent-foreground hover:bg-accent/90"
-            >
-              <Star className="w-4 h-4 mr-2" />
-              Adicionar {parseInt(xpAmount || "0").toLocaleString("pt-BR")} XP
-            </Button>
+
+            <div className="p-5 flex flex-col gap-4 relative z-10">
+              <p className="text-[9px] font-pixel text-emerald-500/60 uppercase tracking-tighter">
+                Selecione a carga de XP para o treinador:
+              </p>
+
+              {/* Grade de Valores Rápidos */}
+              <div className="grid grid-cols-3 gap-2">
+                {[50, 100, 250, 500, 1000].map((val) => (
+                  <button
+                    key={val}
+                    onClick={() => setXpAmount(String(val))}
+                    className={`font-mono text-[10px] py-1.5 border transition-all ${
+                      xpAmount === String(val)
+                        ? "bg-emerald-500 text-black border-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.4)]"
+                        : "bg-white/5 text-emerald-500/50 border-white/10 hover:border-emerald-500/30"
+                    }`}
+                  >
+                    +{val}
+                  </button>
+                ))}
+              </div>
+
+              {/* Entrada de Valor Personalizado */}
+              <div className="space-y-1">
+                <label className="text-[8px] font-pixel text-emerald-500/40 uppercase">VALOR_ESPECIFICO</label>
+                <Input
+                  type="number"
+                  value={xpAmount}
+                  onChange={(e) => setXpAmount(e.target.value)}
+                  placeholder="0000"
+                  className="h-9 bg-black/40 border-emerald-500/20 text-emerald-400 text-xs font-mono rounded-none focus-visible:ring-1 focus-visible:ring-emerald-500"
+                />
+              </div>
+
+              {/* Botão de Confirmação */}
+              <Button
+                onClick={() => {
+                  const amount = parseInt(xpAmount);
+                  if (amount > 0) {
+                    addTrainerXp(amount);
+                    setXpAmount("");
+                    setXpDialog(false);
+                  }
+                }}
+                disabled={!xpAmount || parseInt(xpAmount) <= 0}
+                className="w-full mt-2 font-pixel text-[10px] h-10 rounded-none bg-emerald-500 text-black hover:bg-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)] border-none disabled:opacity-20"
+              >
+                <Star className="w-3 h-3 mr-2" />
+                CONFIRMAR_INJEÇÃO_XP
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
 
@@ -927,69 +974,86 @@ export function ProfileTab() {
           </DialogContent>
         </Dialog>
 
-        {/* Trainer HP Dialog */}
-        <Dialog open={hpDialog} onOpenChange={setHpDialog}>
-          <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
-            <DialogHeader>
-              <DialogTitle className="text-foreground">
-                {hpMode === "damage" ? "Aplicar Dano ao Treinador" : "Curar Treinador"}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="flex items-center justify-center gap-3 my-1">
-              <Heart className="w-5 h-5 text-red-400" />
-              <span className="text-lg font-bold font-mono text-foreground">
-                {trainer.currentHp ?? 20}/{trainer.maxHp ?? 20} HP
+              {/* Trainer HP Dialog */}
+      <Dialog open={hpDialog} onOpenChange={setHpDialog}>
+        <DialogContent 
+          className="max-w-[320px] mx-auto border-2 bg-[#0a0a14] p-0 overflow-hidden"
+          style={{ borderColor: hpMode === "damage" ? "#ef4444" : "#10b981" }}
+        >
+          {/* Header Estilo HUD */}
+          <div 
+            className="border-b px-4 py-3 flex justify-between items-center"
+            style={{ 
+              backgroundColor: hpMode === "damage" ? "rgba(239, 68, 68, 0.1)" : "rgba(16, 185, 129, 0.1)",
+              borderColor: hpMode === "damage" ? "rgba(239, 68, 68, 0.3)" : "rgba(16, 185, 129, 0.3)"
+            }}
+          >
+            <DialogTitle className="font-pixel text-[10px] tracking-widest uppercase" style={{ color: hpMode === "damage" ? "#ef4444" : "#10b981" }}>
+              {hpMode === "damage" ? "SISTEMA_DE_DANO" : "PROTOCOLO_DE_CURA"}
+            </DialogTitle>
+            <Heart className={`w-3 h-3 ${hpMode === "damage" ? "text-red-500 animate-pulse" : "text-emerald-500"}`} />
+          </div>
+
+          <div className="p-5 flex flex-col gap-4 relative z-10">
+            {/* Monitor de HP Atual */}
+            <div className="bg-black/40 border border-white/5 p-2 text-center">
+              <span className="text-[10px] font-pixel text-white/40 block mb-1">INTEGRIDADE_DO_SUJEITO</span>
+              <span className="text-xl font-mono font-bold text-white tracking-tighter">
+                {trainer.currentHp ?? 20} <span className="text-white/20 text-xs">/ {trainer.maxHp ?? 20} HP</span>
               </span>
             </div>
+
+            {/* Info de Defesa (Apenas em Dano) */}
             {hpMode === "damage" && (
-              <div className="bg-secondary/50 rounded-lg p-2 text-center">
-                <span className="text-xs text-muted-foreground">
-                  Defesa (AC): <span className="text-blue-400 font-bold">{trainer.defesa ?? 10}</span>
-                  {" - "}Reducao: <span className="text-blue-400 font-bold">-{Math.floor((trainer.defesa ?? 10) / 3)}</span>
-                </span>
+              <div className="grid grid-cols-2 gap-2 text-[9px] font-mono border border-blue-500/20 bg-blue-500/5 p-2">
+                <div className="text-blue-400">DEFESA (AC): {trainer.defesa ?? 10}</div>
+                <div className="text-blue-300 text-right">REDUÇÃO: -{Math.floor((trainer.defesa ?? 10) / 3)}</div>
               </div>
             )}
-            <div className="flex gap-2 flex-wrap">
+
+            {/* Seletores Rápidos */}
+            <div className="grid grid-cols-5 gap-1.5">
               {[5, 10, 15, 20, 30].map((val) => (
-                <Button
+                <button
                   key={val}
-                  size="sm"
-                  variant="outline"
                   onClick={() => setHpAmount(String(val))}
-                  className={`border-border bg-transparent hover:bg-secondary ${hpAmount === String(val)
-                    ? hpMode === "damage" ? "text-destructive border-destructive" : "text-green-500 border-green-500"
-                    : "text-foreground"
-                    }`}
+                  className={`font-mono text-[10px] py-2 border transition-all ${
+                    hpAmount === String(val)
+                      ? hpMode === "damage" 
+                        ? "bg-red-500 text-black border-red-400" 
+                        : "bg-emerald-500 text-black border-emerald-400"
+                      : "bg-white/5 text-white/40 border-white/10 hover:border-white/30"
+                  }`}
                 >
                   {hpMode === "damage" ? "-" : "+"}{val}
-                </Button>
+                </button>
               ))}
             </div>
+
+            {/* Input Personalizado */}
             <Input
               type="number"
               value={hpAmount}
               onChange={(e) => setHpAmount(e.target.value)}
-              placeholder="Valor personalizado"
-              className="bg-secondary border-border text-foreground"
+              placeholder="VALOR_CUSTOM..."
+              className="h-9 bg-black/40 border-white/10 text-white text-xs font-mono rounded-none focus-visible:ring-1 focus-visible:ring-white/30"
             />
+
+            {/* Cálculo de Dano Final */}
             {hpMode === "damage" && hpAmount && parseInt(hpAmount) > 0 && (
-              <div className="bg-destructive/10 rounded-lg p-2 text-xs text-muted-foreground">
-                <div className="flex justify-between">
-                  <span>Dano bruto:</span>
-                  <span className="font-mono text-foreground">{hpAmount}</span>
+              <div className="space-y-1 bg-red-950/20 p-2 border border-red-900/30">
+                <div className="flex justify-between text-[9px] font-mono text-red-400/60 uppercase">
+                  <span>Dano Bruto:</span>
+                  <span>{hpAmount}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Reducao da defesa:</span>
-                  <span className="font-mono text-blue-400">-{Math.floor((trainer.defesa ?? 10) / 3)}</span>
-                </div>
-                <div className="flex justify-between border-t border-border/50 mt-1 pt-1">
-                  <span className="font-medium text-foreground">Dano final:</span>
-                  <span className="font-mono font-bold text-destructive">
-                    {Math.max(1, parseInt(hpAmount) - Math.floor((trainer.defesa ?? 10) / 3))}
-                  </span>
+                <div className="flex justify-between text-[10px] font-mono text-red-500 font-bold uppercase pt-1 border-t border-red-900/30">
+                  <span>Dano Final:</span>
+                  <span>{Math.max(1, parseInt(hpAmount) - Math.floor((trainer.defesa ?? 10) / 3))}</span>
                 </div>
               </div>
             )}
+
+            {/* Botão de Ação */}
             <Button
               onClick={() => {
                 const amount = parseInt(hpAmount);
@@ -1006,59 +1070,84 @@ export function ProfileTab() {
                 }
               }}
               disabled={!hpAmount || parseInt(hpAmount) <= 0}
-              className={hpMode === "damage"
-                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                : "bg-green-600 text-white hover:bg-green-700"
-              }
+              className={`w-full font-pixel text-[10px] h-10 rounded-none border-none shadow-lg transition-all ${
+                hpMode === "damage"
+                  ? "bg-red-600 text-white hover:bg-red-500 shadow-red-900/20"
+                  : "bg-emerald-600 text-white hover:bg-emerald-500 shadow-emerald-900/20"
+              }`}
             >
-              <Heart className="w-4 h-4 mr-2" />
-              {hpMode === "damage"
-                ? `Aplicar Dano`
-                : `Curar ${parseInt(hpAmount || "0")} HP`
-              }
+              <Heart className="w-3 h-3 mr-2" />
+              {hpMode === "damage" ? "CONFIRMAR_DANO" : "EXECUTAR_REPARO"}
             </Button>
-          </DialogContent>
-        </Dialog>
+          </div>
+        </DialogContent>
+      </Dialog>
 
         {/* Add Money Dialog */}
-        <Dialog open={moneyDialog} onOpenChange={setMoneyDialog}>
-          <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
-            <DialogHeader>
-              <DialogTitle className="text-foreground">Receber Dinheiro</DialogTitle>
-            </DialogHeader>
-            <p className="text-sm text-muted-foreground">Quanto dinheiro o treinador recebeu?</p>
-            <div className="flex gap-2 flex-wrap">
-              {[100, 500, 1000, 2000, 5000].map((val) => (
-                <Button
-                  key={val}
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setMoneyAmount(String(val))}
-                  className={`border-border bg-transparent hover:bg-secondary ${moneyAmount === String(val) ? "text-accent border-accent" : "text-foreground"
-                    }`}
-                >
-                  {"$"}{val.toLocaleString("pt-BR")}
-                </Button>
-              ))}
-            </div>
-            <Input
-              type="number"
-              value={moneyAmount}
-              onChange={(e) => setMoneyAmount(e.target.value)}
-              placeholder="Valor personalizado"
-              className="bg-secondary border-border text-foreground"
-            />
-            <Button
-              onClick={handleAddMoney}
-              disabled={!moneyAmount || parseInt(moneyAmount) <= 0}
-              className="bg-accent text-accent-foreground hover:bg-accent/90"
-            >
-              <Coins className="w-4 h-4 mr-2" />
-              Receber {"$"}{parseInt(moneyAmount || "0").toLocaleString("pt-BR")}
-            </Button>
-          </DialogContent>
-        </Dialog>
+<Dialog open={moneyDialog} onOpenChange={setMoneyDialog}>
+  <DialogContent 
+    className="max-w-[320px] mx-auto border-2 bg-[#0a0a14] p-0 overflow-hidden"
+    style={{ borderColor: "#f59e0b" }} // Cor Amber para Dinheiro
+  >
+    {/* Cabeçalho Estilo HUD */}
+    <div className="bg-amber-500/10 border-b border-amber-500/30 px-4 py-3 flex justify-between items-center">
+      <DialogTitle className="font-pixel text-[10px] tracking-widest text-amber-500 uppercase">
+        TRANSFERENCIA_DE_CREDITOS
+      </DialogTitle>
+      <div className="flex gap-1">
+        <div className="w-1.5 h-1.5 bg-amber-500 animate-bounce" />
+      </div>
+    </div>
 
+    <div className="p-5 flex flex-col gap-4 relative z-10">
+      <p className="text-[9px] font-pixel text-amber-500/60 uppercase tracking-tighter">
+        Defina o montante para depósito na conta:
+      </p>
+
+      {/* Grade de Valores Rápidos */}
+      <div className="grid grid-cols-3 gap-2">
+        {[100, 500, 1000, 2000, 5000, 10000].map((val) => (
+          <button
+            key={val}
+            onClick={() => setMoneyAmount(String(val))}
+            className={`font-mono text-[10px] py-1.5 border transition-all ${
+              moneyAmount === String(val)
+                ? "bg-amber-500 text-black border-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.4)]"
+                : "bg-white/5 text-amber-500/50 border-white/10 hover:border-amber-500/30"
+            }`}
+          >
+            ${val.toLocaleString("pt-BR")}
+          </button>
+        ))}
+      </div>
+
+      {/* Entrada de Valor Personalizado */}
+      <div className="space-y-1">
+        <label className="text-[8px] font-pixel text-amber-500/40 uppercase">MONTANTE_CUSTOMIZADO</label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-500/50 font-mono text-xs">$</span>
+          <Input
+            type="number"
+            value={moneyAmount}
+            onChange={(e) => setMoneyAmount(e.target.value)}
+            placeholder="0000"
+            className="h-9 bg-black/40 border-amber-500/20 text-amber-400 text-xs font-mono rounded-none pl-7 focus-visible:ring-1 focus-visible:ring-amber-500"
+          />
+        </div>
+      </div>
+
+      {/* Botão de Confirmação */}
+      <Button
+        onClick={handleAddMoney}
+        disabled={!moneyAmount || parseInt(moneyAmount) <= 0}
+        className="w-full mt-2 font-pixel text-[10px] h-10 rounded-none bg-amber-500 text-black hover:bg-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)] border-none disabled:opacity-20"
+      >
+        <Coins className="w-3 h-3 mr-2" />
+        CONFIRMAR_DEPOSITO
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
 {/* Trainer Battle History - Gamer Victory Log */}
 <div className="relative overflow-hidden bg-slate-950 border border-white/10 rounded-xl shadow-2xl">
   {/* Header Estilo Terminal */}
@@ -1074,7 +1163,7 @@ export function ProfileTab() {
     </div>
     <div className="bg-amber-500/20 px-2 py-0.5 rounded-sm border border-amber-500/30">
       <span className="text-[9px] font-mono font-bold text-amber-500 uppercase">
-        {trainer.battleHistory?.length ?? 0} NODES
+        {trainer.battleHistory?.length ?? 0} Duelos
       </span>
     </div>
   </div>

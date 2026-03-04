@@ -188,7 +188,7 @@ export default function Page() {
   // Create audio player ONCE
   useEffect(() => {
     const audio = new Audio();
-    audio.volume = 0.01;
+    audio.volume = 0.0;
     audioRef.current = audio;
 
     // When a home track ends, play another random one (not looped)
@@ -620,6 +620,7 @@ export default function Page() {
   // Game
   return (
     <main className="flex flex-col h-dvh max-w-md mx-auto bg-background relative">
+
       {/* Star Dust Fullscreen Animation para captura */}
       <StarDustFullscreenAnimation
         amount={starDustAnimation.amount}
@@ -956,45 +957,70 @@ export default function Page() {
               );
             })}
           </div>
-                  {/* Add Money Dialog */}
-        <Dialog open={moneyDialog} onOpenChange={setMoneyDialog}>
-          <DialogContent className="bg-card border-border text-foreground max-w-sm mx-auto">
-            <DialogHeader>
-              <DialogTitle className="text-foreground">Receber Dinheiro</DialogTitle>
-            </DialogHeader>
-            <p className="text-sm text-muted-foreground">Quanto dinheiro o treinador recebeu?</p>
-            <div className="flex gap-2 flex-wrap">
-              {[100, 500, 1000, 2000, 5000].map((val) => (
-                <Button
-                  key={val}
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setMoneyAmount(String(val))}
-                  className={`border-border bg-transparent hover:bg-secondary ${
-                    moneyAmount === String(val) ? "text-accent border-accent" : "text-foreground"
-                  }`}
-                >
-                  {"$"}{val.toLocaleString("pt-BR")}
-                </Button>
-              ))}
-            </div>
-            <Input
-              type="number"
-              value={moneyAmount}
-              onChange={(e) => setMoneyAmount(e.target.value)}
-              placeholder="Valor personalizado"
-              className="bg-secondary border-border text-foreground"
-            />
-            <Button
-              onClick={handleAddMoney}
-              disabled={!moneyAmount || parseInt(moneyAmount) <= 0}
-              className="bg-accent text-accent-foreground hover:bg-accent/90"
-            >
-              <Coins className="w-4 h-4 mr-2" />
-              Receber {"$"}{parseInt(moneyAmount || "0").toLocaleString("pt-BR")}
-            </Button>
-          </DialogContent>
-        </Dialog>
+<Dialog open={moneyDialog} onOpenChange={setMoneyDialog}>
+  <DialogContent 
+    className="max-w-[320px] mx-auto border-2 bg-[#0a0a14] p-0 overflow-hidden"
+    style={{ borderColor: "#f59e0b" }} // Cor Amber para Dinheiro
+  >
+    {/* Cabeçalho Estilo HUD */}
+    <div className="bg-amber-500/10 border-b border-amber-500/30 px-4 py-3 flex justify-between items-center">
+      <DialogTitle className="font-pixel text-[10px] tracking-widest text-amber-500 uppercase">
+        TRANSFERENCIA_DE_CREDITOS
+      </DialogTitle>
+      <div className="flex gap-1">
+        <div className="w-1.5 h-1.5 bg-amber-500 animate-bounce" />
+      </div>
+    </div>
+
+    <div className="p-5 flex flex-col gap-4 relative z-10">
+      <p className="text-[9px] font-pixel text-amber-500/60 uppercase tracking-tighter">
+        Defina o montante para depósito na conta:
+      </p>
+
+      {/* Grade de Valores Rápidos */}
+      <div className="grid grid-cols-3 gap-2">
+        {[100, 500, 1000, 2000, 5000, 10000].map((val) => (
+          <button
+            key={val}
+            onClick={() => setMoneyAmount(String(val))}
+            className={`font-mono text-[10px] py-1.5 border transition-all ${
+              moneyAmount === String(val)
+                ? "bg-amber-500 text-black border-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.4)]"
+                : "bg-white/5 text-amber-500/50 border-white/10 hover:border-amber-500/30"
+            }`}
+          >
+            ${val.toLocaleString("pt-BR")}
+          </button>
+        ))}
+      </div>
+
+      {/* Entrada de Valor Personalizado */}
+      <div className="space-y-1">
+        <label className="text-[8px] font-pixel text-amber-500/40 uppercase">VALOR_CUSTOMIZADO</label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-500/50 font-mono text-xs">$</span>
+          <Input
+            type="number"
+            value={moneyAmount}
+            onChange={(e) => setMoneyAmount(e.target.value)}
+            placeholder="0000"
+            className="h-9 bg-black/40 border-amber-500/20 text-amber-400 text-xs font-mono rounded-none pl-7 focus-visible:ring-1 focus-visible:ring-amber-500"
+          />
+        </div>
+      </div>
+
+      {/* Botão de Confirmação */}
+      <Button
+        onClick={handleAddMoney}
+        disabled={!moneyAmount || parseInt(moneyAmount) <= 0}
+        className="w-full mt-2 font-pixel text-[10px] h-10 rounded-none bg-amber-500 text-black hover:bg-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)] border-none disabled:opacity-20"
+      >
+        <Coins className="w-3 h-3 mr-2" />
+        CONFIRMAR_DEPOSITO
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
         </nav>
     </main>
   );
