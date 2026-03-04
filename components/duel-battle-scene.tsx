@@ -278,6 +278,9 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
   const [isRolling, setIsRolling] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
   const [showBagDialog, setShowBagDialog] = useState(false);
+  const [showEtherDialog, setShowEtherDialog] = useState(false);
+  const [selectedEtherItem, setSelectedEtherItem] = useState<string | null>(null);
+  const [selectedEtherPokemon, setSelectedEtherPokemon] = useState<string | null>(null);
   const [showVictoryDialog, setShowVictoryDialog] = useState(false);
   const [showDefeatDialog, setShowDefeatDialog] = useState(false);
   const [rivalAction, setRivalAction] = useState<string | null>(null);
@@ -730,17 +733,53 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
 
   // Handler de uso de item
   const handleUseBagItem = (bagItemId: string) => {
+    const def = BAG_ITEMS.find((d) => d.id === bagItemId);
+    
+    // Ether precisa selecionar Pokemon e golpe
+    if (def?.id === "ether") {
+      setSelectedEtherItem(bagItemId);
+      setShowBagDialog(false);
+      setShowEtherDialog(true);
+      return;
+    }
+    
     if (!spendPA("item")) {
       setShowBagDialog(false);
       return;
     }
-    const def = BAG_ITEMS.find((d) => d.id === bagItemId);
+    
     if (def && pokemon) {
       useBagItem(bagItemId, pokemon.uid);
       addLog(`Usou ${def.name}!`);
       playHeal();
     }
     setShowBagDialog(false);
+    setBattlePhase("menu");
+  };
+
+  // Handler para usar Ether em um golpe especifico
+  const handleUseEther = (pokemonUid: string, moveId: string) => {
+    if (!spendPA("item")) {
+      setShowEtherDialog(false);
+      setSelectedEtherItem(null);
+      setSelectedEtherPokemon(null);
+      return;
+    }
+    
+    const def = BAG_ITEMS.find((d) => d.id === selectedEtherItem);
+    const targetPokemon = team.find((p) => p.uid === pokemonUid);
+    const move = targetPokemon?.moves.find((m) => m.moveId === moveId);
+    const moveDef = move ? getMove(move.moveId) : null;
+    
+    if (def && selectedEtherItem) {
+      useBagItem(selectedEtherItem, pokemonUid, moveId);
+      addLog(`Usou ${def.name} para restaurar PP de ${moveDef?.name || moveId}!`);
+      playHeal();
+    }
+    
+    setShowEtherDialog(false);
+    setSelectedEtherItem(null);
+    setSelectedEtherPokemon(null);
     setBattlePhase("menu");
   };
 
@@ -1779,12 +1818,147 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
                       onClick={() => handleUseBagItem(item.itemId)}
                       className="flex items-center justify-between h-auto py-2 text-foreground hover:bg-secondary"
                     >
-                      <span className="text-sm">{def.name}</span>
+                      <div className="flex flex-col items-start">
+                        <span className="text-sm">{def.name}</span>
+                        <span className="text-[10px] text-muted-foreground">{def.description}</span>
+                      </div>
                       <span className="text-xs text-accent font-mono">x{item.quantity}</span>
                     </Button>
                   );
                 })}
             </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Ether - Selecao de Pokemon e Golpe */}
+      <Dialog open={showEtherDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowEtherDialog(false);
+          setSelectedEtherItem(null);
+          setSelectedEtherPokemon(null);
+        }
+      }}>
+        <DialogContent className="bg-card border-border text-foreground max-w-md mx-auto">
+          <DialogHeader>
+            <DialogTitle className="text-foreground flex items-center gap-2">
+              <Zap className="w-5 h-5 text-blue-400" />
+              Ether - Restaurar PP
+            </DialogTitle>
+            <DialogDescription>
+              {!selectedEtherPokemon 
+                ? "Selecione um Pokemon para restaurar PP de um golpe"
+                : "Selecione o golpe para restaurar 5 PP"
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ScrollArea className="max-h-80">
+            {!selectedEtherPokemon ? (
+              // Lista de Pokemon do time
+              <div className="flex flex-col gap-2">
+                {team.filter((p) => p.currentHp > 0).map((p) => {
+                  const hasMovesNeedingPP = p.moves.some((m) => m.currentPP < m.maxPP);
+                  return (
+                    <Button
+                      key={p.uid}
+                      variant="ghost"
+                      disabled={!hasMovesNeedingPP}
+                      onClick={() => setSelectedEtherPokemon(p.uid)}
+                      className="flex items-center justify-between h-auto py-3 text-foreground hover:bg-secondary"
+                    >
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={getSpriteUrl(p.speciesId)}
+                          alt={p.name}
+                          className="w-12 h-12 pixelated"
+                        />
+                        <div className="flex flex-col items-start">
+                          <span className="text-sm font-bold">{p.name}</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            Lv. {p.level} | HP: {p.currentHp}/{p.maxHp}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {hasMovesNeedingPP ? (
+                          <span className="text-[10px] text-blue-400">{p.moves.filter((m) => m.currentPP < m.maxPP).length} golpe(s) com PP baixo</span>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground">PP cheio</span>
+                        )}
+                      </div>
+                    </Button>
+                  );
+                })}
+              </div>
+            ) : (
+              // Lista de golpes do Pokemon selecionado
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedEtherPokemon(null)}
+                  className="self-start text-muted-foreground hover:text-foreground mb-2"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-1" /> Voltar
+                </Button>
+                
+                {(() => {
+                  const targetPokemon = team.find((p) => p.uid === selectedEtherPokemon);
+                  if (!targetPokemon) return null;
+                  
+                  return (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 p-2 bg-secondary/50 rounded-lg">
+                        <img
+                          src={getSpriteUrl(targetPokemon.speciesId)}
+                          alt={targetPokemon.name}
+                          className="w-10 h-10 pixelated"
+                        />
+                        <span className="font-bold">{targetPokemon.name}</span>
+                      </div>
+                      
+                      {targetPokemon.moves.map((m) => {
+                        const moveDef = getMove(m.moveId);
+                        if (!moveDef) return null;
+                        const needsPP = m.currentPP < m.maxPP;
+                        const ppAfter = Math.min(m.maxPP, m.currentPP + 5);
+                        
+                        return (
+                          <Button
+                            key={m.moveId}
+                            variant="ghost"
+                            disabled={!needsPP}
+                            onClick={() => handleUseEther(selectedEtherPokemon, m.moveId)}
+                            className="flex items-center justify-between w-full h-auto py-3 text-foreground hover:bg-secondary"
+                            style={{
+                              borderLeft: `3px solid ${TYPE_COLORS[moveDef.type as PokemonType]}`,
+                            }}
+                          >
+                            <div className="flex flex-col items-start">
+                              <span className="text-sm font-bold">{moveDef.name}</span>
+                              <span className="text-[10px] text-muted-foreground capitalize">
+                                Tipo: {moveDef.type} | {moveDef.damage_dice || "Status"}
+                              </span>
+                            </div>
+                            <div className="flex flex-col items-end">
+                              <span className={`text-sm font-mono ${needsPP ? 'text-amber-400' : 'text-green-400'}`}>
+                                PP: {m.currentPP}/{m.maxPP}
+                              </span>
+                              {needsPP && (
+                                <span className="text-[10px] text-blue-400">
+                                  +5 PP
+                                </span>
+                              )}
+                            </div>
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </ScrollArea>
         </DialogContent>
       </Dialog>

@@ -17,7 +17,9 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Pill, CircleDot, Beaker, Package, Plus, Minus, Gem, Zap, Terminal, ChevronRight } from "lucide-react";
+import { Pill, CircleDot, Beaker, Package, Plus, Minus, Gem, Zap, Terminal, ChevronRight, ChevronLeft } from "lucide-react";
+import { getMove, TYPE_COLORS } from "@/lib/pokemon-data";
+import type { PokemonType } from "@/lib/pokemon-data";
 import { playButtonClick, playHeal } from "@/lib/sounds";
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -41,6 +43,11 @@ export function BagTab() {
     itemId: string;
     itemName: string;
   } | null>(null);
+  const [etherTarget, setEtherTarget] = useState<{
+    itemId: string;
+    itemName: string;
+  } | null>(null);
+  const [selectedEtherPokemon, setSelectedEtherPokemon] = useState<string | null>(null);
   const [addItemDialog, setAddItemDialog] = useState(false);
   const [addQty, setAddQty] = useState(1);
 
@@ -124,7 +131,14 @@ export function BagTab() {
 
                     {canUse && (
                       <button
-                        onClick={() => setUseTarget({ itemId: item.itemId, itemName: def.name })}
+                        onClick={() => {
+                          // Ether precisa de seleção de Pokemon e golpe
+                          if (def.id === "ether") {
+                            setEtherTarget({ itemId: item.itemId, itemName: def.name });
+                          } else {
+                            setUseTarget({ itemId: item.itemId, itemName: def.name });
+                          }
+                        }}
                         className="relative px-5 py-2 overflow-hidden group/btn active:scale-90 transition-transform"
                       >
                         <div className="absolute inset-0 bg-primary/10 border border-primary/30 skew-x-[-15deg] group-hover/btn:bg-primary/20" />
@@ -233,6 +247,156 @@ export function BagTab() {
             </div>
           </ScrollArea>
         </div>
+      </DialogContent>
+    )}
+  </Dialog>
+
+  {/* Dialog de Ether - Selecao de Pokemon e Golpe */}
+  <Dialog open={!!etherTarget} onOpenChange={(open) => {
+    if (!open) {
+      setEtherTarget(null);
+      setSelectedEtherPokemon(null);
+    }
+  }}>
+    {etherTarget && (
+      <DialogContent className="bg-[#0c0d12] border-2 border-blue-500/40 text-white max-w-md rounded-none shadow-[0_0_40px_rgba(0,0,0,0.7)]">
+        <div className="absolute top-0 left-0 w-20 h-[2px] bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+        
+        <DialogHeader>
+          <DialogTitle className="text-white font-black italic uppercase text-xl flex items-center gap-2">
+            <Zap className="w-5 h-5 text-blue-400" />
+            {etherTarget.itemName} - Restaurar PP
+          </DialogTitle>
+          <DialogDescription className="text-slate-400">
+            {!selectedEtherPokemon 
+              ? "Selecione um Pokemon para restaurar PP de um golpe"
+              : "Selecione o golpe para restaurar 5 PP"
+            }
+          </DialogDescription>
+        </DialogHeader>
+
+        <ScrollArea className="max-h-[400px] pr-2">
+          {!selectedEtherPokemon ? (
+            // Lista de Pokemon do time
+            <div className="flex flex-col gap-2">
+              {team.length > 0 ? (
+                team.filter((p) => p.currentHp > 0).map((p) => {
+                  const hasMovesNeedingPP = p.moves.some((m) => m.currentPP < m.maxPP);
+                  return (
+                    <button
+                      key={p.uid}
+                      disabled={!hasMovesNeedingPP}
+                      onClick={() => setSelectedEtherPokemon(p.uid)}
+                      className={`group relative flex items-center gap-4 p-3 border transition-all ${
+                        !hasMovesNeedingPP 
+                        ? "opacity-30 grayscale cursor-not-allowed border-white/5" 
+                        : "bg-white/5 border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5"
+                      }`}
+                    >
+                      <div className="relative w-12 h-12 flex-shrink-0 bg-black/40 border border-white/5 rounded-sm overflow-hidden">
+                        <img
+                          src={getSpriteUrl(p.speciesId)}
+                          className="w-full h-full object-contain pixelated relative z-10"
+                        />
+                      </div>
+
+                      <div className="flex-1 text-left">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black uppercase italic tracking-tighter">{p.name}</span>
+                          <span className="text-[10px] font-mono text-slate-500">LV.{p.level || '??'}</span>
+                        </div>
+                        
+                        <div className="mt-1 text-[10px] text-slate-400">
+                          {hasMovesNeedingPP ? (
+                            <span className="text-blue-400">{p.moves.filter((m) => m.currentPP < m.maxPP).length} golpe(s) precisam de PP</span>
+                          ) : (
+                            <span>Todos os golpes com PP cheio</span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="text-center py-10 border border-dashed border-white/10">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-600 italic">Nenhum Pokemon no time</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            // Lista de golpes do Pokemon selecionado
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => setSelectedEtherPokemon(null)}
+                className="self-start flex items-center gap-1 text-slate-400 hover:text-white text-xs mb-2"
+              >
+                <ChevronLeft className="w-4 h-4" /> Voltar
+              </button>
+              
+              {(() => {
+                const targetPokemon = team.find((p) => p.uid === selectedEtherPokemon);
+                if (!targetPokemon) return null;
+                
+                return (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-2 bg-white/5 border border-white/10">
+                      <img
+                        src={getSpriteUrl(targetPokemon.speciesId)}
+                        className="w-10 h-10 pixelated"
+                      />
+                      <span className="font-black uppercase italic">{targetPokemon.name}</span>
+                    </div>
+                    
+                    {targetPokemon.moves.map((m) => {
+                      const moveDef = getMove(m.moveId);
+                      if (!moveDef) return null;
+                      const needsPP = m.currentPP < m.maxPP;
+                      const ppAfter = Math.min(m.maxPP, m.currentPP + 5);
+                      
+                      return (
+                        <button
+                          key={m.moveId}
+                          disabled={!needsPP}
+                          onClick={() => {
+                            useBagItem(etherTarget.itemId, selectedEtherPokemon, m.moveId);
+                            setEtherTarget(null);
+                            setSelectedEtherPokemon(null);
+                            playHeal();
+                          }}
+                          className={`w-full flex items-center justify-between p-3 border-l-4 transition-all ${
+                            !needsPP 
+                            ? "opacity-40 cursor-not-allowed bg-white/[0.02]" 
+                            : "bg-white/5 hover:bg-white/10"
+                          }`}
+                          style={{
+                            borderLeftColor: TYPE_COLORS[moveDef.type as PokemonType] || "#666",
+                          }}
+                        >
+                          <div className="flex flex-col items-start">
+                            <span className="text-sm font-bold">{moveDef.name}</span>
+                            <span className="text-[10px] text-slate-500 capitalize">
+                              Tipo: {moveDef.type} | {moveDef.damage_dice || "Status"}
+                            </span>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <span className={`text-sm font-mono ${needsPP ? 'text-amber-400' : 'text-green-400'}`}>
+                              PP: {m.currentPP}/{m.maxPP}
+                            </span>
+                            {needsPP && (
+                              <span className="text-[10px] text-blue-400">
+                                +5 PP (vai para {ppAfter})
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+        </ScrollArea>
       </DialogContent>
     )}
   </Dialog>
