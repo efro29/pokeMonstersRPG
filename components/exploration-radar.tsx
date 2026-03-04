@@ -26,49 +26,107 @@ const MAX_POKEMON_PER_SCAN = 5;
 // ─── Categorias de Pokemon que NAO aparecem no radar ───────
 // Legendarios / Miticos / Deuses - somente em metas ofensivas
 const LEGENDARY_IDS = new Set([
-  // Kanto
+  // GEN 1 - Kanto
   144, 145, 146, 150, 151,
-  // Johto
+
+  // GEN 2 - Johto
   243, 244, 245, 249, 250, 251,
-  // Hoenn
-  377, 378, 379, // Regis
-  380, 381,      // Lati@s
-  382, 383, 384, // Weather trio
-  385, 386,      // Miticos
-  // Sinnoh
-  480, 481, 482, // Lake trio
-  483, 484, 487, // Dialga, Palkia, Giratina
-  485,           // Heatran
-  486,           // Regigigas
-  488,           // Cresselia
-  489, 490,      // Phione, Manaphy
-  491,           // Darkrai
-  492,           // Shaymin
-  493            // Arceus
+
+  // GEN 3 - Hoenn
+  377, 378, 379, 380, 381, 382, 383, 384, 385, 386,
+
+  // GEN 4 - Sinnoh
+  480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493,
+
+  // GEN 5 - Unova
+  494, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649,
+
+  // GEN 6 - Kalos
+  716, 717, 718, 719, 720, 721,
+
+  // GEN 7 - Alola (+ Ultra Beasts)
+  772, 773, 785, 786, 787, 788, 789, 790, 791, 792, 793, 794, 795,
+  796, 797, 798, 799, 800, 801, 802, 803, 804, 805, 806, 807, 808, 809,
+
+  // GEN 8 - Galar (+ Crown Tundra/Isle of Armor)
+  888, 889, 890, 891, 892, 893, 894, 895, 896, 897, 898, 905,
+
+  // GEN 9 - Paldea (+ Teal Mask/Indigo Disk)
+  1001, 1002, 1003, 1004, 1007, 1008, 1014, 1015, 1016, 1017,
+  1020, 1021, 1022, 1023, 1024, 1025
 ]);
 
 // Fosseis - somente em metas ofensivas
 const FOSSIL_IDS = new Set([
-  // Kanto
+  // GEN 1 - Kanto
   138, 139,      // Omanyte, Omastar
   140, 141,      // Kabuto, Kabutops
   142,           // Aerodactyl
-  // Johto (nenhum fossil novo)
-  // Hoenn
+
+  // GEN 3 - Hoenn
   345, 346,      // Lileep, Cradily
   347, 348,      // Anorith, Armaldo
-  // Sinnoh
+
+  // GEN 4 - Sinnoh
   408, 409,      // Cranidos, Rampardos
   410, 411,      // Shieldon, Bastiodon
-]);
 
+  // GEN 5 - Unova
+  564, 565,      // Tirtouga, Carracosta
+  566, 567,      // Archen, Archeops
+
+  // GEN 6 - Kalos
+  696, 697,      // Tyrunt, Tyrantrum
+  698, 699,      // Amaura, Aurorus
+
+  // GEN 8 - Galar (Fósseis Combinados)
+  880,           // Dracozolt
+  881,           // Arctozolt
+  882,           // Dracovish
+  883            // Arctovish
+]);
 // Raros especiais - somente em metas ofensivas
 const RARE_SPECIAL_IDS = new Set([
-  132,           // Ditto
-  201,           // Unown
-  352,           // Kecleon
-]);
+  // GEN 1 - Kanto
+  132,           // Ditto (Transformação)
 
+  // GEN 2 - Johto
+  201,           // Unown (28 formas/Alfabeto)
+  235,           // Smeargle (Sketch/Copia movimentos)
+
+  // GEN 3 - Hoenn
+  290,           // Nincada (Gera dois Pokémon na evolução)
+  292,           // Shedinja (1 HP / Wonder Guard)
+  327,           // Spinda (Bilhões de padrões de manchas)
+  351,           // Castform (Mudança de clima)
+  352,           // Kecleon (Mudança de tipo/Invisibilidade)
+
+  // GEN 4 - Sinnoh
+  441,           // Chatot (Gravação de voz/Chatter)
+  442,           // Spiritomb (Encontro especial de 108 almas)
+  479,           // Rotom (Possessão de eletrodomésticos)
+
+  // GEN 5 - Unova
+  550,           // Basculin (Múltiplas formas de listras)
+  570, 571,      // Zorua & Zoroark (Ilusão/Copia aparência)
+
+  // GEN 6 - Kalos
+  666,           // Vivillon (20 padrões baseados em localização real)
+  676,           // Furfrou (Cortes de pelo customizáveis)
+
+  // GEN 7 - Alola
+  774,           // Minior (Forma meteoro/Núcleo colorido)
+
+  // GEN 8 - Galar
+  845,           // Cramorant (Gulp Missile/Engole presas)
+  854, 855,      // Sinistea & Polteageist (Versões Autênticas vs Falsas)
+  876,           // Indeedee (Diferença drástica entre gêneros)
+
+  // GEN 9 - Paldea
+  922,           // Pawmot (Ressurreição em batalha)
+  990,           // Iron Valiant (Paradoxo - fusão visual)
+  999, 1000      // Gimmighoul & Gholdengo (Coleta de 999 moedas)
+]);
 // IDs que sao resultado de evolucao (o campo "to" de EVOLUTIONS)
 const EVOLVED_IDS = new Set(EVOLUTIONS.map((e) => e.to));
 
@@ -81,10 +139,15 @@ const FIRE_TYPES: Set<string> = new Set(["fire"]);
 
 // Geracoes com ranges para calculo de dificuldade
 const GEN_RANGES: [number, number][] = [
-  [1, 151],   // G1 Kanto
-  [152, 251], // G2 Johto
-  [252, 386], // G3 Hoenn (completa)
-  [387, 493], // G4
+  [1, 151],    // G1 - Kanto
+  [152, 251],  // G2 - Johto
+  [252, 386],  // G3 - Hoenn
+  [387, 493],  // G4 - Sinnoh
+  [494, 649],  // G5 - Unova
+  [650, 721],  // G6 - Kalos
+  [722, 809],  // G7 - Alola
+  [810, 905],  // G8 - Galar & Hisui
+  [906, 1025], // G9 - Paldea (Inclui DLCs: Teal Mask / Indigo Disk)
 ];
 
 // ─── Estado do clima ───────────────────────────────────────
@@ -884,8 +947,8 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
   const startScanAgain = useCallback(() => {
 
 
- 
-  if (scanning) return;
+
+    if (scanning) return;
     if (energy.charges <= 0) {
       setScanMessage("Sem energia! Aguarde a recarga.");
       setTimeout(() => setScanMessage(null), 1000);
@@ -927,7 +990,7 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
 
 
 
-  
+
   }, [scanning, energy, finishScan]);
 
 
@@ -935,55 +998,55 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
   const startScan = useCallback(() => {
 
 
-    if(blips.length > 0 ){
+    if (blips.length > 0) {
 
 
-    }else{
+    } else {
 
-  if (scanning) return;
-    if (energy.charges <= 0) {
-      setScanMessage("Sem energia! Aguarde a recarga.");
-      setTimeout(() => setScanMessage(null), 1000);
-      return;
-    }
-
-    playButtonClick();
-
-    // Gastar energia
-    const newCharges = energy.charges - 1;
-    const batteryJustDepleted = energy.batteryActive && newCharges <= 0;
-    const next: RadarEnergy = {
-      charges: batteryJustDepleted ? MAX_ENERGY : newCharges,
-      lastUsed: Date.now(),
-      batteryActive: batteryJustDepleted ? false : energy.batteryActive,
-    };
-    setEnergy(next);
-    saveEnergy(next);
-
-    setScanning(true);
-    setScanProgress(0);
-    setBlips([]);
-    setSelectedBlip(null);
-    setClaimedGift(null);
-    setScanMessage(null);
-
-    // Progresso do scan
-    const start = Date.now();
-    scanInterval.current = setInterval(() => {
-      const elapsed = Date.now() - start;
-      const pct = Math.min(1, elapsed / SCAN_DURATION_MS);
-      setScanProgress(pct);
-      if (pct >= 1) {
-        if (scanInterval.current) clearInterval(scanInterval.current);
-        finishScan();
+      if (scanning) return;
+      if (energy.charges <= 0) {
+        setScanMessage("Sem energia! Aguarde a recarga.");
+        setTimeout(() => setScanMessage(null), 1000);
+        return;
       }
-    }, 50);
+
+      playButtonClick();
+
+      // Gastar energia
+      const newCharges = energy.charges - 1;
+      const batteryJustDepleted = energy.batteryActive && newCharges <= 0;
+      const next: RadarEnergy = {
+        charges: batteryJustDepleted ? MAX_ENERGY : newCharges,
+        lastUsed: Date.now(),
+        batteryActive: batteryJustDepleted ? false : energy.batteryActive,
+      };
+      setEnergy(next);
+      saveEnergy(next);
+
+      setScanning(true);
+      setScanProgress(0);
+      setBlips([]);
+      setSelectedBlip(null);
+      setClaimedGift(null);
+      setScanMessage(null);
+
+      // Progresso do scan
+      const start = Date.now();
+      scanInterval.current = setInterval(() => {
+        const elapsed = Date.now() - start;
+        const pct = Math.min(1, elapsed / SCAN_DURATION_MS);
+        setScanProgress(pct);
+        if (pct >= 1) {
+          if (scanInterval.current) clearInterval(scanInterval.current);
+          finishScan();
+        }
+      }, 50);
 
 
 
     }
 
-  
+
   }, [scanning, energy, finishScan]);
 
   // Cleanup
@@ -1060,241 +1123,241 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
   const center = radarSize / 2;
 
   return (
-<div className="flex flex-col items-center h-full overflow-auto py-4 px-3 gap-4 bg-slate-950 font-mono text-cyan-400">
-  
-  {/* TOP HUD: Weather & Energy */}
-  <div className="flex items-center justify-between w-full max-w-sm border-b border-cyan-900/50 pb-2 mb-2">
-    <div className="flex items-center gap-3 px-3 py-1 bg-black/60 border-l-2 border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.1)]">
-      <span className="text-xl animate-pulse">
-        {weather.condition === "clear" && "☀️"}
-        {weather.condition === "rain" && "🌧️"}
-        {weather.condition === "thunderstorm" && "⛈️"}
-        {weather.condition === "clouds" && "☁️"}
-        {weather.condition === "unknown" && "📡"}
-      </span>
-      <div className="flex flex-col">
-        <span className="text-[10px] uppercase tracking-tighter text-cyan-500/70">Location_Signal</span>
-        <span className="text-xs font-black text-white uppercase truncate max-w-[100px]">
-          {weather.city || "Searching..."}
-        </span>
-      </div>
-      
-      <div className="flex gap-1">
-        {(weather.condition === "rain" || weather.condition === "thunderstorm") && (
-          <span className="text-[9px] px-1.5 py-0.5 bg-blue-600/20 border border-blue-500 text-blue-400 font-bold animate-pulse">
-            WATER_UP
-          </span>
-        )}
-        {weather.condition === "clear" && (
-          <span className="text-[9px] px-1.5 py-0.5 bg-red-600/20 border border-red-500 text-red-400 font-bold animate-pulse">
-            FIRE_UP
-          </span>
-        )}
-      </div>
-    </div>
+    <div className="flex flex-col items-center h-full overflow-auto py-4 px-3 gap-4 bg-slate-950 font-mono text-cyan-400">
 
-    <div className="flex flex-col items-end">
-      <span className="text-[9px] uppercase text-cyan-500/50 mb-1">Power_Core</span>
-      <div className="flex items-center gap-2">
-        {recoveryTimer && !energy.batteryActive && (
-          <span className="text-[10px] text-cyan-600 animate-pulse">{recoveryTimer}</span>
-        )}
-        <div className="relative">
-             <BatteryIcon charges={energy.charges} max={energy.batteryActive ? BATTERY_ENERGY : MAX_ENERGY} />
-             <div className="absolute inset-0 shadow-[0_0_10px_rgba(34,197,94,0.3)] pointer-events-none" />
+      {/* TOP HUD: Weather & Energy */}
+      <div className="flex items-center justify-between w-full max-w-sm border-b border-cyan-900/50 pb-2 mb-2">
+        <div className="flex items-center gap-3 px-3 py-1 bg-black/60 border-l-2 border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.1)]">
+          <span className="text-xl animate-pulse">
+            {weather.condition === "clear" && "☀️"}
+            {weather.condition === "rain" && "🌧️"}
+            {weather.condition === "thunderstorm" && "⛈️"}
+            {weather.condition === "clouds" && "☁️"}
+            {weather.condition === "unknown" && "📡"}
+          </span>
+          <div className="flex flex-col">
+            <span className="text-[10px] uppercase tracking-tighter text-cyan-500/70">Location_Signal</span>
+            <span className="text-xs font-black text-white uppercase truncate max-w-[100px]">
+              {weather.city || "Searching..."}
+            </span>
+          </div>
+
+          <div className="flex gap-1">
+            {(weather.condition === "rain" || weather.condition === "thunderstorm") && (
+              <span className="text-[9px] px-1.5 py-0.5 bg-blue-600/20 border border-blue-500 text-blue-400 font-bold animate-pulse">
+                WATER_UP
+              </span>
+            )}
+            {weather.condition === "clear" && (
+              <span className="text-[9px] px-1.5 py-0.5 bg-red-600/20 border border-red-500 text-red-400 font-bold animate-pulse">
+                FIRE_UP
+              </span>
+            )}
+          </div>
         </div>
-        <span className={`text-xs font-bold ${energy.batteryActive ? 'text-yellow-400' : 'text-cyan-400'}`}>
-          {Math.floor((energy.charges / (energy.batteryActive ? BATTERY_ENERGY : MAX_ENERGY)) * 100)}%
-        </span>
-      </div>
-    </div>
-  </div>
 
-  {/* MAIN RADAR AREA */}
-  <div 
-    onClick={startScan}
-    className="z-20 relative shrink-0 cursor-crosshair group"
-    style={{ width: radarSize, height: radarSize }}
-  >
-    <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,_#061b1b_0%,_#000000_100%)] border border-cyan-500/30 overflow-hidden">
-        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,118,0.06))] bg-[length:100%_2px,3px_100%]" />
-    </div>
-
-    <svg width={radarSize} height={radarSize} className="absolute inset-0">
-      {[0.25, 0.5, 0.75, 1].map((r) => (
-        <circle
-          key={r}
-          cx={center} cy={center} r={center * r - 2}
-          fill="none"
-          stroke="rgba(6, 182, 212, 0.2)"
-          strokeWidth={1}
-          strokeDasharray={r === 1 ? "0" : "4 4"}
-        />
-      ))}
-      <line x1={center} y1="0" x2={center} y2={radarSize} stroke="rgba(6, 182, 212, 0.3)" strokeWidth={0.5} />
-      <line x1="0" y1={center} x2={radarSize} y2={center} stroke="rgba(6, 182, 212, 0.3)" strokeWidth={0.5} />
-    </svg>
-
-    {/* PAW PRINTS LAYER (Adicionadas aqui no estilo anterior) */}
-    <svg
-      className="absolute inset-0 pointer-events-none z-[5]"
-      width={radarSize}
-      height={radarSize}
-      viewBox={`0 0 ${radarSize} ${radarSize}`}
-    >
-      {blips.flatMap((blip) =>
-        blip.pawPrints.map((paw) => (
-          <g
-            key={paw.id}
-            opacity={paw.opacity}
-            transform={`translate(${paw.x}, ${paw.y}) rotate(${paw.rotation})`}
-          >
-            {/* Paw visual - Estilo minimalista combinando com o radar */}
-            <circle cx={-2.5} cy={-3} r={1.2} fill="rgba(6, 182, 212, 0.6)" />
-            <circle cx={0} cy={-4} r={1.2} fill="rgba(6, 182, 212, 0.6)" />
-            <circle cx={2.5} cy={-3} r={1.2} fill="rgba(6, 182, 212, 0.6)" />
-            <ellipse cx={0} cy={0} rx={2.5} ry={2} fill="rgba(6, 182, 212, 0.4)" />
-          </g>
-        ))
-      )}
-    </svg>
-
-{/* Scanning Sweep - Radar Clássico */}
-{/* Scanning Sweep - Radar Clássico Alinhado */}
-{scanning && (
-  <motion.div
-    className="absolute inset-0 pointer-events-none z-10"
-    style={{ transformOrigin: "center center" }}
-    animate={{ rotate: 360 }}
-    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-  >
-    {/* O Rastro (Fatia de Luz) - Ajustado para alinhar com o topo */}
-    <div 
-      className="absolute inset-0 rounded-full"
-      style={{ 
-        // "from 0deg" começa no topo (12h), exatamente onde a linha está
-        // O rastro de 25% (90 graus) fica "atrás" da linha no sentido horário
-        background: `conic-gradient(from 0deg at 50% 50%, rgba(34, 211, 238, 0.14) 1%, transparent 60%)`,
-        maskImage: 'radial-gradient(circle, black 35%, transparent 100%)',
-        WebkitMaskImage: 'radial-gradient(circle, black 35%, transparent 100%)',
-        transform: 'rotate(-90deg)' // Compensação para o gradiente colar na linha
-      }}
-    />
-
-    {/* A Linha do Ponteiro (O Scanner Laser) */}
-    <div 
-      className="absolute top-0 left-1/2 w-[2px] h-1/2 bg-cyan-400" 
-      style={{ 
-        transform: "translateX(-50%)",
-        boxShadow: "0 0 15px #22d3ee, 0 0 5px #fff" 
-      }}
-    />
-    
-    {/* Ponto de luz na ponta (Efeito lente) */}
-    <div 
-      className="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_12px_#22d3ee]" 
-    />
-  </motion.div>
-)}
-
-    {/* Blips & Entities */}
-    {/* Blips & Entities */}
-    <AnimatePresence>
-      {blips.map((blip) => {
-        const rad = (blip.angle * Math.PI) / 180;
-        const maxR = center - 20;
-        const x = center + Math.cos(rad) * maxR * blip.distance;
-        const y = center + Math.sin(rad) * maxR * blip.distance;
-        
-        // Verifica se este blip é o alvo selecionado
-        const isSelected = selectedBlip?.id === blip.id;
-
-        // Lógica de cores original
-        const color = blip.isEgg
-          ? (EGG_TIER_COLORS[blip.egg?.tier || "green"].bg)
-          : blip.isGift
-            ? (blip.giftKit?.color || "#F59E0B")
-            : TYPE_COLORS[(blip.pokemon?.types[0] || "normal")];
-
-        return (
-          <motion.button
-            key={blip.id}
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ 
-              scale: 1, 
-              opacity: 1, 
-              left: x - 12, 
-              top: y - 12,
-              zIndex: isSelected ? 50 : 30 // Alvo clicado fica por cima de tudo
-            }}
-            exit={{ scale: 0, opacity: 0 }}
-            className="absolute group transition-transform active:scale-90"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleBlipClick(blip);
-            }}
-          >
-            <div className="relative w-7 h-7 flex items-center justify-center">
-                
-                {/* DESTAQUE DE ALVO CLICADO (Target Lock Brackets) */}
-                {isSelected && (
-                  <>
-                    {/* Cantoneiras de Mira Estilo Sniper */}
-                    <motion.div 
-                      initial={{ scale: 1.5, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className="absolute inset-0 pointer-events-none"
-                    >
-                      <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2" style={{ borderColor: color }} />
-                      <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2" style={{ borderColor: color }} />
-                      <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2" style={{ borderColor: color }} />
-                      <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2" style={{ borderColor: color }} />
-                    </motion.div>
-
-                    {/* Pulso de Radar Circular no Alvo */}
-                    <motion.div 
-                      animate={{ scale: [1, 2], opacity: [0.5, 0] }}
-                      transition={{ repeat: Infinity, duration: 1.2, ease: "easeOut" }}
-                      className="absolute inset-0 rounded-full border-2"
-                      style={{ borderColor: color }}
-                    />
-                  </>
-                )}
-
-                {/* Anel Giratório Padrão (Fica mais opaco se selecionado) */}
-                <div 
-                  className={`absolute inset-1 border border-dashed rounded-full animate-spin-slow ${isSelected ? 'opacity-100 border-2' : 'opacity-40 border-1'}`} 
-                  style={{ borderColor: color }} 
-                />
-
-                {/* Ponto Central (Blip) */}
-                <div 
-                  className={`w-2.5 h-2.5 rounded-full shadow-[0_0_10px_currentColor] transition-all duration-300`} 
-                  style={{ 
-                    backgroundColor: color, 
-                    color: color,
-                    boxShadow: isSelected ? `0 0 20px ${color}` : `0 0 8px ${color}`,
-                    transform: isSelected ? 'scale(1.2)' : 'scale(1)'
-                  }} 
-                />
-                
-                {/* Indicador visual para itens especiais */}
-                {(blip.isEgg || blip.isGift) && !isSelected && (
-                  <span className="absolute -top-1 -right-1 text-[8px] drop-shadow-md">
-                    {blip.isEgg ? "🥚" : "🎁"}
-                  </span>
-                )}
+        <div className="flex flex-col items-end">
+          <span className="text-[9px] uppercase text-cyan-500/50 mb-1">Power_Core</span>
+          <div className="flex items-center gap-2">
+            {recoveryTimer && !energy.batteryActive && (
+              <span className="text-[10px] text-cyan-600 animate-pulse">{recoveryTimer}</span>
+            )}
+            <div className="relative">
+              <BatteryIcon charges={energy.charges} max={energy.batteryActive ? BATTERY_ENERGY : MAX_ENERGY} />
+              <div className="absolute inset-0 shadow-[0_0_10px_rgba(34,197,94,0.3)] pointer-events-none" />
             </div>
-          </motion.button>
-        );
-      })}
-    </AnimatePresence>
+            <span className={`text-xs font-bold ${energy.batteryActive ? 'text-yellow-400' : 'text-cyan-400'}`}>
+              {Math.floor((energy.charges / (energy.batteryActive ? BATTERY_ENERGY : MAX_ENERGY)) * 100)}%
+            </span>
+          </div>
+        </div>
+      </div>
 
-    <div className="absolute -inset-2 border-2 border-cyan-500/20 rounded-full pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-950 px-2 text-[8px] text-cyan-500 font-bold">RADAR_V3.0</div>
-  
-    </div>
-  </div>
+      {/* MAIN RADAR AREA */}
+      <div
+        onClick={startScan}
+        className="z-20 relative shrink-0 cursor-crosshair group"
+        style={{ width: radarSize, height: radarSize }}
+      >
+        <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,_#061b1b_0%,_#000000_100%)] border border-cyan-500/30 overflow-hidden">
+          <div className="absolute inset-0 opacity-10 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,118,0.06))] bg-[length:100%_2px,3px_100%]" />
+        </div>
+
+        <svg width={radarSize} height={radarSize} className="absolute inset-0">
+          {[0.25, 0.5, 0.75, 1].map((r) => (
+            <circle
+              key={r}
+              cx={center} cy={center} r={center * r - 2}
+              fill="none"
+              stroke="rgba(6, 182, 212, 0.2)"
+              strokeWidth={1}
+              strokeDasharray={r === 1 ? "0" : "4 4"}
+            />
+          ))}
+          <line x1={center} y1="0" x2={center} y2={radarSize} stroke="rgba(6, 182, 212, 0.3)" strokeWidth={0.5} />
+          <line x1="0" y1={center} x2={radarSize} y2={center} stroke="rgba(6, 182, 212, 0.3)" strokeWidth={0.5} />
+        </svg>
+
+        {/* PAW PRINTS LAYER (Adicionadas aqui no estilo anterior) */}
+        <svg
+          className="absolute inset-0 pointer-events-none z-[5]"
+          width={radarSize}
+          height={radarSize}
+          viewBox={`0 0 ${radarSize} ${radarSize}`}
+        >
+          {blips.flatMap((blip) =>
+            blip.pawPrints.map((paw) => (
+              <g
+                key={paw.id}
+                opacity={paw.opacity}
+                transform={`translate(${paw.x}, ${paw.y}) rotate(${paw.rotation})`}
+              >
+                {/* Paw visual - Estilo minimalista combinando com o radar */}
+                <circle cx={-2.5} cy={-3} r={1.2} fill="rgba(6, 182, 212, 0.6)" />
+                <circle cx={0} cy={-4} r={1.2} fill="rgba(6, 182, 212, 0.6)" />
+                <circle cx={2.5} cy={-3} r={1.2} fill="rgba(6, 182, 212, 0.6)" />
+                <ellipse cx={0} cy={0} rx={2.5} ry={2} fill="rgba(6, 182, 212, 0.4)" />
+              </g>
+            ))
+          )}
+        </svg>
+
+        {/* Scanning Sweep - Radar Clássico */}
+        {/* Scanning Sweep - Radar Clássico Alinhado */}
+        {scanning && (
+          <motion.div
+            className="absolute inset-0 pointer-events-none z-10"
+            style={{ transformOrigin: "center center" }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+          >
+            {/* O Rastro (Fatia de Luz) - Ajustado para alinhar com o topo */}
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                // "from 0deg" começa no topo (12h), exatamente onde a linha está
+                // O rastro de 25% (90 graus) fica "atrás" da linha no sentido horário
+                background: `conic-gradient(from 0deg at 50% 50%, rgba(34, 211, 238, 0.14) 1%, transparent 60%)`,
+                maskImage: 'radial-gradient(circle, black 35%, transparent 100%)',
+                WebkitMaskImage: 'radial-gradient(circle, black 35%, transparent 100%)',
+                transform: 'rotate(-90deg)' // Compensação para o gradiente colar na linha
+              }}
+            />
+
+            {/* A Linha do Ponteiro (O Scanner Laser) */}
+            <div
+              className="absolute top-0 left-1/2 w-[2px] h-1/2 bg-cyan-400"
+              style={{
+                transform: "translateX(-50%)",
+                boxShadow: "0 0 15px #22d3ee, 0 0 5px #fff"
+              }}
+            />
+
+            {/* Ponto de luz na ponta (Efeito lente) */}
+            <div
+              className="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_12px_#22d3ee]"
+            />
+          </motion.div>
+        )}
+
+        {/* Blips & Entities */}
+        {/* Blips & Entities */}
+        <AnimatePresence>
+          {blips.map((blip) => {
+            const rad = (blip.angle * Math.PI) / 180;
+            const maxR = center - 20;
+            const x = center + Math.cos(rad) * maxR * blip.distance;
+            const y = center + Math.sin(rad) * maxR * blip.distance;
+
+            // Verifica se este blip é o alvo selecionado
+            const isSelected = selectedBlip?.id === blip.id;
+
+            // Lógica de cores original
+            const color = blip.isEgg
+              ? (EGG_TIER_COLORS[blip.egg?.tier || "green"].bg)
+              : blip.isGift
+                ? (blip.giftKit?.color || "#F59E0B")
+                : TYPE_COLORS[(blip.pokemon?.types[0] || "normal")];
+
+            return (
+              <motion.button
+                key={blip.id}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{
+                  scale: 1,
+                  opacity: 1,
+                  left: x - 12,
+                  top: y - 12,
+                  zIndex: isSelected ? 50 : 30 // Alvo clicado fica por cima de tudo
+                }}
+                exit={{ scale: 0, opacity: 0 }}
+                className="absolute group transition-transform active:scale-90"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleBlipClick(blip);
+                }}
+              >
+                <div className="relative w-7 h-7 flex items-center justify-center">
+
+                  {/* DESTAQUE DE ALVO CLICADO (Target Lock Brackets) */}
+                  {isSelected && (
+                    <>
+                      {/* Cantoneiras de Mira Estilo Sniper */}
+                      <motion.div
+                        initial={{ scale: 1.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="absolute inset-0 pointer-events-none"
+                      >
+                        <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2" style={{ borderColor: color }} />
+                        <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2" style={{ borderColor: color }} />
+                        <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2" style={{ borderColor: color }} />
+                        <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2" style={{ borderColor: color }} />
+                      </motion.div>
+
+                      {/* Pulso de Radar Circular no Alvo */}
+                      <motion.div
+                        animate={{ scale: [1, 2], opacity: [0.5, 0] }}
+                        transition={{ repeat: Infinity, duration: 1.2, ease: "easeOut" }}
+                        className="absolute inset-0 rounded-full border-2"
+                        style={{ borderColor: color }}
+                      />
+                    </>
+                  )}
+
+                  {/* Anel Giratório Padrão (Fica mais opaco se selecionado) */}
+                  <div
+                    className={`absolute inset-1 border border-dashed rounded-full animate-spin-slow ${isSelected ? 'opacity-100 border-2' : 'opacity-40 border-1'}`}
+                    style={{ borderColor: color }}
+                  />
+
+                  {/* Ponto Central (Blip) */}
+                  <div
+                    className={`w-2.5 h-2.5 rounded-full shadow-[0_0_10px_currentColor] transition-all duration-300`}
+                    style={{
+                      backgroundColor: color,
+                      color: color,
+                      boxShadow: isSelected ? `0 0 20px ${color}` : `0 0 8px ${color}`,
+                      transform: isSelected ? 'scale(1.2)' : 'scale(1)'
+                    }}
+                  />
+
+                  {/* Indicador visual para itens especiais */}
+                  {(blip.isEgg || blip.isGift) && !isSelected && (
+                    <span className="absolute -top-1 -right-1 text-[8px] drop-shadow-md">
+                      {blip.isEgg ? "🥚" : "🎁"}
+                    </span>
+                  )}
+                </div>
+              </motion.button>
+            );
+          })}
+        </AnimatePresence>
+
+        <div className="absolute -inset-2 border-2 border-cyan-500/20 rounded-full pointer-events-none">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-950 px-2 text-[8px] text-cyan-500 font-bold">RADAR_V3.0</div>
+
+        </div>
+      </div>
       {/* Botão de ativar bateria */}
       {canActivateBattery && (
         <button
@@ -1314,114 +1377,114 @@ export function ExplorationRadar({ onStartCapture, onStartWildBattle }: Explorat
       )}
 
 
-{/* POKEMON DATA OVERLAY */}
-<AnimatePresence mode="wait">
-  {selectedBlip && selectedBlip.pokemon && (
-    <motion.div
-      key={selectedBlip.id}
-      initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      exit={{ opacity: 0, y: 20, filter: "blur(10px)" }}
-      transition={{ duration: 0.2, ease: "easeOut" }}
-      className="absolute bottom-20 bg-black/90 border-t-2 border-b-2 border-cyan-500 py-2 w-full max-w-sm flex items-center px-3 gap-2 backdrop-blur-md z-[100] shadow-[0_0_30px_rgba(6,182,212,0.2)]"
-    >
-      {/* NOVO: Botão Start Scan integrado ao Card */}
-<Button
-  onClick={(e) => { e.stopPropagation(); startScanAgain(); }}
-  disabled={scanning}
-  // Adicionado !bg-transparent e active:!bg-cyan-500/20 para travar a cor
-  className={`
+      {/* POKEMON DATA OVERLAY */}
+      <AnimatePresence mode="wait">
+        {selectedBlip && selectedBlip.pokemon && (
+          <motion.div
+            key={selectedBlip.id}
+            initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: 20, filter: "blur(10px)" }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="absolute bottom-20 bg-black/90 border-t-2 border-b-2 border-cyan-500 py-2 w-full max-w-sm flex items-center px-3 gap-2 backdrop-blur-md z-[100] shadow-[0_0_30px_rgba(6,182,212,0.2)]"
+          >
+            {/* NOVO: Botão Start Scan integrado ao Card */}
+            <Button
+              onClick={(e) => { e.stopPropagation(); startScanAgain(); }}
+              disabled={scanning}
+              // Adicionado !bg-transparent e active:!bg-cyan-500/20 para travar a cor
+              className={`
     relative shrink-0 w-12 h-16 flex flex-col items-center justify-center gap-1 
     border-r border-cyan-500/30 pr-3 transition-all duration-200
     !bg-transparent hover:!bg-cyan-500/10 active:!bg-cyan-500/20 
     !text-cyan-400 focus:ring-0 focus:outline-none outline-none
     ${scanning ? 'opacity-40 grayscale' : 'opacity-100'}
   `}
->
-  {/* Glow Effect de fundo (Só aparece quando não está escaneando) */}
-  {!scanning && (
-    <div className="absolute inset-0 bg-cyan-500/5 animate-pulse -z-10" />
-  )}
+            >
+              {/* Glow Effect de fundo (Só aparece quando não está escaneando) */}
+              {!scanning && (
+                <div className="absolute inset-0 bg-cyan-500/5 animate-pulse -z-10" />
+              )}
 
-  {/* Ícone 📡 */}
-  <div className="relative">
-    <span className={`text-xl block leading-none ${scanning ? 'animate-spin opacity-50' : 'text-cyan-400'}`}>
-      📡
-    </span>
-    {/* Sombra interna do ícone */}
-    {!scanning && (
-       <div className="absolute inset-0 blur-[6px] bg-cyan-400/40 rounded-full -z-10" />
-    )}
-  </div>
+              {/* Ícone 📡 */}
+              <div className="relative">
+                <span className={`text-xl block leading-none ${scanning ? 'animate-spin opacity-50' : 'text-cyan-400'}`}>
+                  📡
+                </span>
+                {/* Sombra interna do ícone */}
+                {!scanning && (
+                  <div className="absolute inset-0 blur-[6px] bg-cyan-400/40 rounded-full -z-10" />
+                )}
+              </div>
 
-  {/* Texto Scan */}
-  <span className={`
+              {/* Texto Scan */}
+              <span className={`
     text-[8px] font-black uppercase tracking-[0.15em] mt-1
     ${scanning ? 'text-cyan-800' : 'text-cyan-500'}
   `}>
-    {scanning ? 'Wait' : 'Scan'}
-  </span>
+                {scanning ? 'Wait' : 'Scan'}
+              </span>
 
-  {/* Pequeno detalhe de "LED" na base do botão */}
-  <div className={`
+              {/* Pequeno detalhe de "LED" na base do botão */}
+              <div className={`
     w-4 h-[2px] mt-1 rounded-full
     ${scanning ? 'bg-cyan-900' : 'bg-cyan-400 shadow-[0_0_5px_#22d3ee]'}
   `} />
-</Button>
-      {/* Sprite Slot */}
-      <div className="relative shrink-0 w-14 h-14 bg-cyan-950/30 border border-cyan-500/50 rounded overflow-hidden p-1">
-        <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,191,255,0.1)_50%)] bg-[length:100%_4px] pointer-events-none z-10" />
-        <img
-          src={getSpriteUrl(selectedBlip.pokemon.id)}
-          className={`w-full h-full pixelated object-contain relative z-0 ${!isDiscovered(selectedBlip.pokemon.id) && 'brightness-0 opacity-70'}`}
-          alt="target"
-        />
-        <div className="absolute top-0 left-0 w-1 h-1 border-t border-l border-cyan-400" />
-        <div className="absolute bottom-0 right-0 w-1 h-1 border-b border-r border-cyan-400" />
-      </div>
+            </Button>
+            {/* Sprite Slot */}
+            <div className="relative shrink-0 w-14 h-14 bg-cyan-950/30 border border-cyan-500/50 rounded overflow-hidden p-1">
+              <div className="absolute inset-0 bg-[linear-gradient(transparent_50%,rgba(0,191,255,0.1)_50%)] bg-[length:100%_4px] pointer-events-none z-10" />
+              <img
+                src={getSpriteUrl(selectedBlip.pokemon.id)}
+                className={`w-full h-full pixelated object-contain relative z-0 ${!isDiscovered(selectedBlip.pokemon.id) && 'brightness-0 opacity-70'}`}
+                alt="target"
+              />
+              <div className="absolute top-0 left-0 w-1 h-1 border-t border-l border-cyan-400" />
+              <div className="absolute bottom-0 right-0 w-1 h-1 border-b border-r border-cyan-400" />
+            </div>
 
-      {/* Info Group */}
-      <div className="flex flex-col min-w-[65px] max-w-[80px]">
-        <span className="text-[7px] text-cyan-500/70 font-black tracking-tighter leading-none">ID:{String(selectedBlip.pokemon.id).padStart(3, '0')}</span>
-        <span className="text-[11px] font-black text-white uppercase italic truncate mt-0.5">
-          {isDiscovered(selectedBlip.pokemon.id) ? selectedBlip.pokemon.name : "UNK_DATA"}
-        </span>
-        <div className="flex gap-1 mt-1">
-          <span className="text-[6px] px-1 bg-cyan-500 text-black font-black uppercase">
-            {isDiscovered(selectedBlip.pokemon.id) ? selectedBlip.pokemon.types[0] : "???"}
-          </span>
-        </div>
-      </div>
+            {/* Info Group */}
+            <div className="flex flex-col min-w-[65px] max-w-[80px]">
+              <span className="text-[7px] text-cyan-500/70 font-black tracking-tighter leading-none">ID:{String(selectedBlip.pokemon.id).padStart(3, '0')}</span>
+              <span className="text-[11px] font-black text-white uppercase italic truncate mt-0.5">
+                {isDiscovered(selectedBlip.pokemon.id) ? selectedBlip.pokemon.name : "UNK_DATA"}
+              </span>
+              <div className="flex gap-1 mt-1">
+                <span className="text-[6px] px-1 bg-cyan-500 text-black font-black uppercase">
+                  {isDiscovered(selectedBlip.pokemon.id) ? selectedBlip.pokemon.types[0] : "???"}
+                </span>
+              </div>
+            </div>
 
-      {/* Action Buttons Group */}
-      <div className="flex flex-1 gap-1 items-center pl-1 border-l border-cyan-900/50">
-        <Button
-          onClick={(e) => { e.stopPropagation(); handleBattle(); }}
-          className="flex-1 h-9 px-0 bg-red-600/10 border border-red-600/50 text-red-500 text-[8px] font-black uppercase skew-x-[-12deg] hover:bg-red-600 hover:text-white transition-all active:scale-95"
-        >
-          <span className="skew-x-[12deg]">⚔️ BATTLE</span>
-        </Button>
+            {/* Action Buttons Group */}
+            <div className="flex flex-1 gap-1 items-center pl-1 border-l border-cyan-900/50">
+              <Button
+                onClick={(e) => { e.stopPropagation(); handleBattle(); }}
+                className="flex-1 h-9 px-0 bg-red-600/10 border border-red-600/50 text-red-500 text-[8px] font-black uppercase skew-x-[-12deg] hover:bg-red-600 hover:text-white transition-all active:scale-95"
+              >
+                <span className="skew-x-[12deg]">⚔️ BATTLE</span>
+              </Button>
 
-        <Button
-          onClick={(e) => { e.stopPropagation(); handleCapture(); }}
-          className="flex-1 h-9 px-0 bg-cyan-600/10 border border-cyan-600/50 text-cyan-400 text-[8px] font-black uppercase skew-x-[-12deg] hover:bg-cyan-600 hover:text-white transition-all active:scale-95"
-        >
-          <span className="skew-x-[12deg]">🎯 GET</span>
-        </Button>
-      </div>
+              <Button
+                onClick={(e) => { e.stopPropagation(); handleCapture(); }}
+                className="flex-1 h-9 px-0 bg-cyan-600/10 border border-cyan-600/50 text-cyan-400 text-[8px] font-black uppercase skew-x-[-12deg] hover:bg-cyan-600 hover:text-white transition-all active:scale-95"
+              >
+                <span className="skew-x-[12deg]">🎯 GET</span>
+              </Button>
+            </div>
 
-      {/* Decorative Line */}
-      <div className="absolute top-0 right-4 -translate-y-full">
-        <div className="h-[1px] w-6 bg-cyan-500/40" />
-      </div>
-    </motion.div>
-  )}
-</AnimatePresence>
-</div>
+            {/* Decorative Line */}
+            <div className="absolute top-0 right-4 -translate-y-full">
+              <div className="h-[1px] w-6 bg-cyan-500/40" />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
-// ─── Ícone de bateria com raio ���─────────────────────────────
+// ─── Ícone de bateria com raio    ─────────────────────────────
 function BatteryIcon({ charges, max, size = 28 }: { charges: number; max: number; size?: number }) {
   const pct = charges / max;
   const barColor = pct > 0.5 ? "#22C55E" : pct > 0.25 ? "#F59E0B" : "#EF4444";
