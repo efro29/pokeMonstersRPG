@@ -373,16 +373,6 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
     }
   }, [pokemon?.currentHp, pokemon?.uid]);
 
-  // Executa turno do rival quando for sua vez
-  useEffect(() => {
-    if (!isPlayerTurn && battle.phase === "menu") {
-      const timer = setTimeout(() => {
-        executeRivalTurn();
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [isPlayerTurn, battle.phase, executeRivalTurn]);
-
   // Auto-switch rival pokemon quando o atual desmaia
   useEffect(() => {
     if (activeRival && activeRival.currentHp <= 0) {
@@ -996,6 +986,16 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
     endBattle();
     onDefeat();
   };
+
+  // Executa turno do rival quando nao for turno do jogador e estiver em menu
+  useEffect(() => {
+    if (!isPlayerTurn && battle.phase === "menu") {
+      const timer = setTimeout(() => {
+        executeRivalTurn();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isPlayerTurn, battle.phase, executeRivalTurn]);
 
   if (!pokemon) return null;
 
