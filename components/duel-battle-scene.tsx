@@ -557,9 +557,17 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
       };
       
       // Se nao for golpe normal, dispara animacao anime primeiro
-      if (moveType !== "normal" && pokemon) {
+      if (moveType !== "normal" && pokemon && activeRival && triggerAnimeAttack) {
         const attackerSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${activeRival.speciesId}.png`;
         const defenderSprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.speciesId}.png`;
+        
+        console.log("[v0] Rival anime attack triggered:", {
+          moveType,
+          attackerSprite,
+          defenderSprite,
+          attackerName: activeRival?.nome,
+          defenderName: pokemon?.name,
+        });
         
         playAttack();
         
@@ -573,6 +581,12 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
         );
       } else {
         // Golpe normal - executa direto
+        console.log("[v0] Normal attack (no anime animation):", {
+          moveType,
+          hasTriggerfn: !!triggerAnimeAttack,
+          hasPokemon: !!pokemon,
+          hasRival: !!activeRival,
+        });
         playAttack();
         executeAttack();
       }
