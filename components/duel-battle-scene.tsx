@@ -25,6 +25,7 @@ import {
 } from "@/lib/pokemon-data";
 import type { PokemonType, HitResult, MoveRange, DamageBreakdown } from "@/lib/pokemon-data";
 import { D20Dice } from "./d20-dice";
+import { SequentialDiceRoller } from "./sequential-dice-roller";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -305,6 +306,11 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
     onComplete: () => void;
   } | null>(null);
 
+  // Estados para dados sequenciais
+  const [isSequentialRolling, setIsSequentialRolling] = useState(false);
+  const [sequentialDiceCount, setSequentialDiceCount] = useState(0);
+  const [sequentialDiceSize, setSequentialDiceSize] = useState(0);
+
   const ARENAS = ["campo"];
   const [arena] = useState(() => ARENAS[Math.floor(Math.random() * ARENAS.length)]);
 
@@ -366,6 +372,16 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
       addLog(`${pokemon.name} desmaiou! Atributos penalizados.`);
     }
   }, [pokemon?.currentHp, pokemon?.uid]);
+
+  // Executa turno do rival quando for sua vez
+  useEffect(() => {
+    if (!isPlayerTurn && battle.phase === "menu") {
+      const timer = setTimeout(() => {
+        executeRivalTurn();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isPlayerTurn, battle.phase, executeRivalTurn]);
 
   // Auto-switch rival pokemon quando o atual desmaia
   useEffect(() => {
@@ -664,6 +680,89 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
     [resolveDiceRoll, activeRival, activeRivalIndex, pokemon, addLog]
   );
 
+  // Handler para dados sequenciais completarem
+  const handleSequentialDiceComplete = useCallback(
+    (results: number[], totalDamage: number) => {
+      setIsSequentialRolling(false);
+      
+      // Processa como um dado D20 com o total de dano dos dados sequenciais
+      // Aqui nós simulamos um acerto para aplicar o dano total
+      setTimeout(() => {
+        const state = useGameStore.getState();
+        const selectedMoveId = state.battle.selectedMoveId;
+        const move = selectedMoveId ? getMove(selectedMoveId) : null;
+        
+        playAttackHit();
+        
+        // Aplica dano ao rival com efetividade de tipo
+        if (activeRival && move) {
+          // Obtem tipos do rival
+          const rivalSpecies = getPokemon(activeRival.speciesId);
+          const rivalTypes = rivalSpecies?.types || [];
+          
+          // Calcula multiplicador de tipo
+          const typeMultiplier = getTypeEffectiveness(move.type as PokemonType, rivalTypes as PokemonType[]);
+          
+          // Multiplicador de nivel (jogador vs rival)
+          const playerLevel = pokemon?.level || 1;
+          const rivalLevel = activeRival.level;
+          let levelMultiplier = 1.0;
+          const levelDiff = playerLevel - rivalLevel;
+          if (levelDiff > 0) {
+            levelMultiplier = Math.min(2.0, 1.0 + (levelDiff * 0.10));
+          } else if (levelDiff < 0) {
+            levelMultiplier = Math.max(0.5, 1.0 + (levelDiff * 0.05));
+          }
+          
+          // Calcula bônus de ataque do treinador
+          const bonusAtaque = Math.floor(attrs.combate / 2);
+          
+          // Dano final com multiplicadores
+          const damageDealt = Math.max(1, Math.floor((totalDamage + bonusAtaque) * typeMultiplier * levelMultiplier));
+          
+          // Log de efetividade
+          const typeLabel = getTypeEffectivenessLabel(typeMultiplier);
+          let logMsg = `${pokemon.name} usou ${move.name}: Dados [${results.join("+")}=${totalDamage}]`;
+          if (bonusAtaque > 0) logMsg += ` +${bonusAtaque} (Combate)`;
+          logMsg += ` = ${damageDealt} de dano!`;
+          if (typeLabel) {
+            logMsg += ` [${typeLabel}]`;
+          }
+          if (levelMultiplier !== 1.0) {
+            logMsg += ` [Nv: x${levelMultiplier.toFixed(1)}]`;
+          }
+          addLog(logMsg);
+          
+          setRivalShake(true);
+          setShowRivalParticles(true);
+          setTimeout(() => {
+            setRivalShake(false);
+            setShowRivalParticles(false);
+            setRivalTeam((prev) => {
+              const updated = [...prev];
+              updated[activeRivalIndex] = {
+                ...updated[activeRivalIndex],
+                currentHp: Math.max(0, updated[activeRivalIndex].currentHp - damageDealt),
+              };
+              return updated;
+            });
+            
+            // Volta ao menu após aplicar dano
+            setTimeout(() => {
+              setBattlePhase("menu");
+              setIsPlayerTurn(false);
+              // Restaura PA do jogador
+              useGameStore.setState((state) => ({
+                battle: { ...state.battle, pa: state.battle.maxPa },
+              }));
+            }, 600);
+          }, 500);
+        }
+      }, 800);
+    },
+    [activeRival, activeRivalIndex, pokemon, addLog, attrs.combate, setBattlePhase]
+  );
+
   // Handler de selecao de ataque
   const handleAttackSelect = (moveId: string) => {
     const moveDef = getMove(moveId);
@@ -673,6 +772,17 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
     }
     
     const moveType = moveDef?.type as PokemonType || "normal";
+    
+    // Extrai dados do golpe (ex: "2d6" -> numDice=2, diceSize=6)
+    let numDice = 1;
+    let diceSize = 6;
+    if (moveDef?.damage_dice) {
+      const diceMatch = moveDef.damage_dice.match(/(\d+)d(\d+)/);
+      if (diceMatch) {
+        numDice = parseInt(diceMatch[1]);
+        diceSize = parseInt(diceMatch[2]);
+      }
+    }
     
     // Se nao for golpe normal, dispara animacao anime primeiro
     if (moveType !== "normal" && moveDef && pokemon && activeRival) {
@@ -690,7 +800,9 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
         () => {
           // Apos animacao anime, continua com o fluxo normal
           selectMove(moveId);
-          setIsRolling(true);
+          setSequentialDiceCount(numDice);
+          setSequentialDiceSize(diceSize);
+          setIsSequentialRolling(true);
           playDiceRoll();
           
           setPlayerAttacking(true);
@@ -702,9 +814,11 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
         }
       );
     } else {
-      // Golpe normal - fluxo original
+      // Golpe normal - fluxo com dados sequenciais
       selectMove(moveId);
-      setIsRolling(true);
+      setSequentialDiceCount(numDice);
+      setSequentialDiceSize(diceSize);
+      setIsSequentialRolling(true);
       playAttack();
       playDiceRoll();
       
@@ -1583,8 +1697,42 @@ export function DuelBattleScene({ npc, onClose, onVictory, onDefeat }: DuelBattl
             </motion.div>
           )}
 
-          {/* Rolagem de dado */}
-          {battle.phase === "rolling" && (
+          {/* Rolagem de dado sequencial */}
+          {battle.phase === "rolling" && isSequentialRolling && (
+            <motion.div
+              style={{ backgroundColor: "rgb(0,0,0,0.6)", zIndex: 10, padding: 10, borderRadius: 8 }}
+              key="rolling-sequential"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="flex flex-col items-center"
+            >
+              {selectedMove && (
+                <div className="text-center mb-4">
+                  <p className="text-sm text-muted-foreground">
+                    {pokemon.name} usou <b className="text-white">{selectedMove.name}!</b>
+                  </p>
+                  <span className="text-xs text-amber-500 font-mono mt-2 block">
+                    Rolando {sequentialDiceCount}d{sequentialDiceSize}...
+                  </span>
+                </div>
+              )}
+              <SequentialDiceRoller 
+                rolling={isSequentialRolling}
+                diceCount={sequentialDiceCount}
+                diceSize={sequentialDiceSize}
+                onComplete={handleSequentialDiceComplete}
+                onDiceResult={(index, value, damage) => {
+                  // Feedback visual/sonoro de cada dado
+                  playDiceRoll();
+                  addLog(`Dado ${index + 1}: ${value} (Dano total: ${damage})`);
+                }}
+              />
+            </motion.div>
+          )}
+
+          {/* Rolagem de dado D20 (fallback para compatibilidade) */}
+          {battle.phase === "rolling" && !isSequentialRolling && (
             <motion.div
               style={{ backgroundColor: "rgb(0,0,0,0.6)", zIndex: 10, padding: 10, borderRadius: 8 }}
               key="rolling"
